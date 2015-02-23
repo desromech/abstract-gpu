@@ -1,0 +1,101 @@
+<api name="Abstract GPU" headerFile="agpu.h" constantPrefix="AGPU_" typePrefix="agpu_" functionPrefix="agpu" >
+<version name="1.0">
+    <types>
+        <typedef name="byte" ctype="unsigned char" />
+        <typedef name="sbyte" ctype="signed char" />
+        <typedef name="short" ctype="signed short" />
+        <typedef name="ushort" ctype="unsigned short" />
+        <typedef name="int" ctype="signed int" />
+        <typedef name="uint" ctype="unsigned int" />
+        <typedef name="pointer" ctype="void*" />
+        <typedef name="size" ctype="size_t" />
+        <typedef name="enum" ctype="int" />
+
+        <typedef name="float" ctype="float" />
+        <typedef name="double" ctype="double" />
+        
+    </types>
+    
+    <constants>
+        <enum name="error">
+            <constant name="Ok" value="0" />
+        </enum>
+
+        <enum name="stencil_operation">
+            <constant name="Keep" value="0" />
+            <constant name="Zero" value="1" />
+            <constant name="Replace" value="2" />
+            <constant name="Invert" value="3" />
+            <constant name="Increase" value="4" />
+            <constant name="IncreaseWrap" value="5" />
+            <constant name="Decrease" value="6" />
+            <constant name="DecreaseWrap" value="7" />
+        </enum>
+        
+        <enum name="compare_function">
+            <constant name="Always" value="0" />
+            <constant name="Never" value="1" />
+            <constant name="Less" value="2" />
+            <constant name="LessEqual" value="3" />
+            <constant name="Equal" value="4" />
+            <constant name="NotEqual" value="5" />
+            <constant name="Greater" value="6" />
+            <constant name="GreaterEqual" value="7" />
+        </enum>
+        
+        <enum name="texture_type">
+            <constant name="TextureBuffer" value="0" />
+            <constant name="Texture1D" value="1" />
+            <constant name="Texture2D" value="2" />
+            <constant name="TextureCube" value="3" />
+            <constant name="Texture3D" value="4" />
+            <constant name="TextureArray1D" value="5" />
+            <constant name="TextureArray2D" value="6" />
+            <constant name="TextureArrayCube" value="7" />
+            <constant name="TextureArray3D" value="8" />
+        </enum>
+    </constants>
+    
+    <globals>
+        <function name="getPlatforms" cname="GetPlatforms" returnType="error" category="platform">
+            <arg name="numplatforms" type="size" />
+            <arg name="platforms" type="plaftorm*" />
+            <arg name="ret_numplatforms" type="size*" />
+        </function>
+    </globals>
+    
+    <interfaces>
+        <interface name="platform">
+        </interface>
+        
+        <interface name="device">
+            <method name="addReference" cname="AddDeviceReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseDevice" return="error">
+            </method>
+        </interface>
+        
+        <interface name="context">
+            <method name="addReference" cname="AddContextReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseContext" returnType="error">
+            </method>
+        </interface>
+        
+        <interface name="texture">
+        </interface>
+        
+        <interface name="surface">
+        </interface>
+        
+        <interface name="buffer">
+        </interface>
+        
+        <interface name="shader">
+        </interface>
+    </interfaces>
+</version>
+
+</api>
