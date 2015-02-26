@@ -1,7 +1,7 @@
 import argparse
 import subprocess
 import sys
-from aslc.Parser import parser
+from aslc.Semantic import compileString
 
 # Parse the command line
 argParser = argparse.ArgumentParser(description="AbstractGPU Shading Language Compiler")
@@ -37,9 +37,8 @@ def preprocessInput(inputFile):
     return stdout
     
 def processInputFile(inputFile):
-    ast = parser.parse(preprocessInput(inputFile))
-    print ast
+    return compileString(preprocessInput(inputFile))
     
 for inputFile in inputFiles:
-    processInputFile(inputFile)
+    print processInputFile(inputFile)
 

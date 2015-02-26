@@ -1,4 +1,5 @@
 import ply.yacc as yacc
+from Type import *
 from AST import *
 from Tokenizer import tokens
 
@@ -18,7 +19,7 @@ precedence = (
 
 def p_module(p):
     'module : module_element_list'
-    p[0] = Module(None, p[1])
+    p[0] = TranslationUnit(None, p[1])
 
 def p_module_element_list(p):
     'module_element_list : '
@@ -60,11 +61,14 @@ def p_prototype_arguments_nonempty_rest(p):
 
 def p_prototype_argument(p):
     'prototype_argument : type_expr IDENTIFIER'
-    p[0] = FunctionArgument(p[1], p[2].value)
+    p[0] = FunctionArgumentNode(p[1], p[2].value)
     
 def p_function_prototype(p):
     'function_prototype : function_kind type_expr IDENTIFIER LPAREN prototype_arguments RPAREN'
-    p[0] = FunctionPrototype(None, p[1], p[2], p[3].value, p[5])
+    position = p[2].position
+    if p[1].position is not None:
+        position = p[1].position
+    p[0] = FunctionPrototype(position, p[1], p[2], p[3].value, p[5])
     
 def p_function_declaration(p):
     'function_declaration : function_prototype SEMICOLON'
