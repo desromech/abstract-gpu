@@ -4,8 +4,17 @@ from Type import *
 BinaryOperation_ADD = 'add'
 BinaryOperation_SUB = 'sub'
 BinaryOperation_MUL = 'mul'
-BinaryOperation_DIV = 'div'
-BinaryOperation_REM = 'rem'
+BinaryOperation_IDIV = 'div'
+BinaryOperation_UDIV = 'udiv'
+BinaryOperation_IREM = 'rem'
+BinaryOperation_UREM = 'urem'
+
+BinaryOperation_BITAND = 'bitand'
+BinaryOperation_BITOR = 'bitor'
+BinaryOperation_BITXOR = 'bitxor'
+
+BinaryOperation_SHIFTLEFT = 'shiftleft'
+BinaryOperation_SHIFTRIGHT = 'shiftright'
 
 BinaryOperation_ILT = 'ilt'
 BinaryOperation_ILE = 'ile'
@@ -35,6 +44,29 @@ BinaryOperation_OFNE = 'ofne'
 BinaryOperation_OFGT = 'ofgt'
 BinaryOperation_OFGE = 'ofge'
 
+ComparisonOperations = set((
+    BinaryOperation_ILT,
+    BinaryOperation_ILE,
+    BinaryOperation_IEQ,
+    BinaryOperation_INE,
+    BinaryOperation_IGT,
+    BinaryOperation_IGE,
+
+    BinaryOperation_UFLT,
+    BinaryOperation_UFLE,
+    BinaryOperation_UFEQ,
+    BinaryOperation_UFNE,
+    BinaryOperation_UFGT,
+    BinaryOperation_UFGE,
+
+    BinaryOperation_OFLT,
+    BinaryOperation_OFLE,
+    BinaryOperation_OFEQ,
+    BinaryOperation_OFNE,
+    BinaryOperation_OFGT,
+    BinaryOperation_OFGE,
+))
+
 class Module:
     def __init__(self):
         self.symbols = {}
@@ -53,7 +85,7 @@ class Value:
         pass
 
     def getType(self):
-        pass
+        raise Exception(self.__class__.__name__)
 
     def isConstant(self):
         return False
@@ -357,6 +389,9 @@ class StoreInstruction(Instruction):
     def __init__(self, value, reference):
         Instruction.__init__(self, [value, reference])
 
+    def getType(self):
+        return None
+
     def getReference(self):
         return self.parameters[1]
 
@@ -367,6 +402,9 @@ class StoreInstruction(Instruction):
         return 'store %s in %s' % (str(self.getValue()), str(self.getReference()))
 
 class TerminatorInstruction(Instruction):
+    def getType(self):
+        return None
+        
     def isTerminator(self):
         return True
 
@@ -410,25 +448,30 @@ class UnaryOperationInstruction(Instruction):
         return '%s %s %s' % (self.operation, str(self.getOperand()))
 
 class BinaryOperationInstruction(Instruction):
+
     def __init__(self, operation, left, right):
         Instruction.__init__(self, [left, right])
         self.operation = operation
-        assert left.getType() == right.getType()
+        self.type = self.computeType(self.operation, left.getType(), right.getType())
 
     def getLeft(self):
-        return parameters[0]
+        return self.parameters[0]
 
     def getRight(self):
-        return parameters[1]
+        return self.parameters[1]
+
+    def getType(self):
+        return self.type
 
     def definitionString(self):
         return '%s %s %s' % (self.operation, str(self.getLeft()), str(self.getRight()))
-
-
-class ComparisonInstruction(BinaryOperationInstruction):
-    def getType(self):
-        return BasicType_Bool
-
+        
+    def computeType(self, operation, leftType, rightType):
+        assert leftType == rightType
+        if operation in ComparisonOperations:
+            return BasicType_Bool
+        return leftType
+        
 class UnreachableInstruction(TerminatorInstruction):
     def __init__(self):
         TerminatorInstruction.__init__(self, [])

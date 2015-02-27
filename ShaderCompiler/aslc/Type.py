@@ -69,6 +69,12 @@ class IntegerType(PrimitiveType):
 
     def isInteger(self):
         return True
+        
+    def isSigned(self):
+        return self.signed
+        
+    def isUnsigned(self):
+        return not self.signed
 
     def __str__(self):
         return self.name

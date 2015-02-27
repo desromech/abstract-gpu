@@ -106,6 +106,23 @@ class Statement(AstNode):
     def __init__(self, position):
         AstNode.__init__(self, position)
 
+class VariablesDeclaration(Statement):
+    def __init__(self, typeExpression, variables):
+        AstNode.__init__(self, typeExpression.position)
+        self.variables = variables
+
+    def accept(self, visitor):
+        return visitor.visitVariablesDeclaration(self)
+        
+class VariableDeclaration(Statement):
+    def __init__(self, position, identifier, initialValue):
+        AstNode.__init__(self, typeExpression.position)
+        self.identifier = identifier
+        self.initialValue = initialValue
+
+    def accept(self, visitor):
+        return visitor.visitVariableDeclaration(self)
+        
 class NullStatement(Statement):
     def __str__(self):
         return ';'
@@ -221,6 +238,16 @@ class BinaryExpression(Expression):
 
     def accept(self, visitor):
         return visitor.visitBinaryExpression(self)
+
+class BinaryAssignmentExpression(Expression):
+    def __init__(self, position, operation, left, right):
+        Expression.__init__(self, position)
+        self.operation = operation
+        self.left = left
+        self.right = right
+
+    def accept(self, visitor):
+        return visitor.visitBinaryAssignmentExpression(self)
 
 class UnaryExpression(Expression):
     def __init__(self, position, operation, operand):

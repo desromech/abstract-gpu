@@ -4,6 +4,8 @@ from AST import *
 from Tokenizer import tokens
 
 precedence = (
+    ('right', 'ASSIGN', 'ASSIGN_PLUS', 'ASSIGN_MINUS', 'ASSIGN_MULTIPLY', 'ASSIGN_DIVIDE', 'ASSIGN_REMAINDER',
+              'ASSIGN_BITAND', 'ASSIGN_BITOR', 'ASSIGN_BITXOR', 'ASSIGN_SHIFTLEFT', 'ASSIGN_SHIFTRIGHT'),
     ('left', 'LOR'),
     ('left', 'LAND'),
     ('left', 'BITOR'),
@@ -95,9 +97,30 @@ def p_statement(p):
                  | break_statement
                  | continue_statement
                  | discard_statement
-                 | return_statement'''
+                 | return_statement
+                 | variables_declaration'''
     p[0] = p[1]
     
+def p_variables_declaration(p):
+    'variables_declaration : type_expr variables_names SEMICOLON'
+    p[0] = VariablesDeclaration(p[1], p[2])
+    
+def p_variables_names_first(p):
+    'variables_names : variable_name'
+    p[0] = [ p[1] ]
+
+def p_variables_names_rest(p):
+    'variables_names : variables_names COMMA variable_name'
+    p[0] = p[1] + [ p[3] ]
+    
+def p_variable_name(p):
+    'variable_name : IDENTIFIER'
+    p[0] = VariableDeclaration(p[1].position, p[1].value, None)
+    
+def p_variable_name_initial(p):
+    'variable_name : IDENTIFIER ASSIGN expression'
+    p[0] = VariableDeclaration(p[1].position, p[1].value, p[3])
+
 def p_null_statement(p):
     'null_statement : SEMICOLON'
     p[0] = NullStatement(p[1].position)
@@ -171,6 +194,24 @@ def p_expression_binary(p):
                   '''
     p[0] = BinaryExpression(p[2].position, p[2].value, p[1], p[3])
 
+def p_expression_binary_assignment(p):
+    '''expression : expression ASSIGN expression
+                 
+                  | expression ASSIGN_PLUS expression
+                  | expression ASSIGN_MINUS expression
+                  | expression ASSIGN_MULTIPLY expression
+                  | expression ASSIGN_DIVIDE expression
+                  | expression ASSIGN_REMAINDER expression
+                 
+                  | expression ASSIGN_BITOR expression
+                  | expression ASSIGN_BITAND expression
+                  | expression ASSIGN_BITXOR expression
+                 
+                  | expression ASSIGN_SHIFTLEFT expression
+                  | expression ASSIGN_SHIFTRIGHT expression
+                  '''
+    p[0] = BinaryAssignmentExpression(p[2].position, p[2].value, p[1], p[3])
+    
 def p_expression_unary(p):
     '''expression : PLUS expression %prec UPLUS
                   | MINUS expression %prec UMINUS

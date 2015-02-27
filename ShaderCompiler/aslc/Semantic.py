@@ -3,6 +3,27 @@ from SSA import *
 from Type import *
 from Parser import parser
 
+BinaryOperationMap = {
+    '+' : 'add',
+    '-' : 'sub',
+    '*' : 'mul',
+    '/' : 'div',
+    '%' : 'rem',
+    
+    '<' : 'lt',
+    '<=' : 'le',
+    '==' : 'eq',
+    '!=' :'ne',
+    '>' : 'gt',
+    '>=' : 'ge',
+
+    '&' : 'bitand',
+    '|' : 'bitor',
+    '^' : 'bitxor',
+    '<<' : 'shiftleft',
+    '>>' : 'shiftright',
+}
+
 class SemanticError(Exception):
     def __init__(self, position, message):
         self.position = position
@@ -91,7 +112,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
 
         # TODO: Support coercions
         if value.getType() != targetType:
-            error(statement, 'cannot coerce %s into %s' % ( str(value.getType()), str(returnType)))
+            error(where, 'cannot coerce %s into %s' % ( str(value.getType()), str(targetType)))
 
         return value
 
@@ -117,11 +138,12 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         # Create the if blocks
         thenBlock = BasicBlock(self.function, 'ifThen')
         elseBlock = None
+        continueBlock = None
+
         if statement.elseStatement is not None:
             elseBlock = BasicBlock(self.function, 'ifElse')
-        continueBlock = BasicBlock(self.function, 'ifContinue')
         if elseBlock is None:
-            elseBlock = continueBlock
+            elseBlock = continueBlock = BasicBlock(self.function, 'ifContinue')
 
         # Coerce the condition into a boolean
         condition = self.coerceInto(statement.condition.accept(self), BasicType_Bool, statement)
@@ -132,18 +154,23 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         statement.thenStatement.accept(self)
 
         if not self.builder.isLastTerminator:
+            if continueBlock is None:
+                continueBlock = BasicBlock(self.function, 'ifContinue')
             self.builder.jump(continueBlock)
 
         # Compile the else block
         if statement.elseStatement is not None:
-            build.setInsertBlock(elseBlock)
+            self.builder.setInsertBlock(elseBlock)
             statement.elseStatement.accept(self)
 
             if not self.builder.isLastTerminator:
+                if continueBlock is None:
+                    continueBlock = BasicBlock(self.function, 'ifContinue')
                 self.builder.jump(continueBlock)
 
         # Continue compiling after the if
-        self.builder.setInsertBlock(continueBlock)
+        if continueBlock is not None:
+            self.builder.setInsertBlock(continueBlock)
 
     def visitWhileStatement(self, statement):
         # Create the continue and break blocks
@@ -221,7 +248,55 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         value = self.coerceInto(expression.accept(self), returnType, statement)
         self.builder.returnValue(value)
 
+    def commonCoercionType(self, where, leftType, rightType):
+        if leftType == rightType:
+            return leftType
+            
+        hasInteger = leftType.isInteger() or rightType.isInteger()
+        hasFloatingPoint = leftType.isFloatingPoint() or rightType.isFloatingPoint()
+        hasDouble = leftType.isDouble() or rightType.isDouble()
+        if hasFloatingPoint:
+            if hasDouble:
+                return BasicType_Double
+            return BasicType_Float
+        elif hasInteger:
+            return BasicType_Integer
+        error('cannot operate an object of type "%s" with another of type "%s"' % (str(leftType), str(rightType)))
+        
+    def implicitCommonCoercion(self, left, right, where):
+        leftValue = self.evalReferences(left)
+        rightValue = self.evalReferences(right)
+        leftType = leftValue.getType()
+        rightType = rightValue.getType()
+        
+        coercionType = self.commonCoercionType(where, leftType, rightType)
+        
+        return coercionType, self.coerceInto(leftValue, coercionType, where), self.coerceInto(rightValue, coercionType, where)
+        
+    def visitBinaryExpression(self, expression):
+        # Perform the value coercion
+        leftValue = expression.left.accept(self)
+        rightValue = expression.right.accept(self)
+        coercionType, leftCoerced, rightCoerced = self.implicitCommonCoercion(leftValue, rightValue, expression)
 
+        # Try to build the binary operation instruction name, if possible
+        isFloat = coercionType.isFloatingPoint()
+        isInteger = coercionType.isInteger()
+        operation = expression.operation
+        suffix = BinaryOperationMap.get(operation, None)
+        if isinstance(suffix, str):
+            if isInteger:
+                preffix = 'i'
+                if (operation == '/' or operation == '%') and coercionType.isUnsigned():
+                    preffix = 'u'
+            elif isFloat:
+                preffix = 'uf'
+            else:
+                error('Cannot use %s with values of type %s' % (expression.operation, str(coercionType)))
+            return self.builder.addBinaryOperation(preffix + suffix, leftCoerced, rightCoerced)
+
+        error('COMPILER ERROR: unimplemented operation %s' % operation)
+        
     def compile(self, definition):
         # Create the entry basic block and the instruction builder
         declarations = BasicBlock(self.function, 'declarations')

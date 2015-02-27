@@ -26,6 +26,19 @@ tokens = (
     "KERNEL",
     
     # Operators
+    "ASSIGN",
+    "ASSIGN_PLUS",
+    "ASSIGN_MINUS",
+    "ASSIGN_MULTIPLY",
+    "ASSIGN_DIVIDE",
+    "ASSIGN_REMAINDER",
+    
+    "ASSIGN_BITAND",
+    "ASSIGN_BITOR",
+    "ASSIGN_BITXOR",
+    "ASSIGN_SHIFTLEFT",
+    "ASSIGN_SHIFTRIGHT",
+    
     "PLUS",
     "MINUS",
     "MULTIPLY",
@@ -131,6 +144,46 @@ def unescapeString(val):
         i += 1
     return result
     
+def t_ASSIGN_PLUS(t):
+    r'\+='
+    return addPosition(t)
+
+def t_ASSIGN_MINUS(t):
+    r'-='
+    return addPosition(t)
+
+def t_ASSIGN_MULTIPLY(t):
+    r'\*='
+    return addPosition(t)
+
+def t_ASSIGN_DIVIDE(t):
+    r'/='
+    return addPosition(t)
+
+def t_ASSIGN_REMAINDER(t):
+    r'%='
+    return addPosition(t)
+
+def t_ASSIGN_BITAND(t):
+    r'&='
+    return addPosition(t)
+
+def t_ASSIGN_BITOR(t):
+    r'\|='
+    return addPosition(t)
+
+def t_ASSIGN_BITXOR(t):
+    r'^='
+    return addPosition(t)
+
+def t_ASSIGN_SHIFTLEFT(t):
+    r'<<='
+    return addPosition(t)
+
+def t_ASSIGN_SHIFTRIGHT(t):
+    r'>>='
+    return addPosition(t)
+
 def t_PLUS(t):
     r'\+'
     return addPosition(t)
@@ -175,6 +228,10 @@ def t_EQ(t):
     r'=='
     return addPosition(t)
     
+def t_ASSIGN(t):
+    r'='
+    return addPosition(t)
+
 def t_NE(t):
     r'!='
     return addPosition(t)
