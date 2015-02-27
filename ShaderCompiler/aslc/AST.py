@@ -109,6 +109,7 @@ class Statement(AstNode):
 class VariablesDeclaration(Statement):
     def __init__(self, typeExpression, variables):
         AstNode.__init__(self, typeExpression.position)
+        self.typeExpression = typeExpression
         self.variables = variables
 
     def accept(self, visitor):
@@ -116,7 +117,7 @@ class VariablesDeclaration(Statement):
         
 class VariableDeclaration(Statement):
     def __init__(self, position, identifier, initialValue):
-        AstNode.__init__(self, typeExpression.position)
+        AstNode.__init__(self, position)
         self.identifier = identifier
         self.initialValue = initialValue
 
@@ -128,7 +129,15 @@ class NullStatement(Statement):
         return ';'
 
     def accept(self, visitor):
-        return visitor.visitNulStatement(self)
+        return visitor.visitNullStatement(self)
+
+class ExpressionStatement(Statement):
+    def __init__(self, expression):
+        Statement.__init__(self, expression.position)
+        self.expression = expression
+        
+    def accept(self, visitor):
+        return visitor.visitExpressionStatement(self)
     
 class BlockStatement(Statement):
     def __init__(self, position, body):

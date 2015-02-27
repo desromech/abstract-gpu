@@ -98,7 +98,8 @@ def p_statement(p):
                  | continue_statement
                  | discard_statement
                  | return_statement
-                 | variables_declaration'''
+                 | variables_declaration
+                 | expression_statement'''
     p[0] = p[1]
     
 def p_variables_declaration(p):
@@ -164,6 +165,10 @@ def p_return_statement(p):
 def p_return_value_statement(p):
     'return_statement : RETURN expression SEMICOLON'
     p[0] = ReturnStatement(p[1].position, p[2])
+
+def p_expression_statement(p):
+    'expression_statement : expression SEMICOLON'
+    p[0] = ExpressionStatement(p[1])
 
 def p_expression(p):
     '''expression : primary_expression'''

@@ -22,6 +22,9 @@ class Type:
     def __init__(self):
         pass
 
+    def isType(self):
+        return True
+        
     def isReference(self):
         return False
 

@@ -78,6 +78,12 @@ class SemanticAnalysis:
     def visitBooleanConstant(self, constant):
         return ConstantValue.get(BasicType_Bool, constant.value)
 
+    def visitIntegerConstant(self, constant):
+        return ConstantValue.get(BasicType_Int, constant.value)
+
+    def visitRealConstant(self, constant):
+        return ConstantValue.get(BasicType_Float, constant.value)
+
 # Function specific semantic analysis.
 class FunctionSemanticAnalysis(SemanticAnalysis):
     def __init__(self, function, parentScope):
@@ -296,6 +302,36 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
             return self.builder.addBinaryOperation(preffix + suffix, leftCoerced, rightCoerced)
 
         error('COMPILER ERROR: unimplemented operation %s' % operation)
+
+    def visitNullStatement(self, statement):
+        # Do nothing here
+        pass
+
+    def visitVariablesDeclaration(self, declarations):
+        # Get the type and ensure it is a type.
+        tpe = declarations.typeExpression.accept(self)
+        if not tpe.isType():
+            error(tpe, 'expected a type')
+
+        # Declare the variables.
+        for decl in declarations.variables:
+            identifier = decl.identifier
+            initialValueExpression = decl.initialValue
+            
+            # Allocate the variable
+            location = self.declarationsBuilder.alloca(tpe)
+            
+            # Set the initial value
+            if initialValueExpression is not None:
+                value = self.coerceInto(initialValueExpression.accept(self), tpe, decl)
+                self.builder.store(value, location)
+            
+            # Add the variable to the current scope
+            self.scope.addSymbol(identifier, location, decl)
+            
+    def visitExpressionStatement(self, statement):
+        # Just visit the expression
+        statement.expression.accept(self)
         
     def compile(self, definition):
         # Create the entry basic block and the instruction builder

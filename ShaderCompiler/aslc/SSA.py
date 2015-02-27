@@ -87,6 +87,9 @@ class Value:
     def getType(self):
         raise Exception(self.__class__.__name__)
 
+    def isType(self):
+        return False
+        
     def isConstant(self):
         return False
 
