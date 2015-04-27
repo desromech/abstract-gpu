@@ -1,4 +1,6 @@
+#!/usr/bin/python
 import re
+import sys
 
 from definition import *
 from string import Template
@@ -9,9 +11,10 @@ HEADER_START = \
 #define $HeaderProtectMacro
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
-#define extern "C" {
+extern "C" {
 #endif /* __cplusplus */
 
 #ifdef _WIN32
@@ -88,7 +91,7 @@ class MakeHeaderVisitor:
         self.emitVersions(api.versions)
         self.emitExtensions(api.extensions)
         self.endHeader();
-        
+   
     def visitTypedef(self, typedef):
         self.printLine('typedef $CType $TypePrefix$Name;', CType=typedef.ctype, Name=typedef.name)
         
@@ -147,6 +150,9 @@ class MakeHeaderVisitor:
         for function in functions:
             self.emitFunction(function)
         self.newline()
+
+    def emitInterfaceType(self, interface):
+        self.printLine('typedef struct _$TypePrefix$Name $TypePrefix$Name;', Name = interface.name)
     
     def emitInterface(self, interface):
         self.printLine('/* Methods for interface $TypePrefix$Name. */', Name = interface.name)
@@ -157,17 +163,50 @@ class MakeHeaderVisitor:
         for method in interface.methods:
             self.emitFunction(method)
         self.newline()
+
+    def emitField(self, field):
+        self.printLine('\t$TypePrefix$Type $Name;', Type = field.type, Name = field.name)
         
+    def emitStruct(self, struct):
+        self.printLine('/* Structure $TypePrefix$Name. */', Name = struct.name)
+        self.printLine('typedef struct $TypePrefix$Name {', Name = struct.name)
+        for field in struct.fields:
+            self.emitField(field)
+        self.printLine('} $TypePrefix$Name;', Name = struct.name)
+        self.newline()
+
+    def emitIcdInterface(self, fragment):
+        self.printLine('/* Installable client driver interface. */')
+        self.printLine('typedef struct _agpu_icd_dispatch {')
+        self.printLine('\tint icd_interface_version;')
+        for function in fragment.globals:
+            self.printLine('\t$FunctionPrefix${FunctionName}_FUN $FunctionPrefix${FunctionName};', FunctionName = function.cname)
+
+        for interface in fragment.interfaces:
+            for method in interface.methods:
+                self.printLine('\t$FunctionPrefix${FunctionName}_FUN $FunctionPrefix${FunctionName};', FunctionName = method.cname)
+
+        self.printLine('} agpu_icd_dispatch;')
+
     def emitFragment(self, fragment):
         # Emit the types
         for typ in fragment.types:
             typ.accept(self)
         self.newline()
-            
+
+        # Emit the interface types
+        for interface in fragment.interfaces:
+            self.emitInterfaceType(interface)
+        self.newline()
+
         # Emit the constants.
         for constant in fragment.constants:
             constant.accept(self)
         self.newline()
+
+        # Emit the structures.
+        for struct in fragment.structs:
+            self.emitStruct(struct)
         
         # Emit the global functions
         self.emitGlobals(fragment.globals)
@@ -175,6 +214,9 @@ class MakeHeaderVisitor:
         # Emit the interface methods
         for interface in fragment.interfaces:
             self.emitInterface(interface)
+
+        # Emit the icd interface
+        self.emitIcdInterface(fragment)
         self.newline()
         
     def emitVersion(self, version):
@@ -192,7 +234,9 @@ class MakeHeaderVisitor:
             self.emitExtension(extension)
 
 if __name__ == '__main__':
-    api = ApiDefinition.loadFromFileNamed('../definitions/api.xml')
-    with open(api.headerFileName, 'w') as out:
+    if len(sys.argv) < 3:
+        print "make-headers <definitions> <output dir>"
+    api = ApiDefinition.loadFromFileNamed(sys.argv[1])
+    with open(sys.argv[2] + '/' + api.headerFileName, 'w') as out:
         visitor = MakeHeaderVisitor(out)
         api.accept(visitor)

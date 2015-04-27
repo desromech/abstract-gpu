@@ -10,15 +10,41 @@
         <typedef name="pointer" ctype="void*" />
         <typedef name="size" ctype="size_t" />
         <typedef name="enum" ctype="int" />
+        <typedef name="bool" ctype="bool" />
 
         <typedef name="float" ctype="float" />
         <typedef name="double" ctype="double" />
-        
     </types>
+
+	<structs>
+        <struct name="device_open_info">
+            <field name="display" type="pointer" />
+            <field name="window" type="pointer" />
+            <field name="surface" type="pointer" />
+            <field name="red_size" type="int" />
+            <field name="green_size" type="int" />
+            <field name="blue_size" type="int" />
+            <field name="alpha_size" type="int" />
+            <field name="depth_size" type="int" />
+            <field name="stencil_size" type="int" />
+            <field name="doublebuffer" type="bool" />
+            <field name="sample_buffers" type="bool" />
+            <field name="samples" type="int" />
+        </struct>
+
+		<struct name="draw_elements_command">
+			<field name="count" type="uint" />
+			<field name="instance_count" type="uint" />
+			<field name="first_index" type="uint" />
+			<field name="base_vertex" type="uint" />
+			<field name="base_instance" type="uint" />
+		</struct>
+	</structs>
     
     <constants>
         <enum name="error">
             <constant name="Ok" value="0" />
+            <constant name="InvalidOperation" value="-1" />
         </enum>
 
         <enum name="stencil_operation">
@@ -54,25 +80,61 @@
             <constant name="TextureArrayCube" value="7" />
             <constant name="TextureArray3D" value="8" />
         </enum>
+
+		<enum name="shader_type">
+			<constant name="VertexShader" value="0" />
+			<constant name="FragmentShader" value="1" />
+			<constant name="GeometryShader" value="2" />
+			<constant name="ComputeShader" value="3" />
+			<constant name="TessellationControlShader" value="4" />
+			<constant name="TessellationEvaluationShader" value="5" />
+		</enum>
+
+		<enum name="buffer_binding_type">
+			<constant name="ArrayBuffer" value="0" />
+			<constant name="ElementArrayBuffer" value="1" />
+			<constant name="UniformBuffer" value="2" />
+			<constant name="DrawIndirectBuffer" value="3" />
+		</enum>
+
+		<enum name="render_buffer_bit">
+			<constant name="DepthBufferBit" value="1" />
+			<constant name="StencilBufferBit" value="2" />
+			<constant name="ColorBufferBit" value="4" />
+		</enum>
+
     </constants>
     
     <globals>
         <function name="getPlatforms" cname="GetPlatforms" returnType="error" category="platform">
             <arg name="numplatforms" type="size" />
-            <arg name="platforms" type="plaftorm*" />
+            <arg name="platforms" type="platform**" />
             <arg name="ret_numplatforms" type="size*" />
         </function>
     </globals>
     
     <interfaces>
         <interface name="platform">
+            <method name="openDevice" cname="OpenDevice" returnType="device*">
+                <arg name="openInfo" type="device_open_info*" />
+            </method>
+
         </interface>
         
         <interface name="device">
             <method name="addReference" cname="AddDeviceReference" returnType="error">
             </method>
 
-            <method name="release" cname="ReleaseDevice" return="error">
+            <method name="release" cname="ReleaseDevice" returnType="error">
+            </method>
+
+            <method name="getImmediateContext" cname="GetImmediateContext" returnType="context*">
+            </method>
+
+            <method name="createDeferredContext" cname="CreateDeferredContext" returnType="context*">
+            </method>
+
+            <method name="swapBuffers" cname="SwapBuffers" returnType="error">
             </method>
         </interface>
         
@@ -82,18 +144,50 @@
 
             <method name="release" cname="ReleaseContext" returnType="error">
             </method>
+
+            <method name="setClearColor" cname="SetClearColor" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="setClearDepth" cname="SetClearDepth" returnType="error">
+                <arg name="depth" type="float" />
+            </method>
+
+            <method name="setClearStencil" cname="SetClearStencil" returnType="error">
+                <arg name="value" type="int" />
+            </method>
+
+            <method name="clear" cname="Clear" returnType="error">
+                <arg name="buffers" type="render_buffer_bit" />
+            </method>
+
+            <method name="setDepthFunction" cname="SetDepthFunction" returnType="error">
+                <arg name="function" type="compare_function" />
+            </method>
+
+            <method name="setAlphaFunction" cname="SetAlphaFunction" returnType="error">
+                <arg name="function" type="compare_function" />
+                <arg name="reference" type="float" />
+            </method>
+
         </interface>
         
         <interface name="texture">
         </interface>
-        
-        <interface name="surface">
-        </interface>
-        
+
         <interface name="buffer">
         </interface>
         
         <interface name="shader">
+        </interface>
+
+        <interface name="program">
+        </interface>
+
+        <interface name="framebuffer">
         </interface>
     </interfaces>
 </version>

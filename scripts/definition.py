@@ -12,14 +12,29 @@ class Typedef:
         
     def accept(self, visitor):
         return visitor.visitTypedef(self)
+
+class Field:
+    def __init__(self, xmlNode):
+        self.name = xmlNode.get('name')
+        self.type = xmlNode.get('type')
+
+    def accept(self, visitor):
+        return visitor.visitField(self)
       
 class Struct:
     def __init__(self, xmlNode):
-        pass
+        self.name = xmlNode.get('name')
+        self.fields = []
+        self.loadFields(xmlNode)
         
     def accept(self, visitor):
         return visitor.visitStruct(self)
-                 
+
+    def loadFields(self, node):
+        for child in node:
+            if child.tag == 'field':
+                self.fields.append(Field(child))
+
 class Enum:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
@@ -47,7 +62,7 @@ class Constant:
 class SelfArgument:
     def __init__(self, clazz):
         self.name = clazz.name
-        self.type = clazz.name
+        self.type = clazz.name + '*'
         
 class Argument:
     def __init__(self, xmlNode):
@@ -93,12 +108,14 @@ class ApiFragment:
         self.constants = []
         self.globals = []
         self.interfaces = []
+        self.structs = []
         self.loadChildren(xmlNode)
 
     def loadChildren(self, xmlNode):
         for child in xmlNode:
             if child.tag == 'types': self.loadTypes(child)
             elif child.tag == 'constants': self.loadConstants(child)
+            elif child.tag == 'structs' : self.loadStructs(child)
             elif child.tag == 'globals': self.loadGlobals(child)
             elif child.tag == 'interfaces': self.loadInterfaces(child)
             
@@ -118,6 +135,14 @@ class ApiFragment:
 
             if loadedNode is not None:
                 self.constants.append(loadedNode)
+
+    def loadStructs(self, node):
+        for child in node:
+            loadedNode = None
+            if child.tag == 'struct': loadedNode = Struct(child)
+
+            if loadedNode is not None:
+                self.structs.append(loadedNode)
 
     def loadGlobals(self, node):
         for child in node:
