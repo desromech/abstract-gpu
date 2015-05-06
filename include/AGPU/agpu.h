@@ -43,7 +43,14 @@ typedef struct _agpu_framebuffer agpu_framebuffer;
 
 typedef enum {
 	AGPU_OK = 0,
-	AGPU_INVALID_OPERATION = -1,
+	AGPU_ERROR = -1,
+	AGPU_NULL_POINTER = -2,
+	AGPU_INVALID_OPERATION = -3,
+	AGPU_INVALID_PARAMETER = -4,
+	AGPU_OUT_OF_BOUNDS = -5,
+	AGPU_UNSUPPORTED = -6,
+	AGPU_UNIMPLEMENTED = -7,
+	AGPU_NOT_CURRENT_CONTEXT = -8,
 } agpu_error;
 
 typedef enum {
@@ -154,6 +161,9 @@ AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
 /* Methods for interface agpu_context. */
 typedef agpu_error (*agpuAddContextReference_FUN) ( agpu_context* context );
 typedef agpu_error (*agpuReleaseContext_FUN) ( agpu_context* context );
+typedef agpu_error (*agpuFinish_FUN) ( agpu_context* context );
+typedef agpu_error (*agpuFlush_FUN) ( agpu_context* context );
+typedef agpu_error (*agpuMakeCurrent_FUN) ( agpu_context* context );
 typedef agpu_error (*agpuSetClearColor_FUN) ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
 typedef agpu_error (*agpuSetClearDepth_FUN) ( agpu_context* context, agpu_float depth );
 typedef agpu_error (*agpuSetClearStencil_FUN) ( agpu_context* context, agpu_int value );
@@ -163,6 +173,9 @@ typedef agpu_error (*agpuSetAlphaFunction_FUN) ( agpu_context* context, agpu_com
 
 AGPU_EXPORT agpu_error agpuAddContextReference ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuReleaseContext ( agpu_context* context );
+AGPU_EXPORT agpu_error agpuFinish ( agpu_context* context );
+AGPU_EXPORT agpu_error agpuFlush ( agpu_context* context );
+AGPU_EXPORT agpu_error agpuMakeCurrent ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
 AGPU_EXPORT agpu_error agpuSetClearDepth ( agpu_context* context, agpu_float depth );
 AGPU_EXPORT agpu_error agpuSetClearStencil ( agpu_context* context, agpu_int value );
@@ -197,6 +210,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuSwapBuffers_FUN agpuSwapBuffers;
 	agpuAddContextReference_FUN agpuAddContextReference;
 	agpuReleaseContext_FUN agpuReleaseContext;
+	agpuFinish_FUN agpuFinish;
+	agpuFlush_FUN agpuFlush;
+	agpuMakeCurrent_FUN agpuMakeCurrent;
 	agpuSetClearColor_FUN agpuSetClearColor;
 	agpuSetClearDepth_FUN agpuSetClearDepth;
 	agpuSetClearStencil_FUN agpuSetClearStencil;

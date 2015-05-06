@@ -15,17 +15,49 @@
 
 #include "object.hpp"
 
+class AgpuGLImmediateContext;
+
+/**
+ * OpenGL version number
+ */
+enum class OpenGLVersion
+{
+    Version10 = 10,
+    Version20 = 20,
+    Version21 = 21,
+    Version30 = 30,
+    Version31 = 31,
+    Version32 = 32,
+    Version33 = 33,
+    Version40 = 40,
+    Version41 = 41,
+    Version42 = 42,
+    Version43 = 43,
+};
+
 /**
  * Agpu OpenGL device
  */
 class _agpu_device: public Object<_agpu_device>
 {
 public:
+    _agpu_device();
+
     void lostReferences();
 
     static bool isExtensionSupported(const char *extList, const char *extension);
     static agpu_device *open(agpu_device_open_info* openInfo);
 
+    agpu_context* createDeferredContext();
+    agpu_context* getImmediateContext();
+
+    agpu_error swapBuffers();
+
+    bool makeCurrent();
+    void readVersionInformation();
+
+    OpenGLVersion versionNumber;
+    std::string rendererString, shaderString;
 
 #ifdef _WIN32
 #elif defined(__linux__)
@@ -33,6 +65,7 @@ public:
     Window window;
     GLXContext context;
 #endif
+    agpu_context* immediateContext;
 };
 
 #endif //_AGPU_DEVICE_HPP_

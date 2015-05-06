@@ -1,6 +1,65 @@
 #ifndef _AGPU_GL_CONTEXT_HPP
 #define _AGPU_GL_CONTEXT_HPP
 
-#include "object.hpp"
+#include "device.hpp"
+
+/**
+ * AGPU GL context interface
+ */
+class AgpuGLContext
+{
+public:
+    virtual ~AgpuGLContext() {}
+
+    virtual agpu_error makeCurrent() = 0;
+    virtual agpu_error finish() = 0;
+    virtual agpu_error flush() = 0;
+
+    virtual agpu_error setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a ) = 0;
+    virtual agpu_error setClearDepth ( agpu_float depth ) = 0;
+    virtual agpu_error setClearStencil ( agpu_int value ) = 0;
+
+    virtual agpu_error clear ( agpu_render_buffer_bit buffers ) = 0;
+
+    virtual agpu_error setDepthFunction ( agpu_compare_function function ) = 0;
+    virtual agpu_error setAlphaFunction ( agpu_compare_function function, agpu_float reference ) = 0;
+
+
+
+};
+
+class AgpuGLImmediateContext: public AgpuGLContext
+{
+public:
+    AgpuGLImmediateContext(_agpu_device *device);
+    ~AgpuGLImmediateContext();
+
+    virtual agpu_error makeCurrent();
+    virtual agpu_error finish();
+    virtual agpu_error flush();
+
+    virtual agpu_error setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a );
+    virtual agpu_error setClearDepth ( agpu_float depth );
+    virtual agpu_error setClearStencil ( agpu_int value );
+
+    virtual agpu_error clear ( agpu_render_buffer_bit buffers );
+
+    virtual agpu_error setDepthFunction ( agpu_compare_function function );
+    virtual agpu_error setAlphaFunction ( agpu_compare_function function, agpu_float reference );
+
+
+
+    agpu_device *device;
+};
+
+class _agpu_context: public Object<_agpu_context>
+{
+public:
+    _agpu_context(AgpuGLContext *impl);
+
+    void lostReferences();
+
+    AgpuGLContext *impl;
+};
 
 #endif // _AGPU_GL_CONTEXT_HPP

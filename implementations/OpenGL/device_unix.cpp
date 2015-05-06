@@ -218,8 +218,27 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     device->display = display;
     device->window = window;
     device->context = context;
+    if(!device->makeCurrent())
+    {
+        fprintf( stderr, "Failed to make current recently created OpenGL context\n" );
+        return nullptr;
+    }
 
+    device->readVersionInformation();
     return device;
+}
+
+agpu_error agpu_device::swapBuffers()
+{
+    if(!makeCurrent()) return AGPU_NOT_CURRENT_CONTEXT;
+    glFlush();
+    glXSwapBuffers(display, window);
+    return AGPU_OK;
+}
+
+bool agpu_device::makeCurrent()
+{
+    return glXMakeCurrent(display, window, context) == True;
 }
 
 #endif

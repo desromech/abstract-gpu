@@ -44,7 +44,14 @@
     <constants>
         <enum name="error">
             <constant name="Ok" value="0" />
-            <constant name="InvalidOperation" value="-1" />
+            <constant name="Error" value="-1" />
+            <constant name="NullPointer" value="-2" />
+            <constant name="InvalidOperation" value="-3" />
+            <constant name="InvalidParameter" value="-4" />
+            <constant name="OutOfBounds" value="-5" />
+            <constant name="Unsupported" value="-6" />
+            <constant name="Unimplemented" value="-7" />
+            <constant name="NotCurrentContext" value="-8" />
         </enum>
 
         <enum name="stencil_operation">
@@ -143,6 +150,15 @@
             </method>
 
             <method name="release" cname="ReleaseContext" returnType="error">
+            </method>
+
+            <method name="finish" cname="Finish" returnType="error">
+            </method>
+
+            <method name="flush" cname="Flush" returnType="error">
+            </method>
+
+            <method name="makeCurrent" cname="MakeCurrent" returnType="error">
             </method>
 
             <method name="setClearColor" cname="SetClearColor" returnType="error">

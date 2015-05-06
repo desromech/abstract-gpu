@@ -133,4 +133,5 @@ void SampleBase::render()
 
 void SampleBase::swapBuffers()
 {
+    agpuSwapBuffers(device);
 }
