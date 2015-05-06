@@ -32,6 +32,14 @@
             <field name="samples" type="int" />
         </struct>
 
+		<struct name="buffer_description">
+			<field name="size" type="uint" />
+			<field name="usage" type="buffer_usage_type" />
+			<field name="binding" type="buffer_binding_type" />
+			<field name="mapping_flags" type="buffer_mapping_flags" />
+			<field name="stride" type="uint" />
+		</struct>
+
 		<struct name="draw_elements_command">
 			<field name="count" type="uint" />
 			<field name="instance_count" type="uint" />
@@ -97,11 +105,24 @@
 			<constant name="TessellationEvaluationShader" value="5" />
 		</enum>
 
+		<enum name="buffer_usage_type">
+			<constant name="Static" value="0" />
+			<constant name="Dynamic" value="1" />
+			<constant name="Stream" value="2" />
+		</enum>
+
 		<enum name="buffer_binding_type">
 			<constant name="ArrayBuffer" value="0" />
 			<constant name="ElementArrayBuffer" value="1" />
 			<constant name="UniformBuffer" value="2" />
 			<constant name="DrawIndirectBuffer" value="3" />
+		</enum>
+
+		<enum name="buffer_mapping_flags">
+			<constant name="Read" value="1" />
+			<constant name="Write" value="2" />
+			<constant name="Persistent" value="4" />
+			<constant name="Coherent" value="8" />
 		</enum>
 
 		<enum name="render_buffer_bit">
@@ -142,6 +163,11 @@
             </method>
 
             <method name="swapBuffers" cname="SwapBuffers" returnType="error">
+            </method>
+
+            <method name="createBuffer" cname="CreateBuffer" returnType="buffer*">
+                <arg name="description" type="buffer_description*" />
+                <arg name="initial_data" type="void*" />
             </method>
         </interface>
         

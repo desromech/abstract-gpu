@@ -13,6 +13,8 @@
 #error unsupported platform
 #endif
 
+#include <string>
+
 #include "object.hpp"
 
 class AgpuGLImmediateContext;

@@ -97,11 +97,24 @@ typedef enum {
 } agpu_shader_type;
 
 typedef enum {
+	AGPU_STATIC = 0,
+	AGPU_DYNAMIC = 1,
+	AGPU_STREAM = 2,
+} agpu_buffer_usage_type;
+
+typedef enum {
 	AGPU_ARRAY_BUFFER = 0,
 	AGPU_ELEMENT_ARRAY_BUFFER = 1,
 	AGPU_UNIFORM_BUFFER = 2,
 	AGPU_DRAW_INDIRECT_BUFFER = 3,
 } agpu_buffer_binding_type;
+
+typedef enum {
+	AGPU_READ = 1,
+	AGPU_WRITE = 2,
+	AGPU_PERSISTENT = 4,
+	AGPU_COHERENT = 8,
+} agpu_buffer_mapping_flags;
 
 typedef enum {
 	AGPU_DEPTH_BUFFER_BIT = 1,
@@ -125,6 +138,15 @@ typedef struct agpu_device_open_info {
 	agpu_bool sample_buffers;
 	agpu_int samples;
 } agpu_device_open_info;
+
+/* Structure agpu_buffer_description. */
+typedef struct agpu_buffer_description {
+	agpu_uint size;
+	agpu_buffer_usage_type usage;
+	agpu_buffer_binding_type binding;
+	agpu_buffer_mapping_flags mapping_flags;
+	agpu_uint stride;
+} agpu_buffer_description;
 
 /* Structure agpu_draw_elements_command. */
 typedef struct agpu_draw_elements_command {
@@ -151,12 +173,14 @@ typedef agpu_error (*agpuReleaseDevice_FUN) ( agpu_device* device );
 typedef agpu_context* (*agpuGetImmediateContext_FUN) ( agpu_device* device );
 typedef agpu_context* (*agpuCreateDeferredContext_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_device* device );
+typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_void* initial_data );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
 AGPU_EXPORT agpu_context* agpuGetImmediateContext ( agpu_device* device );
 AGPU_EXPORT agpu_context* agpuCreateDeferredContext ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
+AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_void* initial_data );
 
 /* Methods for interface agpu_context. */
 typedef agpu_error (*agpuAddContextReference_FUN) ( agpu_context* context );
@@ -208,6 +232,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetImmediateContext_FUN agpuGetImmediateContext;
 	agpuCreateDeferredContext_FUN agpuCreateDeferredContext;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
+	agpuCreateBuffer_FUN agpuCreateBuffer;
 	agpuAddContextReference_FUN agpuAddContextReference;
 	agpuReleaseContext_FUN agpuReleaseContext;
 	agpuFinish_FUN agpuFinish;
