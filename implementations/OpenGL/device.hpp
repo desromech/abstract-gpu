@@ -4,11 +4,13 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <GL/GL.h>
+#include <GL/glext.h>
 #elif defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
+#include <GL/glext.h>
 #else
 #error unsupported platform
 #endif
@@ -57,6 +59,14 @@ public:
 
     bool makeCurrent();
     void readVersionInformation();
+    void loadExtensions();
+    void *getProcAddress(const char *symbolName);
+
+    template<typename FT>
+    void loadExtensionFunction(FT &functionPointer, const char *functionName)
+    {
+        functionPointer = reinterpret_cast<FT> (getProcAddress(functionName));
+    }
 
     OpenGLVersion versionNumber;
     std::string rendererString, shaderString;
@@ -68,6 +78,21 @@ public:
     GLXContext context;
 #endif
     agpu_context* immediateContext;
+    
+public:
+    // OpenGL API
+    
+    // Vertex buffer object
+    PFNGLGENBUFFERSPROC glGenBuffers;
+    PFNGLDELETEBUFFERSPROC glDeleteBuffers;
+    PFNGLBINDBUFFERPROC glBindBuffer;
+    PFNGLBUFFERDATAPROC glBufferData;
+    PFNGLBUFFERSUBDATAPROC glBufferSubData;
+    PFNGLMAPBUFFERPROC glMapBuffer;
+    PFNGLUNMAPBUFFERPROC glUnmapBuffer;
+    PFNGLBUFFERSTORAGEPROC glBufferStorage;
+
+
 };
 
 #endif //_AGPU_DEVICE_HPP_

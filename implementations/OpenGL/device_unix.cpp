@@ -225,7 +225,13 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     }
 
     device->readVersionInformation();
+    device->loadExtensions();
     return device;
+}
+
+void *agpu_device::getProcAddress(const char *symbolName)
+{
+    return (void*)glXGetProcAddress((const GLubyte*)symbolName);
 }
 
 agpu_error agpu_device::swapBuffers()

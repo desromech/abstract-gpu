@@ -24,8 +24,6 @@ public:
     virtual agpu_error setDepthFunction ( agpu_compare_function function ) = 0;
     virtual agpu_error setAlphaFunction ( agpu_compare_function function, agpu_float reference ) = 0;
 
-
-
 };
 
 class AgpuGLImmediateContext: public AgpuGLContext

@@ -119,10 +119,17 @@
 		</enum>
 
 		<enum name="buffer_mapping_flags">
-			<constant name="Read" value="1" />
-			<constant name="Write" value="2" />
-			<constant name="Persistent" value="4" />
-			<constant name="Coherent" value="8" />
+			<constant name="MapReadBit" value="1" />
+			<constant name="MapWriteBit" value="2" />
+			<constant name="MapPersistentBit" value="4" />
+			<constant name="MapCoherentBit" value="8" />
+            <constant name="MapDynamicStorageBit" value="16" />
+		</enum>
+
+		<enum name="mapping_access">
+			<constant name="ReadOnly" value="1" />
+			<constant name="WriteOnly" value="2" />
+			<constant name="ReadWrite" value="3" />
 		</enum>
 
 		<enum name="render_buffer_bit">
@@ -167,7 +174,7 @@
 
             <method name="createBuffer" cname="CreateBuffer" returnType="buffer*">
                 <arg name="description" type="buffer_description*" />
-                <arg name="initial_data" type="void*" />
+                <arg name="initial_data" type="pointer" />
             </method>
         </interface>
         
@@ -221,6 +228,12 @@
         </interface>
 
         <interface name="buffer">
+            <method name="mapBuffer" cname="MapBuffer" returnType="pointer">
+                <arg name="flags" type="mapping_access"/>
+            </method>
+
+            <method name="unmapBuffer" cname="UnmapBuffer" returnType="error">
+            </method>
         </interface>
         
         <interface name="shader">

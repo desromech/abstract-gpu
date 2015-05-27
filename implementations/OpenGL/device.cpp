@@ -3,6 +3,9 @@
 #include <string.h>
 #include "device.hpp"
 #include "context.hpp"
+#include "buffer.hpp"
+
+#define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
 _agpu_device:: _agpu_device()
 {
@@ -65,6 +68,20 @@ void _agpu_device::readVersionInformation()
     versionNumber = OpenGLVersion(majorVersion*10 + minorVersion);
 }
 
+void _agpu_device::loadExtensions()
+{
+    // Vertex buffer object.
+    LOAD_FUNCTION(glGenBuffers);
+    LOAD_FUNCTION(glDeleteBuffers);
+    LOAD_FUNCTION(glBindBuffer);
+    LOAD_FUNCTION(glBufferData);
+    LOAD_FUNCTION(glBufferSubData);
+    LOAD_FUNCTION(glMapBuffer);
+    LOAD_FUNCTION(glUnmapBuffer);
+    LOAD_FUNCTION(glBufferStorage);
+
+}
+
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
 {
     return device->retain();
@@ -88,5 +105,10 @@ AGPU_EXPORT agpu_context* agpuCreateDeferredContext ( agpu_device* device )
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device )
 {
     return device->swapBuffers();
+}
+
+AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
+{
+    return agpu_buffer::createBuffer(device, *description, initial_data);
 }
 

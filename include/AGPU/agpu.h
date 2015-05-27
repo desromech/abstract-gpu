@@ -110,11 +110,18 @@ typedef enum {
 } agpu_buffer_binding_type;
 
 typedef enum {
-	AGPU_READ = 1,
-	AGPU_WRITE = 2,
-	AGPU_PERSISTENT = 4,
-	AGPU_COHERENT = 8,
+	AGPU_MAP_READ_BIT = 1,
+	AGPU_MAP_WRITE_BIT = 2,
+	AGPU_MAP_PERSISTENT_BIT = 4,
+	AGPU_MAP_COHERENT_BIT = 8,
+	AGPU_MAP_DYNAMIC_STORAGE_BIT = 16,
 } agpu_buffer_mapping_flags;
+
+typedef enum {
+	AGPU_READ_ONLY = 1,
+	AGPU_WRITE_ONLY = 2,
+	AGPU_READ_WRITE = 3,
+} agpu_mapping_access;
 
 typedef enum {
 	AGPU_DEPTH_BUFFER_BIT = 1,
@@ -173,14 +180,14 @@ typedef agpu_error (*agpuReleaseDevice_FUN) ( agpu_device* device );
 typedef agpu_context* (*agpuGetImmediateContext_FUN) ( agpu_device* device );
 typedef agpu_context* (*agpuCreateDeferredContext_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_device* device );
-typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_void* initial_data );
+typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
 AGPU_EXPORT agpu_context* agpuGetImmediateContext ( agpu_device* device );
 AGPU_EXPORT agpu_context* agpuCreateDeferredContext ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
-AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_void* initial_data );
+AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
 
 /* Methods for interface agpu_context. */
 typedef agpu_error (*agpuAddContextReference_FUN) ( agpu_context* context );
@@ -211,7 +218,11 @@ AGPU_EXPORT agpu_error agpuSetAlphaFunction ( agpu_context* context, agpu_compar
 
 
 /* Methods for interface agpu_buffer. */
+typedef agpu_pointer (*agpuMapBuffer_FUN) ( agpu_buffer* buffer, agpu_mapping_access flags );
+typedef agpu_error (*agpuUnmapBuffer_FUN) ( agpu_buffer* buffer );
 
+AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags );
+AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer );
 
 /* Methods for interface agpu_shader. */
 
@@ -244,6 +255,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuClear_FUN agpuClear;
 	agpuSetDepthFunction_FUN agpuSetDepthFunction;
 	agpuSetAlphaFunction_FUN agpuSetAlphaFunction;
+	agpuMapBuffer_FUN agpuMapBuffer;
+	agpuUnmapBuffer_FUN agpuUnmapBuffer;
 } agpu_icd_dispatch;
 
 
