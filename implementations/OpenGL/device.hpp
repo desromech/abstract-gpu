@@ -26,6 +26,7 @@ class AgpuGLImmediateContext;
  */
 enum class OpenGLVersion
 {
+    Invalid = -1,
     Version10 = 10,
     Version20 = 20,
     Version21 = 21,
@@ -38,6 +39,8 @@ enum class OpenGLVersion
     Version42 = 42,
     Version43 = 43,
 };
+
+extern OpenGLVersion GLContextVersionPriorities[];
 
 /**
  * Agpu OpenGL device
@@ -91,8 +94,39 @@ public:
     PFNGLMAPBUFFERPROC glMapBuffer;
     PFNGLUNMAPBUFFERPROC glUnmapBuffer;
     PFNGLBUFFERSTORAGEPROC glBufferStorage;
+    
+    // Shader
+    PFNGLCREATESHADERPROC glCreateShader;
+    PFNGLDELETESHADERPROC glDeleteShader;
+    PFNGLSHADERSOURCEPROC glShaderSource;
+    PFNGLCOMPILESHADERPROC glCompileShader;
+    PFNGLGETSHADERSOURCEPROC glGetShaderSource;
+    PFNGLGETSHADERIVPROC glGetShaderiv;
+    PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
+    PFNGLISSHADERPROC glIsShader;
+    
+    // Program
+    PFNGLCREATEPROGRAMPROC glCreateProgram;
+    PFNGLDELETEPROGRAMPROC glDeleteProgram;
+    PFNGLATTACHSHADERPROC glAttachShader;
+    PFNGLDETACHSHADERPROC glDetachShader;
+    PFNGLBINDATTRIBLOCATIONPROC glBindAttribLocation;
+    PFNGLLINKPROGRAMPROC glLinkProgram;
+    
+    PFNGLUSEPROGRAMPROC glUseProgram;
+    PFNGLISPROGRAMPROC glIsProgram;
+    PFNGLVALIDATEPROGRAMPROC glValidateProgram;
 
+    PFNGLGETPROGRAMIVPROC glGetProgramiv;
+    PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
 
+    PFNGLGETACTIVEATTRIBPROC glGetActiveAttrib;
+    PFNGLGETACTIVEUNIFORMPROC glGetActiveUniform;
+    
+    PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+    PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+    PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
+    PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 };
 
 #endif //_AGPU_DEVICE_HPP_

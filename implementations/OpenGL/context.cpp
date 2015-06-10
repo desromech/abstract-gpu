@@ -1,4 +1,6 @@
 #include "context.hpp"
+#include "buffer.hpp"
+#include "program.hpp"
 
 // Immediate context
 AgpuGLImmediateContext::AgpuGLImmediateContext(agpu_device *device)
@@ -29,7 +31,7 @@ agpu_error AgpuGLImmediateContext::setClearStencil ( agpu_int value )
     return AGPU_OK;
 }
 
-agpu_error AgpuGLImmediateContext::clear ( agpu_render_buffer_bit buffers )
+agpu_error AgpuGLImmediateContext::clear ( agpu_bitfield buffers )
 {
     GLbitfield bits = 0;
     if(buffers & AGPU_COLOR_BUFFER_BIT)
@@ -67,6 +69,19 @@ agpu_error AgpuGLImmediateContext::flush()
 agpu_error AgpuGLImmediateContext::makeCurrent()
 {
     return device->makeCurrent() ? AGPU_OK : AGPU_NOT_CURRENT_CONTEXT;
+}
+
+agpu_error AgpuGLImmediateContext::uploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
+{
+    CHECK_POINTER(buffer);
+    buffer->uploadBufferData(offset, size, data);
+    return AGPU_OK;
+}
+
+agpu_error AgpuGLImmediateContext::useProgram (agpu_program* program )
+{
+    device->glUseProgram(program ? program->handle : 0);
+    return AGPU_OK;
 }
 
 // Context dispatching
@@ -110,7 +125,7 @@ AGPU_EXPORT agpu_error agpuSetClearStencil ( agpu_context* context, agpu_int val
     return context->impl->setClearStencil(value);
 }
 
-AGPU_EXPORT agpu_error agpuClear ( agpu_context* context, agpu_render_buffer_bit buffers )
+AGPU_EXPORT agpu_error agpuClear ( agpu_context* context, agpu_bitfield buffers )
 {
     CHECK_POINTER(context);
     return context->impl->clear(buffers);
@@ -140,4 +155,16 @@ AGPU_EXPORT agpu_error agpuFlush ( agpu_context* context )
     return context->impl->flush();
 }
 
+AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_context* context, agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
+{
+    CHECK_POINTER(context);
+    return context->impl->uploadBufferData(buffer, offset, size, data);
+}
+
+AGPU_EXPORT agpu_error agpuUseProgram ( agpu_context* context, agpu_program* program )
+{
+    CHECK_POINTER(context);
+    CHECK_POINTER(program);
+    return context->impl->useProgram(program);
+}
 

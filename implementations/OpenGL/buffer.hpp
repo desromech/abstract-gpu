@@ -14,6 +14,7 @@ public:
     
     agpu_pointer mapBuffer(agpu_mapping_access access);
     agpu_error unmapBuffer();
+    agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
     
 public:
 
@@ -21,7 +22,7 @@ public:
     agpu_buffer_description description;
     GLenum target;
     GLuint handle;
-    agpu_pointer *mappedPointer;
+    agpu_pointer mappedPointer;
 };
 
 #endif //_AGPU_BUFFER_HPP_

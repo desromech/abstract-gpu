@@ -4,8 +4,24 @@
 #include "device.hpp"
 #include "context.hpp"
 #include "buffer.hpp"
+#include "shader.hpp"
+#include "program.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
+
+OpenGLVersion GLContextVersionPriorities[] = {
+    OpenGLVersion::Version43,
+    OpenGLVersion::Version42,
+    OpenGLVersion::Version41,
+    OpenGLVersion::Version40,
+    OpenGLVersion::Version33,
+    OpenGLVersion::Version32,
+    OpenGLVersion::Version31,
+    OpenGLVersion::Version30,
+    OpenGLVersion::Version21,
+    OpenGLVersion::Version20,
+    OpenGLVersion::Invalid
+};
 
 _agpu_device:: _agpu_device()
 {
@@ -66,6 +82,7 @@ void _agpu_device::readVersionInformation()
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
     versionNumber = OpenGLVersion(majorVersion*10 + minorVersion);
+    printf("OpenGL version %s\n", glGetString(GL_VERSION));
 }
 
 void _agpu_device::loadExtensions()
@@ -79,7 +96,39 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glMapBuffer);
     LOAD_FUNCTION(glUnmapBuffer);
     LOAD_FUNCTION(glBufferStorage);
+    
+    // Shader
+    LOAD_FUNCTION(glCreateShader);
+    LOAD_FUNCTION(glDeleteShader);
+    LOAD_FUNCTION(glShaderSource);
+    LOAD_FUNCTION(glCompileShader);
+    LOAD_FUNCTION(glGetShaderSource);
+    LOAD_FUNCTION(glGetShaderiv);
+    LOAD_FUNCTION(glGetShaderInfoLog);
+    LOAD_FUNCTION(glIsShader);
+    
+    // Program
+    LOAD_FUNCTION(glCreateProgram);
+    LOAD_FUNCTION(glDeleteProgram);
+    LOAD_FUNCTION(glAttachShader);
+    LOAD_FUNCTION(glDetachShader);
+    LOAD_FUNCTION(glBindAttribLocation);
+    LOAD_FUNCTION(glLinkProgram);
+    
+    LOAD_FUNCTION(glUseProgram);
+    LOAD_FUNCTION(glIsProgram);
+    LOAD_FUNCTION(glValidateProgram);
 
+    LOAD_FUNCTION(glGetProgramiv);
+    LOAD_FUNCTION(glGetProgramInfoLog);
+
+    LOAD_FUNCTION(glGetActiveAttrib);
+    LOAD_FUNCTION(glGetActiveUniform);
+    
+    LOAD_FUNCTION(glDisableVertexAttribArray);
+    LOAD_FUNCTION(glEnableVertexAttribArray);
+    LOAD_FUNCTION(glGetAttribLocation);
+    LOAD_FUNCTION(glGetUniformLocation);
 }
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
@@ -112,3 +161,12 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_des
     return agpu_buffer::createBuffer(device, *description, initial_data);
 }
 
+AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
+{
+    return agpu_shader::createShader(device, type);
+}
+
+AGPU_EXPORT agpu_program* agpuCreateProgram ( agpu_device* device )
+{
+    return agpu_program::createProgram(device);
+}

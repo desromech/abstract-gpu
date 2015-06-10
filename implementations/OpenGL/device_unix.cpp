@@ -172,18 +172,34 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     }
     else
     {
-        // Try to get a GL 3.0 context!
         int contextAttributes[] =
-          {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+        {
+            GLX_CONTEXT_MAJOR_VERSION_ARB, 0,
             GLX_CONTEXT_MINOR_VERSION_ARB, 0,
             //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
             None
-          };
+        };
 
-        context = glXCreateContextAttribsARB( display, framebufferConfig, 0, True, contextAttributes );
-        // Sync to ensure any errors generated are processed.
-        XSync( display, False );
+        for(int versionIndex = 0; GLContextVersionPriorities[versionIndex] !=  OpenGLVersion::Invalid; ++versionIndex)
+        {
+            auto version = (int)GLContextVersionPriorities[versionIndex];
+            
+            // GLX_CONTEXT_MAJOR_VERSION_ARB
+            contextAttributes[1] = version / 10;
+            // GLX_CONTEXT_MINOR_VERSION_ARB
+            contextAttributes[3] = version % 10;
+  
+            context = glXCreateContextAttribsARB( display, framebufferConfig, 0, True, contextAttributes );
+            
+            // Sync to ensure any errors generated are processed.
+            XSync( display, False );
+            
+            // Check for success.
+            if(!ctxErrorOccurred && context)
+                break;
+        }
+        
+        // Check failure.
         if ( ctxErrorOccurred || !context )
         {
             // Couldn't create GL 3.0 context.  Fall back to old-style 2.x context.
@@ -199,7 +215,6 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
             context = glXCreateContextAttribsARB( display, framebufferConfig, 0, True, contextAttributes );
         }
     }
-
 
     // Sync to ensure any errors generated are processed.
     XSync( display, False );

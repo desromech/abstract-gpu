@@ -1,9 +1,33 @@
 #ifndef _SAMPLE_BASE_HPP_
 #define _SAMPLE_BASE_HPP_
 
+#include "glm/glm.hpp"
 #include <AGPU/agpu.h>
 #include <SDL.h>
 #include <SDL_main.h>
+#include <string>
+
+
+// Utility functions
+std::string readWholeFile(const char *fileName);
+
+
+// Vertex used in the samples
+struct SampleVertex
+{
+    SampleVertex(glm::vec3 position, glm::vec3 normal, glm::vec4 color, glm::vec2 texcoord)
+        : position(position), normal(normal), color(color), texcoord(texcoord) {}
+        
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec4 color;
+    glm::vec2 texcoord;
+    
+    static SampleVertex onlyColor(float x, float y, float z, float r, float g, float b, float a)
+    {
+        return SampleVertex(glm::vec3(x, y, z), glm::vec3(0,0,0), glm::vec4(r, g, b, a), glm::vec2(0, 1));
+    }
+};
 
 class SampleBase
 {
@@ -21,7 +45,11 @@ public:
     void swapBuffers();
 
 protected:
-
+    agpu_shader *compileShaderFromFile(const char *fileName, agpu_shader_type type, agpu_shader_language language = AGPU_SHADER_LANGUAGE_GLSL);
+    agpu_program *createProgramFromFiles(const char *vertexSource, const char *fragmentSource, agpu_shader_language language = AGPU_SHADER_LANGUAGE_GLSL);
+    agpu_buffer *createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData);
+    agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
+    
     SDL_Window *window;
 
     agpu_device *device;

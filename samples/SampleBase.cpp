@@ -1,6 +1,34 @@
 #include <stdio.h>
+#include <vector>
 #include "SampleBase.hpp"
 #include "SDL_syswm.h"
+
+std::string readWholeFile(const char *fileName)
+{
+    FILE *file = fopen(fileName, "r");
+    if(!file)
+    {
+        fprintf(stderr, "Failed to open file %s\n", fileName);
+        return std::string();
+    }
+    
+    // Allocate the data.
+    std::vector<char> data;
+    fseek(file, 0, SEEK_END);
+    data.resize(ftell(file));
+    fseek(file, 0, SEEK_SET);
+    
+    // Read the file
+    if(fread(&data[0], data.size(), 1, file) != 1)
+    {
+        fprintf(stderr, "Failed to read file %s\n", fileName);
+        fclose(file);
+        return std::string();
+    }
+    
+    fclose(file);
+    return std::string(data.begin(), data.end());
+}
 
 int SampleBase::main(int argc, const char **argv)
 {
@@ -134,4 +162,87 @@ void SampleBase::render()
 void SampleBase::swapBuffers()
 {
     agpuSwapBuffers(device);
+}
+
+agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader_type type, agpu_shader_language language)
+{
+    // Read the source file
+    auto source = readWholeFile(fileName);
+    if(source.empty())
+        return nullptr;
+
+    // Create the shader and compile it.        
+    auto shader = agpuCreateShader(device, type);
+    agpuSetShaderSource(shader, language, source.c_str(), source.size());
+    if(agpuCompileShader(shader, nullptr) != AGPU_OK)
+    {
+        auto logLength = agpuGetShaderCompilationLogLength(shader);
+        char logBuffer[logLength+1];
+        agpuGetShaderCompilationLog(shader, logLength, logBuffer);
+        agpuReleaseShader(shader);
+        fprintf(stderr, "Compilation error of '%s':%s\n", fileName, logBuffer);
+        return nullptr;
+    }
+    
+    return shader;
+}
+
+agpu_program *SampleBase::createProgramFromFiles(const char *vertexSource, const char *fragmentSource, agpu_shader_language language)
+{
+    // Compile the vertex and fragment shaders
+    auto vertexShader = compileShaderFromFile(vertexSource, AGPU_VERTEX_SHADER);
+    auto fragmentShader = compileShaderFromFile(fragmentSource, AGPU_FRAGMENT_SHADER);
+    if(!vertexShader || !fragmentShader)
+        return nullptr;
+        
+    // Create the program.
+    auto program = agpuCreateProgram(device);
+    agpuAttachShader(program, vertexShader);
+    agpuAttachShader(program, fragmentShader);
+ 
+    // Bind some attributes.   
+    agpuBindAttributeLocation(program, "vPosition", 0);
+    agpuBindAttributeLocation(program, "vColor", 1);
+    
+    // Link the program.
+    auto linkResult = agpuLinkProgram(program) != AGPU_OK;
+    
+    // Link the shaders
+    agpuReleaseShader(vertexShader);
+    agpuReleaseShader(fragmentShader);
+    
+    // Check the link result.
+    if(linkResult)
+    {
+        auto logLength = agpuGetProgramLinkingLogLength(program);
+        char logBuffer[logLength+1];
+        agpuGetProgramLinkingLog(program, logLength, logBuffer);
+        agpuReleaseProgram(program);
+        fprintf(stderr, "Linking error of '%s' with '%s':%s\n", vertexSource, fragmentSource, logBuffer);
+        return nullptr;
+    }
+    
+    return program;
+}
+
+agpu_buffer *SampleBase::createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData)
+{
+    agpu_buffer_description desc;
+    desc.size = capacity * vertexSize;
+    desc.usage = AGPU_STATIC;
+    desc.binding = AGPU_ARRAY_BUFFER;
+    desc.mapping_flags = 0;
+    desc.stride = vertexSize;
+    return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_buffer *SampleBase::createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData)
+{
+    agpu_buffer_description desc;
+    desc.size = capacity * indexSize;
+    desc.usage = AGPU_STATIC;
+    desc.binding = AGPU_ELEMENT_ARRAY_BUFFER;
+    desc.mapping_flags = 0;
+    desc.stride = indexSize;
+    return agpuCreateBuffer(device, &desc, initialData);
 }

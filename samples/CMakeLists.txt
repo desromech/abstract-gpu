@@ -6,3 +6,6 @@ set(SampleCommon_SRC
 
 add_executable(Sample1 Sample1.cpp ${SampleCommon_SRC})
 target_link_libraries(Sample1 ${AGPU_SAMPLES_LIBS})
+
+add_executable(Sample2 Sample2.cpp ${SampleCommon_SRC})
+target_link_libraries(Sample2 ${AGPU_SAMPLES_LIBS})

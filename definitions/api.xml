@@ -11,9 +11,18 @@
         <typedef name="size" ctype="size_t" />
         <typedef name="enum" ctype="int" />
         <typedef name="bool" ctype="bool" />
-
+        
         <typedef name="float" ctype="float" />
         <typedef name="double" ctype="double" />
+
+        <typedef name="bitfield" ctype="unsigned int" />
+                
+        <typedef name="cstring" ctype="const char*" />
+        <typedef name="string" ctype="const char*" />
+        <typedef name="string_length" ctype="int" />
+        
+        <typedef name="cstring_buffer" ctype="char*" />
+        <typedef name="string_buffer" ctype="char*" />
     </types>
 
 	<structs>
@@ -36,7 +45,7 @@
 			<field name="size" type="uint" />
 			<field name="usage" type="buffer_usage_type" />
 			<field name="binding" type="buffer_binding_type" />
-			<field name="mapping_flags" type="buffer_mapping_flags" />
+			<field name="mapping_flags" type="bitfield" bits="buffer_mapping_flags" />
 			<field name="stride" type="uint" />
 		</struct>
 
@@ -60,6 +69,8 @@
             <constant name="Unsupported" value="-6" />
             <constant name="Unimplemented" value="-7" />
             <constant name="NotCurrentContext" value="-8" />
+            <constant name="CompilationError" value="-9" />
+            <constant name="LinkingError" value="-9" />
         </enum>
 
         <enum name="stencil_operation">
@@ -138,6 +149,13 @@
 			<constant name="ColorBufferBit" value="4" />
 		</enum>
 
+		<enum name="shader_language">
+			<constant name="ShaderLanguageGlsl" value="0" />
+            <constant name="ShaderLanguageEglsl" value="1" />
+			<constant name="ShaderLanguageSpirV" value="2" />
+            <constant name="ShaderLanguageHlsl" value="3" />
+            <constant name="ShaderLanguageBinary" value="4" />
+		</enum>
     </constants>
     
     <globals>
@@ -176,6 +194,12 @@
                 <arg name="description" type="buffer_description*" />
                 <arg name="initial_data" type="pointer" />
             </method>
+            
+            <method name="createShader" cname="CreateShader" returnType="shader*">
+                <arg name="type" type="shader_type" />
+            </method>
+            <method name="createProgram" cname="CreateProgram" returnType="program*">
+            </method>
         </interface>
         
         <interface name="context">
@@ -210,7 +234,7 @@
             </method>
 
             <method name="clear" cname="Clear" returnType="error">
-                <arg name="buffers" type="render_buffer_bit" />
+                <arg name="buffers" type="bitfield" />
             </method>
 
             <method name="setDepthFunction" cname="SetDepthFunction" returnType="error">
@@ -221,6 +245,17 @@
                 <arg name="function" type="compare_function" />
                 <arg name="reference" type="float" />
             </method>
+            
+            <method name="useProgram" cname="UseProgram" returnType="error">
+                <arg name="program" type="program*" />
+            </method>
+
+            <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+                <arg name="data" type="pointer"/>
+            </method>
 
         </interface>
         
@@ -228,6 +263,12 @@
         </interface>
 
         <interface name="buffer">
+            <method name="addReference" cname="AddBufferReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseBuffer" returnType="error">
+            </method>
+            
             <method name="mapBuffer" cname="MapBuffer" returnType="pointer">
                 <arg name="flags" type="mapping_access"/>
             </method>
@@ -237,9 +278,58 @@
         </interface>
         
         <interface name="shader">
+            <method name="addReference" cname="AddShaderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShader" returnType="error">
+            </method>
+            
+            <method name="setShaderSource" cname="SetShaderSource" returnType="error">
+                <arg name="language" type="shader_language" />
+                <arg name="sourceText" type="string" />
+                <arg name="sourceTextLength" type="string_length" />
+            </method>
+            
+            <method name="compileShader" cname="CompileShader" returnType="error">
+                <arg name="options" type="cstring" />
+            </method>
+
+            <method name="getCompilationLogLength" cname="GetShaderCompilationLogLength" returnType="size">
+            </method>
+            
+            <method name="getCompilationLog" cname="GetShaderCompilationLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
         </interface>
 
         <interface name="program">
+            <method name="addReference" cname="AddProgramReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseProgram" returnType="error">
+            </method>
+            
+            <method name="attachShader" cname="AttachShader" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+            
+            <method name="linkProgram" cname="LinkProgram" returnType="error">
+            </method>
+
+            <method name="getLinkingLogLength" cname="GetProgramLinkingLogLength" returnType="size">
+            </method>
+            
+            <method name="getLinkingLog" cname="GetProgramLinkingLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+            
+            <method name="bindAttributeLocation" cname="BindAttributeLocation" returnType="error">
+                <arg name="name" type="cstring" />
+                <arg name="location" type="int" />
+            </method>
+            
         </interface>
 
         <interface name="framebuffer">

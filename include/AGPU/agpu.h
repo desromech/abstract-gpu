@@ -31,6 +31,12 @@ typedef int agpu_enum;
 typedef bool agpu_bool;
 typedef float agpu_float;
 typedef double agpu_double;
+typedef unsigned int agpu_bitfield;
+typedef const char* agpu_cstring;
+typedef const char* agpu_string;
+typedef int agpu_string_length;
+typedef char* agpu_cstring_buffer;
+typedef char* agpu_string_buffer;
 
 typedef struct _agpu_platform agpu_platform;
 typedef struct _agpu_device agpu_device;
@@ -51,6 +57,8 @@ typedef enum {
 	AGPU_UNSUPPORTED = -6,
 	AGPU_UNIMPLEMENTED = -7,
 	AGPU_NOT_CURRENT_CONTEXT = -8,
+	AGPU_COMPILATION_ERROR = -9,
+	AGPU_LINKING_ERROR = -9,
 } agpu_error;
 
 typedef enum {
@@ -129,6 +137,14 @@ typedef enum {
 	AGPU_COLOR_BUFFER_BIT = 4,
 } agpu_render_buffer_bit;
 
+typedef enum {
+	AGPU_SHADER_LANGUAGE_GLSL = 0,
+	AGPU_SHADER_LANGUAGE_EGLSL = 1,
+	AGPU_SHADER_LANGUAGE_SPIR_V = 2,
+	AGPU_SHADER_LANGUAGE_HLSL = 3,
+	AGPU_SHADER_LANGUAGE_BINARY = 4,
+} agpu_shader_language;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -151,7 +167,7 @@ typedef struct agpu_buffer_description {
 	agpu_uint size;
 	agpu_buffer_usage_type usage;
 	agpu_buffer_binding_type binding;
-	agpu_buffer_mapping_flags mapping_flags;
+	agpu_bitfield mapping_flags;
 	agpu_uint stride;
 } agpu_buffer_description;
 
@@ -181,6 +197,8 @@ typedef agpu_context* (*agpuGetImmediateContext_FUN) ( agpu_device* device );
 typedef agpu_context* (*agpuCreateDeferredContext_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_device* device );
 typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
+typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
+typedef agpu_program* (*agpuCreateProgram_FUN) ( agpu_device* device );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -188,6 +206,8 @@ AGPU_EXPORT agpu_context* agpuGetImmediateContext ( agpu_device* device );
 AGPU_EXPORT agpu_context* agpuCreateDeferredContext ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
+AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
+AGPU_EXPORT agpu_program* agpuCreateProgram ( agpu_device* device );
 
 /* Methods for interface agpu_context. */
 typedef agpu_error (*agpuAddContextReference_FUN) ( agpu_context* context );
@@ -198,9 +218,11 @@ typedef agpu_error (*agpuMakeCurrent_FUN) ( agpu_context* context );
 typedef agpu_error (*agpuSetClearColor_FUN) ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
 typedef agpu_error (*agpuSetClearDepth_FUN) ( agpu_context* context, agpu_float depth );
 typedef agpu_error (*agpuSetClearStencil_FUN) ( agpu_context* context, agpu_int value );
-typedef agpu_error (*agpuClear_FUN) ( agpu_context* context, agpu_render_buffer_bit buffers );
+typedef agpu_error (*agpuClear_FUN) ( agpu_context* context, agpu_bitfield buffers );
 typedef agpu_error (*agpuSetDepthFunction_FUN) ( agpu_context* context, agpu_compare_function function );
 typedef agpu_error (*agpuSetAlphaFunction_FUN) ( agpu_context* context, agpu_compare_function function, agpu_float reference );
+typedef agpu_error (*agpuUseProgram_FUN) ( agpu_context* context, agpu_program* program );
+typedef agpu_error (*agpuUploadBufferData_FUN) ( agpu_context* context, agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 
 AGPU_EXPORT agpu_error agpuAddContextReference ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuReleaseContext ( agpu_context* context );
@@ -210,25 +232,57 @@ AGPU_EXPORT agpu_error agpuMakeCurrent ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
 AGPU_EXPORT agpu_error agpuSetClearDepth ( agpu_context* context, agpu_float depth );
 AGPU_EXPORT agpu_error agpuSetClearStencil ( agpu_context* context, agpu_int value );
-AGPU_EXPORT agpu_error agpuClear ( agpu_context* context, agpu_render_buffer_bit buffers );
+AGPU_EXPORT agpu_error agpuClear ( agpu_context* context, agpu_bitfield buffers );
 AGPU_EXPORT agpu_error agpuSetDepthFunction ( agpu_context* context, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetAlphaFunction ( agpu_context* context, agpu_compare_function function, agpu_float reference );
+AGPU_EXPORT agpu_error agpuUseProgram ( agpu_context* context, agpu_program* program );
+AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_context* context, agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 
 /* Methods for interface agpu_texture. */
 
 
 /* Methods for interface agpu_buffer. */
+typedef agpu_error (*agpuAddBufferReference_FUN) ( agpu_buffer* buffer );
+typedef agpu_error (*agpuReleaseBuffer_FUN) ( agpu_buffer* buffer );
 typedef agpu_pointer (*agpuMapBuffer_FUN) ( agpu_buffer* buffer, agpu_mapping_access flags );
 typedef agpu_error (*agpuUnmapBuffer_FUN) ( agpu_buffer* buffer );
 
+AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer );
+AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags );
 AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer );
 
 /* Methods for interface agpu_shader. */
+typedef agpu_error (*agpuAddShaderReference_FUN) ( agpu_shader* shader );
+typedef agpu_error (*agpuReleaseShader_FUN) ( agpu_shader* shader );
+typedef agpu_error (*agpuSetShaderSource_FUN) ( agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength );
+typedef agpu_error (*agpuCompileShader_FUN) ( agpu_shader* shader, agpu_cstring options );
+typedef agpu_size (*agpuGetShaderCompilationLogLength_FUN) ( agpu_shader* shader );
+typedef agpu_error (*agpuGetShaderCompilationLog_FUN) ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer );
 
+AGPU_EXPORT agpu_error agpuAddShaderReference ( agpu_shader* shader );
+AGPU_EXPORT agpu_error agpuReleaseShader ( agpu_shader* shader );
+AGPU_EXPORT agpu_error agpuSetShaderSource ( agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength );
+AGPU_EXPORT agpu_error agpuCompileShader ( agpu_shader* shader, agpu_cstring options );
+AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength ( agpu_shader* shader );
+AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer );
 
 /* Methods for interface agpu_program. */
+typedef agpu_error (*agpuAddProgramReference_FUN) ( agpu_program* program );
+typedef agpu_error (*agpuReleaseProgram_FUN) ( agpu_program* program );
+typedef agpu_error (*agpuAttachShader_FUN) ( agpu_program* program, agpu_shader* shader );
+typedef agpu_error (*agpuLinkProgram_FUN) ( agpu_program* program );
+typedef agpu_size (*agpuGetProgramLinkingLogLength_FUN) ( agpu_program* program );
+typedef agpu_error (*agpuGetProgramLinkingLog_FUN) ( agpu_program* program, agpu_size buffer_size, agpu_string_buffer buffer );
+typedef agpu_error (*agpuBindAttributeLocation_FUN) ( agpu_program* program, agpu_cstring name, agpu_int location );
 
+AGPU_EXPORT agpu_error agpuAddProgramReference ( agpu_program* program );
+AGPU_EXPORT agpu_error agpuReleaseProgram ( agpu_program* program );
+AGPU_EXPORT agpu_error agpuAttachShader ( agpu_program* program, agpu_shader* shader );
+AGPU_EXPORT agpu_error agpuLinkProgram ( agpu_program* program );
+AGPU_EXPORT agpu_size agpuGetProgramLinkingLogLength ( agpu_program* program );
+AGPU_EXPORT agpu_error agpuGetProgramLinkingLog ( agpu_program* program, agpu_size buffer_size, agpu_string_buffer buffer );
+AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_program* program, agpu_cstring name, agpu_int location );
 
 /* Methods for interface agpu_framebuffer. */
 
@@ -244,6 +298,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateDeferredContext_FUN agpuCreateDeferredContext;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
 	agpuCreateBuffer_FUN agpuCreateBuffer;
+	agpuCreateShader_FUN agpuCreateShader;
+	agpuCreateProgram_FUN agpuCreateProgram;
 	agpuAddContextReference_FUN agpuAddContextReference;
 	agpuReleaseContext_FUN agpuReleaseContext;
 	agpuFinish_FUN agpuFinish;
@@ -255,8 +311,25 @@ typedef struct _agpu_icd_dispatch {
 	agpuClear_FUN agpuClear;
 	agpuSetDepthFunction_FUN agpuSetDepthFunction;
 	agpuSetAlphaFunction_FUN agpuSetAlphaFunction;
+	agpuUseProgram_FUN agpuUseProgram;
+	agpuUploadBufferData_FUN agpuUploadBufferData;
+	agpuAddBufferReference_FUN agpuAddBufferReference;
+	agpuReleaseBuffer_FUN agpuReleaseBuffer;
 	agpuMapBuffer_FUN agpuMapBuffer;
 	agpuUnmapBuffer_FUN agpuUnmapBuffer;
+	agpuAddShaderReference_FUN agpuAddShaderReference;
+	agpuReleaseShader_FUN agpuReleaseShader;
+	agpuSetShaderSource_FUN agpuSetShaderSource;
+	agpuCompileShader_FUN agpuCompileShader;
+	agpuGetShaderCompilationLogLength_FUN agpuGetShaderCompilationLogLength;
+	agpuGetShaderCompilationLog_FUN agpuGetShaderCompilationLog;
+	agpuAddProgramReference_FUN agpuAddProgramReference;
+	agpuReleaseProgram_FUN agpuReleaseProgram;
+	agpuAttachShader_FUN agpuAttachShader;
+	agpuLinkProgram_FUN agpuLinkProgram;
+	agpuGetProgramLinkingLogLength_FUN agpuGetProgramLinkingLogLength;
+	agpuGetProgramLinkingLog_FUN agpuGetProgramLinkingLog;
+	agpuBindAttributeLocation_FUN agpuBindAttributeLocation;
 } agpu_icd_dispatch;
 
 

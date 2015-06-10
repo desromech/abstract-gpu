@@ -1,5 +1,7 @@
 set(AGPU_OpenGL_SOURCES
     buffer.cpp
+    shader.cpp
+    program.cpp
     context.cpp
     device.cpp
     device_unix.cpp

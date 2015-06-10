@@ -12,7 +12,7 @@ inline GLenum mapBinding(agpu_buffer_binding_type binding)
 	}
 }
 
-inline GLbitfield mapMappingFlags(agpu_buffer_mapping_flags flags)
+inline GLbitfield mapMappingFlags(agpu_bitfield flags)
 {
     GLbitfield glflags = 0;
     
@@ -37,6 +37,7 @@ inline GLenum mapMappingAccess(agpu_mapping_access flags)
     case AGPU_READ_ONLY: return GL_READ_ONLY;
     case AGPU_WRITE_ONLY: return GL_WRITE_ONLY;
     case AGPU_READ_WRITE: return GL_READ_WRITE;
+    default: abort();
     }
     
 }
@@ -54,6 +55,10 @@ void agpu_buffer::lostReferences()
 
 agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_description &description, agpu_pointer initialData)
 {
+    // A device is needed.
+    if(!device)
+        return nullptr;
+        
     GLuint handle;
     auto binding = mapBinding(description.binding);
     auto mappingFlags = mapMappingFlags(description.mapping_flags);
@@ -77,20 +82,32 @@ agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_de
 
 agpu_pointer agpu_buffer::mapBuffer(agpu_mapping_access access)
 {
-    if(mappedBuffer)
-        return mappedBuffer;
-    return mappedBuffer = glMapBuffer(target, mapMappingAccess(access);
+    if(mappedPointer)
+        return mappedPointer;
+        
+    device->glBindBuffer(target, handle);
+    return mappedPointer = device->glMapBuffer(target, mapMappingAccess(access));
 }
 
 agpu_error agpu_buffer::unmapBuffer()
 {
-    auto result = glUnmapBuffer(target);
-    mappedBuffer = nullptr;
+    device->glBindBuffer(target, handle);
+    auto result = device->glUnmapBuffer(target);
+    mappedPointer = nullptr;
     
     return (result != GL_FALSE) ? AGPU_OK : AGPU_ERROR; 
 }
 
+agpu_error agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+{
+    device->glBindBuffer(target, handle);
+    device->glBufferSubData(target, offset, size, data);
+    return AGPU_OK;
+}
+
+// C Interface
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags )
+
 {
     if(!buffer) return nullptr;
     return buffer->mapBuffer(flags);
@@ -101,4 +118,3 @@ AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer )
     CHECK_POINTER(buffer);
     return buffer->unmapBuffer();
 }
-

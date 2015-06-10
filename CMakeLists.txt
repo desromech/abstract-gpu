@@ -30,7 +30,7 @@ endif()
 find_package(OpenGL)
 
 # Add some include directories
-include_directories(. include)
+include_directories(. include thirdparty/glm)
 
 # Set output dir.
 set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")

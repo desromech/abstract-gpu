@@ -19,11 +19,14 @@ public:
     virtual agpu_error setClearDepth ( agpu_float depth ) = 0;
     virtual agpu_error setClearStencil ( agpu_int value ) = 0;
 
-    virtual agpu_error clear ( agpu_render_buffer_bit buffers ) = 0;
+    virtual agpu_error clear ( agpu_bitfield buffers ) = 0;
 
     virtual agpu_error setDepthFunction ( agpu_compare_function function ) = 0;
     virtual agpu_error setAlphaFunction ( agpu_compare_function function, agpu_float reference ) = 0;
 
+    virtual agpu_error uploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data ) = 0;
+
+    virtual agpu_error useProgram (agpu_program* program ) = 0;
 };
 
 class AgpuGLImmediateContext: public AgpuGLContext
@@ -40,12 +43,14 @@ public:
     virtual agpu_error setClearDepth ( agpu_float depth );
     virtual agpu_error setClearStencil ( agpu_int value );
 
-    virtual agpu_error clear ( agpu_render_buffer_bit buffers );
+    virtual agpu_error clear ( agpu_bitfield buffers );
 
     virtual agpu_error setDepthFunction ( agpu_compare_function function );
     virtual agpu_error setAlphaFunction ( agpu_compare_function function, agpu_float reference );
 
+    virtual agpu_error uploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 
+    virtual agpu_error useProgram (agpu_program* program );
 
     agpu_device *device;
 };
