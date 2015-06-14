@@ -95,6 +95,15 @@ public:
     PFNGLUNMAPBUFFERPROC glUnmapBuffer;
     PFNGLBUFFERSTORAGEPROC glBufferStorage;
     
+    // Vertex array object
+    PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
+    PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
+    PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
+    
+    // Indirect drawing.
+    PFNGLDRAWELEMENTSINDIRECTPROC glDrawElementsIndirect;
+    PFNGLMULTIDRAWELEMENTSINDIRECTPROC glMultiDrawElementsIndirect;
+    
     // Shader
     PFNGLCREATESHADERPROC glCreateShader;
     PFNGLDELETESHADERPROC glDeleteShader;
@@ -123,10 +132,23 @@ public:
     PFNGLGETACTIVEATTRIBPROC glGetActiveAttrib;
     PFNGLGETACTIVEUNIFORMPROC glGetActiveUniform;
     
+    PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
     PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
     PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
     PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
     PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+    
+    PFNGLUNIFORM1FVPROC glUniform1fv;
+    PFNGLUNIFORM2FVPROC glUniform2fv;
+    PFNGLUNIFORM3FVPROC glUniform3fv;
+    PFNGLUNIFORM4FVPROC glUniform4fv;
+    PFNGLUNIFORM1IVPROC glUniform1iv;
+    PFNGLUNIFORM2IVPROC glUniform2iv;
+    PFNGLUNIFORM3IVPROC glUniform3iv;
+    PFNGLUNIFORM4IVPROC glUniform4iv;
+    PFNGLUNIFORMMATRIX2FVPROC glUniformMatrix2fv;
+    PFNGLUNIFORMMATRIX3FVPROC glUniformMatrix3fv;
+    PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 };
 
 #endif //_AGPU_DEVICE_HPP_

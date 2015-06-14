@@ -27,6 +27,24 @@ public:
     virtual agpu_error uploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data ) = 0;
 
     virtual agpu_error useProgram (agpu_program* program ) = 0;
+    virtual agpu_error useVertexBinding ( agpu_vertex_binding* vertex_binding ) = 0;
+    virtual agpu_error useIndexBuffer ( agpu_buffer* index_buffer ) = 0;
+    virtual agpu_error useDrawBuffer ( agpu_buffer* draw_buffer ) = 0;
+    
+    virtual agpu_error drawElementsIndirect ( agpu_primitive_mode mode, agpu_size offset ) = 0;
+    virtual agpu_error multiDrawElementsIndirect ( agpu_primitive_mode mode, agpu_size offset, agpu_size drawcount ) = 0;
+    
+    virtual agpu_error setUniform1i ( agpu_int location, agpu_size count, agpu_int* data ) = 0;
+    virtual agpu_error setUniform2i ( agpu_int location, agpu_size count, agpu_int* data ) = 0;
+    virtual agpu_error setUniform3i ( agpu_int location, agpu_size count, agpu_int* data ) = 0;
+    virtual agpu_error setUniform4i ( agpu_int location, agpu_size count, agpu_int* data ) = 0;
+    virtual agpu_error setUniform1f ( agpu_int location, agpu_size count, agpu_float* data ) = 0;
+    virtual agpu_error setUniform2f ( agpu_int location, agpu_size count, agpu_float* data ) = 0;
+    virtual agpu_error setUniform3f ( agpu_int location, agpu_size count, agpu_float* data ) = 0;
+    virtual agpu_error setUniform4f ( agpu_int location, agpu_size count, agpu_float* data ) = 0;
+    virtual agpu_error setUniformMatrix2f ( agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data ) = 0;
+    virtual agpu_error setUniformMatrix4f ( agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data ) = 0;
+    virtual agpu_error setUniformMatrix3f ( agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data ) = 0;
 };
 
 class AgpuGLImmediateContext: public AgpuGLContext
@@ -51,8 +69,31 @@ public:
     virtual agpu_error uploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 
     virtual agpu_error useProgram (agpu_program* program );
-
+    virtual agpu_error useVertexBinding ( agpu_vertex_binding* vertex_binding );
+    virtual agpu_error useIndexBuffer ( agpu_buffer* index_buffer );
+    virtual agpu_error useDrawBuffer ( agpu_buffer* draw_buffer );
+    
+    virtual agpu_error drawElementsIndirect ( agpu_primitive_mode mode, agpu_size offset );
+    virtual agpu_error multiDrawElementsIndirect ( agpu_primitive_mode mode, agpu_size offset, agpu_size drawcount );
+    
+    virtual agpu_error setUniform1i ( agpu_int location, agpu_size count, agpu_int* data );
+    virtual agpu_error setUniform2i ( agpu_int location, agpu_size count, agpu_int* data );
+    virtual agpu_error setUniform3i ( agpu_int location, agpu_size count, agpu_int* data );
+    virtual agpu_error setUniform4i ( agpu_int location, agpu_size count, agpu_int* data );
+    virtual agpu_error setUniform1f ( agpu_int location, agpu_size count, agpu_float* data );
+    virtual agpu_error setUniform2f ( agpu_int location, agpu_size count, agpu_float* data );
+    virtual agpu_error setUniform3f ( agpu_int location, agpu_size count, agpu_float* data );
+    virtual agpu_error setUniform4f ( agpu_int location, agpu_size count, agpu_float* data );
+    virtual agpu_error setUniformMatrix2f ( agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+    virtual agpu_error setUniformMatrix3f ( agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+    virtual agpu_error setUniformMatrix4f ( agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+    
     agpu_device *device;
+    
+public:
+    agpu_vertex_binding *currentVertexBinding;
+    agpu_buffer *currentIndexBuffer;
+    agpu_buffer *currentDrawBuffer;
 };
 
 class _agpu_context: public Object<_agpu_context>

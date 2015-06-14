@@ -56,9 +56,22 @@
 			<field name="base_vertex" type="uint" />
 			<field name="base_instance" type="uint" />
 		</struct>
+        
+        <struct name="vertex_attrib_description">
+            <field name="binding" type="uint" />
+            <field name="type" type="field_type" />
+            <field name="components" type="uint" />
+            <field name="normalized" type="bool" />
+            <field name="offset" type="size" />
+        </struct>
 	</structs>
     
     <constants>
+        <enum name="boolean_values">
+            <constant name="True" value="1" />
+            <constant name="False" value="0" />
+        </enum>
+        
         <enum name="error">
             <constant name="Ok" value="0" />
             <constant name="Error" value="-1" />
@@ -72,6 +85,24 @@
             <constant name="CompilationError" value="-9" />
             <constant name="LinkingError" value="-9" />
         </enum>
+        
+		<enum name="primitive_mode">
+            <constant name="Points" value="0" />
+
+            <constant name="Lines" value="1" />
+            <constant name="LinesAdjacency" value="2" />
+            <constant name="LineStrip" value="3" />
+            <constant name="LineStripAdjacency" value="4" />
+            <constant name="LineLoop" value="5" />
+
+            <constant name="Triangles" value="6" />
+            <constant name="TrianglesAdjacency" value="7" />
+            <constant name="TriangleStrip" value="8" />
+            <constant name="TriangleStripAdjacency" value="9" />
+            <constant name="TriangleFan" value="10" />
+
+            <constant name="Patches" value="11" />
+		</enum>
 
         <enum name="stencil_operation">
             <constant name="Keep" value="0" />
@@ -156,6 +187,20 @@
             <constant name="ShaderLanguageHlsl" value="3" />
             <constant name="ShaderLanguageBinary" value="4" />
 		</enum>
+        
+        <enum name="field_type">
+            <constant name="Float" value="0" />
+            <constant name="HalfFloat" value="1" />
+            <constant name="Double" value="2" />
+            <constant name="Fixed" value="3" />
+            
+            <constant name="Byte" value="4" />
+            <constant name="UnsignedByte" value="5" />
+            <constant name="Short" value="6" />
+            <constant name="UnsignedShort" value="7" />
+            <constant name="Int" value="8" />
+            <constant name="UnsignedInt" value="9" />
+        </enum>
     </constants>
     
     <globals>
@@ -194,12 +239,17 @@
                 <arg name="description" type="buffer_description*" />
                 <arg name="initial_data" type="pointer" />
             </method>
+
+            <method name="createVertexBinding" cname="CreateVertexBinding" returnType="vertex_binding*">
+            </method>
             
             <method name="createShader" cname="CreateShader" returnType="shader*">
                 <arg name="type" type="shader_type" />
             </method>
+            
             <method name="createProgram" cname="CreateProgram" returnType="program*">
             </method>
+            
         </interface>
         
         <interface name="context">
@@ -250,11 +300,103 @@
                 <arg name="program" type="program*" />
             </method>
 
+            <method name="useVertexBinding" cname="UseVertexBinding" returnType="error">
+                <arg name="vertex_binding" type="vertex_binding*" />
+            </method>
+
+            <method name="useIndexBuffer" cname="UseIndexBuffer" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="useDrawBuffer" cname="UseDrawBuffer" returnType="error">
+                <arg name="draw_buffer" type="buffer*" />
+            </method>
+            
+            <method name="drawElementsIndirect" cname="DrawElementsIndirect" returnType="error">
+                <arg name="mode" type="primitive_mode" />
+                <arg name="offset" type="size" />
+            </method>
+
+            <method name="multiDrawElementsIndirect" cname="MultiDrawElementsIndirect" returnType="error">
+                <arg name="mode" type="primitive_mode" />
+                <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
+            </method>
+
             <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
                 <arg name="buffer" type="buffer*" />
                 <arg name="offset" type="size" />
                 <arg name="size" type="size" />
                 <arg name="data" type="pointer"/>
+            </method>
+
+            <method name="setUniform1i" cname="SetUniformi" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="int*"/>
+            </method>
+            
+            <method name="setUniform2i" cname="SetUniform2i" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="int*"/>
+            </method>
+
+            <method name="setUniform3i" cname="SetUniform3i" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="int*"/>
+            </method>
+            
+            <method name="setUniform4i" cname="SetUniform4i" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="int*"/>
+            </method>
+            
+            <method name="setUniform1f" cname="SetUniformf" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="float*"/>
+            </method>
+            
+            <method name="setUniform2f" cname="SetUniform2f" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="float*"/>
+            </method>
+
+            <method name="setUniform3f" cname="SetUniform3f" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="float*"/>
+            </method>
+            
+            <method name="setUniform4f" cname="SetUniform4f" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="data" type="float*"/>
+            </method>
+
+            <method name="setUniformMatrix2f" cname="SetUniformMatrix2f" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="transpose" type="bool" />
+                <arg name="data" type="float*"/>
+            </method>
+
+            <method name="setUniformMatrix3f" cname="SetUniformMatrix3f" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="transpose" type="bool" />
+                <arg name="data" type="float*"/>
+            </method>
+
+            <method name="setUniformMatrix4f" cname="SetUniformMatrix4f" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="count" type="size" />
+                <arg name="transpose" type="bool" />
+                <arg name="data" type="float*"/>
             </method>
 
         </interface>
@@ -275,6 +417,21 @@
 
             <method name="unmapBuffer" cname="UnmapBuffer" returnType="error">
             </method>
+        </interface>
+        
+        <interface name="vertex_binding">
+            <method name="addReference" cname="AddVertexBindingReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVertexBinding" returnType="error">
+            </method>
+            
+            <method name="addVertexBufferBindings" cname="AddVertexBufferBindings" returnType="error">
+                <arg name="vertex_buffer" type="buffer*" />
+                <arg name="attribute_count" type="size" />
+                <arg name="attributes" type="vertex_attrib_description*" />
+            </method>
+
         </interface>
         
         <interface name="shader">
@@ -330,6 +487,9 @@
                 <arg name="location" type="int" />
             </method>
             
+            <method name="getUniformLocation" cname="GetUniformLocation" returnType="int">
+                <arg name="name" type="cstring" />
+            </method>
         </interface>
 
         <interface name="framebuffer">

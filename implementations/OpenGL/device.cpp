@@ -6,6 +6,7 @@
 #include "buffer.hpp"
 #include "shader.hpp"
 #include "program.hpp"
+#include "vertex_binding.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -97,6 +98,15 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glUnmapBuffer);
     LOAD_FUNCTION(glBufferStorage);
     
+    // Vertex array object.
+    LOAD_FUNCTION(glGenVertexArrays);
+    LOAD_FUNCTION(glDeleteVertexArrays);
+    LOAD_FUNCTION(glBindVertexArray);
+    
+    // Indirect drawing
+    LOAD_FUNCTION(glDrawElementsIndirect);
+    LOAD_FUNCTION(glMultiDrawElementsIndirect);
+    
     // Shader
     LOAD_FUNCTION(glCreateShader);
     LOAD_FUNCTION(glDeleteShader);
@@ -125,10 +135,24 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetActiveAttrib);
     LOAD_FUNCTION(glGetActiveUniform);
     
+    LOAD_FUNCTION(glVertexAttribPointer);
     LOAD_FUNCTION(glDisableVertexAttribArray);
     LOAD_FUNCTION(glEnableVertexAttribArray);
     LOAD_FUNCTION(glGetAttribLocation);
     LOAD_FUNCTION(glGetUniformLocation);
+    
+    LOAD_FUNCTION(glUniform1fv);
+    LOAD_FUNCTION(glUniform2fv);
+    LOAD_FUNCTION(glUniform3fv);
+    LOAD_FUNCTION(glUniform4fv);
+    LOAD_FUNCTION(glUniform1iv);
+    LOAD_FUNCTION(glUniform2iv);
+    LOAD_FUNCTION(glUniform3iv);
+    LOAD_FUNCTION(glUniform4iv);
+    LOAD_FUNCTION(glUniformMatrix2fv);
+    LOAD_FUNCTION(glUniformMatrix3fv);
+    LOAD_FUNCTION(glUniformMatrix4fv);
+
 }
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
@@ -159,6 +183,11 @@ AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device )
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
 {
     return agpu_buffer::createBuffer(device, *description, initial_data);
+}
+
+AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device )
+{
+    return agpu_vertex_binding::createVertexBinding(device);
 }
 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )

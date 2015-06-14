@@ -85,13 +85,13 @@ agpu_pointer agpu_buffer::mapBuffer(agpu_mapping_access access)
     if(mappedPointer)
         return mappedPointer;
         
-    device->glBindBuffer(target, handle);
+    bind();
     return mappedPointer = device->glMapBuffer(target, mapMappingAccess(access));
 }
 
 agpu_error agpu_buffer::unmapBuffer()
 {
-    device->glBindBuffer(target, handle);
+    bind();
     auto result = device->glUnmapBuffer(target);
     mappedPointer = nullptr;
     
@@ -100,9 +100,14 @@ agpu_error agpu_buffer::unmapBuffer()
 
 agpu_error agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
-    device->glBindBuffer(target, handle);
+    bind();
     device->glBufferSubData(target, offset, size, data);
     return AGPU_OK;
+}
+
+void agpu_buffer::bind()
+{
+    device->glBindBuffer(target, handle);
 }
 
 // C Interface

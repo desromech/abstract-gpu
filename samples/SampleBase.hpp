@@ -27,6 +27,9 @@ struct SampleVertex
     {
         return SampleVertex(glm::vec3(x, y, z), glm::vec3(0,0,0), glm::vec4(r, g, b, a), glm::vec2(0, 1));
     }
+    
+    static agpu_vertex_attrib_description Description[];
+    static const int DescriptionSize;
 };
 
 class SampleBase
@@ -49,6 +52,7 @@ protected:
     agpu_program *createProgramFromFiles(const char *vertexSource, const char *fragmentSource, agpu_shader_language language = AGPU_SHADER_LANGUAGE_GLSL);
     agpu_buffer *createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData);
     agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
+    agpu_buffer *createImmutableDrawBuffer(size_t capacity, void *initialData);
     
     SDL_Window *window;
 

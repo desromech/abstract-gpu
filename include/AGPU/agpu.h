@@ -43,9 +43,15 @@ typedef struct _agpu_device agpu_device;
 typedef struct _agpu_context agpu_context;
 typedef struct _agpu_texture agpu_texture;
 typedef struct _agpu_buffer agpu_buffer;
+typedef struct _agpu_vertex_binding agpu_vertex_binding;
 typedef struct _agpu_shader agpu_shader;
 typedef struct _agpu_program agpu_program;
 typedef struct _agpu_framebuffer agpu_framebuffer;
+
+typedef enum {
+	AGPU_TRUE = 1,
+	AGPU_FALSE = 0,
+} agpu_boolean_values;
 
 typedef enum {
 	AGPU_OK = 0,
@@ -60,6 +66,21 @@ typedef enum {
 	AGPU_COMPILATION_ERROR = -9,
 	AGPU_LINKING_ERROR = -9,
 } agpu_error;
+
+typedef enum {
+	AGPU_POINTS = 0,
+	AGPU_LINES = 1,
+	AGPU_LINES_ADJACENCY = 2,
+	AGPU_LINE_STRIP = 3,
+	AGPU_LINE_STRIP_ADJACENCY = 4,
+	AGPU_LINE_LOOP = 5,
+	AGPU_TRIANGLES = 6,
+	AGPU_TRIANGLES_ADJACENCY = 7,
+	AGPU_TRIANGLE_STRIP = 8,
+	AGPU_TRIANGLE_STRIP_ADJACENCY = 9,
+	AGPU_TRIANGLE_FAN = 10,
+	AGPU_PATCHES = 11,
+} agpu_primitive_mode;
 
 typedef enum {
 	AGPU_KEEP = 0,
@@ -145,6 +166,19 @@ typedef enum {
 	AGPU_SHADER_LANGUAGE_BINARY = 4,
 } agpu_shader_language;
 
+typedef enum {
+	AGPU_FLOAT = 0,
+	AGPU_HALF_FLOAT = 1,
+	AGPU_DOUBLE = 2,
+	AGPU_FIXED = 3,
+	AGPU_BYTE = 4,
+	AGPU_UNSIGNED_BYTE = 5,
+	AGPU_SHORT = 6,
+	AGPU_UNSIGNED_SHORT = 7,
+	AGPU_INT = 8,
+	AGPU_UNSIGNED_INT = 9,
+} agpu_field_type;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -180,6 +214,15 @@ typedef struct agpu_draw_elements_command {
 	agpu_uint base_instance;
 } agpu_draw_elements_command;
 
+/* Structure agpu_vertex_attrib_description. */
+typedef struct agpu_vertex_attrib_description {
+	agpu_uint binding;
+	agpu_field_type type;
+	agpu_uint components;
+	agpu_bool normalized;
+	agpu_size offset;
+} agpu_vertex_attrib_description;
+
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms );
 
@@ -197,6 +240,7 @@ typedef agpu_context* (*agpuGetImmediateContext_FUN) ( agpu_device* device );
 typedef agpu_context* (*agpuCreateDeferredContext_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_device* device );
 typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
+typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device );
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
 typedef agpu_program* (*agpuCreateProgram_FUN) ( agpu_device* device );
 
@@ -206,6 +250,7 @@ AGPU_EXPORT agpu_context* agpuGetImmediateContext ( agpu_device* device );
 AGPU_EXPORT agpu_context* agpuCreateDeferredContext ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
+AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device );
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
 AGPU_EXPORT agpu_program* agpuCreateProgram ( agpu_device* device );
 
@@ -222,7 +267,23 @@ typedef agpu_error (*agpuClear_FUN) ( agpu_context* context, agpu_bitfield buffe
 typedef agpu_error (*agpuSetDepthFunction_FUN) ( agpu_context* context, agpu_compare_function function );
 typedef agpu_error (*agpuSetAlphaFunction_FUN) ( agpu_context* context, agpu_compare_function function, agpu_float reference );
 typedef agpu_error (*agpuUseProgram_FUN) ( agpu_context* context, agpu_program* program );
+typedef agpu_error (*agpuUseVertexBinding_FUN) ( agpu_context* context, agpu_vertex_binding* vertex_binding );
+typedef agpu_error (*agpuUseIndexBuffer_FUN) ( agpu_context* context, agpu_buffer* index_buffer );
+typedef agpu_error (*agpuUseDrawBuffer_FUN) ( agpu_context* context, agpu_buffer* draw_buffer );
+typedef agpu_error (*agpuDrawElementsIndirect_FUN) ( agpu_context* context, agpu_primitive_mode mode, agpu_size offset );
+typedef agpu_error (*agpuMultiDrawElementsIndirect_FUN) ( agpu_context* context, agpu_primitive_mode mode, agpu_size offset, agpu_size drawcount );
 typedef agpu_error (*agpuUploadBufferData_FUN) ( agpu_context* context, agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
+typedef agpu_error (*agpuSetUniformi_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+typedef agpu_error (*agpuSetUniform2i_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+typedef agpu_error (*agpuSetUniform3i_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+typedef agpu_error (*agpuSetUniform4i_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+typedef agpu_error (*agpuSetUniformf_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+typedef agpu_error (*agpuSetUniform2f_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+typedef agpu_error (*agpuSetUniform3f_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+typedef agpu_error (*agpuSetUniform4f_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+typedef agpu_error (*agpuSetUniformMatrix2f_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+typedef agpu_error (*agpuSetUniformMatrix3f_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+typedef agpu_error (*agpuSetUniformMatrix4f_FUN) ( agpu_context* context, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 
 AGPU_EXPORT agpu_error agpuAddContextReference ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuReleaseContext ( agpu_context* context );
@@ -236,7 +297,23 @@ AGPU_EXPORT agpu_error agpuClear ( agpu_context* context, agpu_bitfield buffers 
 AGPU_EXPORT agpu_error agpuSetDepthFunction ( agpu_context* context, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetAlphaFunction ( agpu_context* context, agpu_compare_function function, agpu_float reference );
 AGPU_EXPORT agpu_error agpuUseProgram ( agpu_context* context, agpu_program* program );
+AGPU_EXPORT agpu_error agpuUseVertexBinding ( agpu_context* context, agpu_vertex_binding* vertex_binding );
+AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_context* context, agpu_buffer* index_buffer );
+AGPU_EXPORT agpu_error agpuUseDrawBuffer ( agpu_context* context, agpu_buffer* draw_buffer );
+AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_context* context, agpu_primitive_mode mode, agpu_size offset );
+AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_context* context, agpu_primitive_mode mode, agpu_size offset, agpu_size drawcount );
 AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_context* context, agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
+AGPU_EXPORT agpu_error agpuSetUniformi ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+AGPU_EXPORT agpu_error agpuSetUniform2i ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+AGPU_EXPORT agpu_error agpuSetUniform3i ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+AGPU_EXPORT agpu_error agpuSetUniform4i ( agpu_context* context, agpu_int location, agpu_size count, agpu_int* data );
+AGPU_EXPORT agpu_error agpuSetUniformf ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+AGPU_EXPORT agpu_error agpuSetUniform2f ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+AGPU_EXPORT agpu_error agpuSetUniform3f ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+AGPU_EXPORT agpu_error agpuSetUniform4f ( agpu_context* context, agpu_int location, agpu_size count, agpu_float* data );
+AGPU_EXPORT agpu_error agpuSetUniformMatrix2f ( agpu_context* context, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+AGPU_EXPORT agpu_error agpuSetUniformMatrix3f ( agpu_context* context, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
+AGPU_EXPORT agpu_error agpuSetUniformMatrix4f ( agpu_context* context, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 
 /* Methods for interface agpu_texture. */
 
@@ -251,6 +328,15 @@ AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags );
 AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer );
+
+/* Methods for interface agpu_vertex_binding. */
+typedef agpu_error (*agpuAddVertexBindingReference_FUN) ( agpu_vertex_binding* vertex_binding );
+typedef agpu_error (*agpuReleaseVertexBinding_FUN) ( agpu_vertex_binding* vertex_binding );
+typedef agpu_error (*agpuAddVertexBufferBindings_FUN) ( agpu_vertex_binding* vertex_binding, agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+
+AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding );
+AGPU_EXPORT agpu_error agpuReleaseVertexBinding ( agpu_vertex_binding* vertex_binding );
+AGPU_EXPORT agpu_error agpuAddVertexBufferBindings ( agpu_vertex_binding* vertex_binding, agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
 
 /* Methods for interface agpu_shader. */
 typedef agpu_error (*agpuAddShaderReference_FUN) ( agpu_shader* shader );
@@ -275,6 +361,7 @@ typedef agpu_error (*agpuLinkProgram_FUN) ( agpu_program* program );
 typedef agpu_size (*agpuGetProgramLinkingLogLength_FUN) ( agpu_program* program );
 typedef agpu_error (*agpuGetProgramLinkingLog_FUN) ( agpu_program* program, agpu_size buffer_size, agpu_string_buffer buffer );
 typedef agpu_error (*agpuBindAttributeLocation_FUN) ( agpu_program* program, agpu_cstring name, agpu_int location );
+typedef agpu_int (*agpuGetUniformLocation_FUN) ( agpu_program* program, agpu_cstring name );
 
 AGPU_EXPORT agpu_error agpuAddProgramReference ( agpu_program* program );
 AGPU_EXPORT agpu_error agpuReleaseProgram ( agpu_program* program );
@@ -283,6 +370,7 @@ AGPU_EXPORT agpu_error agpuLinkProgram ( agpu_program* program );
 AGPU_EXPORT agpu_size agpuGetProgramLinkingLogLength ( agpu_program* program );
 AGPU_EXPORT agpu_error agpuGetProgramLinkingLog ( agpu_program* program, agpu_size buffer_size, agpu_string_buffer buffer );
 AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_program* program, agpu_cstring name, agpu_int location );
+AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_program* program, agpu_cstring name );
 
 /* Methods for interface agpu_framebuffer. */
 
@@ -298,6 +386,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateDeferredContext_FUN agpuCreateDeferredContext;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
 	agpuCreateBuffer_FUN agpuCreateBuffer;
+	agpuCreateVertexBinding_FUN agpuCreateVertexBinding;
 	agpuCreateShader_FUN agpuCreateShader;
 	agpuCreateProgram_FUN agpuCreateProgram;
 	agpuAddContextReference_FUN agpuAddContextReference;
@@ -312,11 +401,30 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetDepthFunction_FUN agpuSetDepthFunction;
 	agpuSetAlphaFunction_FUN agpuSetAlphaFunction;
 	agpuUseProgram_FUN agpuUseProgram;
+	agpuUseVertexBinding_FUN agpuUseVertexBinding;
+	agpuUseIndexBuffer_FUN agpuUseIndexBuffer;
+	agpuUseDrawBuffer_FUN agpuUseDrawBuffer;
+	agpuDrawElementsIndirect_FUN agpuDrawElementsIndirect;
+	agpuMultiDrawElementsIndirect_FUN agpuMultiDrawElementsIndirect;
 	agpuUploadBufferData_FUN agpuUploadBufferData;
+	agpuSetUniformi_FUN agpuSetUniformi;
+	agpuSetUniform2i_FUN agpuSetUniform2i;
+	agpuSetUniform3i_FUN agpuSetUniform3i;
+	agpuSetUniform4i_FUN agpuSetUniform4i;
+	agpuSetUniformf_FUN agpuSetUniformf;
+	agpuSetUniform2f_FUN agpuSetUniform2f;
+	agpuSetUniform3f_FUN agpuSetUniform3f;
+	agpuSetUniform4f_FUN agpuSetUniform4f;
+	agpuSetUniformMatrix2f_FUN agpuSetUniformMatrix2f;
+	agpuSetUniformMatrix3f_FUN agpuSetUniformMatrix3f;
+	agpuSetUniformMatrix4f_FUN agpuSetUniformMatrix4f;
 	agpuAddBufferReference_FUN agpuAddBufferReference;
 	agpuReleaseBuffer_FUN agpuReleaseBuffer;
 	agpuMapBuffer_FUN agpuMapBuffer;
 	agpuUnmapBuffer_FUN agpuUnmapBuffer;
+	agpuAddVertexBindingReference_FUN agpuAddVertexBindingReference;
+	agpuReleaseVertexBinding_FUN agpuReleaseVertexBinding;
+	agpuAddVertexBufferBindings_FUN agpuAddVertexBufferBindings;
 	agpuAddShaderReference_FUN agpuAddShaderReference;
 	agpuReleaseShader_FUN agpuReleaseShader;
 	agpuSetShaderSource_FUN agpuSetShaderSource;
@@ -330,6 +438,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetProgramLinkingLogLength_FUN agpuGetProgramLinkingLogLength;
 	agpuGetProgramLinkingLog_FUN agpuGetProgramLinkingLog;
 	agpuBindAttributeLocation_FUN agpuBindAttributeLocation;
+	agpuGetUniformLocation_FUN agpuGetUniformLocation;
 } agpu_icd_dispatch;
 
 

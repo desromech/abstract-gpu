@@ -62,6 +62,11 @@ agpu_error _agpu_program::bindAttributeLocation(agpu_cstring name, agpu_int loca
 	return AGPU_OK;
 }
 
+agpu_int _agpu_program::getUniformLocation ( agpu_cstring name )
+{
+	return device->glGetUniformLocation(handle, name);
+}
+
 // C Interface
 AGPU_EXPORT agpu_error agpuAddProgramReference ( agpu_program* program )
 {
@@ -103,4 +108,10 @@ AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_program* program, agpu_c
 {
 	CHECK_POINTER(program);
 	return program->bindAttributeLocation(name, location);
+}
+
+AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_program* program, agpu_cstring name )
+{
+	CHECK_POINTER(program);
+	return program->getUniformLocation(name);
 }

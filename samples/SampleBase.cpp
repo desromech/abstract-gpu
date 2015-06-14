@@ -3,6 +3,21 @@
 #include "SampleBase.hpp"
 #include "SDL_syswm.h"
 
+	agpu_uint binding;
+	agpu_field_type type;
+	agpu_uint components;
+	agpu_bool normalized;
+	agpu_size offset;
+    
+agpu_vertex_attrib_description SampleVertex::Description[] = {
+    {0, AGPU_FLOAT, 3, AGPU_FALSE, offsetof(SampleVertex, position)},
+    {1, AGPU_FLOAT, 4, AGPU_FALSE, offsetof(SampleVertex, color)},
+    {2, AGPU_FLOAT, 3, AGPU_FALSE, offsetof(SampleVertex, normal)},
+    {3, AGPU_FLOAT, 2, AGPU_FALSE, offsetof(SampleVertex, texcoord)},
+};
+
+const int SampleVertex::DescriptionSize = 4;
+    
 std::string readWholeFile(const char *fileName)
 {
     FILE *file = fopen(fileName, "r");
@@ -203,6 +218,8 @@ agpu_program *SampleBase::createProgramFromFiles(const char *vertexSource, const
     // Bind some attributes.   
     agpuBindAttributeLocation(program, "vPosition", 0);
     agpuBindAttributeLocation(program, "vColor", 1);
+    agpuBindAttributeLocation(program, "vNormal", 2);
+    agpuBindAttributeLocation(program, "vTexCoord", 3);
     
     // Link the program.
     auto linkResult = agpuLinkProgram(program) != AGPU_OK;
@@ -244,5 +261,17 @@ agpu_buffer *SampleBase::createImmutableIndexBuffer(size_t capacity, size_t inde
     desc.binding = AGPU_ELEMENT_ARRAY_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = indexSize;
+    return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_buffer *SampleBase::createImmutableDrawBuffer(size_t capacity, void *initialData)
+{
+    size_t commandSize = sizeof(agpu_draw_elements_command);
+    agpu_buffer_description desc;
+    desc.size = capacity * commandSize;
+    desc.usage = AGPU_STATIC;
+    desc.binding = AGPU_DRAW_INDIRECT_BUFFER;
+    desc.mapping_flags = 0;
+    desc.stride = commandSize;
     return agpuCreateBuffer(device, &desc, initialData);
 }

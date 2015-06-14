@@ -16,6 +16,8 @@ public:
     agpu_error unmapBuffer();
     agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
     
+    void bind();
+    
 public:
 
     agpu_device *device;

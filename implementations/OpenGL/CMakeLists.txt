@@ -7,6 +7,7 @@ set(AGPU_OpenGL_SOURCES
     device_unix.cpp
     icd.c
     platform.cpp
+    vertex_binding.cpp
 )
 
 include_directories(${OPENGL_INCLUDE_DIR})

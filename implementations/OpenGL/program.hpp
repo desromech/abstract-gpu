@@ -18,7 +18,9 @@ public:
     agpu_error getProgramLinkingLog(agpu_size buffer_size, agpu_string_buffer buffer);
     
     agpu_error bindAttributeLocation(agpu_cstring name, agpu_int location);
-    
+
+    agpu_int getUniformLocation ( agpu_cstring name );
+        
 public:
     agpu_device *device;
     GLuint handle;
