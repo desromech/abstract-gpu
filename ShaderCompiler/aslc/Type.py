@@ -17,6 +17,19 @@ PrimitiveTypes = {
 OpaqueTypes = {
 }
 
+# Utility methods
+def alignTo(offset, alignment):
+    return (offset + alignment - 1) % alignment
+
+def makePowerOfTwo(guess):
+    highestBit = 0
+    while(guess >> highestBit != 0):
+        highestBit += 1
+
+    if (1 << highestBit) == guess:
+        return guess
+    return 1 << (highestBit + 1)
+
 # Type
 class Type:
     def __init__(self):
@@ -41,6 +54,12 @@ class Type:
         return False
 
     def isDouble(self):
+        return False
+
+    def isStructure(self):
+        return False
+
+    def isVector(self):
         return False
 
 # Primitive type
@@ -127,21 +146,27 @@ class SamplerType(OpaqueType):
 class ReferenceType(Type):
     referencesTypes = {}
     
-    def __init__(self, baseType):
-        assert baseType not in self.referencesTypes
+    def __init__(self, baseType, readOnly=False):
+        assert (baseType, readOnly) not in self.referencesTypes
         self.referencesTypes[baseType] = self
         self.baseType = baseType
+        self.readOnly = readOnly
 
     def isReference(self):
         return True
 
+    def isReadOnly(self):
+        return self.readOnly
+
     def __str__(self):
+        if self.readOnly:
+            return "readonly " + str(self.baseType) + '&'
         return str(self.baseType) + '&'
 
     @classmethod
-    def get(cls, baseType):
-        res = cls.referencesTypes.get(baseType, None)
-        if res is None: return cls(baseType)
+    def get(cls, baseType, readOnly=False):
+        res = cls.referencesTypes.get((baseType, readOnly), None)
+        if res is None: return cls(baseType, readOnly)
         return res
 
 # Vector type
@@ -153,6 +178,15 @@ class VectorType(Type):
         self.vectorTypes[(baseType, elements)] = self
         self.baseType = baseType
         self.elements = elements
+
+        self.size = baseType.size*elements
+        self.alignment = makePowerOfTwo(baseType.alignment*elements)
+
+    def isVector(self):
+        return True
+
+    def __str__(self):
+        return str(self.baseType) + str(self.elements)
 
     @classmethod
     def get(cls, baseType, elements):
@@ -176,9 +210,66 @@ class MatrixType(Type):
         res = cls.matrixTypes.get((baseType, rows, columns), None)
         if res is None: return cls(baseType, rows, columns)
         return res
-    
-# Function type
 
+# Attribute data
+class Attribute:
+    def __init__(self, name, arguments):
+        self.name = name
+        self.arguments = arguments
+
+# Structure types
+class StructureField:
+    def __init__(self, name, fieldType, semantics):
+        self.name = name
+        self.fieldType = fieldType
+        self.index = -1
+        self.offset = -1
+        self.location = -1
+        self.semantics = semantics
+        if 'location' in semantics:
+            self.location = semantics['location']
+
+class StructureType(Type):
+    def __init__(self, name, fields, semantics):
+        self.name = name
+        self.fields = fields
+        self.fieldDictionary = {}
+        self.semantics = semantics
+        self.size = 0
+        self.alignment = 1
+
+        index = 0        
+        for f in self.fields:
+            self.fieldDictionary[f.name] = f
+            f.index = index
+            index += 1
+
+            # Add to my alignment
+            self.alignment = max(self.alignment, f.fieldType.alignment)
+
+            # Compute the offset and my new size
+            self.size = alignTo(self.size, f.fieldType.alignment)
+            f.offset = self.size;
+            self.size += f.fieldType.size
+
+        self.size = alignTo(self.size, self.alignment)
+
+    def getField(self, name):
+        return self.fieldDictionary[name]
+        
+    def isStructure(self):
+        return True
+
+    def offsetAtIndex(self, index):
+        return self.fields[index].offset
+
+    def typeAtIndex(self, index):
+        return self.fields[index].fieldType
+
+    def __str__(self):
+        return 'struct ' + self.name
+
+# Function type
 class FunctionArgumentType:
     def __init__(self, argumentType, kind = ARGUMENT_KIND_NORMAL):
         self.type = argumentType
@@ -192,7 +283,6 @@ class FunctionArgumentType:
 
     def __str__(self):
         return '[%s]%s' % (self.kind, str(self.type))
-
 
 class FunctionType(Type):
     functionTypes = {}

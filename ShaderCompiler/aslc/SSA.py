@@ -321,6 +321,13 @@ class BlockBuilder:
     def frem(self, left, right, name=None):
         return self.addBinaryOperation(BinaryOperation_FREM, left, right, name)
 
+    def getElementReference(self, reference, indirectionIndex, name=None):
+        return self.addInstruction(GetElementReferenceInstruction(reference, [indirectionIndex]), name)
+
+    def getElementReferenceInd(self, reference, indirections, name=None):
+        return self.addInstruction(GetElementReferenceInstruction(reference, indirections), name)
+
+
 class Instruction(Value):
     def __init__(self, parameters):
         self.ownerBlock = None
@@ -475,6 +482,38 @@ class BinaryOperationInstruction(Instruction):
             return BasicType_Bool
         return leftType
         
+class GetElementReferenceInstruction(Instruction):
+
+    def __init__(self, baseReference, indirections):
+        Instruction.__init__(self, [baseReference])
+        self.indirections = indirections
+        self.computeType(baseReference.getType(), indirections)
+
+    def getType(self):
+        return self.type
+
+    def getOffset(self):
+        return self.offset
+
+    def getBaseReference(self):
+        return self.parameters[0]
+
+    def definitionString(self):
+        return 'getElementReference %s %s' % (self.getBaseReference(), self.indirections)
+        
+    def computeType(self, baseReference, indirections):
+        assert baseReference.isReference()
+        if len(indirections) == 0: return None
+
+        currentType = baseReference.baseType
+        offset = 0
+        for index in indirections:
+            offset += currentType.offsetAtIndex(index)
+            currentType = currentType.typeAtIndex(index)
+
+        self.type = ReferenceType.get(currentType, baseReference.isReadOnly())
+        self.offset = offset
+
 class UnreachableInstruction(TerminatorInstruction):
     def __init__(self):
         TerminatorInstruction.__init__(self, [])

@@ -49,11 +49,6 @@ typedef struct _agpu_program agpu_program;
 typedef struct _agpu_framebuffer agpu_framebuffer;
 
 typedef enum {
-	AGPU_TRUE = 1,
-	AGPU_FALSE = 0,
-} agpu_boolean_values;
-
-typedef enum {
 	AGPU_OK = 0,
 	AGPU_ERROR = -1,
 	AGPU_NULL_POINTER = -2,
@@ -260,6 +255,8 @@ typedef agpu_error (*agpuReleaseContext_FUN) ( agpu_context* context );
 typedef agpu_error (*agpuFinish_FUN) ( agpu_context* context );
 typedef agpu_error (*agpuFlush_FUN) ( agpu_context* context );
 typedef agpu_error (*agpuMakeCurrent_FUN) ( agpu_context* context );
+typedef agpu_error (*agpuSetViewport_FUN) ( agpu_context* context, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
+typedef agpu_error (*agpuSetScissor_FUN) ( agpu_context* context, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 typedef agpu_error (*agpuSetClearColor_FUN) ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
 typedef agpu_error (*agpuSetClearDepth_FUN) ( agpu_context* context, agpu_float depth );
 typedef agpu_error (*agpuSetClearStencil_FUN) ( agpu_context* context, agpu_int value );
@@ -290,6 +287,8 @@ AGPU_EXPORT agpu_error agpuReleaseContext ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuFinish ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuFlush ( agpu_context* context );
 AGPU_EXPORT agpu_error agpuMakeCurrent ( agpu_context* context );
+AGPU_EXPORT agpu_error agpuSetViewport ( agpu_context* context, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
+AGPU_EXPORT agpu_error agpuSetScissor ( agpu_context* context, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
 AGPU_EXPORT agpu_error agpuSetClearDepth ( agpu_context* context, agpu_float depth );
 AGPU_EXPORT agpu_error agpuSetClearStencil ( agpu_context* context, agpu_int value );
@@ -394,6 +393,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuFinish_FUN agpuFinish;
 	agpuFlush_FUN agpuFlush;
 	agpuMakeCurrent_FUN agpuMakeCurrent;
+	agpuSetViewport_FUN agpuSetViewport;
+	agpuSetScissor_FUN agpuSetScissor;
 	agpuSetClearColor_FUN agpuSetClearColor;
 	agpuSetClearDepth_FUN agpuSetClearDepth;
 	agpuSetClearStencil_FUN agpuSetClearStencil;

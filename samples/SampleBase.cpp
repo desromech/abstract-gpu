@@ -10,10 +10,10 @@
 	agpu_size offset;
     
 agpu_vertex_attrib_description SampleVertex::Description[] = {
-    {0, AGPU_FLOAT, 3, AGPU_FALSE, offsetof(SampleVertex, position)},
-    {1, AGPU_FLOAT, 4, AGPU_FALSE, offsetof(SampleVertex, color)},
-    {2, AGPU_FLOAT, 3, AGPU_FALSE, offsetof(SampleVertex, normal)},
-    {3, AGPU_FLOAT, 2, AGPU_FALSE, offsetof(SampleVertex, texcoord)},
+    {0, AGPU_FLOAT, 3, false, offsetof(SampleVertex, position)},
+    {1, AGPU_FLOAT, 4, false, offsetof(SampleVertex, color)},
+    {2, AGPU_FLOAT, 3, false, offsetof(SampleVertex, normal)},
+    {3, AGPU_FLOAT, 2, false, offsetof(SampleVertex, texcoord)},
 };
 
 const int SampleVertex::DescriptionSize = 4;
@@ -48,8 +48,11 @@ std::string readWholeFile(const char *fileName)
 int SampleBase::main(int argc, const char **argv)
 {
     SDL_Init(SDL_INIT_VIDEO);
+    
+    screenWidth = 640;
+    screenHeight = 480;
 
-    SDL_Window * window = SDL_CreateWindow("AGPU Sample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
+    SDL_Window * window = SDL_CreateWindow("AGPU Sample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_OPENGL);
     if(!window)
     {
         fprintf(stderr, "Failed to open window\n");

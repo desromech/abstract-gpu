@@ -73,6 +73,7 @@ tokens = (
     "DOT",
     "COMMA",
     "SEMICOLON",
+    "COLON",
     
     # Components
     "TYPE",
@@ -80,6 +81,9 @@ tokens = (
     "REAL",
     "INTEGER",
     "STRING",
+
+    # Types
+    "STRUCT",
 )
 
 reserved = {
@@ -109,6 +113,8 @@ reserved = {
     'bitnot' : 'BITNOT',
     'bitor' : 'BITOR',
     'bitxor' : 'BITXOR',
+
+    'struct' : 'STRUCT',
 }
 
 STRING_ESCAPE_MAP = {
@@ -214,6 +220,10 @@ def t_COMMA(t):
     
 def t_SEMICOLON(t):
     r';'
+    return addPosition(t)
+
+def t_COLON(t):
+    r':'
     return addPosition(t)
 
 def t_LE(t):

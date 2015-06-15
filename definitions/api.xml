@@ -67,10 +67,6 @@
 	</structs>
     
     <constants>
-        <enum name="boolean_values">
-            <constant name="True" value="1" />
-            <constant name="False" value="0" />
-        </enum>
         
         <enum name="error">
             <constant name="Ok" value="0" />
@@ -268,6 +264,20 @@
             <method name="makeCurrent" cname="MakeCurrent" returnType="error">
             </method>
 
+            <method name="setViewport" cname="SetViewport" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setScissor" cname="SetScissor" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+            
             <method name="setClearColor" cname="SetClearColor" returnType="error">
                 <arg name="r" type="float" />
                 <arg name="g" type="float" />

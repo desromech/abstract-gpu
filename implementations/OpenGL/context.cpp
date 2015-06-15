@@ -48,6 +48,18 @@ AgpuGLImmediateContext::~AgpuGLImmediateContext()
 {
 }
 
+agpu_error AgpuGLImmediateContext::setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+    glViewport(x, y, w, h);
+    return AGPU_OK;
+}
+
+agpu_error AgpuGLImmediateContext::setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+    glScissor(x, y, w, h);
+    return AGPU_OK;
+}
+
 agpu_error AgpuGLImmediateContext::setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a )
 {
     glClearColor(r, g, b, a);
@@ -252,6 +264,18 @@ AGPU_EXPORT agpu_error agpuReleaseContext ( agpu_context* context )
 {
     CHECK_POINTER(context);
     return context->release();
+}
+
+AGPU_EXPORT agpu_error agpuSetViewport ( agpu_context* context, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+    CHECK_POINTER(context);
+    return context->impl->setViewport(x, y, w, h);    
+}
+
+AGPU_EXPORT agpu_error agpuSetScissor ( agpu_context* context, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+    CHECK_POINTER(context);
+    return context->impl->setScissor(x, y, w, h);    
 }
 
 AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_context* context, agpu_float r, agpu_float g, agpu_float b, agpu_float a )

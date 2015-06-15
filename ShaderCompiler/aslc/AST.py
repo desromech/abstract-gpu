@@ -49,10 +49,11 @@ class FunctionKindNode(AstNode):
 
     def __str__(self):
         return 'kind(%s)' % str(self.kind)
-                    
+
 class FunctionArgumentNode(AstNode):
-    def __init__(self, argumentType, name):
+    def __init__(self, passType, argumentType, name):
         AstNode.__init__(self, argumentType.position)
+        self.passType = passType
         self.argumentType = argumentType
         self.name = name
 
@@ -102,6 +103,45 @@ class FunctionDefinition(AstNode):
     def __str__(self):
         return str(self.prototype) + ' -> ' + str(self.body)
         
+class StructDefinition(AstNode):
+    def __init__(self, position, name, fields, attributes):
+        AstNode.__init__(self, position);
+        self.name = name
+        self.fields = fields
+        self.attributes = attributes
+
+    def accept(self, visitor):
+        return visitor.visitStructDefinition(self)
+
+    def __str__(self):
+        return 'struct %s ( %s );' % (self.name, str(self.fields))
+
+class StructField(AstNode):
+    def __init__(self, fieldType, name, attributes):
+        AstNode.__init__(self, fieldType.position);
+        self.fieldType = fieldType
+        self.name = name
+        self.attributes = attributes
+
+    def accept(self, visitor):
+        return visitor.visitStructField(self)
+
+    def __str__(self):
+        return '%s %s [ %s ]' % (str(self.fieldType), self.name, str(self.semantic))
+
+class AttributeDefinition(AstNode):
+    def __init__(self, position, name, arguments):
+        AstNode.__init__(self, position);
+        self.name = name
+        self.arguments = arguments
+
+    def accept(self, visitor):
+        return visitor.visitAttributeDefinition(self)
+
+    def __str__(self):
+        return '%s ( %s ) ' % (self.name, str(self.arguments))
+
+
 class Statement(AstNode):
     def __init__(self, position):
         AstNode.__init__(self, position)
@@ -318,4 +358,16 @@ class StringLiteral(Expression):
 
     def accept(self, visitor):
         return visitor.visitStringLiteral(self)
+
+class MemberAccess(Expression):
+    def __init__(self, position, reference, memberName):
+        Expression.__init__(self, position)
+        self.reference = reference
+        self.memberName = memberName
+
+    def __str__(self):
+        return str(self.reference ) + 'at: ' + self.memberName
+
+    def accept(self, visitor):
+        return visitor.visitMemberAccess(self)
 

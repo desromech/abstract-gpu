@@ -15,6 +15,9 @@ public:
     virtual agpu_error finish() = 0;
     virtual agpu_error flush() = 0;
 
+    virtual agpu_error setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h ) = 0;
+    virtual agpu_error setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h ) = 0;
+
     virtual agpu_error setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a ) = 0;
     virtual agpu_error setClearDepth ( agpu_float depth ) = 0;
     virtual agpu_error setClearStencil ( agpu_int value ) = 0;
@@ -56,6 +59,9 @@ public:
     virtual agpu_error makeCurrent();
     virtual agpu_error finish();
     virtual agpu_error flush();
+
+    virtual agpu_error setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h );
+    virtual agpu_error setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 
     virtual agpu_error setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a );
     virtual agpu_error setClearDepth ( agpu_float depth );

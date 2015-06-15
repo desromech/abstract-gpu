@@ -29,11 +29,12 @@ def p_module_element_list(p):
     
 def p_module_element_list_append(p):
     'module_element_list : module_element_list module_element'
-    p[0] = p[1] + [p[2]]
+    p[0] = p[1] + [ p[2] ]
     
 def p_module_element(p):
     '''module_element : function_declaration
-                    | function_definition'''
+                    | function_definition
+                    | struct_definition'''
     p[0] = p[1]
     
 def p_function_kind_empty(p):
@@ -62,9 +63,19 @@ def p_prototype_arguments_nonempty_rest(p):
     p[0] = p[1] + [ p[3] ]
 
 def p_prototype_argument(p):
-    'prototype_argument : type_expr IDENTIFIER'
-    p[0] = FunctionArgumentNode(p[1], p[2].value)
+    'prototype_argument : argument_pass_type type_expr IDENTIFIER'
+    p[0] = FunctionArgumentNode(p[1], p[2], p[3].value)
     
+def p_argument_pass_type_empty(p):
+    '''argument_pass_type : '''
+    p[0] = 'normal'
+
+def p_argument_pass_type_nonempty(p):
+    '''argument_pass_type : IN
+                          | OUT
+                          | INOUT'''
+    p[0] = p[1].value
+
 def p_function_prototype(p):
     'function_prototype : function_kind type_expr IDENTIFIER LPAREN prototype_arguments RPAREN'
     position = p[2].position
@@ -302,6 +313,42 @@ def p_type(p):
 def p_identifier(p):
     'identifier : IDENTIFIER'
     p[0] = IdentifierExpr(p[1].position, p[1].value)
+
+def p_struct_definition(p):
+    'struct_definition : optional_attribute_list  STRUCT IDENTIFIER LCBRACKET struct_fields RCBRACKET SEMICOLON'
+    p[0] = StructDefinition(p[2].position, p[3].value, p[5], p[1])
+
+def p_struct_fields_nonempty(p):
+    'struct_fields : struct_fields struct_field'
+    p[0] = p[1] + [p[2]]
+
+def p_struct_fields_empty(p):
+    'struct_fields : '
+    p[0] = []
+
+def p_struct_field(p):
+    'struct_field : optional_attribute_list type IDENTIFIER SEMICOLON'
+    p[0] = StructField(p[2], p[3].value, p[1]);
+
+def p_optional_attribute_list_empty(p):
+    'optional_attribute_list : '
+    p[0] = []
+
+def p_optional_attribute_list_rest(p):
+    'optional_attribute_list : optional_attribute_list attribute'
+    p[0] = p[1] + [p[2]]
+
+def p_attribute(p):
+    'attribute : LBRACKET IDENTIFIER attribute_arguments RBRACKET'
+    p[0] = AttributeDefinition(p[1].position, p[2].value, p[3])
+
+def p_attribute_arguments_empty(p):
+    'attribute_arguments : '
+    p[0] = []
+
+def p_attribute_arguments_nonempty(p):
+    'attribute_arguments : LPAREN call_arguments RPAREN'
+    p[0] = p[2]
 
 # Error rule for syntax errors
 def p_error(p):

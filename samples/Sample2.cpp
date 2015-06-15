@@ -1,5 +1,5 @@
 #include "SampleBase.hpp"
-
+#include "glm/gtc/matrix_transform.hpp"
 
 static SampleVertex vertices[] = {
     SampleVertex::onlyColor(-1.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0),
@@ -47,6 +47,15 @@ public:
             return;
         }
 
+        // Set the viewport
+        agpuSetViewport(context, 0, 0, screenWidth, screenHeight);
+        
+        // Compute the projection matrix
+        float aspect = float(screenWidth) / float(screenHeight);
+        float h = 2.0;
+        float w = h*aspect;
+        projectionMatrix = glm::ortho(-w, w, -h, h, -10.0f, 10.0f);
+
         // Clear the background
         agpuSetClearColor(context, 0, 0, 0, 0);
         agpuClear(context, AGPU_COLOR_BUFFER_BIT | AGPU_DEPTH_BUFFER_BIT);
@@ -55,9 +64,9 @@ public:
         agpuUseProgram(context, program);
         
         // Set some matrices.
-        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "projectionMatrix"), 1, AGPU_FALSE, (agpu_float*)&projectionMatrix);
-        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "viewMatrix"), 1, AGPU_FALSE, (agpu_float*)&viewMatrix);
-        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "modelMatrix"), 1, AGPU_FALSE, (agpu_float*)&modelMatrix);
+        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "projectionMatrix"), 1, false, (agpu_float*)&projectionMatrix);
+        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "viewMatrix"), 1, false, (agpu_float*)&viewMatrix);
+        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "modelMatrix"), 1, false, (agpu_float*)&modelMatrix);
         
         // Use the vertices and the indices.
         agpuUseVertexBinding(context, vertexBinding);

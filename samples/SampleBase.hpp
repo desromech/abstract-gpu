@@ -54,6 +54,7 @@ protected:
     agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
     agpu_buffer *createImmutableDrawBuffer(size_t capacity, void *initialData);
     
+    int screenWidth, screenHeight;
     SDL_Window *window;
 
     agpu_device *device;
