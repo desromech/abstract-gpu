@@ -245,7 +245,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         self.loadBreakAndContinue(oldBreakContinue)
 
         # Continue with the rest of the program
-        self.builder.setInsertBlock(continueBlock)
+        self.builder.setInsertBlock(breakBlock)
 
     def visitBreakStatement(self, statement):
         if self.breakBlock is None:
