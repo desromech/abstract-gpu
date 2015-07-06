@@ -93,6 +93,9 @@ class Value:
     def isConstant(self):
         return False
 
+    def isInstruction(self):
+        return False
+
     def isTerminator(self):
         return False
 
@@ -160,6 +163,7 @@ class Function(GlobalValue):
         self.makeArguments()
         self.basicBlocks = []
         self.gensymCount = 1
+        self.haveDominance = False
 
     def isDeclaration(self):
         return len(self.basicBlocks) == 0
@@ -181,12 +185,119 @@ class Function(GlobalValue):
             self.arguments.append(FunctionArgument(i, argType))
 
     def addBasicBlock(self, basicBlock):
+        basicBlock.index = len(self.basicBlocks)
         self.basicBlocks.append(basicBlock)
+        self.postOrderCache = None 
+        self.haveDominance = False
 
     def generateSymbol(self):
         result = 'g%d' % self.gensymCount
         self.gensymCount += 1
         return result
+
+    def getPostOrder(self):
+        # Return the cached post order
+        if self.postOrderCache is not None:
+            return self.postOrderCache
+
+        # Clear the post order cache
+        self.postOrderCache = []
+        
+        # Reset the visited flag
+        visited = [False] * len(self.basicBlocks)
+
+        # Do the dfs.
+        def postOrder(node):
+            assert node.index >= 0
+            if visited[node.index]:
+                return
+
+            visited[node.index] = True
+            for successor in node.getSuccessors():
+                postOrder(successor)
+            self.postOrderCache.append(node)
+
+        # Build the post order
+        if len(self.basicBlocks) != 0:
+            postOrder(self.basicBlocks[0])
+
+        # Store the post order index in the nodes
+        for i in range(len(self.postOrderCache)):
+            self.postOrderCache[i].postOrderIndex = i
+
+        return self.postOrderCache
+
+    #
+    # Dominance algorithm taken from paper "A Simple, Fast Dominance Algorithm" by Cooper et al.
+    #
+    def computeDominance(self):
+        if len(self.basicBlocks) == 0 or self.haveDominance:
+            return
+
+        # Get the reverse post order
+        postOrder = self.getPostOrder()
+        reversePostOrder = postOrder[:-1]
+        reversePostOrder.reverse()
+
+        # Initialize the dominances
+        entryNode = self.basicBlocks[0]
+        doms = [-1]*len(postOrder)
+        doms[entryNode.postOrderIndex] = entryNode.postOrderIndex
+        changed = True
+        while changed:
+            changed = False
+            for node in reversePostOrder:
+                nodeIndex = node.postOrderIndex
+
+                # Find first processed predecessor.
+                newIdom = None
+                for pred in node.predecessors:
+                    if doms[pred.postOrderIndex] >= 0:
+                        newIdom = pred.postOrderIndex
+                        break
+                assert newIdom is not None
+
+                # Do for the others predecessors
+                firstNewIdom = newIdom
+                for pred in node.predecessors:
+                    if pred.postOrderIndex != firstNewIdom and doms[pred.postOrderIndex] >= 0:
+                        newIdom = self.dominanceIntersect(doms, pred.postOrderIndex, newIdom)
+
+                if doms[nodeIndex] != newIdom:
+                    changed = True
+                    doms[nodeIndex] = newIdom
+
+
+        # Store the immediate dominators
+        for i in range(len(doms)):
+            postOrder[i].immediateDominator = postOrder[doms[i]]
+
+        # Reset the dominance frontier
+        for n in self.basicBlocks:
+            n.dominanceFrontier = set()
+
+        # Build the dominance frontier
+        for n in self.basicBlocks:
+            preds = n.predecessors
+            if len(preds) >= 2:
+                for pred in preds:
+                    runner = pred
+                    end = n.immediateDominator
+                    while runner is not end:
+                        runner.dominanceFrontier.add(n)
+                        runner = runner.immediateDominator
+
+        self.haveDominance = True
+                
+    def dominanceIntersect(self, doms, n1, n2):
+        finger1 = n1
+        finger2 = n2
+        while finger1 != finger2:
+            while finger1 < finger2:
+                finger1 = doms[finger1]
+            while finger2 < finger1:
+                finger2 = doms[finger2]
+        return finger1
 
 class FunctionArgument(Value):
     def __init__(self, index, argumentType):
@@ -204,18 +315,34 @@ class FunctionArgument(Value):
         else:
             return '$%d' % self.index
 
+# Basic block
+# A basic block is a node in the program control flow graph.
 class BasicBlock:
     def __init__(self, function, name=None):
         self.name = name
         self.function = function
         self.instructions = []
+        self.successors = []
+        self.predecessors = []
+        self.index = -1
+        self.postOrderIndex = -1
+        self.immediateDominator = None
+        self.dominanceFrontier = set()
         function.addBasicBlock(self)
 
         if self.name is None:
             self.name = function.generateSymbol()
 
+    
     def addInstruction(self, instruction):
+        assert instruction.isInstruction()
         self.instructions.append(instruction)
+
+        # If the instruction is a terminator, build the sucessors and predecessors
+        if instruction.isTerminator():
+            self.successors = instruction.getSuccessors()
+            for successor in self.successors:
+                successor.predecessors.append(self)
 
     def getLastInstruction(self):
         if len(self.instructions) == 0:
@@ -223,7 +350,18 @@ class BasicBlock:
         return self.instructions[-1]
 
     def __str__(self):
-        result = '%s:\n'  % self.name
+        idomStr = ""
+        if self.immediateDominator is not None:
+            idomStr = "[idom: %s] " % self.immediateDominator.name
+
+        domFrontierStr = ""
+        if len(self.dominanceFrontier) > 0:
+            domFrontierStr = "[domFr: "
+            for node in self.dominanceFrontier:
+                domFrontierStr += node.name + " "
+            domFrontierStr += "]"
+
+        result = '%s: %s%s\n'  % (self.name, idomStr, domFrontierStr)
         for instruction in self.instructions:
             result += '  %s\n' % instruction.lineString()
         return result
@@ -236,7 +374,15 @@ class BasicBlock:
                     self.instructions[i] = newInstruction
                 else:
                     del self.instructions[i]
-        
+
+    def getSuccessors(self):
+        return self.successors
+
+    def getPredecessors(self):
+        return self.predecessors
+
+# Block builder
+# A block builder is used to add instruction into a basic block.
 class BlockBuilder:
     def __init__(self, basicBlock):
         self.function = basicBlock.function
@@ -338,6 +484,9 @@ class Instruction(Value):
         for param in parameters:
             param.addInstructionReference(self)
 
+    def isInstruction(self):
+        return True
+
     def addInstructionReference(self, reference):
         self.instructionReferences.append(reference)
 
@@ -418,6 +567,9 @@ class TerminatorInstruction(Instruction):
     def isTerminator(self):
         return True
 
+    def getSuccessors(self):
+        pass
+
 class JumpInstruction(TerminatorInstruction):
     def __init__(self, targetBlock):
         TerminatorInstruction.__init__(self, [])
@@ -428,6 +580,9 @@ class JumpInstruction(TerminatorInstruction):
 
     def definitionString(self):
         return 'jump @%s' % self.targetBlock.name
+
+    def getSuccessors(self):
+        return [self.targetBlock]
 
 class BranchInstruction(TerminatorInstruction):
     def __init__(self, condition, thenBlock, elseBlock):
@@ -440,11 +595,11 @@ class BranchInstruction(TerminatorInstruction):
     def getCondition(self):
         return self.parameters[0]
 
-    def getTargetBlock(self, targetBlock):
-        return self.targetBlock
-
     def definitionString(self):
         return 'branch %s then @%s else @%s' % (str(self.getCondition()), self.thenBlock.name, self.elseBlock.name)
+
+    def getSuccessors(self):
+        return [self.thenBlock, self.elseBlock]
 
 class UnaryOperationInstruction(Instruction):
     def __init__(self, operation, operand):
@@ -521,12 +676,18 @@ class UnreachableInstruction(TerminatorInstruction):
     def definitionString(self):
         return 'unreachable'
 
+    def getSuccessors(self):
+        return []
+
 class ReturnVoidInstruction(TerminatorInstruction):
     def __init__(self):
         TerminatorInstruction.__init__(self, [])
 
     def definitionString(self):
         return 'return void'
+
+    def getSuccessors(self):
+        return []
 
 class ReturnInstruction(TerminatorInstruction):
     def __init__(self, value):
@@ -538,4 +699,6 @@ class ReturnInstruction(TerminatorInstruction):
     def definitionString(self):
         return 'return %s' % str(self.getValue())
 
+    def getSuccessors(self):
+        return []
 

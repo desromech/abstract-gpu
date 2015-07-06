@@ -2,6 +2,7 @@ import AST
 from SSA import *
 from Type import *
 from Parser import parser
+from Optimization import *
 
 BinaryOperationMap = {
     '+' : 'add',
@@ -461,6 +462,7 @@ class ModuleSemanticAnalysis(SemanticAnalysis):
         SemanticAnalysis.__init__(self, Scope(None))
         self.module = Module()
         self.errorCount = 0
+        self.functionPassManager = FunctionPassManager([PromoteAllocaToRegisters])
 
     def visitTranslationUnit(self, translationUnit):
         for declaration in translationUnit.declarations:
@@ -496,6 +498,10 @@ class ModuleSemanticAnalysis(SemanticAnalysis):
         # Compile the function
         functionAnalysis = FunctionSemanticAnalysis(function, self.scope)
         functionAnalysis.compile(definition)
+
+        # Optimize the function
+        self.functionPassManager.runOnFunction(function)
+
         return function
 
     def visitFunctionKindNode(self, node):

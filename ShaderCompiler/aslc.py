@@ -39,8 +39,12 @@ def preprocessInput(inputFile):
     return stdout
     
 def processInputFile(inputFile):
-    return compileString(preprocessInput(inputFile))
+    preprocessed = preprocessInput(inputFile)
+    compiled = compileString(preprocessed)
+    return compiled
     
+# Process the input files
 for inputFile in inputFiles:
-    print processInputFile(inputFile)
+    processInputFile(inputFile)
+    
 
