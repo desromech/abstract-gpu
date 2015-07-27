@@ -131,6 +131,12 @@ void SampleBase::processEvents()
     {
         switch(event.type)
         {
+        case SDL_MOUSEBUTTONDOWN:
+            printf("Mouse down\n");
+            break;
+        case SDL_FINGERDOWN:
+            printf("Finger down\n");
+            break;
         case SDL_KEYDOWN:
             onKeyDown(event);
             break;

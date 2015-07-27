@@ -8,10 +8,21 @@ int max(int a, int b)
 
 void simpleWhile()
 {
-    while(true)
+    if(true)
+        return;
+
+    while(1 > 0)
     {
         if(true)
             break;
+
+        while(true)
+        {
+            if(false)
+                break;
+            if(true)
+                continue;
+        }
 
         if(false)
             continue;
@@ -29,15 +40,23 @@ struct VertexOutput
     float4 color;
 };
 
+struct FragmentOutput
+{
+    float4 color;
+};
+
 kernel(vertex) void vertexShader(in VertexInput input, out VertexOutput output)
 {
     float a;
     a = 1.0;
 
-    output.color = input.color;
+    if(a > 0.0)
+        output.color = input.color;
+
+    simpleWhile();
 }
 
-kernel(fragment) void fragmentShader(in VertexOutput input, out VertexOutput output)
+kernel(fragment) void fragmentShader(in VertexOutput input, out FragmentOutput output)
 {
 }
 

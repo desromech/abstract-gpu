@@ -43,6 +43,9 @@ class Type:
 
     def isVoid(self):
         return False
+
+    def isFunction(self):
+        return False
     
     def isInteger(self):
         return False
@@ -301,6 +304,9 @@ class FunctionType(Type):
             arguments += ' ' + str(arg)
         return '([%s]%s -> %s)' % (self.kind, arguments, str(self.returnType))
 
+    def isFunction(self):
+        return True
+
     def overloadName(self):
         result = '('
         for arg in self.arguments:
@@ -344,7 +350,11 @@ SamplerType('sampler3DArray', 3, True)
 
 # Common basic types
 BasicType_Bool = PrimitiveTypes['bool']
+BasicType_Byte = PrimitiveTypes['byte']
+BasicType_Short = PrimitiveTypes['short']
+BasicType_UShort = PrimitiveTypes['ushort']
 BasicType_Int = PrimitiveTypes['int']
+BasicType_UInt = PrimitiveTypes['uint']
 BasicType_Float = PrimitiveTypes['float']
 BasicType_Double = PrimitiveTypes['double']
 

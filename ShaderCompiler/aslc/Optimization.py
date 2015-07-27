@@ -24,4 +24,4 @@ class PromoteAllocaToRegisters:
         #print function.getName(), 
         #print function.computeDominance()
         function.computeDominance()
-        print function
+        #print function

@@ -80,6 +80,9 @@ class Module:
             result += '%s\n' % str(symbol)
         return result
 
+    def getFunctions(self):
+        return filter(lambda gv: gv.isFunction(), self.symbols.values())
+        
 class Value:
     def __init__(self):
         pass
@@ -92,11 +95,17 @@ class Value:
         
     def isConstant(self):
         return False
+        
+    def isGlobalValue(self):
+        return False
 
     def isInstruction(self):
         return False
 
     def isTerminator(self):
+        return False
+
+    def isExit(self):
         return False
 
     def addInstructionReference(self, reference):
@@ -149,6 +158,15 @@ class GlobalValue(Constant):
 
     def getType(self):
         return self.type
+        
+    def isGlobalValue(self):
+        return True
+        
+    def isFunction(self):
+        return False
+
+    def isGlobalVariable(self):
+        return False
 
 class GlobalVariable(GlobalValue):
     def __init__(self, tpe):
@@ -157,6 +175,39 @@ class GlobalVariable(GlobalValue):
     def __str__(self):
         return '%s $%s = %s;\n' % (str(self.type), self.name, str(self.value))
 
+    def isGlobalVariable(self):
+        return True
+
+class ControlFlowLoop:
+    def __init__(self):
+        self.header = None
+        self.body = set()
+        self.parentLoop = None
+
+    def findStartingAtBlock(self, block):
+        self.header = block
+        self.parentLoop = block.loop
+        
+        for pred in block.getPredecessors():
+            # Find the back edges in the predecessor
+            if block.dominates(pred):
+                self.body.add(block)
+                block.loop = self
+                self.addLoopBody(pred)
+                
+        # Is this a loop?
+        if len(self.body) == 0:
+            return False
+            
+        return True        
+                
+    def addLoopBody(self, node):
+        if node not in self.body:
+            self.body.add(node)
+            node.loop = self
+            for pred in node.getPredecessors():
+                self.addLoopBody(pred)
+                
 class Function(GlobalValue):
     def __init__(self, name, tpe):
         GlobalValue.__init__(self, name, tpe)
@@ -164,6 +215,22 @@ class Function(GlobalValue):
         self.basicBlocks = []
         self.gensymCount = 1
         self.haveDominance = False
+        self.havePostDominance = False
+        self.loops = None
+        self.exitBlocks = None
+
+    def getExitBlocks(self):
+        if self.exitBlocks is not None:
+            return self.exitBlocks
+            
+        self.exitBlocks = []
+        for block in self.basicBlocks:
+            if block.isExitBlock():
+                self.exitBlocks.append(block)
+        return self.exitBlocks
+        
+    def isFunction(self):
+        return True
 
     def isDeclaration(self):
         return len(self.basicBlocks) == 0
@@ -187,14 +254,54 @@ class Function(GlobalValue):
     def addBasicBlock(self, basicBlock):
         basicBlock.index = len(self.basicBlocks)
         self.basicBlocks.append(basicBlock)
-        self.postOrderCache = None 
+        self.postOrderCache = None
+        self.exitPostOrderCache = None
+        self.preOrderCache = None  
         self.haveDominance = False
+        self.havePostDominance = False
+        self.loops = None
 
     def generateSymbol(self):
         result = 'g%d' % self.gensymCount
         self.gensymCount += 1
         return result
 
+    def getEntryPoint(self):
+        return self.basicBlocks[0]
+
+    def getExitPostOrder(self):
+        # Return the cached exit post order
+        if self.exitPostOrderCache is not None:
+            return self.exitPostOrderCache
+
+        # Clear the post order cache
+        self.exitPostOrderCache = []
+        
+        # Reset the visited flag
+        visited = [False] * len(self.basicBlocks)
+
+        # Do the dfs.
+        def postOrder(node):
+            assert node.index >= 0
+            if visited[node.index]:
+                return
+
+            visited[node.index] = True
+            for pred in node.getPredecessors():
+                postOrder(pred)
+            self.exitPostOrderCache.append(node)
+
+        # Build the post order
+        blocks = self.getExitBlocks()
+        for exit in blocks:
+            postOrder(exit)
+
+        # Store the post order index in the nodes
+        for i in range(len(self.exitPostOrderCache)):
+            self.exitPostOrderCache[i].exitPostOrderIndex = i
+
+        return self.exitPostOrderCache
+        
     def getPostOrder(self):
         # Return the cached post order
         if self.postOrderCache is not None:
@@ -226,6 +333,38 @@ class Function(GlobalValue):
             self.postOrderCache[i].postOrderIndex = i
 
         return self.postOrderCache
+        
+    def getPreOrder(self):
+        # Return the cached post order
+        if self.preOrderCache is not None:
+            return self.preOrderCache
+
+        # Clear the post order cache
+        self.preOrderCache = []
+        
+        # Reset the visited flag
+        visited = [False] * len(self.basicBlocks)
+
+        # Do the dfs.
+        def preOrder(node):
+            assert node.index >= 0
+            if visited[node.index]:
+                return
+
+            visited[node.index] = True
+            self.preOrderCache.append(node)
+            for successor in node.getSuccessors():
+                preOrder(successor)
+
+        # Build the pre order
+        if len(self.basicBlocks) != 0:
+            preOrder(self.basicBlocks[0])
+
+        # Store pre post order index in the nodes
+        for i in range(len(self.preOrderCache)):
+            self.preOrderCache[i].preOrderIndex = i
+
+        return self.preOrderCache
 
     #
     # Dominance algorithm taken from paper "A Simple, Fast Dominance Algorithm" by Cooper et al.
@@ -271,6 +410,8 @@ class Function(GlobalValue):
         # Store the immediate dominators
         for i in range(len(doms)):
             postOrder[i].immediateDominator = postOrder[doms[i]]
+            if postOrder[i].immediateDominator is postOrder[i]:
+                postOrder[i].immediateDominator = None
 
         # Reset the dominance frontier
         for n in self.basicBlocks:
@@ -289,6 +430,71 @@ class Function(GlobalValue):
 
         self.haveDominance = True
                 
+    def computePostDominance(self):
+        if len(self.basicBlocks) == 0 or self.havePostDominance:
+            return
+
+        # Get the reverse post order
+        postOrder = self.getExitPostOrder()
+        reversePostOrder = list(postOrder)
+        reversePostOrder.reverse()
+
+        fakeExit = BasicBlock(None)
+        fakeExit.exitPostOrderIndex = len(postOrder)
+
+        # Initialize the dominances
+        doms = [-1]*(len(postOrder) + 1)
+        doms[fakeExit.exitPostOrderIndex] = fakeExit.exitPostOrderIndex
+        changed = True
+        while changed:
+            changed = False
+            for node in reversePostOrder:
+                nodeIndex = node.exitPostOrderIndex
+
+                # Find first processed successor.
+                newIdom = None
+                for succ in node.getSuccessorsWithFakeExit(fakeExit):
+                    if doms[succ.exitPostOrderIndex] >= 0:
+                        newIdom = succ.exitPostOrderIndex
+                        break
+                assert newIdom is not None
+
+                # Do for the others successor
+                firstNewIdom = newIdom
+                for succ in node.getSuccessorsWithFakeExit(fakeExit):
+                    if succ.exitPostOrderIndex != firstNewIdom and doms[succ.exitPostOrderIndex] >= 0:
+                        newIdom = self.dominanceIntersect(doms, succ.exitPostOrderIndex, newIdom)
+
+                if doms[nodeIndex] != newIdom:
+                    changed = True
+                    doms[nodeIndex] = newIdom
+
+
+        # Store the immediate post dominators
+        for i in range(len(postOrder)):
+            index = doms[i]
+            if index == len(postOrder):
+                postOrder[i].immediatePostDominator = None
+            else:
+                postOrder[i].immediatePostDominator = postOrder[index]
+
+        # Reset the post dominance frontier
+        for n in self.basicBlocks:
+            n.postDominanceFrontier = set()
+
+        # Build the dominance frontier
+        for n in self.basicBlocks:
+            preds = n.predecessors
+            if len(preds) >= 2:
+                for pred in preds:
+                    runner = pred
+                    end = n.immediatePostDominator
+                    while runner is not end:
+                        runner.postDominanceFrontier.add(n)
+                        runner = runner.immediatePostDominator
+
+        self.havePostDominance = True
+        
     def dominanceIntersect(self, doms, n1, n2):
         finger1 = n1
         finger2 = n2
@@ -299,6 +505,22 @@ class Function(GlobalValue):
                 finger2 = doms[finger2]
         return finger1
 
+    def findLoops(self):
+        if self.loops is not None:
+            return self.loops
+            
+        # Reset the node loops
+        for node in self.basicBlocks:
+            node.loop = None
+            
+        # Compute the loops
+        self.loops = []
+        for node in self.getPreOrder():
+            loop = ControlFlowLoop()
+            if loop.findStartingAtBlock(node):
+                self.loops.append(loop)
+        return self.loops
+        
 class FunctionArgument(Value):
     def __init__(self, index, argumentType):
         self.name = None
@@ -326,12 +548,17 @@ class BasicBlock:
         self.predecessors = []
         self.index = -1
         self.postOrderIndex = -1
+        self.exitPostOrderIndex = -1
+        self.preOrderIndex = -1
         self.immediateDominator = None
         self.dominanceFrontier = set()
-        function.addBasicBlock(self)
-
-        if self.name is None:
-            self.name = function.generateSymbol()
+        self.immediatePostDominator = None
+        self.postDominanceFrontier = set()
+        self.loop = None
+        if function is not None:
+            function.addBasicBlock(self)
+            if self.name is None:
+                self.name = function.generateSymbol()
 
     
     def addInstruction(self, instruction):
@@ -361,7 +588,18 @@ class BasicBlock:
                 domFrontierStr += node.name + " "
             domFrontierStr += "]"
 
-        result = '%s: %s%s\n'  % (self.name, idomStr, domFrontierStr)
+        ipdomStr = ""
+        if self.immediatePostDominator is not None:
+            ipdomStr = "[ipdom: %s] " % self.immediatePostDominator.name
+
+        pdomFrontierStr = ""
+        if len(self.postDominanceFrontier) > 0:
+            pdomFrontierStr = "[pdomFr: "
+            for node in self.postDominanceFrontier:
+                pdomFrontierStr += node.name + " "
+            pdomFrontierStr += "]"
+
+        result = '%s: %s%s%s%s\n'  % (self.name, idomStr, domFrontierStr, ipdomStr, pdomFrontierStr)
         for instruction in self.instructions:
             result += '  %s\n' % instruction.lineString()
         return result
@@ -378,9 +616,29 @@ class BasicBlock:
     def getSuccessors(self):
         return self.successors
 
+    def getSuccessorsWithFakeExit(self, exit):
+        if len(self.successors) == 0 and self.isExitBlock():
+            return [exit]
+        return self.successors
+
     def getPredecessors(self):
         return self.predecessors
+        
+    def dominatedBy(self, node):
+        idom = self.immediateDominator
+        while idom is not None:
+            if idom is node:
+                return True
+            idom = idom.immediateDominator
+        return False
+        
+    def dominates(self, node):
+        return node.dominatedBy(self)
 
+    def isExitBlock(self):
+        last = self.getLastInstruction()
+        return last is not None and last.isExit()
+        
 # Block builder
 # A block builder is used to add instruction into a basic block.
 class BlockBuilder:
@@ -409,7 +667,7 @@ class BlockBuilder:
     def isLastTerminator(self):
         last = self.getLastInstruction()
         return last is not None and last.isTerminator()
-
+        
     def setInsertBlock(self, block):
         self.currentBlock = block
 
@@ -473,6 +731,9 @@ class BlockBuilder:
     def getElementReferenceInd(self, reference, indirections, name=None):
         return self.addInstruction(GetElementReferenceInstruction(reference, indirections), name)
 
+    def call(self, function, arguments, name=None):
+        return self.addInstruction(CallInstruction(function, arguments), name)
+
 
 class Instruction(Value):
     def __init__(self, parameters):
@@ -518,6 +779,9 @@ class AllocaInstruction(Instruction):
         Instruction.__init__(self, [])
         self.valueType = valueType
         self.type = ReferenceType.get(valueType)
+        
+    def accept(self, visitor):
+        return visitor.visitAllocaInstruction(self)
 
     def getValueType(self):
         return self.valueType
@@ -528,12 +792,42 @@ class AllocaInstruction(Instruction):
     def definitionString(self):
         return 'alloca %s' % str(self.valueType)
 
+class CallInstruction(Instruction):
+    def __init__(self, function, arguments):
+        Instruction.__init__(self, [function] + arguments)
+
+        assert function.getType().isFunction()
+        self.type = function.getType().returnType
+
+    def accept(self, visitor):
+        return visitor.visitCallInstruction(self)
+
+    def getType(self):
+        return self.type
+
+    def getFunction(self):
+        return self.parameters[0]
+
+    def getArguments(self):
+        return self.parameters[1:]
+
+    def definitionString(self):
+        argStr = ''
+        for arg in self.getArguments():
+            if len(argStr) > 0:
+                argStr += ', '
+            argStr += str(arg)
+        return 'cal %s (%s)' % (str(self.getFunction()), argStr)
+
 class LoadInstruction(Instruction):
     def __init__(self, reference):
         Instruction.__init__(self, [reference])
 
         assert reference.getType().isReference()
         self.type = reference.getType().baseType
+
+    def accept(self, visitor):
+        return visitor.visitLoadInstruction(self)
 
     def getType(self):
         return self.type
@@ -547,6 +841,9 @@ class LoadInstruction(Instruction):
 class StoreInstruction(Instruction):
     def __init__(self, value, reference):
         Instruction.__init__(self, [value, reference])
+
+    def accept(self, visitor):
+        return visitor.visitStoreInstruction(self)
 
     def getType(self):
         return None
@@ -575,7 +872,10 @@ class JumpInstruction(TerminatorInstruction):
         TerminatorInstruction.__init__(self, [])
         self.targetBlock = targetBlock
 
-    def getTargetBlock(self, targetBlock):
+    def accept(self, visitor):
+        return visitor.visitJumpInstruction(self)
+
+    def getTargetBlock(self):
         return self.targetBlock
 
     def definitionString(self):
@@ -592,8 +892,17 @@ class BranchInstruction(TerminatorInstruction):
 
         assert condition.getType().isBoolean()
 
+    def accept(self, visitor):
+        return visitor.visitBranchInstruction(self)
+
     def getCondition(self):
         return self.parameters[0]
+
+    def getThenBlock(self):
+        return self.thenBlock
+
+    def getElseBlock(self):
+        return self.elseBlock
 
     def definitionString(self):
         return 'branch %s then @%s else @%s' % (str(self.getCondition()), self.thenBlock.name, self.elseBlock.name)
@@ -605,6 +914,9 @@ class UnaryOperationInstruction(Instruction):
     def __init__(self, operation, operand):
         Instruction.__init__(self, [operand])
         self.operation = operation
+
+    def accept(self, visitor):
+        return visitor.visitUnaryOperationInstruction(self)
 
     def getOperand(self):
         return parameters[0]
@@ -618,6 +930,9 @@ class BinaryOperationInstruction(Instruction):
         Instruction.__init__(self, [left, right])
         self.operation = operation
         self.type = self.computeType(self.operation, left.getType(), right.getType())
+
+    def accept(self, visitor):
+        return visitor.visitBinaryOperationInstruction(self)
 
     def getLeft(self):
         return self.parameters[0]
@@ -643,6 +958,9 @@ class GetElementReferenceInstruction(Instruction):
         Instruction.__init__(self, [baseReference])
         self.indirections = indirections
         self.computeType(baseReference.getType(), indirections)
+
+    def accept(self, visitor):
+        return visitor.visitGetElementReferenceInstruction(self)
 
     def getType(self):
         return self.type
@@ -673,25 +991,42 @@ class UnreachableInstruction(TerminatorInstruction):
     def __init__(self):
         TerminatorInstruction.__init__(self, [])
 
+    def accept(self, visitor):
+        return visitor.visitUnreachableInstruction(self)
+
     def definitionString(self):
         return 'unreachable'
 
     def getSuccessors(self):
         return []
+        
+    def isExit(self):
+        return True
+
 
 class ReturnVoidInstruction(TerminatorInstruction):
     def __init__(self):
         TerminatorInstruction.__init__(self, [])
+
+    def accept(self, visitor):
+        return visitor.visitReturnVoidInstruction(self)
 
     def definitionString(self):
         return 'return void'
 
     def getSuccessors(self):
         return []
+        
+    def isExit(self):
+        return True
+
 
 class ReturnInstruction(TerminatorInstruction):
     def __init__(self, value):
         TerminatorInstruction.__init__(self, [value])
+
+    def accept(self, visitor):
+        return visitor.visitReturnInstruction(self)
 
     def getValue(self):
         return self.parameters[0]
@@ -701,4 +1036,8 @@ class ReturnInstruction(TerminatorInstruction):
 
     def getSuccessors(self):
         return []
+        
+    def isExit(self):
+        return True
+
 

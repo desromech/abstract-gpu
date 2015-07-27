@@ -62,6 +62,9 @@ class FunctionGroup:
     def addFunction(self, name, function):
         self.functions[name] = function
 
+    def isFunctionGroup(self):
+        return True
+        
 # Semantic analysis common
 class SemanticAnalysis:
     def __init__(self, scope):
@@ -197,7 +200,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         self.builder.setInsertBlock(thenBlock)
         statement.thenStatement.accept(self)
 
-        if not self.builder.isLastTerminator:
+        if not self.builder.isLastTerminator():
             if continueBlock is None:
                 continueBlock = BasicBlock(self.function, 'ifContinue')
             self.builder.jump(continueBlock)
@@ -207,7 +210,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
             self.builder.setInsertBlock(elseBlock)
             statement.elseStatement.accept(self)
 
-            if not self.builder.isLastTerminator:
+            if not self.builder.isLastTerminator():
                 if continueBlock is None:
                     continueBlock = BasicBlock(self.function, 'ifContinue')
                 self.builder.jump(continueBlock)
@@ -316,6 +319,67 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         coercionType = self.commonCoercionType(where, leftType, rightType)
         
         return coercionType, self.coerceInto(leftValue, coercionType, where), self.coerceInto(rightValue, coercionType, where)
+        
+    def computeCoercionScore(self, argumentType, functionArgType):
+        if argumentType == functionArgType:
+            return 0
+            
+        error('unimplemented')
+    
+    def visitCallExpression(self, expression):
+        functionGroup = expression.function.accept(self)
+        if not functionGroup.isFunctionGroup():
+            error(expression, 'expected a function name.')
+
+        arguments = list(map(lambda a: a.accept(self), expression.arguments))
+        argumentTypes = list(map(lambda a: a.getType(), arguments))
+        bestScore = -1
+        bestFunctions = []
+        for function in functionGroup.functions.values():
+            functionType = function.getType()
+            argTypes = functionType.arguments
+            if len(arguments) != len(argTypes):
+                continue
+                
+            # Compute the coercion score
+            score = 0
+            canBeDone = True
+            for i in range(len(argTypes)):
+                argumentType = argumentTypes[i]
+                functionArgType = argTypes[i].type
+                argScore = self.computeCoercionScore(argumentType, functionArgType)
+                if argScore < 0:
+                    canBeDone = False
+                    break
+            # Check if the function can be matched
+            if not canBeDone:
+                continue
+                
+            # Accumulate the functions according to the score.
+            if bestScore < 0 or score < bestScore:
+                bestScore = score
+                bestFunctions = [function]
+            elif score == bestScore:
+                bestFunctions.append(function)
+
+        # Ensure there is only one candidate to call.
+        if len(bestFunctions) == 0:
+            error(expression, 'No matching function found.')
+        elif len(bestFunctions) > 1:
+            error(expression, 'The function call is ambiguous.')
+
+        function = bestFunctions[0]
+        functionType = function.getType()
+        
+        # Coerce the arguments.
+        argTypes = functionType.arguments
+        actualArguments = []
+        for i in range(len(argTypes)):
+            actualArguments.append(self.coerceInto(arguments[i], argTypes[i].type, expression))
+
+        # Call the function
+        return self.builder.call(function, actualArguments)
+        
         
     def visitBinaryExpression(self, expression):
         # Perform the value coercion

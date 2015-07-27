@@ -4,6 +4,9 @@ import argparse
 import subprocess
 import sys
 from aslc.Semantic import compileString
+from aslc.GLSLBackend import GLSLBackend
+
+Backend = GLSLBackend
 
 # Parse the command line
 argParser = argparse.ArgumentParser(description="AbstractGPU Shading Language Compiler")
@@ -15,6 +18,7 @@ args = argParser.parse_args()
 includeDirectories = args.includeDirectories
 macroDefinitions = args.macroDefinitions
 inputFiles = args.inputFiles
+outputPath = '.'
 
 # Run CPP to preprocess
 def preprocessInput(inputFile):
@@ -45,6 +49,10 @@ def processInputFile(inputFile):
     
 # Process the input files
 for inputFile in inputFiles:
-    processInputFile(inputFile)
+    module = processInputFile(inputFile)
+    if module is None:
+        sys.exit(-1)
+    backend = Backend(module)
+    backend.generate(outputPath) 
     
 

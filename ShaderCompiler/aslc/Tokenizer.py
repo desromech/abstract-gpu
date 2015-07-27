@@ -199,7 +199,7 @@ def t_MINUS(t):
     return addPosition(t)
     
 def t_MULTIPLY(t):
-    r'\+'
+    r'\*'
     return addPosition(t)
     
 def t_DIVIDE(t):

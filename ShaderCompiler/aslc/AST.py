@@ -278,6 +278,15 @@ class ReturnStatement(Statement):
 class Expression(AstNode):
     pass
     
+class CallExpression(Expression):
+    def __init__(self, position, function, arguments):
+        Expression.__init__(self, position)
+        self.function = function
+        self.arguments = arguments
+
+    def accept(self, visitor):
+        return visitor.visitCallExpression(self)
+        
 class BinaryExpression(Expression):
     def __init__(self, position, operation, left, right):
         Expression.__init__(self, position)
