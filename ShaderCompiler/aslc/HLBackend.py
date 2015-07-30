@@ -239,7 +239,7 @@ class HLBFunctionBuilder:
 		self.function = function
 		self.hlbFunction = hlbFunction
 		self.generatedVarNameCount = 0
-		self.generatedBlocks = set()
+		self.generatedBlocks = {}
 		self.mergeBlocks = set()
 		self.valueMap = {}
 		self.currentBlock = HLBBlockStatement()
@@ -312,9 +312,11 @@ class HLBFunctionBuilder:
 		
 	def generateBasicBlock(self, basicBlock):
 		# Only generate the blocks once
-		if basicBlock in self.generatedBlocks:
-			return None
-		self.generatedBlocks.add(basicBlock)
+		oldBlock = self.generatedBlocks.get(basicBlock, None)
+		if oldBlock is not None:
+			return oldBlock
+		oldBlock = self.currentBlock
+		self.generatedBlocks[basicBlock] = oldBlock
 		
 		# Loop state
 		oldBreakBlock = self.currentBreakBlock
@@ -323,7 +325,7 @@ class HLBFunctionBuilder:
 		
 		# Loop beginning
 		loop = basicBlock.loop
-		oldBlock = self.currentBlock
+		
 		if loop is not None and loop.header is basicBlock:
 			header = loop.header
 			breakBlock = header.immediatePostDominator
@@ -347,10 +349,9 @@ class HLBFunctionBuilder:
 		self.currentBreakBlock = oldBreakBlock
 		self.currentContinueBlock = oldContinueBlock 
 		self.currentBlock = oldBlock
-		
+		 
 		# Generate after the loop
 		if breakBlock is not None:
-			print 'add break: ', breakBlock
 			self.generateBasicBlock(breakBlock)
 		return oldBlock
 			
@@ -378,15 +379,16 @@ class HLBFunctionBuilder:
 		condition = self.mapInstruction(instruction.getCondition())
 		thenBlock = instruction.getThenBlock()
 		elseBlock = instruction.getElseBlock()
+		
 		continueBlock = None
 		if elseBlock in thenBlock.dominanceFrontier:
 			elseStatement = None
+			hasElse = elseBlock in self.mergeBlocks
 			self.currentBlock = HLBBlockStatement()
 			thenStatement = self.generateJumpBlock(thenBlock)
 
-			if elseBlock in self.mergeBlocks:
-				# The else block is generated in a superior level.
-				continueBlock = None
+			if hasElse:
+				# The else block is generated in a superior level. This is a break or continue.
 				elseStatement = self.generateJumpBlock(elseBlock, True)
 			else:
 				continueBlock = elseBlock
