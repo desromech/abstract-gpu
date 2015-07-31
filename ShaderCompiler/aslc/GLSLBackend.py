@@ -166,6 +166,15 @@ class GLSLCodeGenerator:
 		self.endLevel()
 		self.writeIndentedLine('}')
 
+	def visitCallStatement(self, call):
+		function = call.function.name
+		argStr = ''
+		for arg in call.arguments:
+			if len(argStr) > 0:
+				argStr += ', '
+			argStr += arg.accept(self)
+		self.writeIndentedLine('%s (%s);' % (function, argStr))
+		
 	def visitLoopStatement(self, loop):
 		if loop.isWhileLoop():
 			ifStatement = loop.getFirstStatement()

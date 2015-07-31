@@ -194,16 +194,25 @@ class HLBConstant(HLBExpression):
 	def accept(self, visitor):
 		return visitor.visitConstant(self)
 
-class HLBCallExpression(HLBNode):
-	def __init__(self, function, arguments):
+class HLBCallStatement(HLBStatement):
+	def __init__(self, resultType, function, arguments):
+		self.resultType = resultType
 		self.function = function
 		self.arguments = arguments
 
 	def accept(self, visitor):
-		return visitor.visitCallExpression(self)
+		return visitor.visitCallStatement(self)
+
+class HLBCallReturnValue(HLBNode):
+	def __init__(self, call):
+		self.call = call
+
+	def accept(self, visitor):
+		return visitor.visitCallReturnValue(self)
 
 class HLBBinaryExpression(HLBNode):
-	def __init__(self, operation, left, right):
+	def __init__(self, resultType, operation, left, right):
+		self.resultType = resultType
 		self.operation = operation
 		self.left = left
 		self.right = right
@@ -212,7 +221,8 @@ class HLBBinaryExpression(HLBNode):
 		return visitor.visitBinaryExpression(self)
 
 class HLBUnaryExpression(HLBNode):
-	def __init__(self, operation, operand):
+	def __init__(self, resultType, operation, operand):
+		self.resultType = resultType
 		self.operation = operation
 		self.operand = operand
 		
@@ -221,8 +231,7 @@ class HLBUnaryExpression(HLBNode):
 
 class HLBTernaryExpression(HLBNode):
 	def __init__(self):
-		pass
-		
+		pass		
 		
 ShaderKindMap = {
 	FUNCTION_KIND_VERTEX : HLBVertexShader,
@@ -431,12 +440,17 @@ class HLBFunctionBuilder:
 	def visitCallInstruction(self, instruction):
 		function = self.mapInstruction(instruction.getFunction())
 		arguments = list(map(self.mapInstruction, instruction.getArguments()))
-		expression = HLBCallExpression(function, arguments)
+		statement = HLBCallStatement(instruction.getType(), function, arguments)
+		self.addStatement(statement)
+		
+		returnValue = HLBCallReturnValue(statement)
+		self.addInstructionMapping(instruction, returnValue)
+		return returnValue 
 		
 	def visitBinaryOperationInstruction(self, instruction):
 		left = self.mapInstruction(instruction.getLeft())
 		right = self.mapInstruction(instruction.getRight())
-		self.addInstructionMapping(instruction, HLBBinaryExpression(instruction.operation, left, right))
+		self.addInstructionMapping(instruction, HLBBinaryExpression(instruction.getType(), instruction.operation, left, right))
 
 	def visitGetElementReferenceInstruction(self, instruction):
 		baseReference = self.mapInstruction(instruction.getBaseReference())
