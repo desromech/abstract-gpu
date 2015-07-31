@@ -194,6 +194,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
 
         # Coerce the condition into a boolean
         condition = self.coerceInto(statement.condition.accept(self), BasicType_Bool, statement)
+        ifBlock = self.builder.getInsertBlock()
         self.builder.branch(condition, thenBlock, elseBlock)
 
         # Compile the then block
@@ -217,6 +218,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
 
         # Continue compiling after the if
         if continueBlock is not None:
+            ifBlock.mergeBlock = continueBlock
             self.builder.setInsertBlock(continueBlock)
 
     def visitWhileStatement(self, statement):
@@ -232,6 +234,7 @@ class FunctionSemanticAnalysis(SemanticAnalysis):
         # Enter into the loop.
         self.builder.jump(continueBlock)
         self.builder.setInsertBlock(continueBlock)
+        continueBlock.mergeBlock = breakBlock
 
         # Evaluate the while condition
         condition = self.coerceInto(statement.condition.accept(self), BasicType_Bool, statement)

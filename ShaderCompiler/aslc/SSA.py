@@ -554,6 +554,7 @@ class BasicBlock:
         self.dominanceFrontier = set()
         self.immediatePostDominator = None
         self.postDominanceFrontier = set()
+        self.mergeBlock = None
         self.loop = None
         if function is not None:
             function.addBasicBlock(self)
@@ -592,6 +593,10 @@ class BasicBlock:
         if self.immediatePostDominator is not None:
             ipdomStr = "[ipdom: %s] " % self.immediatePostDominator.name
 
+        mergeStr = ""
+        if self.mergeBlock is not None:
+            mergeStr = "[merge: %s] " % self.mergeBlock.name
+        
         pdomFrontierStr = ""
         if len(self.postDominanceFrontier) > 0:
             pdomFrontierStr = "[pdomFr: "
@@ -599,7 +604,7 @@ class BasicBlock:
                 pdomFrontierStr += node.name + " "
             pdomFrontierStr += "]"
 
-        result = '%s: %s%s%s%s\n'  % (self.name, idomStr, domFrontierStr, ipdomStr, pdomFrontierStr)
+        result = '%s: %s%s%s%s%s\n'  % (self.name, idomStr, domFrontierStr, ipdomStr, pdomFrontierStr, mergeStr)
         for instruction in self.instructions:
             result += '  %s\n' % instruction.lineString()
         return result
@@ -667,6 +672,9 @@ class BlockBuilder:
     def isLastTerminator(self):
         last = self.getLastInstruction()
         return last is not None and last.isTerminator()
+
+    def getInsertBlock(self):
+        return self.currentBlock
         
     def setInsertBlock(self, block):
         self.currentBlock = block

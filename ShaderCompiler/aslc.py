@@ -1,4 +1,4 @@
-#!/usr/bin/python
+﻿#!/usr/bin/python
 
 import argparse
 import subprocess
@@ -22,6 +22,9 @@ outputPath = '.'
 
 # Run CPP to preprocess
 def preprocessInput(inputFile):
+    with open(inputFile, 'r') as f:
+        return ('# 1 "%s"\n' % inputFile) + f.read()
+
     args = ['cpp', '-o', '-', '-nostdinc', '-E']
     if includeDirectories is not None:
         for include in includeDirectories:

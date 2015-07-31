@@ -292,7 +292,6 @@ class HLBFunctionBuilder:
 
 	def build(self):
 		print self.function
-		self.function.computePostDominance()
 		self.function.findLoops()
 		self.generateArguments()
 		self.hlbFunction.body = self.generateBasicBlock(self.function.getEntryPoint())
@@ -314,9 +313,10 @@ class HLBFunctionBuilder:
 		# Only generate the blocks once
 		oldBlock = self.generatedBlocks.get(basicBlock, None)
 		if oldBlock is not None:
-			return oldBlock
+			return None
 		oldBlock = self.currentBlock
 		self.generatedBlocks[basicBlock] = oldBlock
+		self.currentMergeBlock = basicBlock.mergeBlock
 		
 		# Loop state
 		oldBreakBlock = self.currentBreakBlock
@@ -325,16 +325,17 @@ class HLBFunctionBuilder:
 		
 		# Loop beginning
 		loop = basicBlock.loop
-		
+		addedMerge = False
 		if loop is not None and loop.header is basicBlock:
 			header = loop.header
-			breakBlock = header.immediatePostDominator
+			breakBlock = basicBlock.mergeBlock
 			newBlock = HLBLoopStatement()
 			self.addStatement(newBlock)
 			self.currentBlock = newBlock
 			self.currentBreakBlock = breakBlock
 			self.currentContinueBlock = header
-			if breakBlock is not None:
+			if breakBlock is not None and breakBlock not in self.mergeBlocks:
+				addedMerge = True
 				self.mergeBlocks.add(breakBlock)
 				
 		# Ensure we are emitting into a block
@@ -351,7 +352,7 @@ class HLBFunctionBuilder:
 		self.currentBlock = oldBlock
 		 
 		# Generate after the loop
-		if breakBlock is not None:
+		if breakBlock is not None and addedMerge:
 			self.generateBasicBlock(breakBlock)
 		return oldBlock
 			
@@ -373,6 +374,7 @@ class HLBFunctionBuilder:
 			return self.generateBasicBlock(targetBlock)
 		else:
 			assert optional
+			return None
 
 	def visitBranchInstruction(self, instruction):
 		ifBlock = self.currentBlock
@@ -380,32 +382,30 @@ class HLBFunctionBuilder:
 		thenBlock = instruction.getThenBlock()
 		elseBlock = instruction.getElseBlock()
 		
-		continueBlock = None
-		if elseBlock in thenBlock.dominanceFrontier:
-			elseStatement = None
-			hasElse = elseBlock in self.mergeBlocks
+		continueBlock = self.currentMergeBlock.mergeBlock
+		if continueBlock not in self.mergeBlocks:
+			addedMerge = True
+			self.mergeBlocks.add(continueBlock)
+			
+		if elseBlock is continueBlock:
 			self.currentBlock = HLBBlockStatement()
 			thenStatement = self.generateJumpBlock(thenBlock)
-
-			if hasElse:
-				# The else block is generated in a superior level. This is a break or continue.
-				elseStatement = self.generateJumpBlock(elseBlock, True)
-			else:
-				continueBlock = elseBlock
-				self.mergeBlocks.add(continueBlock)
-			statement = HLBIfStatement(condition, thenStatement, elseStatement)
+			statement = HLBIfStatement(condition, thenStatement, None)
 		else:
 			self.currentBlock = HLBBlockStatement()
 			thenStatement = self.generateJumpBlock(thenBlock)
 			self.currentBlock = HLBBlockStatement()
-			elseStatement = self.generateJumpBlock(elseBlock)
+			elseStatement = self.generateJumpBlock(elseBlock, True)
 			statement = HLBIfStatement(condition, thenStatement, elseStatement)
 
-		# Restore the block
+		# Restore the block.
 		self.currentBlock = ifBlock
 		self.addStatement(statement)
-		if continueBlock is not None:
-			self.generateBasicBlock(continueBlock)
+		
+		# Merge the if branches.
+		if continueBlock is not None and addedMerge:
+			self.mergeBlocks.remove(continueBlock)
+			self.generateJumpBlock(continueBlock)
 
 	def visitReturnInstruction(self, instruction):
 		pass
