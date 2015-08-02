@@ -48,7 +48,7 @@ agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_str
 	// Check the source code
 	CHECK_POINTER(sourceText);		
 	if(!sourceTextLength)
-		sourceTextLength = strlen(sourceText);
+		sourceTextLength = (agpu_string_length)strlen(sourceText);
 		
 	// Set the shader source
 	device->glShaderSource(handle, 1, &sourceText, &sourceTextLength);
@@ -76,7 +76,16 @@ agpu_size _agpu_shader::getShaderCompilationLogLength()
 
 agpu_error _agpu_shader::getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
-	device->glGetShaderInfoLog(handle, buffer_size, nullptr, buffer);
+	device->glGetShaderInfoLog(handle, (GLsizei)buffer_size, nullptr, buffer);
+	return AGPU_OK;
+}
+
+agpu_error _agpu_shader::bindAttributeLocation ( agpu_cstring name, agpu_int location )
+{
+	LocationBinding lb;
+	lb.location = location;
+	lb.name = name;
+	attributeBindings.push_back(lb);
 	return AGPU_OK;
 }
 
@@ -115,4 +124,10 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_s
 {
 	CHECK_POINTER(shader);
 	return shader->getShaderCompilationLog(buffer_size, buffer);
+}
+
+AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cstring name, agpu_int location )
+{
+	CHECK_POINTER(shader);
+	return shader->bindAttributeLocation(name, location);
 }

@@ -16,6 +16,23 @@ class Sample2: public SampleBase
 public:
     bool initializeSample()
     {
+        // Create the programs.
+        auto vertexShader = compileShaderFromFile("shaders/simple.glslv", AGPU_VERTEX_SHADER);
+        auto fragmentShader = compileShaderFromFile("shaders/simple.glslf", AGPU_FRAGMENT_SHADER);
+        if (!vertexShader || !fragmentShader)
+            return false;
+
+        // Create the pipeline builder
+        auto pipelineBuilder = agpuCreatePipelineBuilder(device);
+        agpuAttachShader(pipelineBuilder, vertexShader);
+        agpuAttachShader(pipelineBuilder, fragmentShader);
+        agpuSetPrimitiveTopology(pipelineBuilder, AGPU_TRIANGLES);
+
+        // Build the pipeline
+        pipeline = buildPipeline(pipelineBuilder);
+        if (!pipeline)
+            return false;
+
         // Create the vertex and the index buffer
         vertexBuffer = createImmutableVertexBuffer(3, sizeof(vertices[0]), vertices);
         indexBuffer = createImmutableIndexBuffer(3, sizeof(indices[0]), indices);
@@ -30,53 +47,46 @@ public:
         // Create the vertex buffer binding.
         vertexBinding = agpuCreateVertexBinding(device);
         agpuAddVertexBufferBindings(vertexBinding, vertexBuffer, SampleVertex::DescriptionSize, SampleVertex::Description);
-        
-        // Create the program
-        program = createProgramFromFiles("shaders/simple.glslv", "shaders/simple.glslf");
-        if(!program)
-            return false;
+
+        // Create the command list
+        commandList = agpuCreateCommandList(device, pipeline);
+
         return true;
     }
 
     void render()
     {
-        auto context = agpuGetImmediateContext(device);
-        if(agpuMakeCurrent(context) != AGPU_OK)
-        {
-            fprintf(stderr, "Failed to use agpu immediate context");
-            return;
-        }
+        // Build the command list
+        agpuResetCommandList(commandList);
 
         // Set the viewport
-        agpuSetViewport(context, 0, 0, screenWidth, screenHeight);
-        
+        agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
+        agpuSetClearColor(commandList, 0, 0, 0, 0);
+        agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
+
         // Compute the projection matrix
         float aspect = float(screenWidth) / float(screenHeight);
         float h = 2.0;
         float w = h*aspect;
         projectionMatrix = glm::ortho(-w, w, -h, h, -10.0f, 10.0f);
 
-        // Clear the background
-        agpuSetClearColor(context, 0, 0, 0, 0);
-        agpuClear(context, AGPU_COLOR_BUFFER_BIT | AGPU_DEPTH_BUFFER_BIT);
-
-        // Use the program
-        agpuUseProgram(context, program);
-        
         // Set some matrices.
-        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "projectionMatrix"), 1, false, (agpu_float*)&projectionMatrix);
-        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "viewMatrix"), 1, false, (agpu_float*)&viewMatrix);
-        agpuSetUniformMatrix4f(context, agpuGetUniformLocation(program, "modelMatrix"), 1, false, (agpu_float*)&modelMatrix);
-        
+        agpuSetUniformMatrix4f(commandList, agpuGetUniformLocation(pipeline, "projectionMatrix"), 1, false, (agpu_float*)&projectionMatrix);
+        agpuSetUniformMatrix4f(commandList, agpuGetUniformLocation(pipeline, "viewMatrix"), 1, false, (agpu_float*)&viewMatrix);
+        agpuSetUniformMatrix4f(commandList, agpuGetUniformLocation(pipeline, "modelMatrix"), 1, false, (agpu_float*)&modelMatrix);
+
         // Use the vertices and the indices.
-        agpuUseVertexBinding(context, vertexBinding);
-        agpuUseIndexBuffer(context, indexBuffer);
-        agpuUseDrawBuffer(context, drawBuffer);
-        
+        agpuUseVertexBinding(commandList, vertexBinding);
+        agpuUseIndexBuffer(commandList, indexBuffer);
+        agpuUseDrawIndirectBuffer(commandList, drawBuffer);
+
         // Draw the objects
-        agpuDrawElementsIndirect(context, AGPU_TRIANGLES, 0);
-        
-        // Swap the front and back buffer
+        agpuDrawElementsIndirect(commandList, 0);
+
+        // Queue the command list
+        auto queue = agpuGetDefaultCommandQueue(device);
+        agpuAddCommandList(queue, commandList);
+
         swapBuffers();
     }
     
@@ -84,7 +94,8 @@ public:
     agpu_buffer *indexBuffer;
     agpu_buffer *drawBuffer;
     agpu_vertex_binding *vertexBinding;
-    agpu_program *program;
+    agpu_pipeline_state *pipeline;
+    agpu_command_list *commandList;
     
     glm::mat4 projectionMatrix;
     glm::mat4 viewMatrix;

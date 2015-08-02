@@ -49,7 +49,7 @@ agpu_error _agpu_vertex_binding::activateVertexAttribute ( agpu_size stride, agp
 {
 	GLenum type = mapFieldType(attribute.type);
 	device->glEnableVertexAttribArray(attribute.binding);
-	device->glVertexAttribPointer(attribute.binding, attribute.components, type, attribute.normalized, stride, reinterpret_cast<void*> (size_t(attribute.offset)));
+	device->glVertexAttribPointer(attribute.binding, attribute.components, type, attribute.normalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset)));
 	
 	return AGPU_OK;
 }

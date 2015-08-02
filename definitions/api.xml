@@ -80,6 +80,7 @@
             <constant name="NotCurrentContext" value="-8" />
             <constant name="CompilationError" value="-9" />
             <constant name="LinkingError" value="-9" />
+            <constant name="CommandListClosed" value="-10" />
         </enum>
         
 		<enum name="primitive_mode">
@@ -222,10 +223,7 @@
             <method name="release" cname="ReleaseDevice" returnType="error">
             </method>
 
-            <method name="getImmediateContext" cname="GetImmediateContext" returnType="context*">
-            </method>
-
-            <method name="createDeferredContext" cname="CreateDeferredContext" returnType="context*">
+            <method name="getDefaultCommandQueue" cname="GetDefaultCommandQueue" returnType="command_queue*">
             </method>
 
             <method name="swapBuffers" cname="SwapBuffers" returnType="error">
@@ -243,25 +241,92 @@
                 <arg name="type" type="shader_type" />
             </method>
             
-            <method name="createProgram" cname="CreateProgram" returnType="program*">
+            <method name="createPipelineBuilder" cname="CreatePipelineBuilder" returnType="pipeline_builder*">
+            </method>
+
+            <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
             </method>
             
         </interface>
         
-        <interface name="context">
-            <method name="addReference" cname="AddContextReference" returnType="error">
+        <interface name="pipeline_builder">
+            <method name="addReference" cname="AddPipelineBuilderReference" returnType="error">
             </method>
 
-            <method name="release" cname="ReleaseContext" returnType="error">
+            <method name="release" cname="ReleasePipelineBuilder" returnType="error">
+            </method>
+            
+            <method name="build" cname="BuildPipelineState" returnType="pipeline_state*">
+            </method>
+            
+            <method name="attachShader" cname="AttachShader" returnType="error">
+                <arg name="shader" type="shader*" />
             </method>
 
-            <method name="finish" cname="Finish" returnType="error">
+            <method name="getBuildingLogLength" cname="GetPipelineBuildingLogLength" returnType="size">
+            </method>
+            
+            <method name="getBuildingLog" cname="GetPipelineBuildingLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+            
+            <method name="setDepthState" cname="SetDepthState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="bool" />
+                <arg name="function" type="compare_function" />
             </method>
 
-            <method name="flush" cname="Flush" returnType="error">
+            <method name="setStencilState" cname="SetStencilState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="int" />
+                <arg name="readMask" type="int" />
             </method>
 
-            <method name="makeCurrent" cname="MakeCurrent" returnType="error">
+            <method name="setAlphaTestingState" cname="SetAlphaTestingState" returnType="error">
+                <arg name="enable" type="bool" />
+                <arg name="function" type="compare_function" />
+            </method>
+            
+            <method name="setRenderTargetCount" cname="SetRenderTargetCount" returnType="error">
+                <arg name="count" type="int" />
+            </method>
+            
+            <method name="setPrimitiveTopology" cname="SetPrimitiveTopology" returnType="error">
+                <arg name="topology" type="primitive_mode" />
+            </method>
+        </interface>
+        
+        <interface name="pipeline_state">
+            <method name="addReference" cname="AddPipelineStateReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleasePipelineState" returnType="error">
+            </method>
+            
+            <method name="getUniformLocation" cname="GetUniformLocation" returnType="int">
+                <arg name="name" type="cstring" />
+            </method>
+        </interface>
+        
+        <interface name="command_queue">
+            <method name="addReference" cname="AddCommandQueueReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseCommandQueue" returnType="error">
+            </method>
+
+            <method name="addCommandList" cname="AddCommandList" returnType="error">
+                <arg name="command_list" type="command_list*" />
+            </method>
+        </interface>
+        
+        <interface name="command_list">
+            <method name="addReference" cname="AddCommandListReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseCommandList" returnType="error">
             </method>
 
             <method name="setViewport" cname="SetViewport" returnType="error">
@@ -297,17 +362,8 @@
                 <arg name="buffers" type="bitfield" />
             </method>
 
-            <method name="setDepthFunction" cname="SetDepthFunction" returnType="error">
-                <arg name="function" type="compare_function" />
-            </method>
-
-            <method name="setAlphaFunction" cname="SetAlphaFunction" returnType="error">
-                <arg name="function" type="compare_function" />
-                <arg name="reference" type="float" />
-            </method>
-            
-            <method name="useProgram" cname="UseProgram" returnType="error">
-                <arg name="program" type="program*" />
+            <method name="usePipelineState" cname="UsePipelineState" returnType="error">
+                <arg name="pipeline" type="pipeline_state*" />
             </method>
 
             <method name="useVertexBinding" cname="UseVertexBinding" returnType="error">
@@ -318,26 +374,25 @@
                 <arg name="index_buffer" type="buffer*" />
             </method>
 
-            <method name="useDrawBuffer" cname="UseDrawBuffer" returnType="error">
+            <method name="useDrawIndirectBuffer" cname="UseDrawIndirectBuffer" returnType="error">
                 <arg name="draw_buffer" type="buffer*" />
             </method>
             
             <method name="drawElementsIndirect" cname="DrawElementsIndirect" returnType="error">
-                <arg name="mode" type="primitive_mode" />
                 <arg name="offset" type="size" />
             </method>
 
             <method name="multiDrawElementsIndirect" cname="MultiDrawElementsIndirect" returnType="error">
-                <arg name="mode" type="primitive_mode" />
                 <arg name="offset" type="size" />
                 <arg name="drawcount" type="size" />
             </method>
+            
+            <method name="setStencilReference" cname="SetStencilReference" returnType="error">
+                <arg name="reference" type="float" />
+            </method>
 
-            <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
-                <arg name="buffer" type="buffer*" />
-                <arg name="offset" type="size" />
-                <arg name="size" type="size" />
-                <arg name="data" type="pointer"/>
+            <method name="setAlphaReference" cname="SetAlphaReference" returnType="error">
+                <arg name="reference" type="float" />
             </method>
 
             <method name="setUniform1i" cname="SetUniformi" returnType="error">
@@ -409,6 +464,12 @@
                 <arg name="data" type="float*"/>
             </method>
 
+            <method name="close" cname="CloseCommandList" returnType="error">
+            </method>
+
+            <method name="reset" cname="ResetCommandList" returnType="error">
+            </method>
+
         </interface>
         
         <interface name="texture">
@@ -426,6 +487,12 @@
             </method>
 
             <method name="unmapBuffer" cname="UnmapBuffer" returnType="error">
+            </method>
+            
+            <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+                <arg name="data" type="pointer"/>
             </method>
         </interface>
         
@@ -468,37 +535,10 @@
                 <arg name="buffer_size" type="size" />
                 <arg name="buffer" type="string_buffer" />
             </method>
-        </interface>
-
-        <interface name="program">
-            <method name="addReference" cname="AddProgramReference" returnType="error">
-            </method>
-
-            <method name="release" cname="ReleaseProgram" returnType="error">
-            </method>
-            
-            <method name="attachShader" cname="AttachShader" returnType="error">
-                <arg name="shader" type="shader*" />
-            </method>
-            
-            <method name="linkProgram" cname="LinkProgram" returnType="error">
-            </method>
-
-            <method name="getLinkingLogLength" cname="GetProgramLinkingLogLength" returnType="size">
-            </method>
-            
-            <method name="getLinkingLog" cname="GetProgramLinkingLog" returnType="error">
-                <arg name="buffer_size" type="size" />
-                <arg name="buffer" type="string_buffer" />
-            </method>
             
             <method name="bindAttributeLocation" cname="BindAttributeLocation" returnType="error">
                 <arg name="name" type="cstring" />
                 <arg name="location" type="int" />
-            </method>
-            
-            <method name="getUniformLocation" cname="GetUniformLocation" returnType="int">
-                <arg name="name" type="cstring" />
             </method>
         </interface>
 

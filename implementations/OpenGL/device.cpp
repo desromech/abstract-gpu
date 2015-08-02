@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "device.hpp"
-#include "context.hpp"
 #include "buffer.hpp"
 #include "shader.hpp"
-#include "program.hpp"
+#include "pipeline_builder.hpp"
+#include "command_list.hpp"
+#include "command_queue.hpp"
 #include "vertex_binding.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
@@ -26,7 +27,6 @@ OpenGLVersion GLContextVersionPriorities[] = {
 
 _agpu_device:: _agpu_device()
 {
-    immediateContext = new agpu_context(new AgpuGLImmediateContext(this));
 }
 
 // Helper to check for extension string presence.  Adapted from:
@@ -60,17 +60,6 @@ bool _agpu_device::isExtensionSupported(const char *extList, const char *extensi
     }
 
     return false;
-}
-
-agpu_context* _agpu_device::getImmediateContext()
-{
-    immediateContext->retain();
-    return immediateContext;
-}
-
-agpu_context* _agpu_device::createDeferredContext()
-{
-    return nullptr;
 }
 
 void _agpu_device::lostReferences()
@@ -155,47 +144,67 @@ void _agpu_device::loadExtensions()
 
 }
 
+void _agpu_device::createDefaultCommandQueue()
+{
+    defaultCommandQueue = agpu_command_queue::create(this);
+}
+
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
 {
+    CHECK_POINTER(device);
     return device->retain();
 }
 
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device *device )
 {
+    CHECK_POINTER(device);
     return device->release();
-}
-
-AGPU_EXPORT agpu_context* agpuGetImmediateContext ( agpu_device* device )
-{
-    return device->getImmediateContext();
-}
-
-AGPU_EXPORT agpu_context* agpuCreateDeferredContext ( agpu_device* device )
-{
-    return device->createDeferredContext();
 }
 
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device )
 {
+    CHECK_POINTER(device);
     return device->swapBuffers();
 }
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
 {
+    if (!device)
+        return nullptr;
     return agpu_buffer::createBuffer(device, *description, initial_data);
 }
 
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device )
 {
+    if (!device)
+        return nullptr;
     return agpu_vertex_binding::createVertexBinding(device);
 }
 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
 {
+    if (!device)
+        return nullptr;
     return agpu_shader::createShader(device, type);
 }
 
-AGPU_EXPORT agpu_program* agpuCreateProgram ( agpu_device* device )
+AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device )
 {
-    return agpu_program::createProgram(device);
+    if (!device)
+        return nullptr;
+    return agpu_pipeline_builder::createBuilder(device); 
+}
+
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_pipeline_state* initial_pipeline_state )
+{
+    if (!device)
+        return nullptr;
+    return agpu_command_list::create(device, initial_pipeline_state);
+}
+
+AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
+{
+    if (!device)
+        return nullptr;
+    return device->defaultCommandQueue;
 }

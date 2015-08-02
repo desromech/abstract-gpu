@@ -210,47 +210,33 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
         return nullptr;
     }
     
+    // Bind some attributes.  
+    if (type == AGPU_VERTEX_SHADER)
+    {
+        agpuBindAttributeLocation(shader, "vPosition", 0);
+        agpuBindAttributeLocation(shader, "vColor", 1);
+        agpuBindAttributeLocation(shader, "vNormal", 2);
+        agpuBindAttributeLocation(shader, "vTexCoord", 3);
+    }
+
     return shader;
 }
 
-agpu_program *SampleBase::createProgramFromFiles(const char *vertexSource, const char *fragmentSource, agpu_shader_language language)
+agpu_pipeline_state *SampleBase::buildPipeline(agpu_pipeline_builder *builder)
 {
-    // Compile the vertex and fragment shaders
-    auto vertexShader = compileShaderFromFile(vertexSource, AGPU_VERTEX_SHADER);
-    auto fragmentShader = compileShaderFromFile(fragmentSource, AGPU_FRAGMENT_SHADER);
-    if(!vertexShader || !fragmentShader)
-        return nullptr;
-        
-    // Create the program.
-    auto program = agpuCreateProgram(device);
-    agpuAttachShader(program, vertexShader);
-    agpuAttachShader(program, fragmentShader);
- 
-    // Bind some attributes.   
-    agpuBindAttributeLocation(program, "vPosition", 0);
-    agpuBindAttributeLocation(program, "vColor", 1);
-    agpuBindAttributeLocation(program, "vNormal", 2);
-    agpuBindAttributeLocation(program, "vTexCoord", 3);
-    
-    // Link the program.
-    auto linkResult = agpuLinkProgram(program) != AGPU_OK;
-    
-    // Link the shaders
-    agpuReleaseShader(vertexShader);
-    agpuReleaseShader(fragmentShader);
+    auto pipeline = agpuBuildPipelineState(builder);
     
     // Check the link result.
-    if(linkResult)
+    if(!pipeline)
     {
-        auto logLength = agpuGetProgramLinkingLogLength(program);
+        auto logLength = agpuGetPipelineBuildingLogLength(builder);
         std::unique_ptr<char[]> logBuffer(new char[logLength + 1]);
-        agpuGetProgramLinkingLog(program, logLength, logBuffer.get());
-        agpuReleaseProgram(program);
-        fprintf(stderr, "Linking error of '%s' with '%s':%s\n", vertexSource, fragmentSource, logBuffer.get());
+        agpuGetPipelineBuildingLog(builder, logLength, logBuffer.get());
+        fprintf(stderr, "Pipeline building error:%s\n", logBuffer.get());
         return nullptr;
     }
     
-    return program;
+    return pipeline;
 }
 
 agpu_buffer *SampleBase::createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData)

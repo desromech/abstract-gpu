@@ -48,16 +48,16 @@ public:
 
 protected:
     agpu_shader *compileShaderFromFile(const char *fileName, agpu_shader_type type, agpu_shader_language language = AGPU_SHADER_LANGUAGE_GLSL);
-    agpu_program *createProgramFromFiles(const char *vertexSource, const char *fragmentSource, agpu_shader_language language = AGPU_SHADER_LANGUAGE_GLSL);
     agpu_buffer *createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData);
     agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
     agpu_buffer *createImmutableDrawBuffer(size_t capacity, void *initialData);
+
+    agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
     
     int screenWidth, screenHeight;
     SDL_Window *window;
 
     agpu_device *device;
-    agpu_context *immediateContext;
     bool quit;
 };
 

@@ -227,7 +227,7 @@ agpu_error agpu_device::swapBuffers()
 
 bool agpu_device::makeCurrent()
 {
-    return wglMakeCurrent(hDC, context);
+    return wglMakeCurrent(hDC, context) == TRUE;
 }
 
 #endif

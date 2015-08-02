@@ -5,23 +5,26 @@ class Sample1: public SampleBase
 public:
     bool initializeSample()
     {
+        commandList = agpuCreateCommandList(device, nullptr);
         return true;
     }
 
     void render()
     {
-        auto context = agpuGetImmediateContext(device);
-        if(agpuMakeCurrent(context) != AGPU_OK)
-        {
-            fprintf(stderr, "Failed to use agpu immediate context");
-            return;
-        }
+        // Build the command list
+        agpuResetCommandList(commandList);
 
-        agpuSetClearColor(context, 0, 0, 1, 0);
-        agpuClear(context, AGPU_COLOR_BUFFER_BIT);
+        agpuSetClearColor(commandList, 0, 0, 1, 0);
+        agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
+
+        // Queue the command list
+        auto queue = agpuGetDefaultCommandQueue(device);
+        agpuAddCommandList(queue, commandList);
 
         swapBuffers();
     }
+
+    agpu_command_list *commandList;
 };
 
 SAMPLE_MAIN(Sample1)

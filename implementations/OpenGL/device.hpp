@@ -56,15 +56,13 @@ public:
     static bool isExtensionSupported(const char *extList, const char *extension);
     static agpu_device *open(agpu_device_open_info* openInfo);
 
-    agpu_context* createDeferredContext();
-    agpu_context* getImmediateContext();
-
     agpu_error swapBuffers();
 
     bool makeCurrent();
     void readVersionInformation();
     void loadExtensions();
     void *getProcAddress(const char *symbolName);
+    void createDefaultCommandQueue();
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)
@@ -84,7 +82,8 @@ public:
     Window window;
     GLXContext context;
 #endif
-    agpu_context* immediateContext;
+
+    agpu_command_queue *defaultCommandQueue;
     
 public:
     // OpenGL API
