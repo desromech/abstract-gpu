@@ -1,7 +1,12 @@
-set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist/samples")
+if(MSVC)
+    set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
+else()
+    set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist/samples")
+endif()
 
 set(SampleCommon_SRC
     SampleBase.cpp
+    SampleBase.hpp
 )
 
 add_executable(Sample1 Sample1.cpp ${SampleCommon_SRC})

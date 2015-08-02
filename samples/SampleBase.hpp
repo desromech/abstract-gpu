@@ -7,7 +7,6 @@
 #include <SDL_main.h>
 #include <string>
 
-
 // Utility functions
 std::string readWholeFile(const char *fileName);
 
@@ -63,10 +62,10 @@ protected:
 };
 
 #define SAMPLE_MAIN(SampleClass) \
-int main(int argc, const char **argv) \
+int main(int argc, char *argv[]) \
 { \
     SampleClass sample; \
-    return sample.main(argc, argv); \
+    return sample.main(argc, (const char **)argv); \
 }
 
 #endif //_SAMPLE_BASE_HPP_

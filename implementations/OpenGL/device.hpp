@@ -2,6 +2,7 @@
 #define _AGPU_DEVICE_HPP_
 
 #if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <GL/GL.h>
 #include <GL/glext.h>
@@ -45,7 +46,7 @@ extern OpenGLVersion GLContextVersionPriorities[];
 /**
  * Agpu OpenGL device
  */
-class _agpu_device: public Object<_agpu_device>
+struct _agpu_device: public Object<_agpu_device>
 {
 public:
     _agpu_device();
@@ -75,6 +76,9 @@ public:
     std::string rendererString, shaderString;
 
 #ifdef _WIN32
+    HWND window;
+    HDC hDC;
+    HGLRC context;
 #elif defined(__linux__)
     Display *display;
     Window window;

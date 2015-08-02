@@ -1,5 +1,5 @@
 # Leng cmake build script.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(AGPU)
 
 # Check the build type
@@ -18,7 +18,7 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/;${CMAKE_MODULE_PATH}")
 
 # Turn warnings
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+if (MSVC)
 	# using Visual Studio C++
 	set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
@@ -30,7 +30,7 @@ endif()
 find_package(OpenGL)
 
 # Add some include directories
-include_directories(. include thirdparty/glm)
+include_directories(. include thirdparty/glm thirdparty/opengl/include)
 
 # Set output dir.
 set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
@@ -42,7 +42,6 @@ if(PKG_CONFIG_FOUND)
 
     # Find SDL2
     pkg_check_modules(SDL2 REQUIRED sdl2)
-    include_directories(${SDL2_INCLUDE_DIRS})
 
     # Find unittest++
     pkg_check_modules(UNITTESTMM unittest++)
@@ -52,7 +51,7 @@ if(PKG_CONFIG_FOUND)
 
 else()
     # For VisualStudio in Window
-    find_path(SDL2_INCLUDE_DIR
+    find_path(SDL2_INCLUDE_DIRS
       NAMES SDL.h
     )
 
@@ -62,8 +61,11 @@ else()
 
     find_library(SDL2_LIBRARY NAMES SDL2 PATHS ${SDL2_LIBRARY_PATH})
 	find_library(SDL2_MAIN_LIBRARY NAMES SDL2main PATHS ${SDL2_LIBRARY_PATH})
-
+    set(SDL2_LIBRARIES ${SDL2_LIBRARY} ${SDL2_MAIN_LIBRARY})
 endif()
+
+# Use the SDL2 include path.
+include_directories(${SDL2_INCLUDE_DIRS})
 
 # Samples libraries
 set(AGPU_MAIN_LIB AgpuOpenGL)

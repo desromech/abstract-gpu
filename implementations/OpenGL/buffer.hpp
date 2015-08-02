@@ -3,7 +3,7 @@
 
 #include "device.hpp"
 
-class _agpu_buffer: public Object<_agpu_buffer>
+struct _agpu_buffer: public Object<_agpu_buffer>
 {
 public:
     _agpu_buffer();

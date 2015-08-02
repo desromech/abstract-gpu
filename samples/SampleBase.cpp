@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <vector>
+#include <memory>
 #include "SampleBase.hpp"
 #include "SDL_syswm.h"
 
@@ -20,7 +21,7 @@ const int SampleVertex::DescriptionSize = 4;
     
 std::string readWholeFile(const char *fileName)
 {
-    FILE *file = fopen(fileName, "r");
+    FILE *file = fopen(fileName, "rb");
     if(!file)
     {
         fprintf(stderr, "Failed to open file %s\n", fileName);
@@ -79,8 +80,9 @@ int SampleBase::main(int argc, const char **argv)
     switch(windowInfo.subsystem)
     {
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
-    case SDL_SYSWM_WINDOW:
+    case SDL_SYSWM_WINDOWS:
         openInfo.window = (agpu_pointer)windowInfo.info.win.window;
+        openInfo.surface = (agpu_pointer)windowInfo.info.win.hdc;
         break;
 #endif
 #if defined(SDL_VIDEO_DRIVER_X11)
@@ -197,14 +199,14 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
 
     // Create the shader and compile it.        
     auto shader = agpuCreateShader(device, type);
-    agpuSetShaderSource(shader, language, source.c_str(), source.size());
+    agpuSetShaderSource(shader, language, source.c_str(), (agpu_string_length)source.size());
     if(agpuCompileShader(shader, nullptr) != AGPU_OK)
     {
         auto logLength = agpuGetShaderCompilationLogLength(shader);
-        char logBuffer[logLength+1];
-        agpuGetShaderCompilationLog(shader, logLength, logBuffer);
+        std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
+        agpuGetShaderCompilationLog(shader, logLength, logBuffer.get());
         agpuReleaseShader(shader);
-        fprintf(stderr, "Compilation error of '%s':%s\n", fileName, logBuffer);
+        fprintf(stderr, "Compilation error of '%s':%s\n", fileName, logBuffer.get());
         return nullptr;
     }
     
@@ -241,10 +243,10 @@ agpu_program *SampleBase::createProgramFromFiles(const char *vertexSource, const
     if(linkResult)
     {
         auto logLength = agpuGetProgramLinkingLogLength(program);
-        char logBuffer[logLength+1];
-        agpuGetProgramLinkingLog(program, logLength, logBuffer);
+        std::unique_ptr<char[]> logBuffer(new char[logLength + 1]);
+        agpuGetProgramLinkingLog(program, logLength, logBuffer.get());
         agpuReleaseProgram(program);
-        fprintf(stderr, "Linking error of '%s' with '%s':%s\n", vertexSource, fragmentSource, logBuffer);
+        fprintf(stderr, "Linking error of '%s' with '%s':%s\n", vertexSource, fragmentSource, logBuffer.get());
         return nullptr;
     }
     

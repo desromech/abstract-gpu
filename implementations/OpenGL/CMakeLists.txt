@@ -1,16 +1,28 @@
 set(AGPU_OpenGL_SOURCES
     buffer.cpp
+    buffer.hpp
     shader.cpp
+    shader.hpp
     program.cpp
+    program.hpp
+    common.hpp
     context.cpp
+    context.hpp
     device.cpp
+    device.hpp
     device_unix.cpp
+    device_win32.cpp
     icd.c
+    object.hpp
     platform.cpp
+    platform.hpp
     vertex_binding.cpp
+    vertex_binding.hpp
 )
 
 include_directories(${OPENGL_INCLUDE_DIR})
+
+add_definitions(-DAGPU_BUILD)
 
 add_library(AgpuOpenGL SHARED ${AGPU_OpenGL_SOURCES})
 target_link_libraries(AgpuOpenGL ${OPENGL_gl_LIBRARY})

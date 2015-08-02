@@ -102,7 +102,7 @@ public:
     agpu_buffer *currentDrawBuffer;
 };
 
-class _agpu_context: public Object<_agpu_context>
+struct _agpu_context: public Object<_agpu_context>
 {
 public:
     _agpu_context(AgpuGLContext *impl);

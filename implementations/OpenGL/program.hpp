@@ -3,7 +3,7 @@
 
 #include "device.hpp"
 
-class _agpu_program: public Object<_agpu_shader>
+struct _agpu_program: public Object<_agpu_shader>
 {
 public:
     _agpu_program();

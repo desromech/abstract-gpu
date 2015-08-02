@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "common.hpp"
 
-extern agpu_icd_dispatch agpu_gl_icd_dispatch;
+extern "C" agpu_icd_dispatch agpu_gl_icd_dispatch;
 
 /**
  * AGPU OpenGL object.

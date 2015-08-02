@@ -6,7 +6,7 @@
 /**
  * Vertex binding
  */
-class _agpu_vertex_binding: public Object<_agpu_vertex_binding>
+struct _agpu_vertex_binding: public Object<_agpu_vertex_binding>
 {
 public:
 	_agpu_vertex_binding();

@@ -58,5 +58,6 @@ kernel(vertex) void vertexShader(in VertexInput input, out VertexOutput output)
 
 kernel(fragment) void fragmentShader(in VertexOutput input, out FragmentOutput output)
 {
+    output.color = input.color; 
 }
 
