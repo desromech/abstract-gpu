@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{0B7F
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleCommon", "SampleCommon\SampleCommon.vcxproj", "{9B7B2C60-6536-4694-9FAF-F50436576C7E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{82551A25-D6CA-469E-8D03-6E0196AC2797} = {82551A25-D6CA-469E-8D03-6E0196AC2797}
 		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401} = {8B59C0F0-C1F9-4846-ACFB-FECC84E76401}
 	EndProjectSection
 EndProject
@@ -23,6 +24,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sample2", "Sample2\Sample2.
 		{9B7B2C60-6536-4694-9FAF-F50436576C7E} = {9B7B2C60-6536-4694-9FAF-F50436576C7E}
 		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401} = {8B59C0F0-C1F9-4846-ACFB-FECC84E76401}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AgpuD3D12", "AgpuD3D12\AgpuD3D12.vcxproj", "{82551A25-D6CA-469E-8D03-6E0196AC2797}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -64,6 +67,14 @@ Global
 		{F5DD541E-E877-44B5-A7B8-D9DDE363AEF2}.Release|x64.Build.0 = Release|x64
 		{F5DD541E-E877-44B5-A7B8-D9DDE363AEF2}.Release|x86.ActiveCfg = Release|Win32
 		{F5DD541E-E877-44B5-A7B8-D9DDE363AEF2}.Release|x86.Build.0 = Release|Win32
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Debug|x64.ActiveCfg = Debug|x64
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Debug|x64.Build.0 = Debug|x64
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Debug|x86.ActiveCfg = Debug|Win32
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Debug|x86.Build.0 = Debug|Win32
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Release|x64.ActiveCfg = Release|x64
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Release|x64.Build.0 = Release|x64
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Release|x86.ActiveCfg = Release|Win32
+		{82551A25-D6CA-469E-8D03-6E0196AC2797}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
