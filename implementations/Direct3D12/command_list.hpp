@@ -10,7 +10,7 @@ public:
 
     void lostReferences();
 
-    static _agpu_command_list *create(agpu_device *device, agpu_pipeline_state *initialState);
+    static _agpu_command_list *create(agpu_device *device, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState);
 
     agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
     agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
@@ -38,7 +38,7 @@ public:
     agpu_error setUniformMatrix3f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
     agpu_error setUniformMatrix4f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
     agpu_error close();
-    agpu_error reset(agpu_pipeline_state* initial_pipeline_state);
+    agpu_error reset(_agpu_command_allocator *allocator, agpu_pipeline_state* initial_pipeline_state);
     agpu_error beginFrame();
     agpu_error endFrame();
 

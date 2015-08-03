@@ -1,5 +1,6 @@
 #include "device.hpp"
 #include "command_queue.hpp"
+#include "command_allocator.hpp"
 #include "command_list.hpp"
 
 _agpu_device::_agpu_device()
@@ -108,10 +109,6 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         }
     }
 
-    // Create the command allocator.
-    if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator))))
-        return false;
-
     // Create frame synchronization fence.
     {
         if (FAILED(d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&frameFence))))
@@ -166,9 +163,6 @@ agpu_error _agpu_device::waitForPreviousFrame()
 
     frameIndex = swapChain->GetCurrentBackBufferIndex();
 
-    // TODO: Put this in a more appropiate location.
-    commandAllocator->Reset();
-
     return AGPU_OK;
 }
 
@@ -218,9 +212,16 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device
     return nullptr;
 }
 
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_pipeline_state* initial_pipeline_state)
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device)
 {
     if (!device)
         return nullptr;
-    return agpu_command_list::create(device, initial_pipeline_state);
+    return agpu_command_allocator::create(device);
+}
+
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+{
+    if (!device)
+        return nullptr;
+    return agpu_command_list::create(device, allocator, initial_pipeline_state);
 }

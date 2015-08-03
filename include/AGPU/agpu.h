@@ -43,6 +43,7 @@ typedef struct _agpu_device agpu_device;
 typedef struct _agpu_pipeline_builder agpu_pipeline_builder;
 typedef struct _agpu_pipeline_state agpu_pipeline_state;
 typedef struct _agpu_command_queue agpu_command_queue;
+typedef struct _agpu_command_allocator agpu_command_allocator;
 typedef struct _agpu_command_list agpu_command_list;
 typedef struct _agpu_texture agpu_texture;
 typedef struct _agpu_buffer agpu_buffer;
@@ -241,7 +242,8 @@ typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_
 typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device );
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
-typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_pipeline_state* initial_pipeline_state );
+typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device );
+typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -251,7 +253,8 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_des
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device );
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_pipeline_state* initial_pipeline_state );
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device );
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 
 /* Methods for interface agpu_pipeline_builder. */
 typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builder* pipeline_builder );
@@ -296,6 +299,15 @@ AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* comman
 AGPU_EXPORT agpu_error agpuReleaseCommandQueue ( agpu_command_queue* command_queue );
 AGPU_EXPORT agpu_error agpuAddCommandList ( agpu_command_queue* command_queue, agpu_command_list* command_list );
 
+/* Methods for interface agpu_command_allocator. */
+typedef agpu_error (*agpuAddCommandAllocatorReference_FUN) ( agpu_command_allocator* command_allocator );
+typedef agpu_error (*agpuReleaseCommandAllocator_FUN) ( agpu_command_allocator* command_allocator );
+typedef agpu_error (*agpuResetCommandAllocator_FUN) ( agpu_command_allocator* command_allocator );
+
+AGPU_EXPORT agpu_error agpuAddCommandAllocatorReference ( agpu_command_allocator* command_allocator );
+AGPU_EXPORT agpu_error agpuReleaseCommandAllocator ( agpu_command_allocator* command_allocator );
+AGPU_EXPORT agpu_error agpuResetCommandAllocator ( agpu_command_allocator* command_allocator );
+
 /* Methods for interface agpu_command_list. */
 typedef agpu_error (*agpuAddCommandListReference_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuReleaseCommandList_FUN) ( agpu_command_list* command_list );
@@ -325,7 +337,7 @@ typedef agpu_error (*agpuSetUniformMatrix2f_FUN) ( agpu_command_list* command_li
 typedef agpu_error (*agpuSetUniformMatrix3f_FUN) ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 typedef agpu_error (*agpuSetUniformMatrix4f_FUN) ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
-typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state );
+typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuEndFrame_FUN) ( agpu_command_list* command_list );
 
@@ -357,7 +369,7 @@ AGPU_EXPORT agpu_error agpuSetUniformMatrix2f ( agpu_command_list* command_list,
 AGPU_EXPORT agpu_error agpuSetUniformMatrix3f ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 AGPU_EXPORT agpu_error agpuSetUniformMatrix4f ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
-AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state );
+AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list );
 
@@ -419,6 +431,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateVertexBinding_FUN agpuCreateVertexBinding;
 	agpuCreateShader_FUN agpuCreateShader;
 	agpuCreatePipelineBuilder_FUN agpuCreatePipelineBuilder;
+	agpuCreateCommandAllocator_FUN agpuCreateCommandAllocator;
 	agpuCreateCommandList_FUN agpuCreateCommandList;
 	agpuAddPipelineBuilderReference_FUN agpuAddPipelineBuilderReference;
 	agpuReleasePipelineBuilder_FUN agpuReleasePipelineBuilder;
@@ -437,6 +450,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddCommandQueueReference_FUN agpuAddCommandQueueReference;
 	agpuReleaseCommandQueue_FUN agpuReleaseCommandQueue;
 	agpuAddCommandList_FUN agpuAddCommandList;
+	agpuAddCommandAllocatorReference_FUN agpuAddCommandAllocatorReference;
+	agpuReleaseCommandAllocator_FUN agpuReleaseCommandAllocator;
+	agpuResetCommandAllocator_FUN agpuResetCommandAllocator;
 	agpuAddCommandListReference_FUN agpuAddCommandListReference;
 	agpuReleaseCommandList_FUN agpuReleaseCommandList;
 	agpuSetViewport_FUN agpuSetViewport;

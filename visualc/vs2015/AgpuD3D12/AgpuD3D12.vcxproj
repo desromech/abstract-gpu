@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\implementations\Direct3D12\command_allocator.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_list.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_queue.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\device.cpp" />
@@ -161,6 +162,7 @@
     <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_binding.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\implementations\Direct3D12\command_allocator.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\command_list.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\common.hpp" />

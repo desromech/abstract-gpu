@@ -5,7 +5,8 @@ class Sample1: public SampleBase
 public:
     bool initializeSample()
     {
-        commandList = agpuCreateCommandList(device, nullptr);
+        commandAllocator = agpuCreateCommandAllocator(device);
+        commandList = agpuCreateCommandList(device, commandAllocator, nullptr);
         agpuCloseCommandList(commandList);
 
         return true;
@@ -14,7 +15,8 @@ public:
     void render()
     {
         // Build the command list
-        agpuResetCommandList(commandList, nullptr);
+        agpuResetCommandAllocator(commandAllocator);
+        agpuResetCommandList(commandList, commandAllocator, nullptr);
         agpuBeginFrame(commandList);
 
         agpuSetClearColor(commandList, 0, 0, 1, 0);
@@ -31,6 +33,7 @@ public:
         swapBuffers();
     }
 
+    agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
 };
 

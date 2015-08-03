@@ -42,7 +42,6 @@ public:
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> d3dDevice;
     ComPtr<ID3D12Resource> mainFrameBufferTargets[MaxFrameCount];
-    ComPtr<ID3D12CommandAllocator> commandAllocator;
     ComPtr<ID3D12DescriptorHeap> renderTargetViewHeap;
     UINT renderTargetViewDescriptorSize;
 

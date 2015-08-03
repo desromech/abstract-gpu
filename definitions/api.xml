@@ -245,10 +245,13 @@
             <method name="createPipelineBuilder" cname="CreatePipelineBuilder" returnType="pipeline_builder*">
             </method>
 
+            <method name="createCommandAllocator" cname="CreateCommandAllocator" returnType="command_allocator*">
+            </method>
+
             <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
+                <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
             </method>
-            
         </interface>
         
         <interface name="pipeline_builder">
@@ -320,6 +323,17 @@
 
             <method name="addCommandList" cname="AddCommandList" returnType="error">
                 <arg name="command_list" type="command_list*" />
+            </method>
+        </interface>
+
+        <interface name="command_allocator">
+            <method name="addReference" cname="AddCommandAllocatorReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseCommandAllocator" returnType="error">
+            </method>
+
+            <method name="reset" cname="ResetCommandAllocator" returnType="error">
             </method>
         </interface>
         
@@ -469,6 +483,7 @@
             </method>
 
             <method name="reset" cname="ResetCommandList" returnType="error">
+                <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
             </method>
 

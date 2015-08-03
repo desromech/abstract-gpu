@@ -49,7 +49,8 @@ public:
         agpuAddVertexBufferBindings(vertexBinding, vertexBuffer, SampleVertex::DescriptionSize, SampleVertex::Description);
 
         // Create the command list
-        commandList = agpuCreateCommandList(device, pipeline);
+        commandAllocator = agpuCreateCommandAllocator(device);
+        commandList = agpuCreateCommandList(device, commandAllocator, pipeline);
         agpuCloseCommandList(commandList);
         return true;
     }
@@ -57,7 +58,8 @@ public:
     void render()
     {
         // Build the command list
-        agpuResetCommandList(commandList, nullptr);
+        agpuResetCommandAllocator(commandAllocator);
+        agpuResetCommandList(commandList, commandAllocator, nullptr);
         agpuBeginFrame(commandList);
 
         // Set the viewport
@@ -92,7 +94,6 @@ public:
         auto queue = agpuGetDefaultCommandQueue(device);
         agpuAddCommandList(queue, commandList);
 
-
         swapBuffers();
     }
     
@@ -101,6 +102,7 @@ public:
     agpu_buffer *drawBuffer;
     agpu_vertex_binding *vertexBinding;
     agpu_pipeline_state *pipeline;
+    agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
     
     glm::mat4 projectionMatrix;

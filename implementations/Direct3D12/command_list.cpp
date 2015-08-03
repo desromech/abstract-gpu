@@ -1,3 +1,4 @@
+#include "command_allocator.hpp"
 #include "command_list.hpp"
 
 _agpu_command_list::_agpu_command_list()
@@ -12,11 +13,11 @@ void _agpu_command_list::lostReferences()
 
 }
 
-_agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_pipeline_state *initialState)
+_agpu_command_list *_agpu_command_list::create(agpu_device *device, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
 {
     ComPtr<ID3D12GraphicsCommandList> commandList;
     // TODO: Use the initial pipeline state.
-    if (FAILED(device->d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, device->commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList))))
+    if (FAILED(device->d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator->allocator.Get(), nullptr, IID_PPV_ARGS(&commandList))))
         return nullptr;
 
     auto list = new _agpu_command_list();
@@ -179,10 +180,12 @@ agpu_error _agpu_command_list::close()
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::reset(agpu_pipeline_state* initial_pipeline_state)
+agpu_error _agpu_command_list::reset(_agpu_command_allocator *allocator, agpu_pipeline_state* initial_pipeline_state)
 {
+    CHECK_POINTER(allocator);
+
     // TODO: Use the initial pipeline
-    ERROR_IF_FAILED(commandList->Reset(device->commandAllocator.Get(), nullptr));
+    ERROR_IF_FAILED(commandList->Reset(allocator->allocator.Get(), nullptr));
     return AGPU_OK;
 }
 
@@ -366,10 +369,10 @@ AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)
     return command_list->close();
 }
 
-AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state)
+AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, _agpu_command_allocator *allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     CHECK_POINTER(command_list);
-    return command_list->reset(initial_pipeline_state);
+    return command_list->reset(allocator, initial_pipeline_state);
 }
 
 AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list)
