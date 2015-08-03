@@ -17,8 +17,8 @@ public:
     bool initializeSample()
     {
         // Create the programs.
-        auto vertexShader = compileShaderFromFile("shaders/simple.glslv", AGPU_VERTEX_SHADER);
-        auto fragmentShader = compileShaderFromFile("shaders/simple.glslf", AGPU_FRAGMENT_SHADER);
+        auto vertexShader = compileShaderFromFile("data/shaders/simple.glslv", AGPU_VERTEX_SHADER);
+        auto fragmentShader = compileShaderFromFile("data/shaders/simple.glslf", AGPU_FRAGMENT_SHADER);
         if (!vertexShader || !fragmentShader)
             return false;
 

@@ -14,7 +14,7 @@ std::string readWholeFile(const char *fileName);
 // Vertex used in the samples
 struct SampleVertex
 {
-    SampleVertex(glm::vec3 position, glm::vec3 normal, glm::vec4 color, glm::vec2 texcoord)
+    SampleVertex(const glm::vec3 &position, const glm::vec3 &normal, const glm::vec4 &color, const glm::vec2 &texcoord)
         : position(position), normal(normal), color(color), texcoord(texcoord) {}
         
     glm::vec3 position;

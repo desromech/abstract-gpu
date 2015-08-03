@@ -50,6 +50,13 @@ if(PKG_CONFIG_FOUND)
     endif()
 
 else()
+    # Find Direct3D 12
+    find_path(D3D12_INCLUDE_DIRS
+      NAMES d3d12.h
+    )
+    
+    find_library(D3D12_LIBRARY NAMES d3d12)
+
     # For VisualStudio in Window
     find_path(SDL2_INCLUDE_DIRS
       NAMES SDL.h
