@@ -6,10 +6,17 @@
 _agpu_device::_agpu_device()
 {
     defaultCommandQueue = nullptr;
+    isOpened = false;
 }
 
 void _agpu_device::lostReferences()
 {
+    if (isOpened)
+    {
+        waitForPreviousFrame();
+        CloseHandle(frameFenceEvent);
+    }
+
     if (defaultCommandQueue)
         defaultCommandQueue->release();
 }
@@ -34,8 +41,6 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     // Get the window size.
     getWindowSize();
-    windowWidth = 640;
-    windowHeight = 480;
 
     // Enable the debug layer
     if (openInfo->debugLayer)
@@ -121,6 +126,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
             return false;
     }
 
+    isOpened = true;
 
     return true;
 }
@@ -128,7 +134,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 bool _agpu_device::getWindowSize()
 {
     RECT rect;
-    GetWindowRect(window, &rect);
+    GetClientRect(window, &rect);
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 

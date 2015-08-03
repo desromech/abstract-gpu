@@ -124,6 +124,7 @@ int SampleBase::main(int argc, const char **argv)
     }
 
     shutdownSample();
+    agpuReleaseDevice(device);
 
     SDL_DestroyWindow(window);
     SDL_Quit();

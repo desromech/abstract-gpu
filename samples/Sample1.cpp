@@ -33,6 +33,12 @@ public:
         swapBuffers();
     }
 
+    void shutdownSample()
+    {
+        agpuReleaseCommandList(commandList);
+        agpuReleaseCommandAllocator(commandAllocator);
+    }
+
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
 };

@@ -54,6 +54,9 @@ public:
     ComPtr<ID3D12Fence> frameFence;
     UINT64 frameFenceValue;
 
+    // Some states
+    bool isOpened;
+
 private:
     bool getWindowSize();
 };
