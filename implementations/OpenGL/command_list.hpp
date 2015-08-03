@@ -42,12 +42,13 @@ public:
     agpu_error setUniformMatrix3f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
     agpu_error setUniformMatrix4f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
     agpu_error close();
-    agpu_error reset();
+    agpu_error reset(agpu_pipeline_state* initial_pipeline_state);
+    agpu_error beginFrame();
+    agpu_error endFrame();
         
 public:
     agpu_device *device;
     
-    agpu_pipeline_state *initialPipeline;
     agpu_pipeline_state *currentPipeline;
 
     agpu_vertex_binding *currentVertexBinding;

@@ -39,6 +39,7 @@
             <field name="doublebuffer" type="bool" />
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
+            <field name="debugLayer" type="bool" />
         </struct>
 
 		<struct name="buffer_description">
@@ -309,7 +310,7 @@
                 <arg name="name" type="cstring" />
             </method>
         </interface>
-        
+
         <interface name="command_queue">
             <method name="addReference" cname="AddCommandQueueReference" returnType="error">
             </method>
@@ -468,6 +469,13 @@
             </method>
 
             <method name="reset" cname="ResetCommandList" returnType="error">
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
+            </method>
+
+            <method name="beginFrame" cname="BeginFrame" returnType="error">
+            </method>
+
+            <method name="endFrame" cname="EndFrame" returnType="error">
             </method>
 
         </interface>

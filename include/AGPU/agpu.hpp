@@ -162,6 +162,7 @@ typedef struct agpu_device_open_info {
 	agpu_bool doublebuffer;
 	agpu_bool sample_buffers;
 	agpu_int samples;
+	agpu_bool debugLayer;
 } agpu_device_open_info;
 
 /* Structure agpu_buffer_description. */
@@ -294,7 +295,9 @@ typedef agpu_error (*agpuSetUniformMatrix2f_FUN) ( agpu_command_list* command_li
 typedef agpu_error (*agpuSetUniformMatrix3f_FUN) ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 typedef agpu_error (*agpuSetUniformMatrix4f_FUN) ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
-typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list );
+typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state );
+typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list );
+typedef agpu_error (*agpuEndFrame_FUN) ( agpu_command_list* command_list );
 
 AGPU_EXPORT agpu_error agpuAddCommandListReference ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuReleaseCommandList ( agpu_command_list* command_list );
@@ -324,7 +327,9 @@ AGPU_EXPORT agpu_error agpuSetUniformMatrix2f ( agpu_command_list* command_list,
 AGPU_EXPORT agpu_error agpuSetUniformMatrix3f ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 AGPU_EXPORT agpu_error agpuSetUniformMatrix4f ( agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
-AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list );
+AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state );
+AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list );
+AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list );
 
 /* Methods for interface agpu_texture. */
 

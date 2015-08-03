@@ -50,14 +50,15 @@ public:
 
         // Create the command list
         commandList = agpuCreateCommandList(device, pipeline);
-
+        agpuCloseCommandList(commandList);
         return true;
     }
 
     void render()
     {
         // Build the command list
-        agpuResetCommandList(commandList);
+        agpuResetCommandList(commandList, nullptr);
+        agpuBeginFrame(commandList);
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
@@ -83,9 +84,14 @@ public:
         // Draw the objects
         agpuDrawElementsIndirect(commandList, 0);
 
+        // Finish the command list
+        agpuEndFrame(commandList);
+        agpuCloseCommandList(commandList);
+
         // Queue the command list
         auto queue = agpuGetDefaultCommandQueue(device);
         agpuAddCommandList(queue, commandList);
+
 
         swapBuffers();
     }

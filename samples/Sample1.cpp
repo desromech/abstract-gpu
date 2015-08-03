@@ -6,16 +6,23 @@ public:
     bool initializeSample()
     {
         commandList = agpuCreateCommandList(device, nullptr);
+        agpuCloseCommandList(commandList);
+
         return true;
     }
 
     void render()
     {
         // Build the command list
-        agpuResetCommandList(commandList);
+        agpuResetCommandList(commandList, nullptr);
+        agpuBeginFrame(commandList);
 
         agpuSetClearColor(commandList, 0, 0, 1, 0);
         agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
+
+        // Finish the command list
+        agpuEndFrame(commandList);
+        agpuCloseCommandList(commandList);
 
         // Queue the command list
         auto queue = agpuGetDefaultCommandQueue(device);

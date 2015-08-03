@@ -101,6 +101,11 @@ int SampleBase::main(int argc, const char **argv)
     openInfo.green_size = 5;
     openInfo.alpha_size = 5;
     openInfo.doublebuffer = 1;
+#ifdef _DEBUG
+    // Use the debug layer when debugging. This is useful for low level backends.
+    openInfo.debugLayer = true;
+#endif
+
     device = agpuOpenDevice(platform, &openInfo);
     if(!device)
     {

@@ -48,7 +48,6 @@ agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_pipeline
 {
     auto list = new agpu_command_list();
     list->device = device;
-    list->initialPipeline = initial_pipeline_state;
     if(initial_pipeline_state)
         list->usePipelineState(initial_pipeline_state);
     return list;
@@ -254,12 +253,22 @@ agpu_error _agpu_command_list::close()
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::reset()
+agpu_error _agpu_command_list::reset(agpu_pipeline_state* initial_pipeline_state)
 {
     closed = false;
     commands.clear();
-    if (initialPipeline)
-        usePipelineState(initialPipeline);
+    if (initial_pipeline_state)
+        usePipelineState(initial_pipeline_state);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::beginFrame()
+{
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::endFrame()
+{
     return AGPU_OK;
 }
 
@@ -447,8 +456,20 @@ AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)
     return command_list->close();
 }
 
-AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list)
+AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state)
 {
     CHECK_POINTER(command_list);
-    return command_list->reset();
+    return command_list->reset(initial_pipeline_state);
+}
+
+AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list)
+{
+    CHECK_POINTER(command_list);
+    return command_list->beginFrame();
+}
+
+AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
+{
+    CHECK_POINTER(command_list);
+    return command_list->endFrame();
 }
