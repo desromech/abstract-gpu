@@ -53,6 +53,7 @@ protected:
     agpu_buffer *createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData);
     agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
     agpu_buffer *createImmutableDrawBuffer(size_t capacity, void *initialData);
+    agpu_buffer *createUploadableUniformBuffer(size_t capacity, void *initialData);
 
     agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
     

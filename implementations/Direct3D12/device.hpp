@@ -10,6 +10,8 @@
 #include <dxgi1_4.h>
 #include <D3Dcompiler.h>
 #include <string>
+#include <mutex>
+#include <functional>
 #include <wrl.h>
 
 #include "object.hpp"
@@ -39,12 +41,23 @@ public:
     agpu_command_queue *defaultCommandQueue;
 
 public:
+    agpu_error withTransferQueue(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &)> function);
+    agpu_error withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function);
+    
+    agpu_error waitForMemoryTransfer();
+
     // Device objects
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> d3dDevice;
     ComPtr<ID3D12Resource> mainFrameBufferTargets[MaxFrameCount];
+
+    // Descriptor heaprs.
     ComPtr<ID3D12DescriptorHeap> renderTargetViewHeap;
+    ComPtr<ID3D12DescriptorHeap> shaderResourcesViewHeaps[4];
+    ComPtr<ID3D12DescriptorHeap> samplersViewHeaps[4];
+
     UINT renderTargetViewDescriptorSize;
+    UINT shaderResourceViewDescriptorSize;
 
     int frameCount;
     int windowWidth, windowHeight;
@@ -67,6 +80,17 @@ public:
 private:
     bool getWindowSize();
     agpu_error createGraphicsRootSignature();
+
+    // For immediate and blocking data transferring.
+    ComPtr<ID3D12CommandAllocator> transferCommandAllocator;
+    ComPtr<ID3D12GraphicsCommandList> transferCommandList;
+
+    std::mutex transferMutex;
+    ComPtr<ID3D12CommandQueue> transferCommandQueue;
+    HANDLE transferFenceEvent;
+    ComPtr<ID3D12Fence> transferFence;
+    UINT64 transferFenceValue;
+
 };
 
 #endif //_AGPU_DEVICE_HPP_

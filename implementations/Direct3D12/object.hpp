@@ -38,8 +38,11 @@ public:
         assert(old > 0 && "the object has to still exist");
         if(old == 0)
             return AGPU_INVALID_OPERATION;
-        else if(old == 1)
+        else if (old == 1)
+        {
             static_cast<ST*> (this)->lostReferences();
+            delete static_cast<ST*> (this);
+        }
         return AGPU_OK;
 
     }

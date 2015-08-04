@@ -21,7 +21,10 @@ public:
     agpu_error usePipelineState(agpu_pipeline_state* pipeline);
     agpu_error useVertexBinding(agpu_vertex_binding* vertex_binding);
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
+    agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
+    agpu_error useShaderResources(agpu_shader_resource_binding* binding);
+    agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
     agpu_error drawElementsIndirect(agpu_size offset);
     agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error setStencilReference(agpu_float reference);
@@ -50,6 +53,9 @@ public:
     float clearColor[4];
     float clearDepth;
     int clearStencil;
+
+private:
+    agpu_error setCommonState();
 };
 
 #endif //AGPU_D3D12_COMMAND_LIST_HPP_

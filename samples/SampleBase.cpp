@@ -328,3 +328,14 @@ agpu_buffer *SampleBase::createImmutableDrawBuffer(size_t capacity, void *initia
     desc.stride = agpu_uint(commandSize);
     return agpuCreateBuffer(device, &desc, initialData);
 }
+
+agpu_buffer *SampleBase::createUploadableUniformBuffer(size_t capacity, void *initialData)
+{
+    agpu_buffer_description desc;
+    desc.size = agpu_uint(capacity);
+    desc.usage = AGPU_DYNAMIC;
+    desc.binding = AGPU_UNIFORM_BUFFER;
+    desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
+    desc.stride = 0;
+    return agpuCreateBuffer(device, &desc, initialData);
+}

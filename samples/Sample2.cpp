@@ -11,6 +11,13 @@ static uint32_t indices[] = {
     0, 1, 2
 };
 
+struct TransformationState
+{
+    glm::mat4 projectionMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 modelMatrix;
+};
+
 class Sample2: public SampleBase
 {
 public:
@@ -41,11 +48,18 @@ public:
         // Create the vertex and the index buffer
         vertexBuffer = createImmutableVertexBuffer(3, sizeof(vertices[0]), vertices);
         indexBuffer = createImmutableIndexBuffer(3, sizeof(indices[0]), indices);
+
+        // Create the transformation buffer.
+        transformationBuffer = createUploadableUniformBuffer(sizeof(TransformationState), nullptr);
+
+        // Create the shader bindings.
+        shaderBindings = agpuCreateShaderResourceBinding(device, 0);
+        agpuBindUniformBuffer(shaderBindings, 0, transformationBuffer);
         
         // Create the command buffer
         agpu_draw_elements_command command;
         memset(&command, 0, sizeof(command));
-        command.count = 3;
+        command.index_count = 3;
         command.instance_count = 1;
         drawBuffer = createImmutableDrawBuffer(1, &command);
         
@@ -62,6 +76,15 @@ public:
 
     void render()
     {
+        // Compute the projection matrix
+        float aspect = float(screenWidth) / float(screenHeight);
+        float h = 2.0;
+        float w = h*aspect;
+        transformationState.projectionMatrix = glm::ortho(-w, w, -h, h, -10.0f, 10.0f);
+
+        // Upload the transformation state.
+        agpuUploadBufferData(transformationBuffer, 0, sizeof(transformationState), &transformationState);
+
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, pipeline);
@@ -72,25 +95,16 @@ public:
         agpuSetClearColor(commandList, 0, 0, 0, 0);
         agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
 
-        // Compute the projection matrix
-        float aspect = float(screenWidth) / float(screenHeight);
-        float h = 2.0;
-        float w = h*aspect;
-        projectionMatrix = glm::ortho(-w, w, -h, h, -10.0f, 10.0f);
-
-        // Set some matrices.
-        agpuSetUniformMatrix4f(commandList, agpuGetUniformLocation(pipeline, "projectionMatrix"), 1, false, (agpu_float*)&projectionMatrix);
-        agpuSetUniformMatrix4f(commandList, agpuGetUniformLocation(pipeline, "viewMatrix"), 1, false, (agpu_float*)&viewMatrix);
-        agpuSetUniformMatrix4f(commandList, agpuGetUniformLocation(pipeline, "modelMatrix"), 1, false, (agpu_float*)&modelMatrix);
-
         // Use the vertices and the indices.
         agpuUseVertexBinding(commandList, vertexBinding);
         agpuUseIndexBuffer(commandList, indexBuffer);
         agpuUseDrawIndirectBuffer(commandList, drawBuffer);
         agpuSetPrimitiveTopology(commandList, AGPU_TRIANGLES);
+        agpuUseShaderResources(commandList, shaderBindings);
 
         // Draw the objects
-        agpuDrawElementsIndirect(commandList, 0);
+        agpuDrawElements(commandList, 3, 1, 0, 0, 0);
+        //agpuDrawElementsIndirect(commandList, 0);
 
         // Finish the command list
         agpuEndFrame(commandList);
@@ -103,6 +117,23 @@ public:
         swapBuffers();
     }
     
+    void shutdownSample()
+    {
+        agpuReleaseBuffer(vertexBuffer);
+        agpuReleaseBuffer(indexBuffer);
+        agpuReleaseBuffer(transformationBuffer);
+        agpuReleaseBuffer(drawBuffer);
+        agpuReleaseShaderResourceBinding(shaderBindings);
+        agpuReleaseVertexLayout(vertexLayout);
+        agpuReleaseVertexBinding(vertexBinding);
+        agpuReleasePipelineState(pipeline);
+        agpuReleaseCommandList(commandList);
+        agpuReleaseCommandAllocator(commandAllocator);
+    }
+
+    agpu_buffer *transformationBuffer;
+    agpu_shader_resource_binding *shaderBindings;
+
     agpu_buffer *vertexBuffer;
     agpu_buffer *indexBuffer;
     agpu_buffer *drawBuffer;
@@ -112,9 +143,7 @@ public:
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
     
-    glm::mat4 projectionMatrix;
-    glm::mat4 viewMatrix;
-    glm::mat4 modelMatrix;
+    TransformationState transformationState;
 };
 
 SAMPLE_MAIN(Sample2)

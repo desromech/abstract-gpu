@@ -186,7 +186,7 @@ agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buff
 
         for (size_t j = 0; j < attrib.rows; ++j)
         {
-            element.SemanticIndex = j;
+            element.SemanticIndex = (UINT)j;
             inputElements.push_back(element);
         }
     }

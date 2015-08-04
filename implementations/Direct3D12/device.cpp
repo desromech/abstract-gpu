@@ -5,31 +5,10 @@
 #include "pipeline_state.hpp"
 #include "pipeline_builder.hpp"
 #include "shader.hpp"
+#include "shader_resource_binding.hpp"
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
-
-inline void extractBindingRange(unsigned int bindingSet, int &rangeStart, int &rangeSize)
-{
-    int firstBit = 0;
-    bool gotBit = false;
-    int bitCount = 0;
-    while (bindingSet != 0)
-    {
-        if (gotBit)
-        {
-            ++rangeSize;
-        }
-        else if(bindingSet & 1)
-        {
-            gotBit = true;
-            rangeStart = bitCount;
-            ++rangeSize;
-        }
-
-        ++bitCount;
-        bindingSet >>= 1;
-    }
-}
+#include "buffer.hpp"
 
 _agpu_device::_agpu_device()
 {
@@ -43,6 +22,7 @@ void _agpu_device::lostReferences()
     {
         waitForPreviousFrame();
         CloseHandle(frameFenceEvent);
+        CloseHandle(transferFenceEvent);
     }
 
     if (defaultCommandQueue)
@@ -118,14 +98,30 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     // Create descriptor heaps
     {
         // Describe and create a render target view (RTV) descriptor heap.
-        D3D12_DESCRIPTOR_HEAP_DESC renderTargetViewHeapDesc = {};
-        renderTargetViewHeapDesc.NumDescriptors = frameCount;
-        renderTargetViewHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        renderTargetViewHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        if (FAILED(d3dDevice->CreateDescriptorHeap(&renderTargetViewHeapDesc, IID_PPV_ARGS(&renderTargetViewHeap))))
+        D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+        heapDesc.NumDescriptors = frameCount;
+        heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+        heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+        if (FAILED(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&renderTargetViewHeap))))
             return false;
 
         renderTargetViewDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    }
+
+    {
+        // Describe and create a constant buffer view descriptor heap.
+        D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+        heapDesc.NumDescriptors = 16;
+        heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        shaderResourceViewDescriptorSize= d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+        for (int i = 0; i < 4; ++i)
+        {
+            if (FAILED(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&shaderResourcesViewHeaps[i]))))
+                return false;
+        }
+        
     }
 
     // Create frame resources.
@@ -143,6 +139,27 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         }
     }
 
+    // Create the transfer command queue.
+    {
+        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+        if (FAILED(d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&transferCommandQueue))))
+            return false;
+
+        // Create the transfer command allocator.
+        if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&transferCommandAllocator))))
+            return false;
+
+        // Create the transfer command list.
+        if (FAILED(d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, transferCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&transferCommandList))))
+            return false;
+
+        if (FAILED(transferCommandList->Close()))
+            return false;
+    }
+
     // Create frame synchronization fence.
     {
         if (FAILED(d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&frameFence))))
@@ -152,6 +169,18 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         // Create an event handle to use for frame synchronization.
         frameFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
         if (frameFenceEvent == nullptr)
+            return false;
+    }
+
+    // Create transfer synchronization fence.
+    {
+        if (FAILED(d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&transferFence))))
+            return false;
+        transferFenceValue = 1;
+
+        // Create an event handle to use for frame synchronization.
+        transferFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+        if (transferFenceEvent == nullptr)
             return false;
     }
 
@@ -245,6 +274,37 @@ agpu_error _agpu_device::waitForPreviousFrame()
     return AGPU_OK;
 }
 
+agpu_error _agpu_device::withTransferQueue(std::function<agpu_error (const ComPtr<ID3D12CommandQueue> &)> function)
+{
+    std::unique_lock<std::mutex> l(transferMutex);
+    return function(transferCommandQueue);
+}
+
+agpu_error _agpu_device::withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function)
+{
+    std::unique_lock<std::mutex> l(transferMutex);
+    transferCommandAllocator->Reset();
+    transferCommandList->Reset(transferCommandAllocator.Get(), nullptr);
+    return function(transferCommandQueue, transferCommandList);
+}
+
+agpu_error _agpu_device::waitForMemoryTransfer()
+{
+    // Signal the fence.
+    auto fence = transferFenceValue;
+    ERROR_IF_FAILED(transferCommandQueue->Signal(transferFence.Get(), fence));
+    ++transferFenceValue;
+
+    // Wait until previous frame is finished.
+    if (transferFence->GetCompletedValue() < fence)
+    {
+        ERROR_IF_FAILED(transferFence->SetEventOnCompletion(fence, transferFenceEvent));
+        WaitForSingleObject(transferFenceEvent, INFINITE);
+    }
+
+    return AGPU_OK;
+}
+
 // Exported C functions
 AGPU_EXPORT agpu_error agpuAddDeviceReference(agpu_device* device)
 {
@@ -273,12 +333,17 @@ AGPU_EXPORT agpu_error agpuSwapBuffers(agpu_device* device)
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_buffer::create(device, description, initial_data);
 }
 
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout *layout)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_vertex_binding::create(device, layout);
 }
 
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
@@ -293,6 +358,14 @@ AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type 
     if (!device)
         return nullptr;
     return agpu_shader::create(device, type);
+}
+
+AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding(agpu_device* device, agpu_int bindingBank)
+{
+    if (!device)
+        return nullptr;
+
+    return agpu_shader_resource_binding::create(device, bindingBank);
 }
 
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device)

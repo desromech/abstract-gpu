@@ -12,12 +12,10 @@ inline GLenum mapPrimitiveTopology(agpu_primitive_topology topology)
     case AGPU_LINES_ADJACENCY: return GL_LINES_ADJACENCY;
     case AGPU_LINE_STRIP: return GL_LINE_STRIP;
     case AGPU_LINE_STRIP_ADJACENCY: return GL_LINE_STRIP_ADJACENCY;
-    case AGPU_LINE_LOOP: return GL_LINE_LOOP;
     case AGPU_TRIANGLES: return GL_TRIANGLES;
     case AGPU_TRIANGLES_ADJACENCY: return GL_TRIANGLES_ADJACENCY;
     case AGPU_TRIANGLE_STRIP: return GL_TRIANGLE_STRIP;
     case AGPU_TRIANGLE_STRIP_ADJACENCY: return GL_TRIANGLE_STRIP_ADJACENCY;
-    case AGPU_TRIANGLE_FAN: return GL_TRIANGLE_FAN;
     case AGPU_PATCHES: return GL_PATCHES;
     default: abort();
     }

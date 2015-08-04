@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\implementations\Direct3D12\buffer.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_allocator.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_list.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_queue.cpp" />
@@ -159,20 +160,24 @@
     <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_state.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\platform.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\shader.cpp" />
+    <ClCompile Include="..\..\..\implementations\Direct3D12\shader_resource_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_layout.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\implementations\Direct3D12\buffer.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\command_allocator.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\command_list.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\common.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\common_commands.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\device.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\object.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_state.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\platform.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\shader.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\shader_resource_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\vertex_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\vertex_layout.hpp" />
     <ClInclude Include="..\..\..\include\AGPU\agpu.h" />

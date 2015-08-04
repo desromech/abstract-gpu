@@ -1,5 +1,28 @@
 #include "command_allocator.hpp"
 #include "command_list.hpp"
+#include "common_commands.hpp"
+#include "pipeline_state.hpp"
+#include "buffer.hpp"
+#include "vertex_binding.hpp"
+#include "shader_resource_binding.hpp"
+
+inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topology)
+{
+    switch (topology)
+    {
+    case AGPU_POINTS: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+    case AGPU_LINES: return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+    case AGPU_LINES_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+    case AGPU_LINE_STRIP: return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+    case AGPU_LINE_STRIP_ADJACENCY:return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+    case AGPU_TRIANGLES: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    case AGPU_TRIANGLES_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+    case AGPU_TRIANGLE_STRIP: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+    case AGPU_TRIANGLE_STRIP_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+    default:
+        abort();
+    }
+}
 
 _agpu_command_list::_agpu_command_list()
 {
@@ -16,14 +39,31 @@ void _agpu_command_list::lostReferences()
 _agpu_command_list *_agpu_command_list::create(agpu_device *device, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
 {
     ComPtr<ID3D12GraphicsCommandList> commandList;
-    // TODO: Use the initial pipeline state.
-    if (FAILED(device->d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator->allocator.Get(), nullptr, IID_PPV_ARGS(&commandList))))
+    ID3D12PipelineState *state = nullptr;
+    if (initialState)
+        state = initialState->state.Get();
+
+    if (FAILED(device->d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator->allocator.Get(), state, IID_PPV_ARGS(&commandList))))
         return nullptr;
 
     auto list = new _agpu_command_list();
     list->device = device;
     list->commandList = commandList;
+    if (list->setCommonState() < 0)
+    {
+        list->release();
+        return nullptr;
+    }
+
     return list;
+}
+
+agpu_error _agpu_command_list::setCommonState()
+{
+    ID3D12DescriptorHeap *heaps[] = { device->shaderResourcesViewHeaps[0].Get() };
+    commandList->SetDescriptorHeaps(1, heaps);
+    commandList->SetGraphicsRootSignature(device->graphicsRootSignature.Get());
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
@@ -81,22 +121,53 @@ agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
 
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(pipeline);
+    commandList->SetPipelineState(pipeline->state.Get());
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useVertexBinding(agpu_vertex_binding* vertex_binding)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(vertex_binding);
+    commandList->IASetVertexBuffers(0, (UINT)vertex_binding->vertexBuffers.size(), &vertex_binding->vertexBufferViews[0]);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useIndexBuffer(agpu_buffer* index_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    if (index_buffer->description.binding != AGPU_ELEMENT_ARRAY_BUFFER)
+        return AGPU_ERROR;
+
+    commandList->IASetIndexBuffer(&index_buffer->view.indexBuffer);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
+{
+    commandList->IASetPrimitiveTopology(mapPrimitiveTopology(topology));
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 {
     return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* binding)
+{
+    CHECK_POINTER(binding);
+
+    auto &heap = device->shaderResourcesViewHeaps[binding->bank];
+    auto desc = heap->GetGPUDescriptorHandleForHeapStart();
+    desc.ptr += binding->heapOffset;
+    commandList->SetGraphicsRootDescriptorTable(binding->bank, desc);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+{
+    commandList->DrawIndexedInstanced(index_count, instance_count, first_index, base_vertex, base_instance);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
@@ -184,37 +255,24 @@ agpu_error _agpu_command_list::reset(_agpu_command_allocator *allocator, agpu_pi
 {
     CHECK_POINTER(allocator);
 
-    // TODO: Use the initial pipeline
-    ERROR_IF_FAILED(commandList->Reset(allocator->allocator.Get(), nullptr));
-    return AGPU_OK;
+    ID3D12PipelineState *state = nullptr;
+    if (initial_pipeline_state)
+        state = initial_pipeline_state->state.Get();
+
+    ERROR_IF_FAILED(commandList->Reset(allocator->allocator.Get(), state));
+    return setCommonState();
 }
 
 agpu_error _agpu_command_list::beginFrame()
 {
-    D3D12_RESOURCE_BARRIER barrier;
-    memset(&barrier, 0, sizeof(barrier));
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = device->mainFrameBufferTargets[device->frameIndex].Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
+    auto barrier = resourceTransitionBarrier(device->mainFrameBufferTargets[device->frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     commandList->ResourceBarrier(1, &barrier);
     return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::endFrame()
 {
-    D3D12_RESOURCE_BARRIER barrier;
-    memset(&barrier, 0, sizeof(barrier));
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = device->mainFrameBufferTargets[device->frameIndex].Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
+    auto barrier = resourceTransitionBarrier(device->mainFrameBufferTargets[device->frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     commandList->ResourceBarrier(1, &barrier);
     return AGPU_OK;
 }
@@ -275,42 +333,62 @@ AGPU_EXPORT agpu_error agpuUsePipelineState(agpu_command_list* command_list, agp
 
 AGPU_EXPORT agpu_error agpuUseVertexBinding(agpu_command_list* command_list, agpu_vertex_binding* vertex_binding)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->useVertexBinding(vertex_binding);
 }
 
 AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_buffer* index_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->useIndexBuffer(index_buffer);
 }
 
 AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->setPrimitiveTopology(topology);
 }
 
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->useDrawIndirectBuffer(draw_buffer);
+}
+
+AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding)
+{
+    CHECK_POINTER(command_list);
+    return command_list->useShaderResources(binding);
+}
+
+AGPU_EXPORT agpu_error agpuDrawElements(agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+{
+    CHECK_POINTER(command_list);
+    return command_list->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
 }
 
 AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->drawElementsIndirect(offset);
 }
 
 AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->multiDrawElementsIndirect(offset, drawcount);
 }
 
 AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_float reference)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->setStencilReference(reference);
 }
 
 AGPU_EXPORT agpu_error agpuSetAlphaReference(agpu_command_list* command_list, agpu_float reference)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    return command_list->setAlphaReference(reference);
 }
 
 AGPU_EXPORT agpu_error agpuSetUniformi(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
