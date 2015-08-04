@@ -13,17 +13,17 @@ public:
 	
     void lostReferences();
 	
-    static agpu_vertex_binding *createVertexBinding(agpu_device *device);
+    static agpu_vertex_binding *createVertexBinding(agpu_device *device, agpu_vertex_layout *layout);
 
-	agpu_error addVertexBufferBindings ( agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+    agpu_error bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers);
 	
-	agpu_error activateVertexAttributes ( agpu_size stride, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
 	agpu_error activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute );
 	
 	void bind();
 	
 public:
 	agpu_device *device;
+    agpu_vertex_layout *vertexLayout;
 	GLuint handle;
 };
 

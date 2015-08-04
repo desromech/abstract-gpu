@@ -18,6 +18,7 @@ typedef struct _agpu_command_list agpu_command_list;
 typedef struct _agpu_texture agpu_texture;
 typedef struct _agpu_buffer agpu_buffer;
 typedef struct _agpu_vertex_binding agpu_vertex_binding;
+typedef struct _agpu_vertex_layout agpu_vertex_layout;
 typedef struct _agpu_shader agpu_shader;
 typedef struct _agpu_framebuffer agpu_framebuffer;
 
@@ -37,6 +38,13 @@ typedef enum {
 } agpu_error;
 
 typedef enum {
+	AGPU_PRIMITIVE_TYPE_POINT = 0,
+	AGPU_PRIMITIVE_TYPE_LINE = 1,
+	AGPU_PRIMITIVE_TYPE_TRIANGLE = 2,
+	AGPU_PRIMITIVE_TYPE_PATCH = 3,
+} agpu_primitive_type;
+
+typedef enum {
 	AGPU_POINTS = 0,
 	AGPU_LINES = 1,
 	AGPU_LINES_ADJACENCY = 2,
@@ -49,7 +57,7 @@ typedef enum {
 	AGPU_TRIANGLE_STRIP_ADJACENCY = 9,
 	AGPU_TRIANGLE_FAN = 10,
 	AGPU_PATCHES = 11,
-} agpu_primitive_mode;
+} agpu_primitive_topology;
 
 typedef enum {
 	AGPU_KEEP = 0,
@@ -128,11 +136,12 @@ typedef enum {
 } agpu_render_buffer_bit;
 
 typedef enum {
-	AGPU_SHADER_LANGUAGE_GLSL = 0,
-	AGPU_SHADER_LANGUAGE_EGLSL = 1,
-	AGPU_SHADER_LANGUAGE_SPIR_V = 2,
-	AGPU_SHADER_LANGUAGE_HLSL = 3,
-	AGPU_SHADER_LANGUAGE_BINARY = 4,
+	AGPU_SHADER_LANGUAGE_NONE = 0,
+	AGPU_SHADER_LANGUAGE_GLSL = 1,
+	AGPU_SHADER_LANGUAGE_EGLSL = 2,
+	AGPU_SHADER_LANGUAGE_SPIR_V = 3,
+	AGPU_SHADER_LANGUAGE_HLSL = 4,
+	AGPU_SHADER_LANGUAGE_BINARY = 5,
 } agpu_shader_language;
 
 typedef enum {
@@ -186,11 +195,14 @@ typedef struct agpu_draw_elements_command {
 
 /* Structure agpu_vertex_attrib_description. */
 typedef struct agpu_vertex_attrib_description {
+	agpu_uint buffer;
 	agpu_uint binding;
 	agpu_field_type type;
 	agpu_uint components;
+	agpu_uint rows;
 	agpu_bool normalized;
 	agpu_size offset;
+	agpu_uint divisor;
 } agpu_vertex_attrib_description;
 
 /* Global functions. */
@@ -209,22 +221,28 @@ typedef agpu_error (*agpuReleaseDevice_FUN) ( agpu_device* device );
 typedef agpu_command_queue* (*agpuGetDefaultCommandQueue_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_device* device );
 typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
-typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device );
+typedef agpu_vertex_layout* (*agpuCreateVertexLayout_FUN) ( agpu_device* device );
+typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device, agpu_vertex_layout* layout );
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
 typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device );
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
+typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
 AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device );
+AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout ( agpu_device* device );
+AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, agpu_vertex_layout* layout );
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device );
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
+AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
 
 /* Methods for interface agpu_pipeline_builder. */
 typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builder* pipeline_builder );
@@ -235,9 +253,9 @@ typedef agpu_size (*agpuGetPipelineBuildingLogLength_FUN) ( agpu_pipeline_builde
 typedef agpu_error (*agpuGetPipelineBuildingLog_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 typedef agpu_error (*agpuSetDepthState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 typedef agpu_error (*agpuSetStencilState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
-typedef agpu_error (*agpuSetAlphaTestingState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enable, agpu_compare_function function );
 typedef agpu_error (*agpuSetRenderTargetCount_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
-typedef agpu_error (*agpuSetPrimitiveTopology_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_mode topology );
+typedef agpu_error (*agpuSetPrimitiveType_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
+typedef agpu_error (*agpuSetVertexLayout_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
 
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipeline_builder );
@@ -247,9 +265,9 @@ AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* 
 AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
-AGPU_EXPORT agpu_error agpuSetAlphaTestingState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enable, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_mode topology );
+AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
+AGPU_EXPORT agpu_error agpuSetVertexLayout ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
 
 /* Methods for interface agpu_pipeline_state. */
 typedef agpu_error (*agpuAddPipelineStateReference_FUN) ( agpu_pipeline_state* pipeline_state );
@@ -290,6 +308,7 @@ typedef agpu_error (*agpuClear_FUN) ( agpu_command_list* command_list, agpu_bitf
 typedef agpu_error (*agpuUsePipelineState_FUN) ( agpu_command_list* command_list, agpu_pipeline_state* pipeline );
 typedef agpu_error (*agpuUseVertexBinding_FUN) ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuUseIndexBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* index_buffer );
+typedef agpu_error (*agpuSetPrimitiveTopology_FUN) ( agpu_command_list* command_list, agpu_primitive_topology topology );
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
 typedef agpu_error (*agpuDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset );
 typedef agpu_error (*agpuMultiDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
@@ -322,6 +341,7 @@ AGPU_EXPORT agpu_error agpuClear ( agpu_command_list* command_list, agpu_bitfiel
 AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, agpu_pipeline_state* pipeline );
 AGPU_EXPORT agpu_error agpuUseVertexBinding ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agpu_buffer* index_buffer );
+AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_command_list* command_list, agpu_primitive_topology topology );
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
 AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset );
 AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
@@ -362,11 +382,20 @@ AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size off
 /* Methods for interface agpu_vertex_binding. */
 typedef agpu_error (*agpuAddVertexBindingReference_FUN) ( agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuReleaseVertexBinding_FUN) ( agpu_vertex_binding* vertex_binding );
-typedef agpu_error (*agpuAddVertexBufferBindings_FUN) ( agpu_vertex_binding* vertex_binding, agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+typedef agpu_error (*agpuBindVertexBuffers_FUN) ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers );
 
 AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuReleaseVertexBinding ( agpu_vertex_binding* vertex_binding );
-AGPU_EXPORT agpu_error agpuAddVertexBufferBindings ( agpu_vertex_binding* vertex_binding, agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+AGPU_EXPORT agpu_error agpuBindVertexBuffers ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers );
+
+/* Methods for interface agpu_vertex_layout. */
+typedef agpu_error (*agpuAddVertexLayoutReference_FUN) ( agpu_vertex_layout* vertex_layout );
+typedef agpu_error (*agpuReleaseVertexLayout_FUN) ( agpu_vertex_layout* vertex_layout );
+typedef agpu_error (*agpuAddVertexAttributeBindings_FUN) ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+
+AGPU_EXPORT agpu_error agpuAddVertexLayoutReference ( agpu_vertex_layout* vertex_layout );
+AGPU_EXPORT agpu_error agpuReleaseVertexLayout ( agpu_vertex_layout* vertex_layout );
+AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
 
 /* Methods for interface agpu_shader. */
 typedef agpu_error (*agpuAddShaderReference_FUN) ( agpu_shader* shader );

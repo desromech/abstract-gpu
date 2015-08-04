@@ -283,6 +283,11 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_
     return AGPU_UNIMPLEMENTED;
 }
 
+AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer)
 {
     return AGPU_UNIMPLEMENTED;

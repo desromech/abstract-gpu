@@ -3,9 +3,9 @@
 #include "vertex_binding.hpp"
 #include "buffer.hpp"
 
-inline GLenum mapPrimitiveMode(agpu_primitive_mode mode)
+inline GLenum mapPrimitiveTopology(agpu_primitive_topology topology)
 {
-    switch (mode)
+    switch (topology)
     {
     case AGPU_POINTS: return GL_POINTS;
     case AGPU_LINES: return GL_LINES;
@@ -132,6 +132,14 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
     });
 }
 
+agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
+{
+    GLenum newPrimitiveMode = mapPrimitiveTopology(topology);
+    return addCommand([=] {
+        primitiveMode = newPrimitiveMode;
+    });
+}
+
 agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
 {
     return addCommand([=] {
@@ -142,7 +150,7 @@ agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
         currentIndexBuffer->bind();
         currentDrawBuffer->bind();
 
-        device->glDrawElementsIndirect(mapPrimitiveMode(currentPipeline->primitiveTopology), mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset));
+        device->glDrawElementsIndirect(primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset));
     });
 }
 
@@ -156,7 +164,7 @@ agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_
         currentIndexBuffer->bind();
         currentDrawBuffer->bind();
 
-        device->glMultiDrawElementsIndirect(mapPrimitiveMode(currentPipeline->primitiveTopology), mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
+        device->glMultiDrawElementsIndirect(primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
     });
 }
 
@@ -358,6 +366,12 @@ AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list
 {
     CHECK_POINTER(command_list);
     return command_list->useDrawIndirectBuffer(draw_buffer);
+}
+
+AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
+{
+    CHECK_POINTER(command_list);
+    return command_list->setPrimitiveTopology(topology);
 }
 
 AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset)

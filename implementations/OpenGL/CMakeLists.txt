@@ -22,6 +22,8 @@ set(AGPU_OpenGL_SOURCES
     platform.hpp
     vertex_binding.cpp
     vertex_binding.hpp
+    vertex_layout.cpp
+    vertex_layout.hpp
 )
 
 include_directories(${OPENGL_INCLUDE_DIR})

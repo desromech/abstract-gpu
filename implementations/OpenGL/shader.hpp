@@ -32,6 +32,7 @@ public:
     GLuint handle;
     bool compiled;
     std::vector<LocationBinding> attributeBindings;
+
 };
 
 

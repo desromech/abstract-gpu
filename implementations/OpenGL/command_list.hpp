@@ -26,6 +26,7 @@ public:
     agpu_error useVertexBinding(agpu_vertex_binding* vertex_binding);
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
+    agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
     agpu_error drawElementsIndirect(agpu_size offset);
     agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error setStencilReference(agpu_float reference);
@@ -54,6 +55,7 @@ public:
     agpu_vertex_binding *currentVertexBinding;
     agpu_buffer *currentIndexBuffer;
     agpu_buffer *currentDrawBuffer;
+    GLenum primitiveMode;
 
     void execute();
 

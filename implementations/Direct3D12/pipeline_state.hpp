@@ -10,8 +10,11 @@ public:
 
     void lostReferences();
 
-public:
+    agpu_int getUniformLocation(agpu_cstring name);
 
+public:
+    agpu_device *device;
+    ComPtr<ID3D12PipelineState> state;
 };
 
 #endif //AGPU_D3D12_PIPELINE_STATE_HPP

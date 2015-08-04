@@ -10,6 +10,15 @@ void _agpu_pipeline_state::lostReferences()
 
 }
 
+agpu_int _agpu_pipeline_state::getUniformLocation(agpu_cstring name)
+{
+    if (!name)
+        return -1;
+
+    // TODO: Implement this
+    return -1;
+}
+
 // Exported C interface
 AGPU_EXPORT agpu_error agpuAddPipelineStateReference(agpu_pipeline_state* pipeline_state)
 {
@@ -25,6 +34,7 @@ AGPU_EXPORT agpu_error agpuReleasePipelineState(agpu_pipeline_state* pipeline_st
 
 AGPU_EXPORT agpu_int agpuGetUniformLocation(agpu_pipeline_state* pipeline_state, agpu_cstring name)
 {
-    // Not supported for now.
-    return -1;
+    if (!pipeline_state)
+        return -1;
+    return pipeline_state->getUniformLocation(name);
 }

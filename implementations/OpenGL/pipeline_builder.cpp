@@ -31,13 +31,9 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     stencilWriteMask = ~0;
     stencilReadMask = ~0;
 
-    // Alpha testing
-    alphaTestEnabled = false;
-    alphaTestFunction = AGPU_GREATER;
-
     // Miscellaneos
     renderTargetCount = 1;
-    primitiveTopology = AGPU_POINTS;
+    primitiveType = AGPU_PRIMITIVE_TYPE_POINT;
 }
 
 void _agpu_pipeline_builder::lostReferences()
@@ -90,13 +86,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     pipeline->stencilEnabled = stencilEnabled;
     pipeline->stencilWriteMask = stencilWriteMask;
     pipeline->stencilReadMask = stencilReadMask;
-    
-    // Alpha testing
-    pipeline->alphaTestEnabled = alphaTestEnabled;
-	pipeline->alphaTestFunction = mapCompareFunction(alphaTestFunction);
 
     // Miscellaneous
-    pipeline->primitiveTopology = primitiveTopology;
+    pipeline->primitiveType = primitiveType;
     pipeline->renderTargetCount = renderTargetCount;
 
 	return pipeline;
@@ -121,7 +113,7 @@ agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
 
 agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
 {
-	device->glGetProgramInfoLog(programHandle, (GLsizei)buffer_size, nullptr, buffer);
+	device->glGetProgramInfoLog(programHandle, (GLsizei)(buffer_size - 1), nullptr, buffer);
 	return AGPU_OK;
 }
 
@@ -141,22 +133,20 @@ agpu_error _agpu_pipeline_builder::setStencilState ( agpu_bool enabled, agpu_int
 	return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setAlphaTestingState ( agpu_bool enable, agpu_compare_function function )
-{
-	alphaTestEnabled = enable;
-	alphaTestFunction = function;
-	return AGPU_OK;
-}
-
 agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
 {
     renderTargetCount = count;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPrimitiveTopology(agpu_primitive_mode topology)
+agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_type type)
 {
-    primitiveTopology = topology;
+    primitiveType = type;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
+{
     return AGPU_OK;
 }
 
@@ -210,12 +200,6 @@ AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_bui
 	return pipeline_builder->setStencilState(enabled, writeMask, readMask);
 }
 
-AGPU_EXPORT agpu_error agpuSetAlphaTestingState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enable, agpu_compare_function function )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->setAlphaTestingState(enable, function);
-}
-
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count )
 {
 	CHECK_POINTER(pipeline_builder);
@@ -223,8 +207,14 @@ AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipelin
 
 }
 
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_pipeline_builder* pipeline_builder, agpu_primitive_mode topology)
+AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type)
 {
     CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setPrimitiveTopology(topology);
+    return pipeline_builder->setPrimitiveType(type);
+}
+
+AGPU_EXPORT agpu_error agpuSetVertexLayout(agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setVertexLayout(layout);
 }

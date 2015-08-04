@@ -8,6 +8,7 @@
 #include "command_list.hpp"
 #include "command_queue.hpp"
 #include "vertex_binding.hpp"
+#include "vertex_layout.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -174,11 +175,18 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_des
     return agpu_buffer::createBuffer(device, *description, initial_data);
 }
 
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device )
+AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
 {
     if (!device)
         return nullptr;
-    return agpu_vertex_binding::createVertexBinding(device);
+    return agpu_vertex_layout::createVertexLayout(device);
+}
+
+AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout* layout)
+{
+    if (!device)
+        return nullptr;
+    return agpu_vertex_binding::createVertexBinding(device, layout);
 }
 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
@@ -207,4 +215,14 @@ AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
     if (!device)
         return nullptr;
     return device->defaultCommandQueue;
+}
+
+AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_GLSL;
+}
+
+AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_GLSL;
 }

@@ -20,10 +20,10 @@ public:
     agpu_error getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
     agpu_error setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
     agpu_error setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
-    agpu_error setAlphaTestingState ( agpu_bool enable, agpu_compare_function function );
     agpu_error setRenderTargetCount ( agpu_int count );
-    agpu_error setPrimitiveTopology(agpu_primitive_mode topology);
-    
+    agpu_error setPrimitiveType(agpu_primitive_type type);
+    agpu_error setVertexLayout(agpu_vertex_layout* layout);
+
     agpu_error reset();
         
 public:
@@ -40,14 +40,10 @@ public:
     bool stencilEnabled;
     int stencilWriteMask;
     int stencilReadMask;
-    
-    // Alpha testing
-    bool alphaTestEnabled;
-	agpu_compare_function alphaTestFunction;
 
     // Miscellaneos
     int renderTargetCount;
-    agpu_primitive_mode primitiveTopology;
+    agpu_primitive_type primitiveType;
 };
 
 

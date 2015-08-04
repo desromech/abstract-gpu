@@ -24,6 +24,26 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\samples\SampleBase.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleFragment.hlsl">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleVertex.hlsl">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleFragment.glsl">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleVertex.glsl">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9B7B2C60-6536-4694-9FAF-F50436576C7E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

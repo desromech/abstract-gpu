@@ -32,6 +32,7 @@
     <ClCompile Include="..\..\..\implementations\OpenGL\shader.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\utility.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\vertex_binding.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\vertex_layout.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\implementations\OpenGL\buffer.hpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="..\..\..\implementations\OpenGL\shader.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\utility.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\vertex_binding.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\vertex_layout.hpp" />
     <ClInclude Include="..\..\..\include\AGPU\agpu.h" />
   </ItemGroup>
   <ItemGroup>

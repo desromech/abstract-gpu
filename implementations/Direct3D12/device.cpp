@@ -2,6 +2,34 @@
 #include "command_queue.hpp"
 #include "command_allocator.hpp"
 #include "command_list.hpp"
+#include "pipeline_state.hpp"
+#include "pipeline_builder.hpp"
+#include "shader.hpp"
+#include "vertex_binding.hpp"
+#include "vertex_layout.hpp"
+
+inline void extractBindingRange(unsigned int bindingSet, int &rangeStart, int &rangeSize)
+{
+    int firstBit = 0;
+    bool gotBit = false;
+    int bitCount = 0;
+    while (bindingSet != 0)
+    {
+        if (gotBit)
+        {
+            ++rangeSize;
+        }
+        else if(bindingSet & 1)
+        {
+            gotBit = true;
+            rangeStart = bitCount;
+            ++rangeSize;
+        }
+
+        ++bitCount;
+        bindingSet >>= 1;
+    }
+}
 
 _agpu_device::_agpu_device()
 {
@@ -38,6 +66,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     // Read some of the parameters.
     window = (HWND)openInfo->window;
     frameCount = openInfo->doublebuffer ? 2 : 1;
+    isDebugEnabled = openInfo->debugLayer;
 
     // Get the window size.
     getWindowSize();
@@ -128,7 +157,51 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     isOpened = true;
 
+    // Create the graphics root signature.
+    if (createGraphicsRootSignature() < 0)
+        return false;
+
     return true;
+}
+
+agpu_error _agpu_device::createGraphicsRootSignature()
+{
+    D3D12_ROOT_SIGNATURE_DESC desc;
+    memset(&desc, 0, sizeof(desc));
+    desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+    D3D12_DESCRIPTOR_RANGE ranges[1];
+    D3D12_ROOT_PARAMETER rootParameters[1];
+    memset(ranges, 0, sizeof(ranges));
+    memset(rootParameters, 0, sizeof(rootParameters));
+
+    // Simple descriptor table
+    // 16 Constant buffers
+    ranges[0].BaseShaderRegister = 0;
+    ranges[0].NumDescriptors = 16;
+    ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+    ranges[0].RegisterSpace = 0;
+    ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;;
+
+    // Shared uniform buffers.
+    rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+    rootParameters[0].DescriptorTable.pDescriptorRanges = &ranges[0];
+    rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+    desc.NumParameters = 1;
+    desc.pParameters = rootParameters;
+
+    ComPtr<ID3DBlob> signature;
+    ComPtr<ID3DBlob> error;
+    if (FAILED(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error)))
+        return AGPU_ERROR;
+
+    ComPtr<ID3D12RootSignature> rootSignature;
+    if (FAILED(d3dDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&graphicsRootSignature))))
+        return AGPU_ERROR;
+
+    return AGPU_OK;
 }
 
 bool _agpu_device::getWindowSize()
@@ -203,19 +276,31 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_descr
     return nullptr;
 }
 
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device)
+AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout *layout)
 {
     return nullptr;
+}
+
+AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
+{
+    if (!device)
+        return nullptr;
+    return agpu_vertex_layout::create(device);
 }
 
 AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type type)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_shader::create(device, type);
 }
 
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_pipeline_builder::create(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device)
@@ -230,4 +315,14 @@ AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_c
     if (!device)
         return nullptr;
     return agpu_command_list::create(device, allocator, initial_pipeline_state);
+}
+
+AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_BINARY;
+}
+
+AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_HLSL;
 }

@@ -23,7 +23,7 @@ AGPU_EXPORT agpu_error agpuReleaseVertexBinding(agpu_vertex_binding* vertex_bind
     return vertex_binding->release();
 }
 
-AGPU_EXPORT agpu_error agpuAddVertexBufferBindings(agpu_vertex_binding* vertex_binding, agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
+AGPU_EXPORT agpu_error agpuBindVertexBuffers(agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers)
 {
     return AGPU_UNIMPLEMENTED;
 }

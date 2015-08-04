@@ -59,16 +59,18 @@
 		</struct>
         
         <struct name="vertex_attrib_description">
+            <field name="buffer" type="uint" />
             <field name="binding" type="uint" />
             <field name="type" type="field_type" />
             <field name="components" type="uint" />
+            <field name="rows" type="uint" />
             <field name="normalized" type="bool" />
             <field name="offset" type="size" />
+            <field name="divisor" type="uint" />
         </struct>
 	</structs>
     
     <constants>
-        
         <enum name="error">
             <constant name="Ok" value="0" />
             <constant name="Error" value="-1" />
@@ -83,8 +85,15 @@
             <constant name="LinkingError" value="-9" />
             <constant name="CommandListClosed" value="-10" />
         </enum>
-        
-		<enum name="primitive_mode">
+
+		<enum name="primitive_type">
+            <constant name="PrimitiveTypePoint" value="0" />
+            <constant name="PrimitiveTypeLine" value="1" />
+            <constant name="PrimitiveTypeTriangle" value="2" />
+            <constant name="PrimitiveTypePatch" value="3" />
+		</enum>
+                
+		<enum name="primitive_topology">
             <constant name="Points" value="0" />
 
             <constant name="Lines" value="1" />
@@ -179,11 +188,12 @@
 		</enum>
 
 		<enum name="shader_language">
-			<constant name="ShaderLanguageGlsl" value="0" />
-            <constant name="ShaderLanguageEglsl" value="1" />
-			<constant name="ShaderLanguageSpirV" value="2" />
-            <constant name="ShaderLanguageHlsl" value="3" />
-            <constant name="ShaderLanguageBinary" value="4" />
+            <constant name="ShaderLanguageNone" value="0" />
+			<constant name="ShaderLanguageGlsl" value="1" />
+            <constant name="ShaderLanguageEglsl" value="2" />
+			<constant name="ShaderLanguageSpirV" value="3" />
+            <constant name="ShaderLanguageHlsl" value="4" />
+            <constant name="ShaderLanguageBinary" value="5" />
 		</enum>
         
         <enum name="field_type">
@@ -235,7 +245,11 @@
                 <arg name="initial_data" type="pointer" />
             </method>
 
+            <method name="createVertexLayout" cname="CreateVertexLayout" returnType="vertex_layout*">
+            </method>
+
             <method name="createVertexBinding" cname="CreateVertexBinding" returnType="vertex_binding*">
+                <arg name="layout" type="vertex_layout*" />
             </method>
             
             <method name="createShader" cname="CreateShader" returnType="shader*">
@@ -251,6 +265,13 @@
             <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
                 <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
+            </method>
+            
+            <method name="getPreferredShaderLanguage" cname="GetPreferredShaderLanguage" returnType="shader_language">
+            </method>
+
+
+            <method name="getPreferredHighLevelShaderLanguage" cname="GetPreferredHighLevelShaderLanguage" returnType="shader_language">
             </method>
         </interface>
         
@@ -287,19 +308,19 @@
                 <arg name="writeMask" type="int" />
                 <arg name="readMask" type="int" />
             </method>
-
-            <method name="setAlphaTestingState" cname="SetAlphaTestingState" returnType="error">
-                <arg name="enable" type="bool" />
-                <arg name="function" type="compare_function" />
-            </method>
             
             <method name="setRenderTargetCount" cname="SetRenderTargetCount" returnType="error">
                 <arg name="count" type="int" />
             </method>
             
-            <method name="setPrimitiveTopology" cname="SetPrimitiveTopology" returnType="error">
-                <arg name="topology" type="primitive_mode" />
+            <method name="setPrimitiveType" cname="SetPrimitiveType" returnType="error">
+                <arg name="type" type="primitive_type" />
             </method>
+
+            <method name="setVertexLayout" cname="SetVertexLayout" returnType="error">
+                <arg name="layout" type="vertex_layout*" />
+            </method>
+
         </interface>
         
         <interface name="pipeline_state">
@@ -387,6 +408,10 @@
 
             <method name="useIndexBuffer" cname="UseIndexBuffer" returnType="error">
                 <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="setPrimitiveTopology" cname="SetPrimitiveTopology" returnType="error">
+                <arg name="topology" type="primitive_topology" />
             </method>
 
             <method name="useDrawIndirectBuffer" cname="UseDrawIndirectBuffer" returnType="error">
@@ -526,12 +551,24 @@
             <method name="release" cname="ReleaseVertexBinding" returnType="error">
             </method>
             
-            <method name="addVertexBufferBindings" cname="AddVertexBufferBindings" returnType="error">
-                <arg name="vertex_buffer" type="buffer*" />
+            <method name="bindVertexBuffers" cname="BindVertexBuffers" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="vertex_buffers" type="buffer**" />
+            </method>
+        </interface>
+
+        <interface name="vertex_layout">
+            <method name="addReference" cname="AddVertexLayoutReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVertexLayout" returnType="error">
+            </method>
+            
+            <method name="addVertexAttributeBindings" cname="AddVertexAttributeBindings" returnType="error">
+                <arg name="vertex_buffer_count" type="uint" />
                 <arg name="attribute_count" type="size" />
                 <arg name="attributes" type="vertex_attrib_description*" />
             </method>
-
         </interface>
         
         <interface name="shader">

@@ -1,4 +1,5 @@
 #include "vertex_binding.hpp"
+#include "vertex_layout.hpp"
 #include "utility.hpp"
 #include "buffer.hpp"
 
@@ -11,12 +12,15 @@ void _agpu_vertex_binding::lostReferences()
 {
 	device->glBindVertexArray(0);
 	device->glDeleteVertexArrays(1, &handle);
+    vertexLayout->release();
 }
 
-agpu_vertex_binding *_agpu_vertex_binding::createVertexBinding(agpu_device *device)
+agpu_vertex_binding *_agpu_vertex_binding::createVertexBinding(agpu_device *device, agpu_vertex_layout *layout)
 {
 	auto binding = new agpu_vertex_binding();
 	binding->device = device;
+    binding->vertexLayout = layout;
+    binding->vertexLayout->retain();
 	device->glGenVertexArrays(1, &binding->handle);
 	return binding;
 }
@@ -26,22 +30,29 @@ void _agpu_vertex_binding::bind()
 	device->glBindVertexArray(handle);
 }
 
-agpu_error _agpu_vertex_binding::addVertexBufferBindings ( agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
+agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
 {
 	bind();
-	vertex_buffer->bind();
-	return activateVertexAttributes(vertex_buffer->description.stride, attribute_count, attributes);
-}
+    if (count != vertexLayout->vertexBufferCount)
+        return AGPU_ERROR;
 
-agpu_error _agpu_vertex_binding::activateVertexAttributes ( agpu_size stride, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
-{
-	for(agpu_size i = 0; i < attribute_count; ++i)
-	{
-		auto error = activateVertexAttribute(stride, attributes[i]);
-		if(error < 0)
-			return error;
-	}
-	
+    agpu_buffer *prevBuffer = nullptr;
+    for (auto &attr : vertexLayout->attributes)
+    {
+        if (attr.buffer > count)
+            return AGPU_ERROR;
+
+        // Bind the buffer
+        auto newBuffer = vertex_buffers[attr.buffer];
+        if (newBuffer != prevBuffer)
+            newBuffer->bind();
+
+        // Activate the attribute
+        auto error = activateVertexAttribute(newBuffer->description.stride, attr);
+        if (error < 0)
+            return error;
+    }
+
 	return AGPU_OK;
 }
 
@@ -69,10 +80,8 @@ AGPU_EXPORT agpu_error agpuReleaseVertexBinding ( agpu_vertex_binding* vertex_bi
 	return AGPU_OK;
 }
 
-AGPU_EXPORT agpu_error agpuAddVertexBufferBindings ( agpu_vertex_binding* vertex_binding, agpu_buffer* vertex_buffer, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
+AGPU_EXPORT agpu_error agpuBindVertexBuffers(agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers)
 {
-	CHECK_POINTER(vertex_binding);
-	CHECK_POINTER(vertex_buffer);
-	CHECK_POINTER(attributes);
-	return vertex_binding->addVertexBufferBindings(vertex_buffer, attribute_count, attributes);
+    CHECK_POINTER(vertex_binding);
+    return vertex_binding->bindVertexBuffers(count, vertex_buffers);
 }

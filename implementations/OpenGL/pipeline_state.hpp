@@ -31,9 +31,9 @@ public:
     bool alphaTestEnabled;
 	GLenum alphaTestFunction;
     
-    // Miscellaneos
+    // Miscellaneous
     int renderTargetCount;
-    agpu_primitive_mode primitiveTopology;
+    agpu_primitive_type primitiveType;
 
 public:
     void activate();

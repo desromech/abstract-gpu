@@ -17,16 +17,21 @@ public:
     bool initializeSample()
     {
         // Create the programs.
-        auto vertexShader = compileShaderFromFile("data/shaders/simple.glslv", AGPU_VERTEX_SHADER);
-        auto fragmentShader = compileShaderFromFile("data/shaders/simple.glslf", AGPU_FRAGMENT_SHADER);
+        auto vertexShader = compileShaderFromFile("data/shaders/simpleVertex", AGPU_VERTEX_SHADER);
+        auto fragmentShader = compileShaderFromFile("data/shaders/simpleFragment", AGPU_FRAGMENT_SHADER);
         if (!vertexShader || !fragmentShader)
             return false;
+
+        // Create the vertex layout.
+        vertexLayout = agpuCreateVertexLayout(device);
+        agpuAddVertexAttributeBindings(vertexLayout, 1, SampleVertex::DescriptionSize, SampleVertex::Description);
 
         // Create the pipeline builder
         auto pipelineBuilder = agpuCreatePipelineBuilder(device);
         agpuAttachShader(pipelineBuilder, vertexShader);
         agpuAttachShader(pipelineBuilder, fragmentShader);
-        agpuSetPrimitiveTopology(pipelineBuilder, AGPU_TRIANGLES);
+        agpuSetVertexLayout(pipelineBuilder, vertexLayout);
+        agpuSetPrimitiveType(pipelineBuilder, AGPU_PRIMITIVE_TYPE_TRIANGLE);
 
         // Build the pipeline
         pipeline = buildPipeline(pipelineBuilder);
@@ -45,12 +50,12 @@ public:
         drawBuffer = createImmutableDrawBuffer(1, &command);
         
         // Create the vertex buffer binding.
-        vertexBinding = agpuCreateVertexBinding(device);
-        agpuAddVertexBufferBindings(vertexBinding, vertexBuffer, SampleVertex::DescriptionSize, SampleVertex::Description);
+        vertexBinding = agpuCreateVertexBinding(device, vertexLayout);
+        agpuBindVertexBuffers(vertexBinding, 1, &vertexBuffer);
 
         // Create the command list
         commandAllocator = agpuCreateCommandAllocator(device);
-        commandList = agpuCreateCommandList(device, commandAllocator, pipeline);
+        commandList = agpuCreateCommandList(device, commandAllocator, nullptr);
         agpuCloseCommandList(commandList);
         return true;
     }
@@ -59,7 +64,7 @@ public:
     {
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
-        agpuResetCommandList(commandList, commandAllocator, nullptr);
+        agpuResetCommandList(commandList, commandAllocator, pipeline);
         agpuBeginFrame(commandList);
 
         // Set the viewport
@@ -82,6 +87,7 @@ public:
         agpuUseVertexBinding(commandList, vertexBinding);
         agpuUseIndexBuffer(commandList, indexBuffer);
         agpuUseDrawIndirectBuffer(commandList, drawBuffer);
+        agpuSetPrimitiveTopology(commandList, AGPU_TRIANGLES);
 
         // Draw the objects
         agpuDrawElementsIndirect(commandList, 0);
@@ -100,6 +106,7 @@ public:
     agpu_buffer *vertexBuffer;
     agpu_buffer *indexBuffer;
     agpu_buffer *drawBuffer;
+    agpu_vertex_layout *vertexLayout;
     agpu_vertex_binding *vertexBinding;
     agpu_pipeline_state *pipeline;
     agpu_command_allocator *commandAllocator;

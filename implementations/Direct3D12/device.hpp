@@ -8,6 +8,7 @@
 #include <windows.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <D3Dcompiler.h>
 #include <string>
 #include <wrl.h>
 
@@ -15,6 +16,7 @@
 
 using Microsoft::WRL::ComPtr;
 const int MaxFrameCount = 3; // Triple buffering.
+const int ShaderTypeCount = 6;
 
 /**
 * Agpu D3D12 device
@@ -37,7 +39,6 @@ public:
     agpu_command_queue *defaultCommandQueue;
 
 public:
-
     // Device objects
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> d3dDevice;
@@ -57,8 +58,15 @@ public:
     // Some states
     bool isOpened;
 
+    // Extra settings.
+    bool isDebugEnabled;
+
+    // Root signatures
+    ComPtr<ID3D12RootSignature> graphicsRootSignature;
+
 private:
     bool getWindowSize();
+    agpu_error createGraphicsRootSignature();
 };
 
 #endif //_AGPU_DEVICE_HPP_
