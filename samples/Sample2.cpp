@@ -56,13 +56,6 @@ public:
         shaderBindings = agpuCreateShaderResourceBinding(device, 0);
         agpuBindUniformBuffer(shaderBindings, 0, transformationBuffer);
         
-        // Create the command buffer
-        agpu_draw_elements_command command;
-        memset(&command, 0, sizeof(command));
-        command.index_count = 3;
-        command.instance_count = 1;
-        drawBuffer = createImmutableDrawBuffer(1, &command);
-        
         // Create the vertex buffer binding.
         vertexBinding = agpuCreateVertexBinding(device, vertexLayout);
         agpuBindVertexBuffers(vertexBinding, 1, &vertexBuffer);
@@ -99,7 +92,6 @@ public:
         // Use the vertices and the indices.
         agpuUseVertexBinding(commandList, vertexBinding);
         agpuUseIndexBuffer(commandList, indexBuffer);
-        agpuUseDrawIndirectBuffer(commandList, drawBuffer);
         agpuSetPrimitiveTopology(commandList, AGPU_TRIANGLES);
         agpuUseShaderResources(commandList, shaderBindings);
 
@@ -123,7 +115,6 @@ public:
         agpuReleaseBuffer(vertexBuffer);
         agpuReleaseBuffer(indexBuffer);
         agpuReleaseBuffer(transformationBuffer);
-        agpuReleaseBuffer(drawBuffer);
         agpuReleaseShaderResourceBinding(shaderBindings);
         agpuReleaseVertexLayout(vertexLayout);
         agpuReleaseVertexBinding(vertexBinding);
@@ -137,7 +128,6 @@ public:
 
     agpu_buffer *vertexBuffer;
     agpu_buffer *indexBuffer;
-    agpu_buffer *drawBuffer;
     agpu_vertex_layout *vertexLayout;
     agpu_vertex_binding *vertexBinding;
     agpu_pipeline_state *pipeline;
