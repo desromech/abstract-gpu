@@ -97,7 +97,6 @@ public:
 
         // Draw the objects
         agpuDrawElements(commandList, 3, 1, 0, 0, 0);
-        //agpuDrawElementsIndirect(commandList, 0);
 
         // Finish the command list
         agpuEndFrame(commandList);
