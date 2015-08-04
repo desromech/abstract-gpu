@@ -92,6 +92,7 @@ public:
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
+        agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetClearColor(commandList, 0, 0, 0, 0);
         agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
 

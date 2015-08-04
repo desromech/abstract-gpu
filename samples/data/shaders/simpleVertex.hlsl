@@ -7,7 +7,7 @@ cbuffer TransformationBuffer : register(b0)
 
 struct VertexInput
 {
-    float3 position : A;
+    float4 position : A;
     float4 color : B;
 };
 
@@ -21,6 +21,6 @@ VertexOutput main(VertexInput input)
 {
     VertexOutput output;
     output.color = input.color;
-    output.position = mul(projectionMatrix, mul(viewMatrix, mul(modelMatrix, float4(input.position, 1.0))));
+    output.position = mul(projectionMatrix, mul(viewMatrix, mul(modelMatrix, input.position)));
     return output;
 }

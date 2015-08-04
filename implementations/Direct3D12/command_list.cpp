@@ -68,12 +68,26 @@ agpu_error _agpu_command_list::setCommonState()
 
 agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
-    return AGPU_UNIMPLEMENTED;
+    D3D12_VIEWPORT viewport;
+    viewport.TopLeftX = x;
+    viewport.TopLeftY = y;
+    viewport.Width = w;
+    viewport.Height = h;
+    viewport.MinDepth = 0.0;
+    viewport.MaxDepth = 1.0;
+    commandList->RSSetViewports(1, &viewport);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
-    return AGPU_UNIMPLEMENTED;
+    RECT rect;
+    rect.top = x;
+    rect.left = y;
+    rect.right = x + w;
+    rect.bottom = y + h;
+    commandList->RSSetScissorRects(1, &rect);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
@@ -164,6 +178,12 @@ agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* 
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_list::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+{
+    commandList->DrawInstanced(vertex_count, instance_count, first_vertex, base_instance);
+    return AGPU_OK;
+}
+
 agpu_error _agpu_command_list::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 {
     commandList->DrawIndexedInstanced(index_count, instance_count, first_index, base_vertex, base_instance);
@@ -190,61 +210,6 @@ agpu_error _agpu_command_list::setAlphaReference(agpu_float reference)
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::setUniformi(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniform2i(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniform3i(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniform4i(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniformf(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniform2f(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniform3f(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniform4f(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniformMatrix2f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniformMatrix3f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setUniformMatrix4f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
 agpu_error _agpu_command_list::close()
 {
     ERROR_IF_FAILED(commandList->Close());
@@ -267,6 +232,11 @@ agpu_error _agpu_command_list::beginFrame()
 {
     auto barrier = resourceTransitionBarrier(device->mainFrameBufferTargets[device->frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     commandList->ResourceBarrier(1, &barrier);
+
+    auto descriptor = device->renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart();
+    descriptor.ptr += device->frameIndex * device->renderTargetViewDescriptorSize;
+    commandList->OMSetRenderTargets(1, &descriptor, FALSE, nullptr);
+
     return AGPU_OK;
 }
 
@@ -359,6 +329,12 @@ AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, a
 {
     CHECK_POINTER(command_list);
     return command_list->useShaderResources(binding);
+}
+
+AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+{
+    CHECK_POINTER(command_list);
+    return command_list->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
 }
 
 AGPU_EXPORT agpu_error agpuDrawElements(agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)

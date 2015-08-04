@@ -424,6 +424,13 @@
                 <arg name="binding" type="shader_resource_binding*" />
             </method>
 
+            <method name="drawArrays" cname="DrawArrays" returnType="error">
+    			<arg name="vertex_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_vertex" type="uint" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
             <method name="drawElements" cname="DrawElements" returnType="error">
     			<arg name="index_count" type="uint" />
     			<arg name="instance_count" type="uint" />
@@ -447,75 +454,6 @@
 
             <method name="setAlphaReference" cname="SetAlphaReference" returnType="error">
                 <arg name="reference" type="float" />
-            </method>
-
-            <method name="setUniform1i" cname="SetUniformi" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="int*"/>
-            </method>
-            
-            <method name="setUniform2i" cname="SetUniform2i" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="int*"/>
-            </method>
-
-            <method name="setUniform3i" cname="SetUniform3i" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="int*"/>
-            </method>
-            
-            <method name="setUniform4i" cname="SetUniform4i" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="int*"/>
-            </method>
-            
-            <method name="setUniform1f" cname="SetUniformf" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="float*"/>
-            </method>
-            
-            <method name="setUniform2f" cname="SetUniform2f" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="float*"/>
-            </method>
-
-            <method name="setUniform3f" cname="SetUniform3f" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="float*"/>
-            </method>
-            
-            <method name="setUniform4f" cname="SetUniform4f" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="data" type="float*"/>
-            </method>
-
-            <method name="setUniformMatrix2f" cname="SetUniformMatrix2f" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="transpose" type="bool" />
-                <arg name="data" type="float*"/>
-            </method>
-
-            <method name="setUniformMatrix3f" cname="SetUniformMatrix3f" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="transpose" type="bool" />
-                <arg name="data" type="float*"/>
-            </method>
-
-            <method name="setUniformMatrix4f" cname="SetUniformMatrix4f" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="count" type="size" />
-                <arg name="transpose" type="bool" />
-                <arg name="data" type="float*"/>
             </method>
 
             <method name="close" cname="CloseCommandList" returnType="error">

@@ -39,8 +39,8 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
 
     // Set default rasterizer state
     description.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-    description.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-    description.RasterizerState.FrontCounterClockwise = TRUE;
+    description.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    description.RasterizerState.FrontCounterClockwise = FALSE;
     description.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
     description.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
     description.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
