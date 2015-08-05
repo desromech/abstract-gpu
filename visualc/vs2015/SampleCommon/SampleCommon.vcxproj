@@ -96,13 +96,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\deps\include\SDL2;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\deps\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\deps\lib\x86;$(LibraryPath)</LibraryPath>
     <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\deps\include\SDL2;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\deps\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\deps\lib\x64;$(LibraryPath)</LibraryPath>
     <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
