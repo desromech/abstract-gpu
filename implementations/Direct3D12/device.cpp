@@ -17,6 +17,11 @@ _agpu_device::_agpu_device()
     isOpened = false;
     for (int i = 0; i < MaxFrameCount; ++i)
         mainFrameBuffer[i] = nullptr;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        shaderResourceBindingOffsets[i] = 0;
+    }
 }
 
 void _agpu_device::lostReferences()

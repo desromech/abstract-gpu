@@ -174,13 +174,23 @@ agpu_pointer _agpu_buffer::mapBuffer(agpu_mapping_access flags)
     if (!canBeReaded && !canBeWritten)
         return nullptr;
 
-    // TODO:
-    return nullptr;
+    // Check the flags more properly.
+    if (FAILED(uploadResource->Map(0, nullptr, (void**)&mappedPointer)))
+        return nullptr;
+
+    return mappedPointer;
 }
 
 agpu_error _agpu_buffer::unmapBuffer()
 {
-    return AGPU_UNIMPLEMENTED;
+    if (!mappedPointer)
+        return AGPU_OK;
+
+    uploadResource->Unmap(0, nullptr);
+    mappedPointer = nullptr;
+
+    // TODO: When the mapping is coherent, send the data to the gpu heap.
+    return AGPU_OK;
 }
 
 agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)

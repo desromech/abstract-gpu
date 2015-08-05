@@ -36,6 +36,7 @@ public:
 
 private:
     agpu_error createView();
+    agpu_pointer *mappedPointer;
 };
 
 #endif //AGPU_D3D12_BUFFER_HPP

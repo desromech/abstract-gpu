@@ -13,6 +13,7 @@ public:
     static agpu_shader_resource_binding *create(agpu_device *device, int bank);
 
     agpu_error bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer);
+    agpu_error bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size);
 
 public:
     agpu_device *device;

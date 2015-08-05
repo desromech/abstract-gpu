@@ -4,12 +4,6 @@
 #include "SampleBase.hpp"
 #include "SDL_syswm.h"
 
-	agpu_uint binding;
-	agpu_field_type type;
-	agpu_uint components;
-	agpu_bool normalized;
-	agpu_size offset;
-    
 agpu_vertex_attrib_description SampleVertex::Description[] = {
     {0, 0, AGPU_FLOAT, 3, 1, false, offsetof(SampleVertex, position)},
     {0, 1, AGPU_FLOAT, 4, 1, false, offsetof(SampleVertex, color)},
@@ -128,7 +122,7 @@ int SampleBase::main(int argc, const char **argv)
     openInfo.blue_size = 5;
     openInfo.green_size = 5;
     openInfo.alpha_size = 5;
-    openInfo.depth_size = 16;
+    openInfo.depth_size = 16,
     openInfo.doublebuffer = 1;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.

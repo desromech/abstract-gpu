@@ -587,6 +587,13 @@
                 <arg name="location" type="int" />
                 <arg name="uniform_buffer" type="buffer*" />
             </method>
+
+            <method name="bindVertexBuffers" cname="BindUniformBufferRange" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="uniform_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
         </interface>
     </interfaces>
 </version>

@@ -446,10 +446,12 @@ AGPU_EXPORT agpu_bool agpuisMainFrameBuffer ( agpu_framebuffer* framebuffer );
 typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
 typedef agpu_error (*agpuReleaseShaderResourceBinding_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
 typedef agpu_error (*agpuBindUniformBuffer_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer );
+typedef agpu_error (*agpuBindUniformBufferRange_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
 
 AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference ( agpu_shader_resource_binding* shader_resource_binding );
 AGPU_EXPORT agpu_error agpuReleaseShaderResourceBinding ( agpu_shader_resource_binding* shader_resource_binding );
 AGPU_EXPORT agpu_error agpuBindUniformBuffer ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer );
+AGPU_EXPORT agpu_error agpuBindUniformBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
 
 /* Installable client driver interface. */
 typedef struct _agpu_icd_dispatch {
@@ -540,6 +542,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddShaderResourceBindingReference_FUN agpuAddShaderResourceBindingReference;
 	agpuReleaseShaderResourceBinding_FUN agpuReleaseShaderResourceBinding;
 	agpuBindUniformBuffer_FUN agpuBindUniformBuffer;
+	agpuBindUniformBufferRange_FUN agpuBindUniformBufferRange;
 } agpu_icd_dispatch;
 
 

@@ -57,6 +57,7 @@ public:
     // Descriptor heaprs.
     ComPtr<ID3D12DescriptorHeap> shaderResourcesViewHeaps[4];
     ComPtr<ID3D12DescriptorHeap> samplersViewHeaps[4];
+    UINT shaderResourceBindingOffsets[4];
 
     UINT renderTargetViewDescriptorSize;
     UINT shaderResourceViewDescriptorSize;
