@@ -28,9 +28,17 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\..\samples\data\shaders\simpleFragment.hlsl" />
-    <CustomBuild Include="..\..\..\samples\data\shaders\simpleVertex.hlsl" />
-    <CustomBuild Include="..\..\..\samples\data\shaders\simpleFragment.glsl" />
-    <CustomBuild Include="..\..\..\samples\data\shaders\simpleVertex.glsl" />
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleFragment.glsl">
+      <Filter>Assets</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleFragment.hlsl">
+      <Filter>Assets</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleVertex.glsl">
+      <Filter>Assets</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\samples\data\shaders\simpleVertex.hlsl">
+      <Filter>Assets</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

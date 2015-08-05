@@ -275,7 +275,15 @@ agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer)
         commandList->ResourceBarrier(1, &barrier);
     }
 
-    commandList->OMSetRenderTargets((UINT)framebuffer->colorBufferDescriptors.size(), &framebuffer->colorBufferDescriptors[0], FALSE, nullptr);
+    if (framebuffer->depthStencil)
+    {
+        auto desc = framebuffer->getDepthStencilCpuHandle();
+        commandList->OMSetRenderTargets((UINT)framebuffer->colorBufferDescriptors.size(), &framebuffer->colorBufferDescriptors[0], FALSE, &desc);
+    }
+    else
+    {
+        commandList->OMSetRenderTargets((UINT)framebuffer->colorBufferDescriptors.size(), &framebuffer->colorBufferDescriptors[0], FALSE, nullptr);
+    }
 
     return AGPU_OK;
 }
