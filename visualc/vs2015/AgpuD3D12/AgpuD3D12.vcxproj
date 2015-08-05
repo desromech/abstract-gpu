@@ -155,6 +155,7 @@
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_list.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\command_queue.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\device.cpp" />
+    <ClCompile Include="..\..\..\implementations\Direct3D12\framebuffer.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\icd.c" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_state.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="..\..\..\implementations\Direct3D12\common.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\common_commands.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\device.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\framebuffer.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\object.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_state.hpp" />

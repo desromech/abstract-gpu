@@ -9,20 +9,31 @@
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
 #include "buffer.hpp"
+#include "framebuffer.hpp"
 
 _agpu_device::_agpu_device()
 {
     defaultCommandQueue = nullptr;
     isOpened = false;
+    for (int i = 0; i < MaxFrameCount; ++i)
+        mainFrameBuffer[i] = nullptr;
 }
 
 void _agpu_device::lostReferences()
 {
+
     if (isOpened)
     {
         waitForPreviousFrame();
         CloseHandle(frameFenceEvent);
         CloseHandle(transferFenceEvent);
+    }
+
+    for (int i = 0; i < MaxFrameCount; ++i)
+    {
+        auto fb = mainFrameBuffer[i];
+        if (fb)
+            fb->release();
     }
 
     if (defaultCommandQueue)
@@ -95,17 +106,22 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     frameIndex = swapChain->GetCurrentBackBufferIndex();
 
-    // Create descriptor heaps
+    // Create the main frame buffer.
     {
-        // Describe and create a render target view (RTV) descriptor heap.
-        D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-        heapDesc.NumDescriptors = frameCount;
-        heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        if (FAILED(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&renderTargetViewHeap))))
-            return false;
+        bool hasDepth = openInfo->depth_size > 0;
+        bool hasStencil = openInfo->stencil_size > 0;
+        for (int i = 0; i < frameCount; ++i)
+        {
+            auto framebuffer = agpu_framebuffer::create(this, windowWidth, windowHeight, 1, hasDepth, hasStencil);
+            mainFrameBuffer[i] = framebuffer;
 
-        renderTargetViewDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            ComPtr<ID3D12Resource> colorBuffer;
+            if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&colorBuffer))))
+                return false;
+
+            framebuffer->attachRawColorBuffer(0, colorBuffer);
+            framebuffer->createImplicitDepthStencil(openInfo->depth_size, openInfo->stencil_size);
+        }
     }
 
     {
@@ -124,20 +140,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         
     }
 
-    // Create frame resources.
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE renderTargetViewHandle(renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
 
-        // Create a RTV for each frame.
-        for (int i = 0; i < frameCount; i++)
-        {
-            if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&mainFrameBufferTargets[i]))))
-                return false;
-
-            d3dDevice->CreateRenderTargetView(mainFrameBufferTargets[i].Get(), nullptr, renderTargetViewHandle);
-            renderTargetViewHandle.ptr += renderTargetViewDescriptorSize;
-        }
-    }
 
     // Create the transfer command queue.
     {
@@ -247,6 +250,11 @@ bool _agpu_device::getWindowSize()
     windowWidth = width;
     windowHeight = height;
     return res;
+}
+
+agpu_framebuffer* _agpu_device::getCurrentBackBuffer()
+{
+    return mainFrameBuffer[frameIndex];
 }
 
 agpu_error _agpu_device::swapBuffers()
@@ -398,4 +406,18 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* dev
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
 {
     return AGPU_SHADER_LANGUAGE_HLSL;
+}
+
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer(agpu_device* device)
+{
+    if (!device)
+        return nullptr;
+    return device->getCurrentBackBuffer();
+}
+
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil)
+{
+    if (!device)
+        return nullptr;
+    return agpu_framebuffer::create(device, width, height, renderTargetCount, hasDepth, hasStencil);
 }

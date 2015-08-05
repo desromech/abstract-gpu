@@ -5,6 +5,7 @@
 #include "buffer.hpp"
 #include "vertex_binding.hpp"
 #include "shader_resource_binding.hpp"
+#include "framebuffer.hpp"
 
 inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topology)
 {
@@ -26,14 +27,13 @@ inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topol
 
 _agpu_command_list::_agpu_command_list()
 {
-    memset(clearColor, 0, sizeof(clearColor));
-    clearDepth = 0;
-    clearStencil = 0;
+    currentFramebuffer = nullptr;
 }
 
 void _agpu_command_list::lostReferences()
 {
-
+    if (currentFramebuffer)
+        currentFramebuffer->release();
 }
 
 _agpu_command_list *_agpu_command_list::create(agpu_device *device, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
@@ -63,16 +63,28 @@ agpu_error _agpu_command_list::setCommonState()
     ID3D12DescriptorHeap *heaps[] = { device->shaderResourcesViewHeaps[0].Get() };
     commandList->SetDescriptorHeaps(1, heaps);
     commandList->SetGraphicsRootSignature(device->graphicsRootSignature.Get());
+
+    // Reset some state
+    memset(clearColor, 0, sizeof(clearColor));
+    clearDepth = 1;
+    clearStencil = 0;
+
+    if (currentFramebuffer)
+    {
+        currentFramebuffer->release();
+        currentFramebuffer = nullptr;
+    }
+
     return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
     D3D12_VIEWPORT viewport;
-    viewport.TopLeftX = x;
-    viewport.TopLeftY = y;
-    viewport.Width = w;
-    viewport.Height = h;
+    viewport.TopLeftX = (FLOAT)x;
+    viewport.TopLeftY = (FLOAT)y;
+    viewport.Width = (FLOAT)w;
+    viewport.Height = (FLOAT)h;
     viewport.MinDepth = 0.0;
     viewport.MaxDepth = 1.0;
     commandList->RSSetViewports(1, &viewport);
@@ -113,21 +125,31 @@ agpu_error _agpu_command_list::setClearStencil(agpu_int value)
 
 agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
 {
+    if (!currentFramebuffer)
+        return AGPU_OK;
+
+    // Clear the color buffers
     if (buffers & AGPU_COLOR_BUFFER_BIT)
     {
-        auto handle = device->renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart();
-        handle.ptr += device->frameIndex * device->renderTargetViewDescriptorSize;
-        commandList->ClearRenderTargetView(handle, clearColor, 0, nullptr);
+        for (size_t i = 0; i < currentFramebuffer->getColorBufferCount(); ++i)
+        {
+            if (!currentFramebuffer->colorBuffers[i])
+                return AGPU_ERROR;
+
+            auto handle = currentFramebuffer->getColorBufferCpuHandle(i);
+            commandList->ClearRenderTargetView(handle, clearColor, 0, nullptr);
+        }
     }
 
-    if (buffers & AGPU_DEPTH_BUFFER_BIT)
+    // Clear the depth stencil attachment.
+    if (currentFramebuffer->depthStencil && ((buffers & AGPU_DEPTH_BUFFER_BIT) || buffers & AGPU_STENCIL_BUFFER_BIT))
     {
-        // TODO:
-    }
-
-    if (buffers & AGPU_STENCIL_BUFFER_BIT)
-    {
-        // TODO:
+        D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS(0);
+        if (buffers & AGPU_DEPTH_BUFFER_BIT)
+            flags = D3D12_CLEAR_FLAG_DEPTH;
+        if (buffers & AGPU_STENCIL_BUFFER_BIT)
+            flags = D3D12_CLEAR_FLAG_STENCIL;
+        commandList->ClearDepthStencilView(currentFramebuffer->getDepthStencilCpuHandle(), flags, clearDepth, clearStencil, 0, nullptr);
     }
 
     return AGPU_OK;
@@ -225,25 +247,60 @@ agpu_error _agpu_command_list::reset(_agpu_command_allocator *allocator, agpu_pi
         state = initial_pipeline_state->state.Get();
 
     ERROR_IF_FAILED(commandList->Reset(allocator->allocator.Get(), state));
+
     return setCommonState();
 }
 
-agpu_error _agpu_command_list::beginFrame()
+agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer)
 {
-    auto barrier = resourceTransitionBarrier(device->mainFrameBufferTargets[device->frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    commandList->ResourceBarrier(1, &barrier);
+    if(framebuffer)
+        framebuffer->retain();
+    if (currentFramebuffer)
+        currentFramebuffer->release();
+    currentFramebuffer = framebuffer;
+    if (!currentFramebuffer)
+        return AGPU_OK;
 
-    auto descriptor = device->renderTargetViewHeap->GetCPUDescriptorHandleForHeapStart();
-    descriptor.ptr += device->frameIndex * device->renderTargetViewDescriptorSize;
-    commandList->OMSetRenderTargets(1, &descriptor, FALSE, nullptr);
+    // TODO: Use a more proper state depending if this is used as a texture or not.
+    D3D12_RESOURCE_STATES prevState = D3D12_RESOURCE_STATE_PRESENT;
+
+    // Perform the resource transitions
+    for (size_t i = 0; i < framebuffer->getColorBufferCount(); ++i)
+    {
+        auto &colorBuffer = framebuffer->colorBuffers[i];
+        if (!colorBuffer)
+            return AGPU_ERROR;
+
+        auto barrier = resourceTransitionBarrier(colorBuffer.Get(), prevState, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        commandList->ResourceBarrier(1, &barrier);
+    }
+
+    commandList->OMSetRenderTargets((UINT)framebuffer->colorBufferDescriptors.size(), &framebuffer->colorBufferDescriptors[0], FALSE, nullptr);
 
     return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::endFrame()
 {
-    auto barrier = resourceTransitionBarrier(device->mainFrameBufferTargets[device->frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-    commandList->ResourceBarrier(1, &barrier);
+    if (!currentFramebuffer)
+        return AGPU_OK;
+
+    // TODO: Use a more proper state depending if this is used as a texture or not.
+    D3D12_RESOURCE_STATES newState = D3D12_RESOURCE_STATE_PRESENT;
+
+    // Perform the resource transitions
+    for (size_t i = 0; i < currentFramebuffer->getColorBufferCount(); ++i)
+    {
+        auto &colorBuffer = currentFramebuffer->colorBuffers[i];
+        if (!colorBuffer)
+            return AGPU_ERROR;
+
+        auto barrier = resourceTransitionBarrier(colorBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, newState);
+        commandList->ResourceBarrier(1, &barrier);
+    }
+
+    currentFramebuffer->release();
+    currentFramebuffer = nullptr;
     return AGPU_OK;
 }
 
@@ -434,10 +491,10 @@ AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, _ag
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list)
+AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list, agpu_framebuffer* framebuffer)
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame();
+    return command_list->beginFrame(framebuffer);
 }
 
 AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)

@@ -35,6 +35,7 @@ public:
 
     agpu_error swapBuffers();
     agpu_error waitForPreviousFrame();
+    agpu_framebuffer* getCurrentBackBuffer();
 
     HWND window;
 
@@ -49,10 +50,11 @@ public:
     // Device objects
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> d3dDevice;
-    ComPtr<ID3D12Resource> mainFrameBufferTargets[MaxFrameCount];
+
+    // Frame buffers
+    agpu_framebuffer *mainFrameBuffer[MaxFrameCount];
 
     // Descriptor heaprs.
-    ComPtr<ID3D12DescriptorHeap> renderTargetViewHeap;
     ComPtr<ID3D12DescriptorHeap> shaderResourcesViewHeaps[4];
     ComPtr<ID3D12DescriptorHeap> samplersViewHeaps[4];
 

@@ -17,7 +17,7 @@ public:
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, nullptr);
-        agpuBeginFrame(commandList);
+        agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
 
         agpuSetClearColor(commandList, 0, 0, 1, 0);
         agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);

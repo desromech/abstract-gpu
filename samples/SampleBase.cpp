@@ -128,6 +128,7 @@ int SampleBase::main(int argc, const char **argv)
     openInfo.blue_size = 5;
     openInfo.green_size = 5;
     openInfo.alpha_size = 5;
+    openInfo.depth_size = 16;
     openInfo.doublebuffer = 1;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.

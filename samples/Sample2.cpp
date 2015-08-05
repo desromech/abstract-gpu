@@ -81,7 +81,7 @@ public:
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, pipeline);
-        agpuBeginFrame(commandList);
+        agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);

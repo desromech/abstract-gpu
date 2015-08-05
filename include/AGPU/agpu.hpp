@@ -229,6 +229,8 @@ typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device*
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
+typedef agpu_framebuffer* (*agpuGetCurrentBackBuffer_FUN) ( agpu_device* device );
+typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -244,6 +246,8 @@ AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* de
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_device* device );
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
 
 /* Methods for interface agpu_pipeline_builder. */
 typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builder* pipeline_builder );
@@ -320,7 +324,7 @@ typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_l
 typedef agpu_error (*agpuSetAlphaReference_FUN) ( agpu_command_list* command_list, agpu_float reference );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
-typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list );
+typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list, agpu_framebuffer* framebuffer );
 typedef agpu_error (*agpuEndFrame_FUN) ( agpu_command_list* command_list );
 
 AGPU_EXPORT agpu_error agpuAddCommandListReference ( agpu_command_list* command_list );
@@ -345,7 +349,7 @@ AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list
 AGPU_EXPORT agpu_error agpuSetAlphaReference ( agpu_command_list* command_list, agpu_float reference );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list );
+AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer );
 AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list );
 
 /* Methods for interface agpu_texture. */
@@ -400,7 +404,13 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_s
 AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cstring name, agpu_int location );
 
 /* Methods for interface agpu_framebuffer. */
+typedef agpu_error (*agpuAddFramebufferReference_FUN) ( agpu_framebuffer* framebuffer );
+typedef agpu_error (*agpuReleaseFramebuffer_FUN) ( agpu_framebuffer* framebuffer );
+typedef agpu_bool (*agpuisMainFrameBuffer_FUN) ( agpu_framebuffer* framebuffer );
 
+AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer );
+AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer );
+AGPU_EXPORT agpu_bool agpuisMainFrameBuffer ( agpu_framebuffer* framebuffer );
 
 /* Methods for interface agpu_shader_resource_binding. */
 typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_resource_binding* shader_resource_binding );

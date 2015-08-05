@@ -43,7 +43,7 @@ public:
     agpu_error setUniformMatrix4f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
     agpu_error close();
     agpu_error reset(_agpu_command_allocator *allocator, agpu_pipeline_state* initial_pipeline_state);
-    agpu_error beginFrame();
+    agpu_error beginFrame(agpu_framebuffer* framebuffer);
     agpu_error endFrame();
 
 public:
@@ -54,6 +54,9 @@ public:
     float clearColor[4];
     float clearDepth;
     int clearStencil;
+
+    // Framebuffer
+    agpu_framebuffer *currentFramebuffer;
 
 private:
     agpu_error setCommonState();

@@ -3,7 +3,6 @@ Release
 x64
 .vs
 *.sdf
-*.vcxproj.filters
 *.vcxproj.user
 *.opensdf
 

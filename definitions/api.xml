@@ -272,8 +272,18 @@
             <method name="getPreferredShaderLanguage" cname="GetPreferredShaderLanguage" returnType="shader_language">
             </method>
 
-
             <method name="getPreferredHighLevelShaderLanguage" cname="GetPreferredHighLevelShaderLanguage" returnType="shader_language">
+            </method>
+            
+            <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
+            </method>
+
+            <method name="createFrameBuffer" cname="CreateFrameBuffer" returnType="framebuffer*">
+                <arg name="width" type="uint" />
+                <arg name="height" type="uint" />
+                <arg name="renderTargetCount" type="uint" />
+                <arg name="hasDepth" type="bool" />
+                <arg name="hasStencil" type="bool" />
             </method>
         </interface>
         
@@ -465,6 +475,7 @@
             </method>
 
             <method name="beginFrame" cname="BeginFrame" returnType="error">
+                <arg name="framebuffer" type="framebuffer*" />
             </method>
 
             <method name="endFrame" cname="EndFrame" returnType="error">
@@ -555,8 +566,16 @@
         </interface>
 
         <interface name="framebuffer">
+            <method name="addReference" cname="AddFramebufferReference" returnType="error">
+            </method>
+    
+            <method name="release" cname="ReleaseFramebuffer" returnType="error">
+            </method>
+            
+            <method name="isMainFrameBuffer" cname="isMainFrameBuffer" returnType="bool">
+            </method>
         </interface>
-
+        
         <interface name="shader_resource_binding">
             <method name="addReference" cname="AddShaderResourceBindingReference" returnType="error">
             </method>
