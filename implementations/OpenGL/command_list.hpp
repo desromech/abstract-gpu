@@ -12,7 +12,7 @@ struct _agpu_command_list: public Object<_agpu_command_list>
 public:
     _agpu_command_list();
     
-    static agpu_command_list *create(agpu_device *device, agpu_pipeline_state* initial_pipeline_state);
+    static agpu_command_list *create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
 
     void lostReferences();
 
@@ -27,24 +27,16 @@ public:
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
     agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
+    agpu_error useShaderResources ( agpu_shader_resource_binding* binding );
+    agpu_error drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
+    agpu_error drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
     agpu_error drawElementsIndirect(agpu_size offset);
     agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error setStencilReference(agpu_float reference);
     agpu_error setAlphaReference(agpu_float reference);
-    agpu_error setUniformi(agpu_int location, agpu_size count, agpu_int* data);
-    agpu_error setUniform2i(agpu_int location, agpu_size count, agpu_int* data);
-    agpu_error setUniform3i(agpu_int location, agpu_size count, agpu_int* data);
-    agpu_error setUniform4i(agpu_int location, agpu_size count, agpu_int* data);
-    agpu_error setUniformf(agpu_int location, agpu_size count, agpu_float* data);
-    agpu_error setUniform2f(agpu_int location, agpu_size count, agpu_float* data);
-    agpu_error setUniform3f(agpu_int location, agpu_size count, agpu_float* data);
-    agpu_error setUniform4f(agpu_int location, agpu_size count, agpu_float* data);
-    agpu_error setUniformMatrix2f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
-    agpu_error setUniformMatrix3f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
-    agpu_error setUniformMatrix4f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data);
     agpu_error close();
-    agpu_error reset(agpu_pipeline_state* initial_pipeline_state);
-    agpu_error beginFrame();
+    agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
+    agpu_error beginFrame (agpu_framebuffer* framebuffer);
     agpu_error endFrame();
         
 public:

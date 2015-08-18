@@ -19,6 +19,8 @@ public:
         agpuResetCommandList(commandList, commandAllocator, nullptr);
         agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
 
+        agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
+        agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetClearColor(commandList, 0, 0, 1, 0);
         agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
 

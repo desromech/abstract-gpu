@@ -572,7 +572,7 @@
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
             </method>
             
-            <method name="isMainFrameBuffer" cname="isMainFrameBuffer" returnType="bool">
+            <method name="isMainFrameBuffer" cname="IsMainFrameBuffer" returnType="bool">
             </method>
         </interface>
         

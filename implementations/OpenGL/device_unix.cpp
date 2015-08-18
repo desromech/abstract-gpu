@@ -239,8 +239,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         return nullptr;
     }
 
-    device->readVersionInformation();
-    device->loadExtensions();
+    device->initializeObjects();
     return device;
 }
 

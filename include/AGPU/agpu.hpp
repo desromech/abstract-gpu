@@ -406,11 +406,11 @@ AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cst
 /* Methods for interface agpu_framebuffer. */
 typedef agpu_error (*agpuAddFramebufferReference_FUN) ( agpu_framebuffer* framebuffer );
 typedef agpu_error (*agpuReleaseFramebuffer_FUN) ( agpu_framebuffer* framebuffer );
-typedef agpu_bool (*agpuisMainFrameBuffer_FUN) ( agpu_framebuffer* framebuffer );
+typedef agpu_bool (*agpuIsMainFrameBuffer_FUN) ( agpu_framebuffer* framebuffer );
 
 AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer );
 AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer );
-AGPU_EXPORT agpu_bool agpuisMainFrameBuffer ( agpu_framebuffer* framebuffer );
+AGPU_EXPORT agpu_bool agpuIsMainFrameBuffer ( agpu_framebuffer* framebuffer );
 
 /* Methods for interface agpu_shader_resource_binding. */
 typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_resource_binding* shader_resource_binding );

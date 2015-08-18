@@ -62,7 +62,9 @@ public:
     void readVersionInformation();
     void loadExtensions();
     void *getProcAddress(const char *symbolName);
+    void initializeObjects();
     void createDefaultCommandQueue();
+    void createMainFrameBuffer();
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)
@@ -84,6 +86,7 @@ public:
 #endif
 
     agpu_command_queue *defaultCommandQueue;
+    agpu_framebuffer *mainFrameBuffer;
     
 public:
     // OpenGL API
@@ -98,10 +101,18 @@ public:
     PFNGLUNMAPBUFFERPROC glUnmapBuffer;
     PFNGLBUFFERSTORAGEPROC glBufferStorage;
     
+    // Buffer binding
+    PFNGLBINDBUFFERRANGEPROC glBindBufferRange;
+    PFNGLBINDBUFFERBASEPROC glBindBufferBase;
+    
     // Vertex array object
     PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
     PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
     PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
+    
+    // Instancing
+    PFNGLDRAWARRAYSINSTANCEDBASEINSTANCEPROC glDrawArraysInstancedBaseInstance;
+    PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXBASEINSTANCEPROC glDrawElementsInstancedBaseVertexBaseInstance;
     
     // Indirect drawing.
     PFNGLDRAWELEMENTSINDIRECTPROC glDrawElementsIndirect;
@@ -141,17 +152,14 @@ public:
     PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
     PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
     
-    PFNGLUNIFORM1FVPROC glUniform1fv;
-    PFNGLUNIFORM2FVPROC glUniform2fv;
-    PFNGLUNIFORM3FVPROC glUniform3fv;
-    PFNGLUNIFORM4FVPROC glUniform4fv;
-    PFNGLUNIFORM1IVPROC glUniform1iv;
-    PFNGLUNIFORM2IVPROC glUniform2iv;
-    PFNGLUNIFORM3IVPROC glUniform3iv;
-    PFNGLUNIFORM4IVPROC glUniform4iv;
-    PFNGLUNIFORMMATRIX2FVPROC glUniformMatrix2fv;
-    PFNGLUNIFORMMATRIX3FVPROC glUniformMatrix3fv;
-    PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
+    // Framebuffer object
+    PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
+    PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
+    PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
+    PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+    
+    // Depth range
+    PFNGLDEPTHRANGEDNVPROC glDepthRangedNV;
 };
 
 #endif //_AGPU_DEVICE_HPP_

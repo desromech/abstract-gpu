@@ -4,11 +4,14 @@
 #include "device.hpp"
 #include "buffer.hpp"
 #include "shader.hpp"
+#include "shader_resource_binding.hpp"
 #include "pipeline_builder.hpp"
+#include "command_allocator.hpp"
 #include "command_list.hpp"
 #include "command_queue.hpp"
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
+#include "framebuffer.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -88,10 +91,18 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glUnmapBuffer);
     LOAD_FUNCTION(glBufferStorage);
     
+    // Buffer binding
+    LOAD_FUNCTION(glBindBufferRange);
+    LOAD_FUNCTION(glBindBufferBase);
+
     // Vertex array object.
     LOAD_FUNCTION(glGenVertexArrays);
     LOAD_FUNCTION(glDeleteVertexArrays);
     LOAD_FUNCTION(glBindVertexArray);
+    
+    // Instancing.
+    LOAD_FUNCTION(glDrawArraysInstancedBaseInstance);
+    LOAD_FUNCTION(glDrawElementsInstancedBaseVertexBaseInstance);
     
     // Indirect drawing
     LOAD_FUNCTION(glDrawElementsIndirect);
@@ -131,23 +142,33 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetAttribLocation);
     LOAD_FUNCTION(glGetUniformLocation);
     
-    LOAD_FUNCTION(glUniform1fv);
-    LOAD_FUNCTION(glUniform2fv);
-    LOAD_FUNCTION(glUniform3fv);
-    LOAD_FUNCTION(glUniform4fv);
-    LOAD_FUNCTION(glUniform1iv);
-    LOAD_FUNCTION(glUniform2iv);
-    LOAD_FUNCTION(glUniform3iv);
-    LOAD_FUNCTION(glUniform4iv);
-    LOAD_FUNCTION(glUniformMatrix2fv);
-    LOAD_FUNCTION(glUniformMatrix3fv);
-    LOAD_FUNCTION(glUniformMatrix4fv);
+    // Framebuffer object
+    LOAD_FUNCTION(glBindFramebuffer);
+    LOAD_FUNCTION(glDeleteFramebuffers);
+    LOAD_FUNCTION(glGenFramebuffers);
+    LOAD_FUNCTION(glCheckFramebufferStatus);
+    
+    // Depth range
+    LOAD_FUNCTION(glDepthRangedNV);
+}
 
+void _agpu_device::initializeObjects()
+{
+    readVersionInformation();
+    loadExtensions();
+    createDefaultCommandQueue();
+    createMainFrameBuffer();
 }
 
 void _agpu_device::createDefaultCommandQueue()
 {
     defaultCommandQueue = agpu_command_queue::create(this);
+}
+
+void _agpu_device::createMainFrameBuffer()
+{
+    // TODO: Get the actual size
+    mainFrameBuffer = agpu_framebuffer::createMain(this, 640, 480, 1, true, true);
 }
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
@@ -166,6 +187,13 @@ AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device )
 {
     CHECK_POINTER(device);
     return device->swapBuffers();
+}
+
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_device* device )
+{
+    if(!device)
+        return nullptr;
+    return device->mainFrameBuffer;
 }
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
@@ -203,11 +231,18 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
     return agpu_pipeline_builder::createBuilder(device); 
 }
 
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_pipeline_state* initial_pipeline_state )
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device )
+{
+    if(!device)
+        return nullptr;
+    return agpu_command_allocator::create(device);
+}
+
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
 {
     if (!device)
         return nullptr;
-    return agpu_command_list::create(device, initial_pipeline_state);
+    return agpu_command_list::create(device, allocator, initial_pipeline_state);
 }
 
 AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
@@ -225,4 +260,11 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* dev
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
 {
     return AGPU_SHADER_LANGUAGE_GLSL;
+}
+
+AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_device* device, agpu_int bindingBank )
+{
+    if(!device)
+        return nullptr;
+    return agpu_shader_resource_binding::create(device, bindingBank);
 }

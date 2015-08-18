@@ -1,8 +1,8 @@
 set(AGPU_OpenGL_SOURCES
     buffer.cpp
     buffer.hpp
-    shader.cpp
-    shader.hpp
+    command_allocator.cpp
+    command_allocator.hpp
     command_list.cpp
     command_list.hpp
     command_queue.cpp
@@ -12,6 +12,8 @@ set(AGPU_OpenGL_SOURCES
     device.hpp
     device_unix.cpp
     device_win32.cpp
+    framebuffer.cpp
+    framebuffer.hpp
     icd.c
     object.hpp
     pipeline_builder.cpp
@@ -20,6 +22,10 @@ set(AGPU_OpenGL_SOURCES
     pipeline_state.hpp
     platform.cpp
     platform.hpp
+    shader.cpp
+    shader.hpp
+    shader_resource_binding.cpp
+    shader_resource_binding.hpp
     vertex_binding.cpp
     vertex_binding.hpp
     vertex_layout.cpp

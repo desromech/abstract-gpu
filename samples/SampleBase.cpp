@@ -247,7 +247,7 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
     auto source = readWholeFile(fullName);
     if(source.empty())
         return nullptr;
-
+        
     // Create the shader and compile it.        
     auto shader = agpuCreateShader(device, type);
     agpuSetShaderSource(shader, preferredShaderLanguage, source.c_str(), (agpu_string_length)source.size());
@@ -257,7 +257,7 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
         std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
         agpuGetShaderCompilationLog(shader, logLength+1, logBuffer.get());
         agpuReleaseShader(shader);
-        printError("Compilation error of '%s':%s\n", fileName, logBuffer.get());
+        printError("Compilation error of '%s':%s\n", fullName.c_str(), logBuffer.get());
         return nullptr;
     }
     

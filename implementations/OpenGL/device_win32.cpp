@@ -209,8 +209,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     device->window = window;
     device->hDC = windowDC;
     device->context = context;
-    device->readVersionInformation();
-    device->loadExtensions();
+    device->initializeObjects();
 
     return device;
 }

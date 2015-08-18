@@ -1,7 +1,11 @@
-#version 130
-uniform mat4 projectionMatrix;
-uniform mat4 modelMatrix;
-uniform mat4 viewMatrix;
+#version 420
+
+layout(std140, binding=0) uniform TransformationBuffer
+{
+    mat4 projectionMatrix;
+    mat4 modelMatrix;
+    mat4 viewMatrix;
+};
 
 in vec3 vPosition;
 in vec4 vColor;

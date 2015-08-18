@@ -27,7 +27,7 @@ inline GLbitfield mapMappingFlags(agpu_bitfield flags)
     if(flags & AGPU_MAP_DYNAMIC_STORAGE_BIT)
         glflags |= GL_DYNAMIC_STORAGE_BIT;
 
-    return flags;
+    return glflags;
 }
 
 inline GLenum mapMappingAccess(agpu_mapping_access flags)
@@ -111,6 +111,19 @@ void agpu_buffer::bind()
 }
 
 // C Interface
+
+AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->release();
+}
+
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags )
 
 {
@@ -122,4 +135,10 @@ AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer )
 {
     CHECK_POINTER(buffer);
     return buffer->unmapBuffer();
+}
+
+AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
+{
+    CHECK_POINTER(buffer);
+    return buffer->uploadBufferData(offset, size, data);
 }

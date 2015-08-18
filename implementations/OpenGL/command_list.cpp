@@ -2,6 +2,8 @@
 #include "pipeline_state.hpp"
 #include "vertex_binding.hpp"
 #include "buffer.hpp"
+#include "framebuffer.hpp"
+#include "shader_resource_binding.hpp"
 
 inline GLenum mapPrimitiveTopology(agpu_primitive_topology topology)
 {
@@ -42,7 +44,7 @@ void _agpu_command_list::lostReferences()
 
 }
 
-agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_pipeline_state* initial_pipeline_state)
+agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     auto list = new agpu_command_list();
     list->device = device;
@@ -138,6 +140,40 @@ agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topo
     });
 }
 
+agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding* binding )
+{
+    CHECK_POINTER(binding);
+    return addCommand([=] {
+        binding->activate();
+    });
+}
+
+agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
+{
+    return addCommand([=] {
+        if (!currentVertexBinding)
+            return;
+
+        currentVertexBinding->bind();
+        device->glDrawArraysInstancedBaseInstance(primitiveMode, first_vertex, vertex_count, instance_count, base_instance);
+    });
+}
+
+agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
+{
+    return addCommand([=] {
+        if (!currentVertexBinding || !currentIndexBuffer)
+            return;
+
+        currentVertexBinding->bind();
+        currentIndexBuffer->bind();
+        size_t offset = currentIndexBuffer->description.stride*first_index;
+        device->glDrawElementsInstancedBaseVertexBaseInstance(primitiveMode, index_count,
+            mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> (offset),
+            instance_count, base_vertex, base_instance);
+    });
+}
+
 agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
 {
     return addCommand([=] {
@@ -176,90 +212,13 @@ agpu_error _agpu_command_list::setAlphaReference(agpu_float reference)
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::setUniformi(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return addCommand([=] {
-        device->glUniform1iv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniform2i(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return addCommand([=] {
-        device->glUniform2iv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniform3i(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return addCommand([=] {
-        device->glUniform3iv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniform4i(agpu_int location, agpu_size count, agpu_int* data)
-{
-    return addCommand([=] {
-        device->glUniform4iv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniformf(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniform1fv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniform2f(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniform2fv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniform3f(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniform3fv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniform4f(agpu_int location, agpu_size count, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniform4fv(location, (GLsizei)count, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniformMatrix2f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniformMatrix2fv(location, (GLsizei)count, transpose, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniformMatrix3f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniformMatrix3fv(location, (GLsizei)count, transpose, data);
-    });
-}
-
-agpu_error _agpu_command_list::setUniformMatrix4f(agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return addCommand([=] {
-        device->glUniformMatrix4fv(location, (GLsizei)count, transpose, data);
-    });
-}
-
 agpu_error _agpu_command_list::close()
 {
     closed = true;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::reset(agpu_pipeline_state* initial_pipeline_state)
+agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     closed = false;
     commands.clear();
@@ -268,9 +227,12 @@ agpu_error _agpu_command_list::reset(agpu_pipeline_state* initial_pipeline_state
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::beginFrame()
+agpu_error _agpu_command_list::beginFrame (agpu_framebuffer* framebuffer)
 {
-    return AGPU_OK;
+    CHECK_POINTER(framebuffer)
+    return addCommand([=] {
+        framebuffer->bind();
+    });
 }
 
 agpu_error _agpu_command_list::endFrame()
@@ -372,6 +334,24 @@ AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list,
     return command_list->setPrimitiveTopology(topology);
 }
 
+AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
+{
+    CHECK_POINTER(command_list);
+    return command_list->useShaderResources(binding);
+}
+
+AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
+{
+    CHECK_POINTER(command_list);
+    return command_list->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
+}
+
+AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
+{
+    CHECK_POINTER(command_list);
+    return command_list->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
+}
+
 AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset)
 {
     CHECK_POINTER(command_list);
@@ -396,88 +376,22 @@ AGPU_EXPORT agpu_error agpuSetAlphaReference(agpu_command_list* command_list, ag
     return command_list->setAlphaReference(reference);
 }
 
-AGPU_EXPORT agpu_error agpuSetUniformi(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniformi(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform2i(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniform2i(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform3i(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniform3i(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform4i(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniform4i(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformf(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniformf(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform2f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniform2f(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform3f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniform3f(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform4f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniform4f(location, count, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformMatrix2f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniformMatrix2f(location, count, transpose, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformMatrix3f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniformMatrix3f(location, count, transpose, data);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformMatrix4f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setUniformMatrix4f(location, count, transpose, data);
-}
-
 AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
     return command_list->close();
 }
 
-AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, agpu_pipeline_state* initial_pipeline_state)
+AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
 {
     CHECK_POINTER(command_list);
-    return command_list->reset(initial_pipeline_state);
+    return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list)
+AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer )
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame();
+    return command_list->beginFrame(framebuffer);
 }
 
 AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
