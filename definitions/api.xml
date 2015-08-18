@@ -583,12 +583,12 @@
             <method name="release" cname="ReleaseShaderResourceBinding" returnType="error">
             </method>
             
-            <method name="bindVertexBuffers" cname="BindUniformBuffer" returnType="error">
+            <method name="bindUniformBuffer" cname="BindUniformBuffer" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="uniform_buffer" type="buffer*" />
             </method>
 
-            <method name="bindVertexBuffers" cname="BindUniformBufferRange" returnType="error">
+            <method name="bindUniformBufferRange" cname="BindUniformBufferRange" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="uniform_buffer" type="buffer*" />
                 <arg name="offset" type="size" />

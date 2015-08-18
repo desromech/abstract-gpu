@@ -11,17 +11,103 @@ HEADER_START = \
 #ifndef $HeaderProtectMacro
 #define $HeaderProtectMacro
 
-#include "$CHeader"
+#include <stdexcept>
+#include "AGPU/$CHeader"
 
-namespace agpu
+/**
+ * Abstract GPU exception.
+ */
+class agpu_exception : public std::runtime_error
 {
+public:
+    explicit agpu_exception(agpu_error error)
+        : std::runtime_error("AGPU Error"), errorCode(error)
+    {
+    }
+    
+    agpu_error getErrorCode() const
+    {
+        return errorCode;
+    }
+    
+private:
+    agpu_error errorCode;
+};
+
+/**
+ * Abstract GPU reference smart pointer.
+ */
+template<typename T>
+class agpu_ref
+{
+public:
+    agpu_ref()
+        : pointer(0)
+    {
+    }
+    
+    agpu_ref(const agpu_ref<T*> &other)
+    {
+        if(other.pointer)
+            other.pointer->addReference();
+        pointer = other.pointer();
+    }
+    
+    agpu_ref(T* pointer)
+        : pointer(pointer)
+    {
+    }
+
+    agpu_ref<T> &operator=(const agpu_ref<T*> &other)
+    {
+        if(pointer != other.pointer)
+        {
+            if(other.pointer)
+                other.pointer->addReference();
+            if(pointer)
+                pointer->release();
+            pointer = other.pointer;
+        }
+        return *this;
+    }
+    
+    operator bool() const
+    {
+        return pointer;
+    }
+    
+    bool operator!() const
+    {
+        return !pointer;
+    }
+    
+    T* get() const
+    {
+        return pointer;
+    }
+    
+    T *operator->() const
+    {
+        return pointer;
+    }
+    
+private:
+    T *pointer;
+};
+
+/**
+ * Helper function to convert an error code into an exception.
+ */
+inline void AgpuThrowIfFailed(agpu_error error)
+{
+    if(error_code < 0)
+        throw agpu_exception(error);
+}
 
 """
 
 HEADER_END = \
 """
-
-} // end of namespace agpu
 #endif /* $HeaderProtectMacro */
 """
 
@@ -60,8 +146,8 @@ class MakeHeaderVisitor:
     def setup(self, api):
         self.api = api
         self.variables ={
-            'HeaderProtectMacro' : '_' + (api.headerFileName + 'pp').upper().replace('.', '_') + '_' ,
-            'CHeader' : '_' + api.headerFileName + '_' ,
+            'HeaderProtectMacro' : (api.headerFileName + 'pp').upper().replace('.', '_') + '_' ,
+            'CHeader' : api.headerFileName ,
             'ApiExportMacro': api.constantPrefix + 'EXPORT', 
             'ConstantPrefix' : api.constantPrefix,
             'FunctionPrefix' : api.functionPrefix,
@@ -80,48 +166,35 @@ class MakeHeaderVisitor:
         self.emitVersions(api.versions)
         self.emitExtensions(api.extensions)
         self.endHeader();
-   
-    def visitTypedef(self, typedef):
-        pass
         
-    def visitConstant(self, constant):
-        self.printLine('#define $ConstantPrefix$ConstantName (($CType)$ConstantValue)',
-            ConstantName = convertToUnderscore(constant.name),
-            CType = constant.ctype, ConstantValue = str(constant.value))
-        
-    def visitEnum(self, enum):
-        self.printLine('typedef enum {')
-        for constant in enum.constants:
-            self.printLine("\t$ConstantPrefix$ConstantName = $ConstantValue,", ConstantName=convertToUnderscore(constant.name), ConstantValue= str(constant.value))
-        self.printLine('} $TypePrefix$EnumName;', EnumName=enum.name)
-        self.newline()
+    def emitMethodWrapper(self, function):
+        allArguments = function.arguments
 
-    def emitFunctionPointerType(self, function):
-        allArguments = function.arguments
-        if function.clazz is not None:
-            allArguments = [SelfArgument(function.clazz)] + allArguments
-            
         arguments = self.makeArgumentsString(allArguments)
-        self.printLine('typedef $TypePrefix$ReturnType (*$FunctionPrefix${FunctionName}_FUN) ( $Arguments );',
-            ReturnType = function.returnType,
-            FunctionName = function.cname,
-            Arguments = arguments)
-        
-    def emitFunction(self, function):
-        allArguments = function.arguments
-        if function.clazz is not None:
-            allArguments = [SelfArgument(function.clazz)] + allArguments
-            
-        arguments = self.makeArgumentsString(allArguments)
-        self.printLine('${ApiExportMacro} $TypePrefix$ReturnType $FunctionPrefix$FunctionName ( $Arguments );',
-            ReturnType = function.returnType,
-            FunctionName = function.cname,
-            Arguments = arguments)
+        paramNames = self.makeArgumentNamesString(allArguments)
+        if function.returnType == 'error':
+            self.printLine('\tinline void $FunctionName ( $Arguments )',
+                ReturnType = function.returnType,
+                FunctionName = function.name,
+                Arguments = arguments)
+            self.printLine('\t{')
+            self.printLine('\t\tAgpuThrowIfFailed($FunctionPrefix$FunctionName( $Arguments ));', FunctionName = function.cname, Arguments = paramNames)
+            self.printLine('\t}')
+            self.newline()
+        else:
+            self.printLine('\tinline $TypePrefix$ReturnType $FunctionName ( $Arguments )',
+                ReturnType = function.returnType,
+                FunctionName = function.name,
+                Arguments = arguments)
+            self.printLine('\t{')
+            self.printLine('\t\treturn $FunctionPrefix$FunctionName( $Arguments );', FunctionName = function.cname, Arguments = paramNames)
+            self.printLine('\t}')
+            self.newline()
         
     def makeArgumentsString(self, arguments):
         # Emit void when no having arguments
         if len(arguments) == 0:
-            return 'void'
+            return ''
 
         result = ''
         for i in range(len(arguments)):
@@ -130,63 +203,28 @@ class MakeHeaderVisitor:
             result += self.processText('$TypePrefix$Type $Name', Type = arg.type, Name = arg.name)
         return result
         
-    def emitGlobals(self, functions):
-        self.writeLine('/* Global functions. */')
-        for function in functions:
-            self.emitFunctionPointerType(function)
-        self.newline()
-        
-        for function in functions:
-            self.emitFunction(function)
-        self.newline()
-
-    def emitInterfaceType(self, interface):
-        self.printLine('typedef struct _$TypePrefix$Name $TypePrefix$Name;', Name = interface.name)
-    
+    def makeArgumentNamesString(self, arguments):
+        result = 'this'
+        for i in range(len(arguments)):
+            arg = arguments[i]
+            result += ', %s' % arg.name
+        return result
+  
     def emitInterface(self, interface):
-        self.printLine('/* Methods for interface $TypePrefix$Name. */', Name = interface.name)
-        for method in interface.methods:
-            self.emitFunctionPointerType(method)
+        self.printLine('// Interface wrapper for $TypePrefix$Name.', Name = interface.name)
+        self.printLine('struct $TypePrefix$Name', Name = interface.name)
+        self.printLine('{')
+        self.printLine('private:')
+        self.printLine('\t$TypePrefix$Name() {}', Name = interface.name)
         self.newline()
-        
+        self.printLine('public:')
         for method in interface.methods:
-            self.emitFunction(method)
-        self.newline()
-
-    def emitField(self, field):
-        self.printLine('\t$TypePrefix$Type $Name;', Type = field.type, Name = field.name)
+            self.emitMethodWrapper(method)
+        self.printLine('};')
         
-    def emitStruct(self, struct):
-        self.printLine('/* Structure $TypePrefix$Name. */', Name = struct.name)
-        self.printLine('typedef struct $TypePrefix$Name {', Name = struct.name)
-        for field in struct.fields:
-            self.emitField(field)
-        self.printLine('} $TypePrefix$Name;', Name = struct.name)
         self.newline()
 
     def emitFragment(self, fragment):
-        # Emit the types
-        for typ in fragment.types:
-            typ.accept(self)
-        self.newline()
-
-        # Emit the interface types
-        for interface in fragment.interfaces:
-            self.emitInterfaceType(interface)
-        self.newline()
-
-        # Emit the constants.
-        for constant in fragment.constants:
-            constant.accept(self)
-        self.newline()
-
-        # Emit the structures.
-        for struct in fragment.structs:
-            self.emitStruct(struct)
-        
-        # Emit the global functions
-        self.emitGlobals(fragment.globals)
-        
         # Emit the interface methods
         for interface in fragment.interfaces:
             self.emitInterface(interface)
