@@ -91,15 +91,15 @@ private:
  */
 inline void AgpuThrowIfFailed(agpu_error error)
 {
-    if(error_code < 0)
+    if(error < 0)
         throw agpu_exception(error);
 }
 
 // Interface wrapper for agpu_platform.
-struct agpu_platform
+struct _agpu_platform
 {
 private:
-	agpu_platform() {}
+	_agpu_platform() {}
 
 public:
 	inline agpu_device* openDevice ( agpu_device_open_info* openInfo )
@@ -110,10 +110,10 @@ public:
 };
 
 // Interface wrapper for agpu_device.
-struct agpu_device
+struct _agpu_device
 {
 private:
-	agpu_device() {}
+	_agpu_device() {}
 
 public:
 	inline void addReference (  )
@@ -171,6 +171,11 @@ public:
 		return agpuCreateCommandAllocator( this );
 	}
 
+	inline agpu_command_list* createCommandListBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+	{
+		return agpuCreateCommandListBundle( this, allocator, initial_pipeline_state );
+	}
+
 	inline agpu_command_list* createCommandList ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
 	{
 		return agpuCreateCommandList( this, allocator, initial_pipeline_state );
@@ -199,10 +204,10 @@ public:
 };
 
 // Interface wrapper for agpu_pipeline_builder.
-struct agpu_pipeline_builder
+struct _agpu_pipeline_builder
 {
 private:
-	agpu_pipeline_builder() {}
+	_agpu_pipeline_builder() {}
 
 public:
 	inline void addReference (  )
@@ -263,10 +268,10 @@ public:
 };
 
 // Interface wrapper for agpu_pipeline_state.
-struct agpu_pipeline_state
+struct _agpu_pipeline_state
 {
 private:
-	agpu_pipeline_state() {}
+	_agpu_pipeline_state() {}
 
 public:
 	inline void addReference (  )
@@ -287,10 +292,10 @@ public:
 };
 
 // Interface wrapper for agpu_command_queue.
-struct agpu_command_queue
+struct _agpu_command_queue
 {
 private:
-	agpu_command_queue() {}
+	_agpu_command_queue() {}
 
 public:
 	inline void addReference (  )
@@ -311,10 +316,10 @@ public:
 };
 
 // Interface wrapper for agpu_command_allocator.
-struct agpu_command_allocator
+struct _agpu_command_allocator
 {
 private:
-	agpu_command_allocator() {}
+	_agpu_command_allocator() {}
 
 public:
 	inline void addReference (  )
@@ -335,10 +340,10 @@ public:
 };
 
 // Interface wrapper for agpu_command_list.
-struct agpu_command_list
+struct _agpu_command_list
 {
 private:
-	agpu_command_list() {}
+	_agpu_command_list() {}
 
 public:
 	inline void addReference (  )
@@ -441,6 +446,11 @@ public:
 		AgpuThrowIfFailed(agpuSetAlphaReference( this, reference ));
 	}
 
+	inline void executeBundle ( agpu_command_list* bundle )
+	{
+		AgpuThrowIfFailed(agpuExecuteBundle( this, bundle ));
+	}
+
 	inline void close (  )
 	{
 		AgpuThrowIfFailed(agpuCloseCommandList( this ));
@@ -464,19 +474,19 @@ public:
 };
 
 // Interface wrapper for agpu_texture.
-struct agpu_texture
+struct _agpu_texture
 {
 private:
-	agpu_texture() {}
+	_agpu_texture() {}
 
 public:
 };
 
 // Interface wrapper for agpu_buffer.
-struct agpu_buffer
+struct _agpu_buffer
 {
 private:
-	agpu_buffer() {}
+	_agpu_buffer() {}
 
 public:
 	inline void addReference (  )
@@ -507,10 +517,10 @@ public:
 };
 
 // Interface wrapper for agpu_vertex_binding.
-struct agpu_vertex_binding
+struct _agpu_vertex_binding
 {
 private:
-	agpu_vertex_binding() {}
+	_agpu_vertex_binding() {}
 
 public:
 	inline void addReference (  )
@@ -531,10 +541,10 @@ public:
 };
 
 // Interface wrapper for agpu_vertex_layout.
-struct agpu_vertex_layout
+struct _agpu_vertex_layout
 {
 private:
-	agpu_vertex_layout() {}
+	_agpu_vertex_layout() {}
 
 public:
 	inline void addReference (  )
@@ -555,10 +565,10 @@ public:
 };
 
 // Interface wrapper for agpu_shader.
-struct agpu_shader
+struct _agpu_shader
 {
 private:
-	agpu_shader() {}
+	_agpu_shader() {}
 
 public:
 	inline void addReference (  )
@@ -599,10 +609,10 @@ public:
 };
 
 // Interface wrapper for agpu_framebuffer.
-struct agpu_framebuffer
+struct _agpu_framebuffer
 {
 private:
-	agpu_framebuffer() {}
+	_agpu_framebuffer() {}
 
 public:
 	inline void addReference (  )
@@ -623,10 +633,10 @@ public:
 };
 
 // Interface wrapper for agpu_shader_resource_binding.
-struct agpu_shader_resource_binding
+struct _agpu_shader_resource_binding
 {
 private:
-	agpu_shader_resource_binding() {}
+	_agpu_shader_resource_binding() {}
 
 public:
 	inline void addReference (  )

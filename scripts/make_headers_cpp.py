@@ -100,7 +100,7 @@ private:
  */
 inline void AgpuThrowIfFailed(agpu_error error)
 {
-    if(error_code < 0)
+    if(error < 0)
         throw agpu_exception(error);
 }
 
@@ -212,10 +212,10 @@ class MakeHeaderVisitor:
   
     def emitInterface(self, interface):
         self.printLine('// Interface wrapper for $TypePrefix$Name.', Name = interface.name)
-        self.printLine('struct $TypePrefix$Name', Name = interface.name)
+        self.printLine('struct _$TypePrefix$Name', Name = interface.name)
         self.printLine('{')
         self.printLine('private:')
-        self.printLine('\t$TypePrefix$Name() {}', Name = interface.name)
+        self.printLine('\t_$TypePrefix$Name() {}', Name = interface.name)
         self.newline()
         self.printLine('public:')
         for method in interface.methods:

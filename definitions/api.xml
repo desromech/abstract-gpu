@@ -264,6 +264,11 @@
             <method name="createCommandAllocator" cname="CreateCommandAllocator" returnType="command_allocator*">
             </method>
 
+            <method name="createCommandListBundle" cname="CreateCommandListBundle" returnType="command_list*">
+                <arg name="allocator" type="command_allocator*" />
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
+            </method>
+
             <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
                 <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
@@ -466,6 +471,10 @@
                 <arg name="reference" type="float" />
             </method>
 
+            <method name="executeBundle" cname="ExecuteBundle" returnType="error">
+                <arg name="bundle" type="command_list*" />
+            </method>
+
             <method name="close" cname="CloseCommandList" returnType="error">
             </method>
 
@@ -484,6 +493,12 @@
         </interface>
         
         <interface name="texture">
+            <method name="addReference" cname="AddTextureReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseTexture" returnType="error">
+            </method>
+
         </interface>
 
         <interface name="buffer">

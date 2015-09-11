@@ -12,7 +12,7 @@ struct _agpu_command_list: public Object<_agpu_command_list>
 public:
     _agpu_command_list();
     
-    static agpu_command_list *create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
+    static agpu_command_list *create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, bool isBundle);
 
     void lostReferences();
 
@@ -34,6 +34,7 @@ public:
     agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error setStencilReference(agpu_float reference);
     agpu_error setAlphaReference(agpu_float reference);
+    agpu_error executeBundle ( agpu_command_list* bundle );
     agpu_error close();
     agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
     agpu_error beginFrame (agpu_framebuffer* framebuffer);
@@ -48,6 +49,7 @@ public:
     agpu_buffer *currentIndexBuffer;
     agpu_buffer *currentDrawBuffer;
     GLenum primitiveMode;
+    bool isBundle;
 
     void execute();
 

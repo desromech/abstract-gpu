@@ -256,6 +256,7 @@ typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_
 typedef agpu_shader_resource_binding* (*agpuCreateShaderResourceBinding_FUN) ( agpu_device* device, agpu_int bindingBank );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
 typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device );
+typedef agpu_command_list* (*agpuCreateCommandListBundle_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
@@ -273,6 +274,7 @@ AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_typ
 AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_device* device, agpu_int bindingBank );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device );
+AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
@@ -352,6 +354,7 @@ typedef agpu_error (*agpuDrawElementsIndirect_FUN) ( agpu_command_list* command_
 typedef agpu_error (*agpuMultiDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
 typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_list, agpu_float reference );
 typedef agpu_error (*agpuSetAlphaReference_FUN) ( agpu_command_list* command_list, agpu_float reference );
+typedef agpu_error (*agpuExecuteBundle_FUN) ( agpu_command_list* command_list, agpu_command_list* bundle );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list, agpu_framebuffer* framebuffer );
@@ -377,6 +380,7 @@ AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_lis
 AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
 AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_float reference );
 AGPU_EXPORT agpu_error agpuSetAlphaReference ( agpu_command_list* command_list, agpu_float reference );
+AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer );
@@ -469,6 +473,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateShaderResourceBinding_FUN agpuCreateShaderResourceBinding;
 	agpuCreatePipelineBuilder_FUN agpuCreatePipelineBuilder;
 	agpuCreateCommandAllocator_FUN agpuCreateCommandAllocator;
+	agpuCreateCommandListBundle_FUN agpuCreateCommandListBundle;
 	agpuCreateCommandList_FUN agpuCreateCommandList;
 	agpuGetPreferredShaderLanguage_FUN agpuGetPreferredShaderLanguage;
 	agpuGetPreferredHighLevelShaderLanguage_FUN agpuGetPreferredHighLevelShaderLanguage;
@@ -514,6 +519,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuMultiDrawElementsIndirect_FUN agpuMultiDrawElementsIndirect;
 	agpuSetStencilReference_FUN agpuSetStencilReference;
 	agpuSetAlphaReference_FUN agpuSetAlphaReference;
+	agpuExecuteBundle_FUN agpuExecuteBundle;
 	agpuCloseCommandList_FUN agpuCloseCommandList;
 	agpuResetCommandList_FUN agpuResetCommandList;
 	agpuBeginFrame_FUN agpuBeginFrame;

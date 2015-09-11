@@ -37,6 +37,7 @@ inline GLenum mapIndexType(agpu_size stride)
 _agpu_command_list::_agpu_command_list()
 {
     closed = false;
+    isBundle = false;
 }
 
 void _agpu_command_list::lostReferences()
@@ -44,10 +45,11 @@ void _agpu_command_list::lostReferences()
 
 }
 
-agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, bool isBundle)
 {
     auto list = new agpu_command_list();
     list->device = device;
+    list->isBundle = isBundle;
     if(initial_pipeline_state)
         list->usePipelineState(initial_pipeline_state);
     return list;
@@ -210,6 +212,17 @@ agpu_error _agpu_command_list::setStencilReference(agpu_float reference)
 agpu_error _agpu_command_list::setAlphaReference(agpu_float reference)
 {
     return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_command_list::executeBundle ( agpu_command_list* bundle )
+{
+    CHECK_POINTER(bundle)
+    if(!bundle->isBundle)
+        return AGPU_INVALID_PARAMETER;
+
+    return addCommand([=] {
+        bundle->execute();
+    });
 }
 
 agpu_error _agpu_command_list::close()
@@ -380,6 +393,12 @@ AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
     return command_list->close();
+}
+
+AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle )
+{
+    CHECK_POINTER(command_list);
+    return command_list->executeBundle(bundle);
 }
 
 AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )

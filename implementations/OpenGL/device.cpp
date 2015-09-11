@@ -242,7 +242,14 @@ AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu
 {
     if (!device)
         return nullptr;
-    return agpu_command_list::create(device, allocator, initial_pipeline_state);
+    return agpu_command_list::create(device, allocator, initial_pipeline_state, false);
+}
+
+AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+{
+    if (!device)
+        return nullptr;
+    return agpu_command_list::create(device, allocator, initial_pipeline_state, true);
 }
 
 AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
