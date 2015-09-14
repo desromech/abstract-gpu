@@ -16,7 +16,9 @@ extern "C" {
 #       define AGPU_EXPORT __declspec(dllimport)
 #   endif
 #else
-#   define AGPU_EXPORT
+#   if __GNUC__ >= 4
+#       define AGPU_EXPORT __attribute__ ((visibility ("default")))
+#   endif
 #endif
 
 typedef unsigned char agpu_byte;
@@ -387,7 +389,11 @@ AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_fr
 AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list );
 
 /* Methods for interface agpu_texture. */
+typedef agpu_error (*agpuAddTextureReference_FUN) ( agpu_texture* texture );
+typedef agpu_error (*agpuReleaseTexture_FUN) ( agpu_texture* texture );
 
+AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture );
+AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture );
 
 /* Methods for interface agpu_buffer. */
 typedef agpu_error (*agpuAddBufferReference_FUN) ( agpu_buffer* buffer );
@@ -524,6 +530,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuResetCommandList_FUN agpuResetCommandList;
 	agpuBeginFrame_FUN agpuBeginFrame;
 	agpuEndFrame_FUN agpuEndFrame;
+	agpuAddTextureReference_FUN agpuAddTextureReference;
+	agpuReleaseTexture_FUN agpuReleaseTexture;
 	agpuAddBufferReference_FUN agpuAddBufferReference;
 	agpuReleaseBuffer_FUN agpuReleaseBuffer;
 	agpuMapBuffer_FUN agpuMapBuffer;

@@ -480,6 +480,16 @@ private:
 	_agpu_texture() {}
 
 public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddTextureReference( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseTexture( this ));
+	}
+
 };
 
 // Interface wrapper for agpu_buffer.

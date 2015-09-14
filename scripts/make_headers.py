@@ -24,7 +24,9 @@ extern "C" {
 #       define ${ApiExportMacro} __declspec(dllimport)
 #   endif
 #else
-#   define ${ApiExportMacro}
+#   if __GNUC__ >= 4
+#       define ${ApiExportMacro} __attribute__ ((visibility ("default")))
+#   endif
 #endif
 
 """
