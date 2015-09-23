@@ -44,7 +44,7 @@ HEADER_END = \
 # Snippet taken from: http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
 def convertToUnderscore(s):
     return re.sub('(?!^)([0-9A-Z]+)', r'_\1', s).upper()
-    
+
 class MakeHeaderVisitor:
     def __init__(self, out):
         self.out = out
