@@ -24,12 +24,12 @@ public:
         : std::runtime_error("AGPU Error"), errorCode(error)
     {
     }
-    
+
     agpu_error getErrorCode() const
     {
         return errorCode;
     }
-    
+
 private:
     agpu_error errorCode;
 };
@@ -45,14 +45,14 @@ public:
         : pointer(0)
     {
     }
-    
+
     agpu_ref(const agpu_ref<T*> &other)
     {
         if(other.pointer)
             other.pointer->addReference();
         pointer = other.pointer();
     }
-    
+
     agpu_ref(T* pointer)
         : pointer(pointer)
     {
@@ -70,27 +70,27 @@ public:
         }
         return *this;
     }
-    
+
     operator bool() const
     {
         return pointer;
     }
-    
+
     bool operator!() const
     {
         return !pointer;
     }
-    
+
     T* get() const
     {
         return pointer;
     }
-    
+
     T *operator->() const
     {
         return pointer;
     }
-    
+
 private:
     T *pointer;
 };
@@ -115,8 +115,8 @@ HEADER_END = \
 # Converts text in 'CamelCase' into 'CAMEL_CASE'
 # Snippet taken from: http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
 def convertToUnderscore(s):
-    return re.sub('(?!^)([0-9A-Z]+)', r'_\1', s).upper()
-    
+    return re.sub('(?!^)([0-9A-Z]+)', r'_\1', s).upper().replace('__', '_')
+
 class MakeHeaderVisitor:
     def __init__(self, out):
         self.out = out
@@ -125,48 +125,48 @@ class MakeHeaderVisitor:
     def processText(self, text, **extraVariables):
         t = Template(text)
         return t.substitute(**dict(self.variables.items() + extraVariables.items()))
-        
+
     def write(self, text):
         self.out.write(text)
-        
+
     def writeLine(self, line):
         self.write(line)
         self.newline()
-        
+
     def newline(self):
         self.write('\n')
-        
+
     def printString(self, text, **extraVariables):
         self.write(self.processText(text, **extraVariables))
-        
+
     def printLine(self, text, **extraVariables):
         self.write(self.processText(text, **extraVariables))
         self.newline()
-        
+
     def setup(self, api):
         self.api = api
         self.variables ={
             'HeaderProtectMacro' : (api.headerFileName + 'pp').upper().replace('.', '_') + '_' ,
             'CHeader' : api.headerFileName ,
-            'ApiExportMacro': api.constantPrefix + 'EXPORT', 
+            'ApiExportMacro': api.constantPrefix + 'EXPORT',
             'ConstantPrefix' : api.constantPrefix,
             'FunctionPrefix' : api.functionPrefix,
             'TypePrefix' : api.typePrefix,
         }
-        
+
     def beginHeader(self):
         self.printString(HEADER_START)
-        
+
     def endHeader(self):
         self.printString(HEADER_END)
-        
+
     def visitApiDefinition(self, api):
         self.setup(api)
         self.beginHeader();
         self.emitVersions(api.versions)
         self.emitExtensions(api.extensions)
         self.endHeader();
-        
+
     def emitMethodWrapper(self, function):
         allArguments = function.arguments
 
@@ -190,7 +190,7 @@ class MakeHeaderVisitor:
             self.printLine('\t\treturn $FunctionPrefix$FunctionName( $Arguments );', FunctionName = function.cname, Arguments = paramNames)
             self.printLine('\t}')
             self.newline()
-        
+
     def makeArgumentsString(self, arguments):
         # Emit void when no having arguments
         if len(arguments) == 0:
@@ -202,14 +202,14 @@ class MakeHeaderVisitor:
             if i > 0: result += ', '
             result += self.processText('$TypePrefix$Type $Name', Type = arg.type, Name = arg.name)
         return result
-        
+
     def makeArgumentNamesString(self, arguments):
         result = 'this'
         for i in range(len(arguments)):
             arg = arguments[i]
             result += ', %s' % arg.name
         return result
-  
+
     def emitInterface(self, interface):
         self.printLine('// Interface wrapper for $TypePrefix$Name.', Name = interface.name)
         self.printLine('struct _$TypePrefix$Name', Name = interface.name)
@@ -221,7 +221,7 @@ class MakeHeaderVisitor:
         for method in interface.methods:
             self.emitMethodWrapper(method)
         self.printLine('};')
-        
+
         self.newline()
 
     def emitFragment(self, fragment):
@@ -231,18 +231,18 @@ class MakeHeaderVisitor:
 
     def emitVersion(self, version):
         self.emitFragment(version)
-        
+
     def emitVersions(self, versions):
         for version in versions.values():
             self.emitVersion(version)
 
     def emitExtension(self, version):
         self.emitFragment(version)
-        
+
     def emitExtensions(self, extensions):
         for extension in extensions.values():
             self.emitExtension(extension)
-            
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print "make-headers <definitions> <output dir>"

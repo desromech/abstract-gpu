@@ -11,16 +11,16 @@
         <typedef name="size" ctype="size_t" />
         <typedef name="enum" ctype="int" />
         <typedef name="bool" ctype="bool" />
-        
+
         <typedef name="float" ctype="float" />
         <typedef name="double" ctype="double" />
 
         <typedef name="bitfield" ctype="unsigned int" />
-                
+
         <typedef name="cstring" ctype="const char*" />
         <typedef name="string" ctype="const char*" />
         <typedef name="string_length" ctype="int" />
-        
+
         <typedef name="cstring_buffer" ctype="char*" />
         <typedef name="string_buffer" ctype="char*" />
     </types>
@@ -57,7 +57,7 @@
 			<field name="base_vertex" type="int" />
 			<field name="base_instance" type="uint" />
 		</struct>
-        
+
         <struct name="vertex_attrib_description">
             <field name="buffer" type="uint" />
             <field name="binding" type="uint" />
@@ -69,7 +69,7 @@
             <field name="divisor" type="uint" />
         </struct>
 	</structs>
-    
+
     <constants>
         <enum name="error">
             <constant name="Ok" value="0" />
@@ -92,7 +92,7 @@
             <constant name="PrimitiveTypeTriangle" value="2" />
             <constant name="PrimitiveTypePatch" value="3" />
 		</enum>
-                
+
 		<enum name="primitive_topology">
             <constant name="Points" value="0" />
 
@@ -119,7 +119,7 @@
             <constant name="Decrease" value="6" />
             <constant name="DecreaseWrap" value="7" />
         </enum>
-        
+
         <enum name="compare_function">
             <constant name="Always" value="0" />
             <constant name="Never" value="1" />
@@ -130,7 +130,7 @@
             <constant name="Greater" value="6" />
             <constant name="GreaterEqual" value="7" />
         </enum>
-        
+
         <enum name="texture_type">
             <constant name="TextureBuffer" value="0" />
             <constant name="Texture1D" value="1" />
@@ -193,13 +193,13 @@
             <constant name="ShaderLanguageHlsl" value="4" />
             <constant name="ShaderLanguageBinary" value="5" />
 		</enum>
-        
+
         <enum name="field_type">
             <constant name="Float" value="0" />
             <constant name="HalfFloat" value="1" />
             <constant name="Double" value="2" />
             <constant name="Fixed" value="3" />
-            
+
             <constant name="Byte" value="4" />
             <constant name="UnsignedByte" value="5" />
             <constant name="Short" value="6" />
@@ -207,8 +207,115 @@
             <constant name="Int" value="8" />
             <constant name="UnsignedInt" value="9" />
         </enum>
+
+        <enum name="texture_format">
+            <constant name="TextureFormatUnknown" value="0" />
+            <constant name="TextureFormatR32G32B32A32_Typeless" value="1" />
+            <constant name="TextureFormatR32G32B32A32_Float" value="2" />
+            <constant name="TextureFormatR32G32B32A32_UInt" value="3" />
+            <constant name="TextureFormatR32G32B32A32_SInt" value="4" />
+            <constant name="TextureFormatR32G32B32_Typeless" value="5" />
+            <constant name="TextureFormatR32G32B32_Float" value="6" />
+            <constant name="TextureFormatR32G32B32_UInt" value="7" />
+            <constant name="TextureFormatR32G32B32_SInt" value="8" />
+
+            <constant name="TextureFormatR16G16B16A16_Typeless" value="9" />
+            <constant name="TextureFormatR16G16B16A16_Float" value="10" />
+            <constant name="TextureFormatR16G16B16A16_UNorm" value="11" />
+            <constant name="TextureFormatR16G16B16A16_UInt" value="12" />
+            <constant name="TextureFormatR16G16B16A16_SNorm" value="13" />
+            <constant name="TextureFormatR16G16B16A16_SInt" value="14" />
+
+            <constant name="TextureFormatR32G32_Typeless" value="15" />
+            <constant name="TextureFormatR32G32_Float" value="16" />
+            <constant name="TextureFormatR32G32_UInt" value="17" />
+            <constant name="TextureFormatR32G32_SInt" value="18" />
+            <constant name="TextureFormatR32G8X24_Typeless" value="19" />
+
+            <constant name="TextureFormatD32_Float_S8X24_UInt" value="20" />
+            <constant name="TextureFormatR32_Float_S8X24_Typeless" value="21" />
+            <constant name="TextureFormatX32_Typeless_G8X24_UInt" value="22" />
+
+            <constant name="TextureFormatR10G10B10A3_Typeless" value="23" />
+            <constant name="TextureFormatR10G10B10A3_UNorm" value="24" />
+            <constant name="TextureFormatR10G10B10A3_UInt" value="25" />
+            <constant name="TextureFormatR11G11B10A3_Float" value="26" />
+
+            <constant name="TextureFormatR8G8B8A8_Typeless" value="27" />
+            <constant name="TextureFormatR8G8B8A8_UNorm" value="28" />
+            <constant name="TextureFormatR8G8B8A8_UNormSRGB" value="29" />
+            <constant name="TextureFormatR8G8B8A8_UInt" value="30" />
+            <constant name="TextureFormatR8G8B8A8_SNorm" value="31" />
+            <constant name="TextureFormatR8G8B8A8_SInt" value="32" />
+
+            <constant name="TextureFormatR16G16_Typeless" value="33" />
+            <constant name="TextureFormatR16G16_Float" value="34" />
+            <constant name="TextureFormatR16G16_UNorm" value="35" />
+            <constant name="TextureFormatR16G16_UInt" value="36" />
+            <constant name="TextureFormatR16G16_SNorm" value="37" />
+            <constant name="TextureFormatR16G16_SInt" value="38" />
+
+            <constant name="TextureFormatR32_Typeless" value="39" />
+            <constant name="TextureFormatD32_Float" value="40" />
+            <constant name="TextureFormatR32_Float" value="41" />
+            <constant name="TextureFormatR32_UInt" value="42" />
+            <constant name="TextureFormatR32_SInt" value="43" />
+
+            <constant name="TextureFormatR24G8_Typeless" value="44" />
+            <constant name="TextureFormatD24_UnormS8_UInt" value="45" />
+            <constant name="TextureFormatR24_UnormX8_Typeless" value="46" />
+            <constant name="TextureFormatX24TG8_UInt" value="47" />
+
+            <constant name="TextureFormatR8G8_Typeless" value="48" />
+            <constant name="TextureFormatR8G8_UNorm" value="49" />
+            <constant name="TextureFormatR8G8_UInt" value="50" />
+            <constant name="TextureFormatR8G8_SNorm" value="51" />
+            <constant name="TextureFormatR8G8_SInt" value="52" />
+
+            <constant name="TextureFormatR16_Typeless" value="53" />
+            <constant name="TextureFormatR16_Float" value="54" />
+            <constant name="TextureFormatD16_UNorm" value="55" />
+            <constant name="TextureFormatR16_UNorm" value="56" />
+            <constant name="TextureFormatR16_UInt" value="57" />
+            <constant name="TextureFormatR16_SNorm" value="58" />
+            <constant name="TextureFormatR16_SInt" value="59" />
+
+            <constant name="TextureFormatR8_Typeless" value="60" />
+            <constant name="TextureFormatR8_UNorm" value="61" />
+            <constant name="TextureFormatR8_UInt" value="62" />
+            <constant name="TextureFormatR8_SNorm" value="63" />
+            <constant name="TextureFormatR8_SInt" value="64" />
+            <constant name="TextureFormatA8_UNorm" value="65" />
+            <constant name="TextureFormatR1_UNorm" value="66" />
+
+            <constant name="TextureFormatBC1_Typeless" value="70" />
+            <constant name="TextureFormatBC1_UNorm" value="71" />
+            <constant name="TextureFormatBC1_UNormSRGB" value="72" />
+            <constant name="TextureFormatBC2_Typeless" value="73" />
+            <constant name="TextureFormatBC2_UNorm" value="74" />
+            <constant name="TextureFormatBC2_UNormSRGB" value="75" />
+            <constant name="TextureFormatBC3_Typeless" value="76" />
+            <constant name="TextureFormatBC3_UNorm" value="77" />
+            <constant name="TextureFormatBC3_UNormSRGB" value="78" />
+            <constant name="TextureFormatBC4_Typeless" value="79" />
+            <constant name="TextureFormatBC4_UNorm" value="80" />
+            <constant name="TextureFormatBC4_SNorm" value="81" />
+            <constant name="TextureFormatBC5_Typeless" value="82" />
+            <constant name="TextureFormatBC5_UNorm" value="83" />
+            <constant name="TextureFormatBC5_SNorm" value="84" />
+
+            <constant name="TextureFormatB5G6R5_UNorm" value="85" />
+            <constant name="TextureFormatB5G6R5A1_UNorm" value="86" />
+            <constant name="TextureFormatB8G8R8A8_UNorm" value="87" />
+            <constant name="TextureFormatB8G8R8X8_UNorm" value="88" />
+
+            <constant name="TextureFormatB8G8R8A8_Typeless" value="90" />
+            <constant name="TextureFormatB8G8R8A8_UNormSRGB" value="91" />
+            <constant name="TextureFormatB8G8R8X8_Typeless" value="92" />
+            <constant name="TextureFormatB8G8R8X8_UNormSRGB" value="93" />
+        </enum>
     </constants>
-    
+
     <globals>
         <function name="getPlatforms" cname="GetPlatforms" returnType="error" category="platform">
             <arg name="numplatforms" type="size" />
@@ -216,7 +323,7 @@
             <arg name="ret_numplatforms" type="size*" />
         </function>
     </globals>
-    
+
     <interfaces>
         <interface name="platform">
             <method name="openDevice" cname="OpenDevice" returnType="device*">
@@ -224,7 +331,7 @@
             </method>
 
         </interface>
-        
+
         <interface name="device">
             <method name="addReference" cname="AddDeviceReference" returnType="error">
             </method>
@@ -249,7 +356,7 @@
             <method name="createVertexBinding" cname="CreateVertexBinding" returnType="vertex_binding*">
                 <arg name="layout" type="vertex_layout*" />
             </method>
-            
+
             <method name="createShader" cname="CreateShader" returnType="shader*">
                 <arg name="type" type="shader_type" />
             </method>
@@ -257,7 +364,7 @@
             <method name="createShaderResourceBinding" cname="CreateShaderResourceBinding" returnType="shader_resource_binding*">
                 <arg name="bindingBank" type="int" />
             </method>
-            
+
             <method name="createPipelineBuilder" cname="CreatePipelineBuilder" returnType="pipeline_builder*">
             </method>
 
@@ -273,13 +380,13 @@
                 <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
             </method>
-            
+
             <method name="getPreferredShaderLanguage" cname="GetPreferredShaderLanguage" returnType="shader_language">
             </method>
 
             <method name="getPreferredHighLevelShaderLanguage" cname="GetPreferredHighLevelShaderLanguage" returnType="shader_language">
             </method>
-            
+
             <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
             </method>
 
@@ -291,29 +398,29 @@
                 <arg name="hasStencil" type="bool" />
             </method>
         </interface>
-        
+
         <interface name="pipeline_builder">
             <method name="addReference" cname="AddPipelineBuilderReference" returnType="error">
             </method>
 
             <method name="release" cname="ReleasePipelineBuilder" returnType="error">
             </method>
-            
+
             <method name="build" cname="BuildPipelineState" returnType="pipeline_state*">
             </method>
-            
+
             <method name="attachShader" cname="AttachShader" returnType="error">
                 <arg name="shader" type="shader*" />
             </method>
 
             <method name="getBuildingLogLength" cname="GetPipelineBuildingLogLength" returnType="size">
             </method>
-            
+
             <method name="getBuildingLog" cname="GetPipelineBuildingLog" returnType="error">
                 <arg name="buffer_size" type="size" />
                 <arg name="buffer" type="string_buffer" />
             </method>
-            
+
             <method name="setDepthState" cname="SetDepthState" returnType="error">
                 <arg name="enabled" type="bool" />
                 <arg name="writeMask" type="bool" />
@@ -325,11 +432,11 @@
                 <arg name="writeMask" type="int" />
                 <arg name="readMask" type="int" />
             </method>
-            
+
             <method name="setRenderTargetCount" cname="SetRenderTargetCount" returnType="error">
                 <arg name="count" type="int" />
             </method>
-            
+
             <method name="setPrimitiveType" cname="SetPrimitiveType" returnType="error">
                 <arg name="type" type="primitive_type" />
             </method>
@@ -339,14 +446,14 @@
             </method>
 
         </interface>
-        
+
         <interface name="pipeline_state">
             <method name="addReference" cname="AddPipelineStateReference" returnType="error">
             </method>
 
             <method name="release" cname="ReleasePipelineState" returnType="error">
             </method>
-            
+
             <method name="getUniformLocation" cname="GetUniformLocation" returnType="int">
                 <arg name="name" type="cstring" />
             </method>
@@ -374,7 +481,7 @@
             <method name="reset" cname="ResetCommandAllocator" returnType="error">
             </method>
         </interface>
-        
+
         <interface name="command_list">
             <method name="addReference" cname="AddCommandListReference" returnType="error">
             </method>
@@ -395,7 +502,7 @@
                 <arg name="w" type="int" />
                 <arg name="h" type="int" />
             </method>
-            
+
             <method name="setClearColor" cname="SetClearColor" returnType="error">
                 <arg name="r" type="float" />
                 <arg name="g" type="float" />
@@ -453,7 +560,7 @@
     			<arg name="base_vertex" type="int" />
     			<arg name="base_instance" type="uint" />
             </method>
-            
+
             <method name="drawElementsIndirect" cname="DrawElementsIndirect" returnType="error">
                 <arg name="offset" type="size" />
             </method>
@@ -462,7 +569,7 @@
                 <arg name="offset" type="size" />
                 <arg name="drawcount" type="size" />
             </method>
-            
+
             <method name="setStencilReference" cname="SetStencilReference" returnType="error">
                 <arg name="reference" type="float" />
             </method>
@@ -491,7 +598,7 @@
             </method>
 
         </interface>
-        
+
         <interface name="texture">
             <method name="addReference" cname="AddTextureReference" returnType="error">
             </method>
@@ -507,28 +614,28 @@
 
             <method name="release" cname="ReleaseBuffer" returnType="error">
             </method>
-            
+
             <method name="mapBuffer" cname="MapBuffer" returnType="pointer">
                 <arg name="flags" type="mapping_access"/>
             </method>
 
             <method name="unmapBuffer" cname="UnmapBuffer" returnType="error">
             </method>
-            
+
             <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
                 <arg name="offset" type="size" />
                 <arg name="size" type="size" />
                 <arg name="data" type="pointer"/>
             </method>
         </interface>
-        
+
         <interface name="vertex_binding">
             <method name="addReference" cname="AddVertexBindingReference" returnType="error">
             </method>
 
             <method name="release" cname="ReleaseVertexBinding" returnType="error">
             </method>
-            
+
             <method name="bindVertexBuffers" cname="BindVertexBuffers" returnType="error">
                 <arg name="count" type="uint" />
                 <arg name="vertex_buffers" type="buffer**" />
@@ -541,39 +648,39 @@
 
             <method name="release" cname="ReleaseVertexLayout" returnType="error">
             </method>
-            
+
             <method name="addVertexAttributeBindings" cname="AddVertexAttributeBindings" returnType="error">
                 <arg name="vertex_buffer_count" type="uint" />
                 <arg name="attribute_count" type="size" />
                 <arg name="attributes" type="vertex_attrib_description*" />
             </method>
         </interface>
-        
+
         <interface name="shader">
             <method name="addReference" cname="AddShaderReference" returnType="error">
             </method>
 
             <method name="release" cname="ReleaseShader" returnType="error">
             </method>
-            
+
             <method name="setShaderSource" cname="SetShaderSource" returnType="error">
                 <arg name="language" type="shader_language" />
                 <arg name="sourceText" type="string" />
                 <arg name="sourceTextLength" type="string_length" />
             </method>
-            
+
             <method name="compileShader" cname="CompileShader" returnType="error">
                 <arg name="options" type="cstring" />
             </method>
 
             <method name="getCompilationLogLength" cname="GetShaderCompilationLogLength" returnType="size">
             </method>
-            
+
             <method name="getCompilationLog" cname="GetShaderCompilationLog" returnType="error">
                 <arg name="buffer_size" type="size" />
                 <arg name="buffer" type="string_buffer" />
             </method>
-            
+
             <method name="bindAttributeLocation" cname="BindAttributeLocation" returnType="error">
                 <arg name="name" type="cstring" />
                 <arg name="location" type="int" />
@@ -583,21 +690,21 @@
         <interface name="framebuffer">
             <method name="addReference" cname="AddFramebufferReference" returnType="error">
             </method>
-    
+
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
             </method>
-            
+
             <method name="isMainFrameBuffer" cname="IsMainFrameBuffer" returnType="bool">
             </method>
         </interface>
-        
+
         <interface name="shader_resource_binding">
             <method name="addReference" cname="AddShaderResourceBindingReference" returnType="error">
             </method>
-    
+
             <method name="release" cname="ReleaseShaderResourceBinding" returnType="error">
             </method>
-            
+
             <method name="bindUniformBuffer" cname="BindUniformBuffer" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="uniform_buffer" type="buffer*" />

@@ -8,7 +8,7 @@ from string import Template
 # Converts text in 'CamelCase' into 'CAMEL_CASE'
 # Snippet taken from: http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
 def convertToUnderscore(s):
-    return re.sub('(?!^)([0-9A-Z]+)', r'_\1', s).upper()
+    return re.sub('(?!^)([0-9A-Z]+)', r'_\1', s).upper().replace('__', '_')
 
 def convertToCamelCase(s):
     result = ''

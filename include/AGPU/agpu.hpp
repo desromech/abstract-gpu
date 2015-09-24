@@ -15,12 +15,12 @@ public:
         : std::runtime_error("AGPU Error"), errorCode(error)
     {
     }
-    
+
     agpu_error getErrorCode() const
     {
         return errorCode;
     }
-    
+
 private:
     agpu_error errorCode;
 };
@@ -36,14 +36,14 @@ public:
         : pointer(0)
     {
     }
-    
+
     agpu_ref(const agpu_ref<T*> &other)
     {
         if(other.pointer)
             other.pointer->addReference();
         pointer = other.pointer();
     }
-    
+
     agpu_ref(T* pointer)
         : pointer(pointer)
     {
@@ -61,27 +61,27 @@ public:
         }
         return *this;
     }
-    
+
     operator bool() const
     {
         return pointer;
     }
-    
+
     bool operator!() const
     {
         return !pointer;
     }
-    
+
     T* get() const
     {
         return pointer;
     }
-    
+
     T *operator->() const
     {
         return pointer;
     }
-    
+
 private:
     T *pointer;
 };
