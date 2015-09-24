@@ -17,7 +17,7 @@ public:
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, nullptr);
-        agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
+        agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(swapChain));
 
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);
@@ -32,6 +32,7 @@ public:
         auto queue = agpuGetDefaultCommandQueue(device);
         agpuAddCommandList(queue, commandList);
 
+        agpuFinishQueueExecution(queue);
         swapBuffers();
     }
 

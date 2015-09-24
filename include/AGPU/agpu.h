@@ -42,6 +42,7 @@ typedef char* agpu_string_buffer;
 
 typedef struct _agpu_platform agpu_platform;
 typedef struct _agpu_device agpu_device;
+typedef struct _agpu_swap_chain agpu_swap_chain;
 typedef struct _agpu_pipeline_builder agpu_pipeline_builder;
 typedef struct _agpu_pipeline_state agpu_pipeline_state;
 typedef struct _agpu_command_queue agpu_command_queue;
@@ -285,19 +286,19 @@ typedef enum {
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
 	agpu_pointer display;
+	agpu_bool debug_layer;
+} agpu_device_open_info;
+
+/* Structure agpu_swap_chain_create_info. */
+typedef struct agpu_swap_chain_create_info {
 	agpu_pointer window;
 	agpu_pointer surface;
-	agpu_int red_size;
-	agpu_int green_size;
-	agpu_int blue_size;
-	agpu_int alpha_size;
-	agpu_int depth_size;
-	agpu_int stencil_size;
+	agpu_texture_format renderbuffer_format;
+	agpu_texture_format depthstencil_format;
 	agpu_bool doublebuffer;
 	agpu_bool sample_buffers;
 	agpu_int samples;
-	agpu_bool debugLayer;
-} agpu_device_open_info;
+} agpu_swap_chain_create_info;
 
 /* Structure agpu_buffer_description. */
 typedef struct agpu_buffer_description {
@@ -343,7 +344,7 @@ AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_o
 typedef agpu_error (*agpuAddDeviceReference_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuReleaseDevice_FUN) ( agpu_device* device );
 typedef agpu_command_queue* (*agpuGetDefaultCommandQueue_FUN) ( agpu_device* device );
-typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_device* device );
+typedef agpu_swap_chain* (*agpuCreateSwapChain_FUN) ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo );
 typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
 typedef agpu_vertex_layout* (*agpuCreateVertexLayout_FUN) ( agpu_device* device );
 typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device, agpu_vertex_layout* layout );
@@ -355,13 +356,12 @@ typedef agpu_command_list* (*agpuCreateCommandListBundle_FUN) ( agpu_device* dev
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
-typedef agpu_framebuffer* (*agpuGetCurrentBackBuffer_FUN) ( agpu_device* device );
 typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
 AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue ( agpu_device* device );
-AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device );
+AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo );
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout ( agpu_device* device );
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, agpu_vertex_layout* layout );
@@ -373,8 +373,18 @@ AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle ( agpu_device* device
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
-AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_device* device );
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
+
+/* Methods for interface agpu_swap_chain. */
+typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
+typedef agpu_error (*agpuReleaseSwapChain_FUN) ( agpu_swap_chain* swap_chain );
+typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_swap_chain* swap_chain );
+typedef agpu_framebuffer* (*agpuGetCurrentBackBuffer_FUN) ( agpu_swap_chain* swap_chain );
+
+AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain );
+AGPU_EXPORT agpu_error agpuReleaseSwapChain ( agpu_swap_chain* swap_chain );
+AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_swap_chain* swap_chain );
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_chain );
 
 /* Methods for interface agpu_pipeline_builder. */
 typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builder* pipeline_builder );
@@ -414,10 +424,12 @@ AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_stat
 typedef agpu_error (*agpuAddCommandQueueReference_FUN) ( agpu_command_queue* command_queue );
 typedef agpu_error (*agpuReleaseCommandQueue_FUN) ( agpu_command_queue* command_queue );
 typedef agpu_error (*agpuAddCommandList_FUN) ( agpu_command_queue* command_queue, agpu_command_list* command_list );
+typedef agpu_error (*agpuFinishQueueExecution_FUN) ( agpu_command_queue* command_queue );
 
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* command_queue );
 AGPU_EXPORT agpu_error agpuReleaseCommandQueue ( agpu_command_queue* command_queue );
 AGPU_EXPORT agpu_error agpuAddCommandList ( agpu_command_queue* command_queue, agpu_command_list* command_list );
+AGPU_EXPORT agpu_error agpuFinishQueueExecution ( agpu_command_queue* command_queue );
 
 /* Methods for interface agpu_command_allocator. */
 typedef agpu_error (*agpuAddCommandAllocatorReference_FUN) ( agpu_command_allocator* command_allocator );
@@ -564,7 +576,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddDeviceReference_FUN agpuAddDeviceReference;
 	agpuReleaseDevice_FUN agpuReleaseDevice;
 	agpuGetDefaultCommandQueue_FUN agpuGetDefaultCommandQueue;
-	agpuSwapBuffers_FUN agpuSwapBuffers;
+	agpuCreateSwapChain_FUN agpuCreateSwapChain;
 	agpuCreateBuffer_FUN agpuCreateBuffer;
 	agpuCreateVertexLayout_FUN agpuCreateVertexLayout;
 	agpuCreateVertexBinding_FUN agpuCreateVertexBinding;
@@ -576,8 +588,11 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateCommandList_FUN agpuCreateCommandList;
 	agpuGetPreferredShaderLanguage_FUN agpuGetPreferredShaderLanguage;
 	agpuGetPreferredHighLevelShaderLanguage_FUN agpuGetPreferredHighLevelShaderLanguage;
-	agpuGetCurrentBackBuffer_FUN agpuGetCurrentBackBuffer;
 	agpuCreateFrameBuffer_FUN agpuCreateFrameBuffer;
+	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
+	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
+	agpuSwapBuffers_FUN agpuSwapBuffers;
+	agpuGetCurrentBackBuffer_FUN agpuGetCurrentBackBuffer;
 	agpuAddPipelineBuilderReference_FUN agpuAddPipelineBuilderReference;
 	agpuReleasePipelineBuilder_FUN agpuReleasePipelineBuilder;
 	agpuBuildPipelineState_FUN agpuBuildPipelineState;
@@ -595,6 +610,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddCommandQueueReference_FUN agpuAddCommandQueueReference;
 	agpuReleaseCommandQueue_FUN agpuReleaseCommandQueue;
 	agpuAddCommandList_FUN agpuAddCommandList;
+	agpuFinishQueueExecution_FUN agpuFinishQueueExecution;
 	agpuAddCommandAllocatorReference_FUN agpuAddCommandAllocatorReference;
 	agpuReleaseCommandAllocator_FUN agpuReleaseCommandAllocator;
 	agpuResetCommandAllocator_FUN agpuResetCommandAllocator;

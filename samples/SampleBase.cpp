@@ -40,7 +40,7 @@ void printError(const char *format, ...)
 #endif
     va_end(args);
 }
-    
+
 std::string readWholeFile(const std::string &fileName)
 {
     FILE *file = fopen(fileName.c_str(), "rb");
@@ -49,13 +49,13 @@ std::string readWholeFile(const std::string &fileName)
         printError("Failed to open file %s\n", fileName.c_str());
         return std::string();
     }
-    
+
     // Allocate the data.
     std::vector<char> data;
     fseek(file, 0, SEEK_END);
     data.resize(ftell(file));
     fseek(file, 0, SEEK_SET);
-    
+
     // Read the file
     if(fread(&data[0], data.size(), 1, file) != 1)
     {
@@ -63,7 +63,7 @@ std::string readWholeFile(const std::string &fileName)
         fclose(file);
         return std::string();
     }
-    
+
     fclose(file);
     return std::string(data.begin(), data.end());
 }
@@ -71,7 +71,7 @@ std::string readWholeFile(const std::string &fileName)
 int SampleBase::main(int argc, const char **argv)
 {
     SDL_Init(SDL_INIT_VIDEO);
-    
+
     screenWidth = 640;
     screenHeight = 480;
 
@@ -97,20 +97,22 @@ int SampleBase::main(int argc, const char **argv)
     SDL_GetWindowWMInfo(window, &windowInfo);
 
     // Open the device
+    agpu_swap_chain_create_info swapChainCreateInfo;
     agpu_device_open_info openInfo;
     memset(&openInfo, 0, sizeof(openInfo));
+    memset(&swapChainCreateInfo, 0, sizeof(swapChainCreateInfo));
     switch(windowInfo.subsystem)
     {
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     case SDL_SYSWM_WINDOWS:
         openInfo.window = (agpu_pointer)windowInfo.info.win.window;
-        openInfo.surface = (agpu_pointer)windowInfo.info.win.hdc;
+        swapChainCreateInfo..surface = (agpu_pointer)windowInfo.info.win.hdc;
         break;
 #endif
 #if defined(SDL_VIDEO_DRIVER_X11)
     case SDL_SYSWM_X11:
         openInfo.display = (agpu_pointer)windowInfo.info.x11.display;
-        openInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
+        swapChainCreateInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
         break;
 #endif
     default:
@@ -118,12 +120,9 @@ int SampleBase::main(int argc, const char **argv)
         return -1;
     }
 
-    openInfo.red_size = 5;
-    openInfo.blue_size = 5;
-    openInfo.green_size = 5;
-    openInfo.alpha_size = 5;
-    openInfo.depth_size = 16,
-    openInfo.doublebuffer = 1;
+    swapChainCreateInfo.renderbuffer_format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+    swapChainCreateInfo.depthstencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    swapChainCreateInfo.doublebuffer = 1;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debugLayer = true;
@@ -132,7 +131,15 @@ int SampleBase::main(int argc, const char **argv)
     device = agpuOpenDevice(platform, &openInfo);
     if(!device)
     {
-        printError("failed to open the device");
+        printError("Failed to open the device\n");
+        return false;
+    }
+
+    // Create the swap chain.
+    swapChain = agpuCreateSwapChain(device, &swapChainCreateInfo);
+    if(!swapChain)
+    {
+        printError("Failed to create the swap chain\n");
         return false;
     }
 
@@ -150,6 +157,7 @@ int SampleBase::main(int argc, const char **argv)
     }
 
     shutdownSample();
+    agpuReleaseSwapChain(swapChain);
     agpuReleaseDevice(device);
 
     SDL_DestroyWindow(window);
@@ -219,7 +227,7 @@ void SampleBase::render()
 
 void SampleBase::swapBuffers()
 {
-    agpuSwapBuffers(device);
+    agpuSwapBuffers(swapChain);
 }
 
 agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader_type type)
@@ -247,8 +255,8 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
     auto source = readWholeFile(fullName);
     if(source.empty())
         return nullptr;
-        
-    // Create the shader and compile it.        
+
+    // Create the shader and compile it.
     auto shader = agpuCreateShader(device, type);
     agpuSetShaderSource(shader, preferredShaderLanguage, source.c_str(), (agpu_string_length)source.size());
     if(agpuCompileShader(shader, nullptr) != AGPU_OK)
@@ -260,8 +268,8 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
         printError("Compilation error of '%s':%s\n", fullName.c_str(), logBuffer.get());
         return nullptr;
     }
-    
-    // Bind some attributes.  
+
+    // Bind some attributes.
     if (type == AGPU_VERTEX_SHADER)
     {
         agpuBindAttributeLocation(shader, "vPosition", 0);
@@ -276,7 +284,7 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
 agpu_pipeline_state *SampleBase::buildPipeline(agpu_pipeline_builder *builder)
 {
     auto pipeline = agpuBuildPipelineState(builder);
-    
+
     // Check the link result.
     if(!pipeline)
     {
@@ -286,7 +294,7 @@ agpu_pipeline_state *SampleBase::buildPipeline(agpu_pipeline_builder *builder)
         printError("Pipeline building error: %s\n", logBuffer.get());
         return nullptr;
     }
-    
+
     return pipeline;
 }
 

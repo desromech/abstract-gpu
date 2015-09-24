@@ -18,16 +18,14 @@ public:
 
 public:
     void bind();
-    
+
     agpu_device *device;
 
     agpu_uint width;
     agpu_uint height;
-    bool isMainFrameBuffer;
     bool hasDepth;
     bool hasStencil;
     int renderTargetCount;
-	GLuint handle;
 };
 
 #endif //AGPU_GL_FRAMEBUFFER_HPP

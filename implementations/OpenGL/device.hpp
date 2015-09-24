@@ -12,6 +12,9 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <GL/glext.h>
+
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+
 #else
 #error unsupported platform
 #endif
@@ -19,6 +22,7 @@
 #include <string>
 
 #include "object.hpp"
+#include "job_queue.hpp"
 
 class AgpuGLImmediateContext;
 
@@ -43,6 +47,36 @@ enum class OpenGLVersion
 
 extern OpenGLVersion GLContextVersionPriorities[];
 
+struct OpenGLContext
+{
+    OpenGLContext();
+    ~OpenGLContext();
+
+    bool makeCurrentWithWindow(agpu_pointer window);
+    bool makeCurrent();
+    void swapBuffers();
+    void swapBuffersOfWindow(agpu_pointer window);
+    void destroy();
+
+    bool ownsWindow;
+    OpenGLVersion version;
+
+    static OpenGLContext *getCurrent();
+
+#ifdef _WIN32
+    HWND window;
+    HDC hDC;
+    HGLRC context;
+#elif defined(__linux__)
+    glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
+    GLXFBConfig framebufferConfig;
+
+    Display *display;
+    Window window;
+    GLXContext context;
+#endif
+};
+
 /**
  * Agpu OpenGL device
  */
@@ -56,15 +90,13 @@ public:
     static bool isExtensionSupported(const char *extList, const char *extension);
     static agpu_device *open(agpu_device_open_info* openInfo);
 
-    agpu_error swapBuffers();
+    OpenGLContext createSecondaryContext(bool useMainWindow);
 
-    bool makeCurrent();
     void readVersionInformation();
     void loadExtensions();
     void *getProcAddress(const char *symbolName);
     void initializeObjects();
     void createDefaultCommandQueue();
-    void createMainFrameBuffer();
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)
@@ -72,25 +104,23 @@ public:
         functionPointer = reinterpret_cast<FT> (getProcAddress(functionName));
     }
 
+    template<typename FT>
+    void onMainContextBlocking(const FT &f)
+    {
+        AsyncJob job(f);
+        mainContextJobQueue.addJob(&job);
+        job.wait();
+    }
+
     OpenGLVersion versionNumber;
     std::string rendererString, shaderString;
 
-#ifdef _WIN32
-    HWND window;
-    HDC hDC;
-    HGLRC context;
-#elif defined(__linux__)
-    Display *display;
-    Window window;
-    GLXContext context;
-#endif
-
     agpu_command_queue *defaultCommandQueue;
-    agpu_framebuffer *mainFrameBuffer;
-    
-public:
+
     // OpenGL API
-    
+    OpenGLContext mainContext;
+    JobQueue mainContextJobQueue;
+
     // Vertex buffer object
     PFNGLGENBUFFERSPROC glGenBuffers;
     PFNGLDELETEBUFFERSPROC glDeleteBuffers;
@@ -100,24 +130,24 @@ public:
     PFNGLMAPBUFFERPROC glMapBuffer;
     PFNGLUNMAPBUFFERPROC glUnmapBuffer;
     PFNGLBUFFERSTORAGEPROC glBufferStorage;
-    
+
     // Buffer binding
     PFNGLBINDBUFFERRANGEPROC glBindBufferRange;
     PFNGLBINDBUFFERBASEPROC glBindBufferBase;
-    
+
     // Vertex array object
     PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
     PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
     PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
-    
+
     // Instancing
     PFNGLDRAWARRAYSINSTANCEDBASEINSTANCEPROC glDrawArraysInstancedBaseInstance;
     PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXBASEINSTANCEPROC glDrawElementsInstancedBaseVertexBaseInstance;
-    
+
     // Indirect drawing.
     PFNGLDRAWELEMENTSINDIRECTPROC glDrawElementsIndirect;
     PFNGLMULTIDRAWELEMENTSINDIRECTPROC glMultiDrawElementsIndirect;
-    
+
     // Shader
     PFNGLCREATESHADERPROC glCreateShader;
     PFNGLDELETESHADERPROC glDeleteShader;
@@ -127,7 +157,7 @@ public:
     PFNGLGETSHADERIVPROC glGetShaderiv;
     PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
     PFNGLISSHADERPROC glIsShader;
-    
+
     // Program
     PFNGLCREATEPROGRAMPROC glCreateProgram;
     PFNGLDELETEPROGRAMPROC glDeleteProgram;
@@ -135,7 +165,7 @@ public:
     PFNGLDETACHSHADERPROC glDetachShader;
     PFNGLBINDATTRIBLOCATIONPROC glBindAttribLocation;
     PFNGLLINKPROGRAMPROC glLinkProgram;
-    
+
     PFNGLUSEPROGRAMPROC glUseProgram;
     PFNGLISPROGRAMPROC glIsProgram;
     PFNGLVALIDATEPROGRAMPROC glValidateProgram;
@@ -145,22 +175,21 @@ public:
 
     PFNGLGETACTIVEATTRIBPROC glGetActiveAttrib;
     PFNGLGETACTIVEUNIFORMPROC glGetActiveUniform;
-    
+
     PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
     PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
     PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
     PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
     PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
-    
+
     // Framebuffer object
     PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
     PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
     PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
     PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
-    
+
     // Depth range
     PFNGLDEPTHRANGEDNVPROC glDepthRangedNV;
 };
 
 #endif //_AGPU_DEVICE_HPP_
-

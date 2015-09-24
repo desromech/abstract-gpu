@@ -55,7 +55,7 @@ public:
         // Create the shader bindings.
         shaderBindings = agpuCreateShaderResourceBinding(device, 0);
         agpuBindUniformBuffer(shaderBindings, 0, transformationBuffer);
-        
+
         // Create the vertex buffer binding.
         vertexBinding = agpuCreateVertexBinding(device, vertexLayout);
         agpuBindVertexBuffers(vertexBinding, 1, &vertexBuffer);
@@ -69,6 +69,8 @@ public:
 
     void render()
     {
+        return;
+        
         // Compute the projection matrix
         float aspect = float(screenWidth) / float(screenHeight);
         float h = 2.0;
@@ -81,7 +83,7 @@ public:
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, pipeline);
-        agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
+        //agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
@@ -108,7 +110,7 @@ public:
 
         swapBuffers();
     }
-    
+
     void shutdownSample()
     {
         agpuReleaseBuffer(vertexBuffer);
@@ -132,7 +134,7 @@ public:
     agpu_pipeline_state *pipeline;
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
-    
+
     TransformationState transformationState;
 };
 

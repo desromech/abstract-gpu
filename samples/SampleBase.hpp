@@ -18,17 +18,17 @@ struct SampleVertex
 {
     SampleVertex(const glm::vec3 &position, const glm::vec3 &normal, const glm::vec4 &color, const glm::vec2 &texcoord)
         : position(position), normal(normal), color(color), texcoord(texcoord) {}
-        
+
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec4 color;
     glm::vec2 texcoord;
-    
+
     static SampleVertex onlyColor(float x, float y, float z, float r, float g, float b, float a)
     {
         return SampleVertex(glm::vec3(x, y, z), glm::vec3(0,0,0), glm::vec4(r, g, b, a), glm::vec2(0, 1));
     }
-    
+
     static agpu_vertex_attrib_description Description[];
     static const int DescriptionSize;
 };
@@ -56,11 +56,12 @@ protected:
     agpu_buffer *createUploadableUniformBuffer(size_t capacity, void *initialData);
 
     agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
-    
+
     int screenWidth, screenHeight;
     SDL_Window *window;
 
     agpu_device *device;
+    agpu_swap_chain *swapChain;
     agpu_shader_language preferredShaderLanguage;
     bool quit;
 };

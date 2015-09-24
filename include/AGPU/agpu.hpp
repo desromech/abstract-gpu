@@ -131,9 +131,9 @@ public:
 		return agpuGetDefaultCommandQueue( this );
 	}
 
-	inline void swapBuffers (  )
+	inline agpu_swap_chain* createSwapChain ( agpu_swap_chain_create_info* swapChainInfo )
 	{
-		AgpuThrowIfFailed(agpuSwapBuffers( this ));
+		return agpuCreateSwapChain( this, swapChainInfo );
 	}
 
 	inline agpu_buffer* createBuffer ( agpu_buffer_description* description, agpu_pointer initial_data )
@@ -191,14 +191,38 @@ public:
 		return agpuGetPreferredHighLevelShaderLanguage( this );
 	}
 
-	inline agpu_framebuffer* getCurrentBackBuffer (  )
-	{
-		return agpuGetCurrentBackBuffer( this );
-	}
-
 	inline agpu_framebuffer* createFrameBuffer ( agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil )
 	{
 		return agpuCreateFrameBuffer( this, width, height, renderTargetCount, hasDepth, hasStencil );
+	}
+
+};
+
+// Interface wrapper for agpu_swap_chain.
+struct _agpu_swap_chain
+{
+private:
+	_agpu_swap_chain() {}
+
+public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddSwapChainReference( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseSwapChain( this ));
+	}
+
+	inline void swapBuffers (  )
+	{
+		AgpuThrowIfFailed(agpuSwapBuffers( this ));
+	}
+
+	inline agpu_framebuffer* getCurrentBackBuffer (  )
+	{
+		return agpuGetCurrentBackBuffer( this );
 	}
 
 };
@@ -311,6 +335,11 @@ public:
 	inline void addCommandList ( agpu_command_list* command_list )
 	{
 		AgpuThrowIfFailed(agpuAddCommandList( this, command_list ));
+	}
+
+	inline void finishExecution (  )
+	{
+		AgpuThrowIfFailed(agpuFinishQueueExecution( this ));
 	}
 
 };

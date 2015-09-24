@@ -15,6 +15,7 @@ set(AGPU_OpenGL_SOURCES
     framebuffer.cpp
     framebuffer.hpp
     icd.c
+    job_queue.hpp
     object.hpp
     pipeline_builder.cpp
     pipeline_builder.hpp
@@ -26,6 +27,8 @@ set(AGPU_OpenGL_SOURCES
     shader.hpp
     shader_resource_binding.cpp
     shader_resource_binding.hpp
+    swap_chain.cpp
+    swap_chain.hpp
     vertex_binding.cpp
     vertex_binding.hpp
     vertex_layout.cpp

@@ -12,8 +12,7 @@
 #define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB       0x2092
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
- 
+static std::mutex contextErrorMutex;
 static bool ctxErrorOccurred = false;
 static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
 {
@@ -21,7 +20,103 @@ static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
     return 0;
 }
 
-static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, std::vector<int> &visualInfo)
+static thread_local OpenGLContext *currentGLContext = nullptr;
+
+OpenGLContext::OpenGLContext()
+    : ownsWindow(false), display(nullptr), window(0), context(0)
+{
+}
+
+OpenGLContext::~OpenGLContext()
+{
+}
+
+OpenGLContext *OpenGLContext::getCurrent()
+{
+    return currentGLContext;
+}
+
+bool OpenGLContext::makeCurrentWithWindow(agpu_pointer window)
+{
+    auto res = glXMakeCurrent(display, (Window)window, context) == True;
+    if(res)
+        currentGLContext = this;
+    return res;
+}
+
+bool OpenGLContext::makeCurrent()
+{
+    auto res = glXMakeCurrent(display, window, context) == True;
+    if(res)
+        currentGLContext = this;
+    return res;
+}
+
+void OpenGLContext::swapBuffers()
+{
+    glFlush();
+    glXSwapBuffers(display, window);
+}
+
+void OpenGLContext::swapBuffersOfWindow(agpu_pointer window)
+{
+    glFlush();
+    glXSwapBuffers(display, (Window)window);
+}
+
+void OpenGLContext::destroy()
+{
+
+}
+
+OpenGLContext agpu_device::createSecondaryContext(bool useMainWindow)
+{
+    std::unique_lock<std::mutex> l(contextErrorMutex);
+    OpenGLContext result;
+    result.framebufferConfig = mainContext.framebufferConfig;
+    result.display = mainContext.display;
+    result.window = mainContext.window;
+
+    auto version = (int)mainContext.version;
+    int contextAttributes[] =
+    {
+        GLX_CONTEXT_MAJOR_VERSION_ARB, version / 10,
+        GLX_CONTEXT_MINOR_VERSION_ARB, version % 10,
+        //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+        None
+    };
+
+    // Install an X error handler so the application won't exit if GL 3.0
+    // context allocation fails.
+    ctxErrorOccurred = false;
+    auto oldHandler = XSetErrorHandler(&ctxErrorHandler);
+
+    // Create the new context
+    result.context = mainContext.glXCreateContextAttribsARB( result.display, result.framebufferConfig, mainContext.context, True, contextAttributes );
+
+    // Sync to ensure any errors generated are processed.
+    XSync( result.display, False );
+
+    // Restore the original error handler
+    XSetErrorHandler( oldHandler );
+
+    if ( ctxErrorOccurred || !result.context )
+    {
+        fprintf( stderr, "Failed to create a secondary OpenGL context\n" );
+        abort();
+    }
+
+    // Set the current context.
+    if(useMainWindow && !result.makeCurrent())
+    {
+        fprintf( stderr, "Failed to make current a secondary OpenGL context\n" );
+        abort();
+    }
+
+    return result;
+}
+
+/*static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, std::vector<int> &visualInfo)
 {
     visualInfo.clear();
     visualInfo.push_back(GLX_X_RENDERABLE); visualInfo.push_back(True);
@@ -80,13 +175,13 @@ static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, st
     }
 
     visualInfo.push_back(None);
-}
+}*/
 
 static bool findFramebufferConfig(Display *display, int *visualAttributes, GLXFBConfig &config)
 {
     int glx_major, glx_minor;
     // FBConfigs were added in GLX version 1.3.
-    if ( !glXQueryVersion( display, &glx_major, &glx_minor ) || 
+    if ( !glXQueryVersion( display, &glx_major, &glx_minor ) ||
        ( ( glx_major == 1 ) && ( glx_minor < 3 ) ) || ( glx_major < 1 ) )
     {
         fprintf(stderr, "Invalid GLX version");
@@ -129,118 +224,181 @@ static bool findFramebufferConfig(Display *display, int *visualAttributes, GLXFB
 
 agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 {
-    // Cast the display and the window.
-    Display *display = (Display*)openInfo->display;
-    Window window = (Window)openInfo->window;
+    // Ensure X11 threads are initialized
+    XInitThreads();
 
-    // Find the framebuffer config
-    std::vector<int> visualAttributes;
-    deviceOpenInfoToVisualAttributes(openInfo, visualAttributes);
-    GLXFBConfig framebufferConfig;
-    if(!findFramebufferConfig(display, &visualAttributes[0], framebufferConfig))
-        return false;
-    
-    // Get the default screen's GLX extension list
-    const char *glxExts = glXQueryExtensionsString( display,
-                                                  DefaultScreen( display ) );
+    // Create the device.
+    std::unique_ptr<agpu_device> device(new agpu_device);
+    bool failure = false;
 
-    // NOTE: It is not necessary to create or make current to a context before
-    // calling glXGetProcAddressARB
-    glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)
-           glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+    // Perform the main context creation in
+    device->mainContextJobQueue.start();
+    AsyncJob contextCreationJob([&] {
+        auto &contextWrapper = device->mainContext;
+        contextWrapper.display = (Display*)openInfo->display;
 
-    GLXContext context = 0;
+        // Create a simple context.
+        int visualAttributes[] {
+            GLX_X_RENDERABLE, True,
+            GLX_RENDER_TYPE, GLX_RGBA_BIT,
+            GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
 
-    // Install an X error handler so the application won't exit if GL 3.0
-    // context allocation fails.
-    //
-    // Note this error handler is global.  All display connections in all threads
-    // of a process use the same error handler, so be sure to guard against other
-    // threads issuing X commands while this code is running.
-    ctxErrorOccurred = false;
-    int (*oldHandler)(Display*, XErrorEvent*) =
-      XSetErrorHandler(&ctxErrorHandler);
+            GLX_RED_SIZE, 8,
+            GLX_GREEN_SIZE, 8,
+            GLX_BLUE_SIZE, 8,
+            GLX_ALPHA_SIZE, 8,
 
-    // Check for the GLX_ARB_create_context extension string and the function.
-    // If either is not present, use GLX 1.3 context creation method.
-    if ( !agpu_device::isExtensionSupported( glxExts, "GLX_ARB_create_context" ) ||
-       !glXCreateContextAttribsARB )
-    {
-        fprintf(stderr, "glXCreateContextAttribsARB() not found... using old-style GLX context\n" );
-        context = glXCreateNewContext( display, framebufferConfig, GLX_RGBA_TYPE, 0, True );
-    }
-    else
-    {
-        int contextAttributes[] =
-        {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 0,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-            //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-            None
+            GLX_DOUBLEBUFFER, True,
+
+            None, None
         };
 
-        for(int versionIndex = 0; GLContextVersionPriorities[versionIndex] !=  OpenGLVersion::Invalid; ++versionIndex)
+        // Find the framebuffer config.
+        GLXFBConfig framebufferConfig;
+        if(!findFramebufferConfig(contextWrapper.display, &visualAttributes[0], framebufferConfig))
         {
-            auto version = (int)GLContextVersionPriorities[versionIndex];
-            
-            // GLX_CONTEXT_MAJOR_VERSION_ARB
-            contextAttributes[1] = version / 10;
-            // GLX_CONTEXT_MINOR_VERSION_ARB
-            contextAttributes[3] = version % 10;
-  
-            context = glXCreateContextAttribsARB( display, framebufferConfig, 0, True, contextAttributes );
-            
-            // Sync to ensure any errors generated are processed.
-            XSync( display, False );
-            
-            // Check for success.
-            if(!ctxErrorOccurred && context)
-                break;
+            failure = true;
+            return;
         }
-        
-        // Check failure.
+        contextWrapper.framebufferConfig = framebufferConfig;
+
+        // Get a visual
+        XVisualInfo *vi = glXGetVisualFromFBConfig( contextWrapper.display, framebufferConfig );
+        XSetWindowAttributes swa;
+        Colormap cmap;
+        swa.colormap = cmap = XCreateColormap( contextWrapper.display,
+                                             RootWindow( contextWrapper.display, vi->screen ),
+                                             vi->visual, AllocNone );
+        swa.background_pixmap = None ;
+        swa.border_pixel      = 0;
+        swa.event_mask        = StructureNotifyMask;
+
+        Window win = XCreateWindow( contextWrapper.display, RootWindow( contextWrapper.display, vi->screen ),
+                                  0, 0, 4, 4, 0, vi->depth, InputOutput,
+                                  vi->visual,
+                                  CWBorderPixel|CWColormap|CWEventMask, &swa );
+        if ( !win )
+        {
+            printf( "Failed to create window.\n" );
+            failure = true;
+        }
+
+        // Done with the visual info data
+        XFree( vi );
+
+        XStoreName( contextWrapper.display, win, "AGPU dummy window" );
+
+        //Store the window in the context wrapper.
+        contextWrapper.ownsWindow = true;
+        contextWrapper.window = win;
+
+        // Get the default screen's GLX extension list
+        const char *glxExts = glXQueryExtensionsString( contextWrapper.display,
+                                                      DefaultScreen( contextWrapper.display ) );
+
+        // NOTE: It is not necessary to create or make current to a context before
+        // calling glXGetProcAddressARB
+        auto glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)
+               glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+        contextWrapper.glXCreateContextAttribsARB = glXCreateContextAttribsARB;
+
+        GLXContext context = 0;
+
+        // Install an X error handler so the application won't exit if GL 3.0
+        // context allocation fails.
+        std::unique_lock<std::mutex> l(contextErrorMutex);
+        ctxErrorOccurred = false;
+        auto oldHandler = XSetErrorHandler(&ctxErrorHandler);
+
+        // Check for the GLX_ARB_create_context extension string and the function.
+        // If either is not present, use GLX 1.3 context creation method.
+        if ( !agpu_device::isExtensionSupported( glxExts, "GLX_ARB_create_context" ) ||
+           !glXCreateContextAttribsARB )
+        {
+            fprintf(stderr, "glXCreateContextAttribsARB() not found... using old-style GLX context\n" );
+            context = glXCreateNewContext( contextWrapper.display, framebufferConfig, GLX_RGBA_TYPE, 0, True );
+        }
+        else
+        {
+            int contextAttributes[] =
+            {
+                GLX_CONTEXT_MAJOR_VERSION_ARB, 0,
+                GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+                //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                None
+            };
+
+            for(int versionIndex = 0; GLContextVersionPriorities[versionIndex] !=  OpenGLVersion::Invalid; ++versionIndex)
+            {
+                auto version = (int)GLContextVersionPriorities[versionIndex];
+
+                // GLX_CONTEXT_MAJOR_VERSION_ARB
+                contextAttributes[1] = version / 10;
+                // GLX_CONTEXT_MINOR_VERSION_ARB
+                contextAttributes[3] = version % 10;
+
+                context = glXCreateContextAttribsARB( contextWrapper.display, framebufferConfig, 0, True, contextAttributes );
+
+                // Sync to ensure any errors generated are processed.
+                XSync( contextWrapper.display, False );
+
+                // Check for success.
+                if(!ctxErrorOccurred && context)
+                {
+                    contextWrapper.version = OpenGLVersion(version);
+                    break;
+                }
+            }
+
+            // Check failure.
+            if ( ctxErrorOccurred || !context )
+            {
+                // Couldn't create GL 3.0 context.  Fall back to old-style 2.x context.
+                // When a context version below 3.0 is requested, implementations will
+                // return the newest context version compatible with OpenGL versions less
+                // than version 3.0.
+                // GLX_CONTEXT_MAJOR_VERSION_ARB = 1
+                contextAttributes[1] = 1;
+                // GLX_CONTEXT_MINOR_VERSION_ARB = 0
+                contextAttributes[3] = 0;
+                contextWrapper.version = OpenGLVersion::Version10;
+
+                ctxErrorOccurred = false;
+                context = glXCreateContextAttribsARB( contextWrapper.display, framebufferConfig, 0, True, contextAttributes );
+            }
+        }
+
+        // Sync to ensure any errors generated are processed.
+        XSync( contextWrapper.display, False );
+
+        // Restore the original error handler
+        XSetErrorHandler( oldHandler );
+
         if ( ctxErrorOccurred || !context )
         {
-            // Couldn't create GL 3.0 context.  Fall back to old-style 2.x context.
-            // When a context version below 3.0 is requested, implementations will
-            // return the newest context version compatible with OpenGL versions less
-            // than version 3.0.
-            // GLX_CONTEXT_MAJOR_VERSION_ARB = 1
-            contextAttributes[1] = 1;
-            // GLX_CONTEXT_MINOR_VERSION_ARB = 0
-            contextAttributes[3] = 0;
-
-            ctxErrorOccurred = false;
-            context = glXCreateContextAttribsARB( display, framebufferConfig, 0, True, contextAttributes );
+            fprintf( stderr, "Failed to create an OpenGL context\n" );
+            failure = true;
+            return;
         }
-    }
 
-    // Sync to ensure any errors generated are processed.
-    XSync( display, False );
+        // Store the context in the wrapper.
+        contextWrapper.context = context;
+        if(!contextWrapper.makeCurrent())
+        {
+            fprintf(stderr, "Failed to make current the main OpenGL context.\n");
+            failure = true;
+            return;
+        }
 
-    // Restore the original error handler
-    XSetErrorHandler( oldHandler );
+        // Initialize the device objects.
+        device->initializeObjects();
+    });
 
-    if ( ctxErrorOccurred || !context )
-    {
-        fprintf( stderr, "Failed to create an OpenGL context\n" );
+    device->mainContextJobQueue.addJob(&contextCreationJob);
+    contextCreationJob.wait();
+    if(failure)
         return nullptr;
-    }
-
-    // Created the context.
-    agpu_device *device = new agpu_device();
-    device->display = display;
-    device->window = window;
-    device->context = context;
-    if(!device->makeCurrent())
-    {
-        fprintf( stderr, "Failed to make current recently created OpenGL context\n" );
-        return nullptr;
-    }
-
-    device->initializeObjects();
-    return device;
+    return device.release();
 }
 
 void *agpu_device::getProcAddress(const char *symbolName)
@@ -248,18 +406,4 @@ void *agpu_device::getProcAddress(const char *symbolName)
     return (void*)glXGetProcAddress((const GLubyte*)symbolName);
 }
 
-agpu_error agpu_device::swapBuffers()
-{
-    if(!makeCurrent()) return AGPU_NOT_CURRENT_CONTEXT;
-    glFlush();
-    glXSwapBuffers(display, window);
-    return AGPU_OK;
-}
-
-bool agpu_device::makeCurrent()
-{
-    return glXMakeCurrent(display, window, context) == True;
-}
-
 #endif
-

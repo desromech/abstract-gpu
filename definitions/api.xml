@@ -28,18 +28,17 @@
 	<structs>
         <struct name="device_open_info">
             <field name="display" type="pointer" />
+            <field name="debug_layer" type="bool" />
+        </struct>
+
+        <struct name="swap_chain_create_info">
             <field name="window" type="pointer" />
             <field name="surface" type="pointer" />
-            <field name="red_size" type="int" />
-            <field name="green_size" type="int" />
-            <field name="blue_size" type="int" />
-            <field name="alpha_size" type="int" />
-            <field name="depth_size" type="int" />
-            <field name="stencil_size" type="int" />
+            <field name="renderbuffer_format" type="texture_format" />
+            <field name="depthstencil_format" type="texture_format" />
             <field name="doublebuffer" type="bool" />
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
-            <field name="debugLayer" type="bool" />
         </struct>
 
 		<struct name="buffer_description">
@@ -342,7 +341,8 @@
             <method name="getDefaultCommandQueue" cname="GetDefaultCommandQueue" returnType="command_queue*">
             </method>
 
-            <method name="swapBuffers" cname="SwapBuffers" returnType="error">
+            <method name="createSwapChain" cname="CreateSwapChain" returnType="swap_chain*">
+                <arg name="swapChainInfo" type="swap_chain_create_info*" />
             </method>
 
             <method name="createBuffer" cname="CreateBuffer" returnType="buffer*">
@@ -387,15 +387,26 @@
             <method name="getPreferredHighLevelShaderLanguage" cname="GetPreferredHighLevelShaderLanguage" returnType="shader_language">
             </method>
 
-            <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
-            </method>
-
             <method name="createFrameBuffer" cname="CreateFrameBuffer" returnType="framebuffer*">
                 <arg name="width" type="uint" />
                 <arg name="height" type="uint" />
                 <arg name="renderTargetCount" type="uint" />
                 <arg name="hasDepth" type="bool" />
                 <arg name="hasStencil" type="bool" />
+            </method>
+        </interface>
+
+        <interface name="swap_chain">
+            <method name="addReference" cname="AddSwapChainReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseSwapChain" returnType="error">
+            </method>
+
+            <method name="swapBuffers" cname="SwapBuffers" returnType="error">
+            </method>
+
+            <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
             </method>
         </interface>
 
@@ -468,6 +479,9 @@
 
             <method name="addCommandList" cname="AddCommandList" returnType="error">
                 <arg name="command_list" type="command_list*" />
+            </method>
+
+            <method name="finishExecution" cname="FinishQueueExecution" returnType="error">
             </method>
         </interface>
 
@@ -694,8 +708,6 @@
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
             </method>
 
-            <method name="isMainFrameBuffer" cname="IsMainFrameBuffer" returnType="bool">
-            </method>
         </interface>
 
         <interface name="shader_resource_binding">

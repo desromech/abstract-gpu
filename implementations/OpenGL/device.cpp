@@ -12,6 +12,7 @@
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
 #include "framebuffer.hpp"
+#include "swap_chain.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -90,7 +91,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glMapBuffer);
     LOAD_FUNCTION(glUnmapBuffer);
     LOAD_FUNCTION(glBufferStorage);
-    
+
     // Buffer binding
     LOAD_FUNCTION(glBindBufferRange);
     LOAD_FUNCTION(glBindBufferBase);
@@ -99,15 +100,15 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGenVertexArrays);
     LOAD_FUNCTION(glDeleteVertexArrays);
     LOAD_FUNCTION(glBindVertexArray);
-    
+
     // Instancing.
     LOAD_FUNCTION(glDrawArraysInstancedBaseInstance);
     LOAD_FUNCTION(glDrawElementsInstancedBaseVertexBaseInstance);
-    
+
     // Indirect drawing
     LOAD_FUNCTION(glDrawElementsIndirect);
     LOAD_FUNCTION(glMultiDrawElementsIndirect);
-    
+
     // Shader
     LOAD_FUNCTION(glCreateShader);
     LOAD_FUNCTION(glDeleteShader);
@@ -117,7 +118,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetShaderiv);
     LOAD_FUNCTION(glGetShaderInfoLog);
     LOAD_FUNCTION(glIsShader);
-    
+
     // Program
     LOAD_FUNCTION(glCreateProgram);
     LOAD_FUNCTION(glDeleteProgram);
@@ -125,7 +126,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glDetachShader);
     LOAD_FUNCTION(glBindAttribLocation);
     LOAD_FUNCTION(glLinkProgram);
-    
+
     LOAD_FUNCTION(glUseProgram);
     LOAD_FUNCTION(glIsProgram);
     LOAD_FUNCTION(glValidateProgram);
@@ -135,19 +136,19 @@ void _agpu_device::loadExtensions()
 
     LOAD_FUNCTION(glGetActiveAttrib);
     LOAD_FUNCTION(glGetActiveUniform);
-    
+
     LOAD_FUNCTION(glVertexAttribPointer);
     LOAD_FUNCTION(glDisableVertexAttribArray);
     LOAD_FUNCTION(glEnableVertexAttribArray);
     LOAD_FUNCTION(glGetAttribLocation);
     LOAD_FUNCTION(glGetUniformLocation);
-    
+
     // Framebuffer object
     LOAD_FUNCTION(glBindFramebuffer);
     LOAD_FUNCTION(glDeleteFramebuffers);
     LOAD_FUNCTION(glGenFramebuffers);
     LOAD_FUNCTION(glCheckFramebufferStatus);
-    
+
     // Depth range
     LOAD_FUNCTION(glDepthRangedNV);
 }
@@ -157,18 +158,11 @@ void _agpu_device::initializeObjects()
     readVersionInformation();
     loadExtensions();
     createDefaultCommandQueue();
-    createMainFrameBuffer();
 }
 
 void _agpu_device::createDefaultCommandQueue()
 {
     defaultCommandQueue = agpu_command_queue::create(this);
-}
-
-void _agpu_device::createMainFrameBuffer()
-{
-    // TODO: Get the actual size
-    mainFrameBuffer = agpu_framebuffer::createMain(this, 640, 480, 1, true, true);
 }
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
@@ -181,19 +175,6 @@ AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device *device )
 {
     CHECK_POINTER(device);
     return device->release();
-}
-
-AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_device* device )
-{
-    CHECK_POINTER(device);
-    return device->swapBuffers();
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_device* device )
-{
-    if(!device)
-        return nullptr;
-    return device->mainFrameBuffer;
 }
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
@@ -228,7 +209,7 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
 {
     if (!device)
         return nullptr;
-    return agpu_pipeline_builder::createBuilder(device); 
+    return agpu_pipeline_builder::createBuilder(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device )
@@ -274,4 +255,11 @@ AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu
     if(!device)
         return nullptr;
     return agpu_shader_resource_binding::create(device, bindingBank);
+}
+
+AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo )
+{
+    if(!device)
+        return nullptr;
+    return agpu_swap_chain::create(device, swapChainInfo);
 }
