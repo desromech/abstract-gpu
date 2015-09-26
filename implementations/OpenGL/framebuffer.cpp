@@ -1,11 +1,23 @@
+#include "texture.hpp"
 #include "framebuffer.hpp"
 
 _agpu_framebuffer::_agpu_framebuffer()
 {
+	for(int i = 0; i < MaxRenderTargetCount; ++i)
+		colorBuffers[i] = nullptr;
+	depthStencil = nullptr;
 }
 
 void _agpu_framebuffer::lostReferences()
 {
+	for(int i = 0; i < MaxRenderTargetCount; ++i)
+	{
+		if(colorBuffers[i])
+			colorBuffers[i]->release();
+	}
+
+	if(depthStencil)
+		depthStencil->release();
 }
 
 agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil)
@@ -19,11 +31,6 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
 	framebuffer->hasDepth = hasDepth;
 	framebuffer->hasStencil = hasStencil;
 	return framebuffer;
-}
-
-agpu_error _agpu_framebuffer::createImplicitDepthStencil(agpu_uint depthSize, agpu_uint stencilSize)
-{
-	return AGPU_UNIMPLEMENTED;
 }
 
 void _agpu_framebuffer::bind()

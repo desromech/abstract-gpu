@@ -12,11 +12,9 @@ public:
     void lostReferences();
 
     static agpu_framebuffer* create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil);
-    static agpu_framebuffer* createMain(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil);
-
-    agpu_error createImplicitDepthStencil(agpu_uint depthSize, agpu_uint stencilSize);
 
 public:
+    static const int MaxRenderTargetCount = 9;
     void bind();
 
     agpu_device *device;
@@ -26,6 +24,8 @@ public:
     bool hasDepth;
     bool hasStencil;
     int renderTargetCount;
+    agpu_texture *colorBuffers[MaxRenderTargetCount];
+    agpu_texture *depthStencil;
 };
 
 #endif //AGPU_GL_FRAMEBUFFER_HPP

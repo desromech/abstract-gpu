@@ -149,6 +149,11 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGenFramebuffers);
     LOAD_FUNCTION(glCheckFramebufferStatus);
 
+    // Texture storage
+    LOAD_FUNCTION(glTexStorage1D);
+    LOAD_FUNCTION(glTexStorage2D);
+    LOAD_FUNCTION(glTexStorage3D);
+
     // Depth range
     LOAD_FUNCTION(glDepthRangedNV);
 }

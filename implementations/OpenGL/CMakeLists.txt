@@ -29,6 +29,9 @@ set(AGPU_OpenGL_SOURCES
     shader_resource_binding.hpp
     swap_chain.cpp
     swap_chain.hpp
+    texture.cpp
+    texture.hpp
+    texture_formats.hpp
     vertex_binding.cpp
     vertex_binding.hpp
     vertex_layout.cpp

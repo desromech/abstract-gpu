@@ -49,6 +49,16 @@
 			<field name="stride" type="uint" />
 		</struct>
 
+        <struct name="texture_description">
+            <field name="type" type="texture_type" />
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="depthOrArraySize" type="ushort" />
+            <field name="miplevels" type="ushort" />
+            <field name="format" type="texture_format" />
+            <field name="flags" type="texture_flags" />
+        </struct>
+
 		<struct name="draw_elements_command">
 			<field name="index_count" type="uint" />
 			<field name="instance_count" type="uint" />
@@ -131,15 +141,19 @@
         </enum>
 
         <enum name="texture_type">
-            <constant name="TextureBuffer" value="0" />
-            <constant name="Texture1D" value="1" />
-            <constant name="Texture2D" value="2" />
-            <constant name="TextureCube" value="3" />
-            <constant name="Texture3D" value="4" />
-            <constant name="TextureArray1D" value="5" />
-            <constant name="TextureArray2D" value="6" />
-            <constant name="TextureArrayCube" value="7" />
-            <constant name="TextureArray3D" value="8" />
+            <constant name="TextureUnknown" value="0" />
+            <constant name="TextureBuffer" value="1" />
+            <constant name="Texture1D" value="2" />
+            <constant name="Texture2D" value="3" />
+            <constant name="TextureCube" value="4" />
+            <constant name="Texture3D" value="5" />
+        </enum>
+
+        <enum name="texture_flags">
+            <constant name="TextureFlagNone" value="0" />
+            <constant name="TextureFlagRenderTarget" value="1" />
+            <constant name="TextureFlagDepthStencil" value="2" />
+            <constant name="TextureFlagUnorderedAccess" value="3" />
         </enum>
 
 		<enum name="shader_type">
@@ -394,6 +408,12 @@
                 <arg name="hasDepth" type="bool" />
                 <arg name="hasStencil" type="bool" />
             </method>
+
+            <method name="createTexture" cname="CreateTexture" returnType="texture*">
+                <arg name="description" type="texture_description*" />
+                <arg name="initialData" type="pointer" />
+            </method>
+            
         </interface>
 
         <interface name="swap_chain">

@@ -188,6 +188,11 @@ public:
     PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
     PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
 
+    // Texture storage.
+    PFNGLTEXSTORAGE1DPROC glTexStorage1D;
+    PFNGLTEXSTORAGE2DPROC glTexStorage2D;
+    PFNGLTEXSTORAGE3DPROC glTexStorage3D;
+
     // Depth range
     PFNGLDEPTHRANGEDNVPROC glDepthRangedNV;
 };

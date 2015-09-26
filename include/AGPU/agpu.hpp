@@ -196,6 +196,11 @@ public:
 		return agpuCreateFrameBuffer( this, width, height, renderTargetCount, hasDepth, hasStencil );
 	}
 
+	inline agpu_texture* createTexture ( agpu_texture_description* description, agpu_pointer initialData )
+	{
+		return agpuCreateTexture( this, description, initialData );
+	}
+
 };
 
 // Interface wrapper for agpu_swap_chain.
@@ -662,11 +667,6 @@ public:
 	inline void release (  )
 	{
 		AgpuThrowIfFailed(agpuReleaseFramebuffer( this ));
-	}
-
-	inline agpu_bool isMainFrameBuffer (  )
-	{
-		return agpuIsMainFrameBuffer( this );
 	}
 
 };

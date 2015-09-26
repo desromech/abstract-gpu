@@ -114,16 +114,20 @@ typedef enum {
 } agpu_compare_function;
 
 typedef enum {
-	AGPU_TEXTURE_BUFFER = 0,
-	AGPU_TEXTURE_1D = 1,
-	AGPU_TEXTURE_2D = 2,
-	AGPU_TEXTURE_CUBE = 3,
-	AGPU_TEXTURE_3D = 4,
-	AGPU_TEXTURE_ARRAY_1D = 5,
-	AGPU_TEXTURE_ARRAY_2D = 6,
-	AGPU_TEXTURE_ARRAY_CUBE = 7,
-	AGPU_TEXTURE_ARRAY_3D = 8,
+	AGPU_TEXTURE_UNKNOWN = 0,
+	AGPU_TEXTURE_BUFFER = 1,
+	AGPU_TEXTURE_1D = 2,
+	AGPU_TEXTURE_2D = 3,
+	AGPU_TEXTURE_CUBE = 4,
+	AGPU_TEXTURE_3D = 5,
 } agpu_texture_type;
+
+typedef enum {
+	AGPU_TEXTURE_FLAG_NONE = 0,
+	AGPU_TEXTURE_FLAG_RENDER_TARGET = 1,
+	AGPU_TEXTURE_FLAG_DEPTH_STENCIL = 2,
+	AGPU_TEXTURE_FLAG_UNORDERED_ACCESS = 3,
+} agpu_texture_flags;
 
 typedef enum {
 	AGPU_VERTEX_SHADER = 0,
@@ -309,6 +313,17 @@ typedef struct agpu_buffer_description {
 	agpu_uint stride;
 } agpu_buffer_description;
 
+/* Structure agpu_texture_description. */
+typedef struct agpu_texture_description {
+	agpu_texture_type type;
+	agpu_uint width;
+	agpu_uint height;
+	agpu_ushort depthOrArraySize;
+	agpu_ushort miplevels;
+	agpu_texture_format format;
+	agpu_texture_flags flags;
+} agpu_texture_description;
+
 /* Structure agpu_draw_elements_command. */
 typedef struct agpu_draw_elements_command {
 	agpu_uint index_count;
@@ -357,6 +372,7 @@ typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, a
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
+typedef agpu_texture* (*agpuCreateTexture_FUN) ( agpu_device* device, agpu_texture_description* description, agpu_pointer initialData );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -374,6 +390,7 @@ AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
+AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description, agpu_pointer initialData );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -551,11 +568,9 @@ AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cst
 /* Methods for interface agpu_framebuffer. */
 typedef agpu_error (*agpuAddFramebufferReference_FUN) ( agpu_framebuffer* framebuffer );
 typedef agpu_error (*agpuReleaseFramebuffer_FUN) ( agpu_framebuffer* framebuffer );
-typedef agpu_bool (*agpuIsMainFrameBuffer_FUN) ( agpu_framebuffer* framebuffer );
 
 AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer );
 AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer );
-AGPU_EXPORT agpu_bool agpuIsMainFrameBuffer ( agpu_framebuffer* framebuffer );
 
 /* Methods for interface agpu_shader_resource_binding. */
 typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
@@ -589,6 +604,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetPreferredShaderLanguage_FUN agpuGetPreferredShaderLanguage;
 	agpuGetPreferredHighLevelShaderLanguage_FUN agpuGetPreferredHighLevelShaderLanguage;
 	agpuCreateFrameBuffer_FUN agpuCreateFrameBuffer;
+	agpuCreateTexture_FUN agpuCreateTexture;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
@@ -661,7 +677,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuBindAttributeLocation_FUN agpuBindAttributeLocation;
 	agpuAddFramebufferReference_FUN agpuAddFramebufferReference;
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
-	agpuIsMainFrameBuffer_FUN agpuIsMainFrameBuffer;
 	agpuAddShaderResourceBindingReference_FUN agpuAddShaderResourceBindingReference;
 	agpuReleaseShaderResourceBinding_FUN agpuReleaseShaderResourceBinding;
 	agpuBindUniformBuffer_FUN agpuBindUniformBuffer;
