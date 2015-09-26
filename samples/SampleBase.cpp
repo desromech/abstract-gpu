@@ -106,7 +106,7 @@ int SampleBase::main(int argc, const char **argv)
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     case SDL_SYSWM_WINDOWS:
         openInfo.window = (agpu_pointer)windowInfo.info.win.window;
-        swapChainCreateInfo..surface = (agpu_pointer)windowInfo.info.win.hdc;
+        swapChainCreateInfo.surface = (agpu_pointer)windowInfo.info.win.hdc;
         break;
 #endif
 #if defined(SDL_VIDEO_DRIVER_X11)
@@ -120,8 +120,10 @@ int SampleBase::main(int argc, const char **argv)
         return -1;
     }
 
-    swapChainCreateInfo.renderbuffer_format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
-    swapChainCreateInfo.depthstencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    swapChainCreateInfo.colorbuffer_format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    swapChainCreateInfo.width = screenWidth;
+    swapChainCreateInfo.height = screenHeight;
     swapChainCreateInfo.doublebuffer = 1;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
@@ -154,6 +156,8 @@ int SampleBase::main(int argc, const char **argv)
     {
         processEvents();
         render();
+
+        SDL_Delay(20);
     }
 
     shutdownSample();

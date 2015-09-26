@@ -30,7 +30,7 @@ public:
     bool isShuttingDown_;
     agpu_device *device;
 
-    OpenGLContext context;
+    OpenGLContext *context;
 
     std::mutex controlMutex;
     std::condition_variable wakeCondition;

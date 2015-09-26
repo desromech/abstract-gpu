@@ -21,8 +21,10 @@ public:
     agpu_device *device;
     agpu_pointer window;
     bool doublebuffer;
-    int backBufferIndex;
-    agpu_framebuffer* buffers[2];
+    agpu_uint width;
+    agpu_uint height;
+    agpu_uint backBufferIndex;
+    agpu_framebuffer* framebuffers[2];
 };
 
 

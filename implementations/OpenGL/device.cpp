@@ -69,6 +69,16 @@ bool _agpu_device::isExtensionSupported(const char *extList, const char *extensi
 
 void _agpu_device::lostReferences()
 {
+    if(mainContext)
+    {
+        onMainContextBlocking([&]() {
+            mainContext->destroy();
+            delete mainContext;
+            mainContext = nullptr;
+        });
+    }
+
+    mainContextJobQueue.shutdown();
 }
 
 void _agpu_device::readVersionInformation()
@@ -148,6 +158,8 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glDeleteFramebuffers);
     LOAD_FUNCTION(glGenFramebuffers);
     LOAD_FUNCTION(glCheckFramebufferStatus);
+    LOAD_FUNCTION(glFramebufferTexture2D);
+    LOAD_FUNCTION(glBlitFramebuffer);
 
     // Texture storage
     LOAD_FUNCTION(glTexStorage1D);

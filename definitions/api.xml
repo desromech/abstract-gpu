@@ -34,8 +34,10 @@
         <struct name="swap_chain_create_info">
             <field name="window" type="pointer" />
             <field name="surface" type="pointer" />
-            <field name="renderbuffer_format" type="texture_format" />
-            <field name="depthstencil_format" type="texture_format" />
+            <field name="colorbuffer_format" type="texture_format" />
+            <field name="depth_stencil_format" type="texture_format" />
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
             <field name="doublebuffer" type="bool" />
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
@@ -153,7 +155,8 @@
             <constant name="TextureFlagNone" value="0" />
             <constant name="TextureFlagRenderTarget" value="1" />
             <constant name="TextureFlagDepthStencil" value="2" />
-            <constant name="TextureFlagUnorderedAccess" value="3" />
+            <constant name="TextureFlagUnorderedAccess" value="4" />
+            <constant name="TextureFlagRenderbufferOnly" value="8" />
         </enum>
 
 		<enum name="shader_type">
@@ -413,7 +416,7 @@
                 <arg name="description" type="texture_description*" />
                 <arg name="initialData" type="pointer" />
             </method>
-            
+
         </interface>
 
         <interface name="swap_chain">
@@ -728,6 +731,14 @@
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
             </method>
 
+            <method name="attachColorBuffer" cname="AttachColorBuffer" returnType="error">
+                <arg name="index" type="int" />
+                <arg name="buffer" type="texture*" />
+            </method>
+
+            <method name="attachDepthStencilBuffer" cname="AttachDepthStencilBuffer" returnType="error">
+                <arg name="buffer" type="texture*" />
+            </method>
         </interface>
 
         <interface name="shader_resource_binding">

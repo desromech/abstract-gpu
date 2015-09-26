@@ -669,6 +669,16 @@ public:
 		AgpuThrowIfFailed(agpuReleaseFramebuffer( this ));
 	}
 
+	inline void attachColorBuffer ( agpu_int index, agpu_texture* buffer )
+	{
+		AgpuThrowIfFailed(agpuAttachColorBuffer( this, index, buffer ));
+	}
+
+	inline void attachDepthStencilBuffer ( agpu_texture* buffer )
+	{
+		AgpuThrowIfFailed(agpuAttachDepthStencilBuffer( this, buffer ));
+	}
+
 };
 
 // Interface wrapper for agpu_shader_resource_binding.

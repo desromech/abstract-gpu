@@ -126,7 +126,8 @@ typedef enum {
 	AGPU_TEXTURE_FLAG_NONE = 0,
 	AGPU_TEXTURE_FLAG_RENDER_TARGET = 1,
 	AGPU_TEXTURE_FLAG_DEPTH_STENCIL = 2,
-	AGPU_TEXTURE_FLAG_UNORDERED_ACCESS = 3,
+	AGPU_TEXTURE_FLAG_UNORDERED_ACCESS = 4,
+	AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY = 8,
 } agpu_texture_flags;
 
 typedef enum {
@@ -297,8 +298,10 @@ typedef struct agpu_device_open_info {
 typedef struct agpu_swap_chain_create_info {
 	agpu_pointer window;
 	agpu_pointer surface;
-	agpu_texture_format renderbuffer_format;
-	agpu_texture_format depthstencil_format;
+	agpu_texture_format colorbuffer_format;
+	agpu_texture_format depth_stencil_format;
+	agpu_uint width;
+	agpu_uint height;
 	agpu_bool doublebuffer;
 	agpu_bool sample_buffers;
 	agpu_int samples;
@@ -568,9 +571,13 @@ AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cst
 /* Methods for interface agpu_framebuffer. */
 typedef agpu_error (*agpuAddFramebufferReference_FUN) ( agpu_framebuffer* framebuffer );
 typedef agpu_error (*agpuReleaseFramebuffer_FUN) ( agpu_framebuffer* framebuffer );
+typedef agpu_error (*agpuAttachColorBuffer_FUN) ( agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer );
+typedef agpu_error (*agpuAttachDepthStencilBuffer_FUN) ( agpu_framebuffer* framebuffer, agpu_texture* buffer );
 
 AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer );
 AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer );
+AGPU_EXPORT agpu_error agpuAttachColorBuffer ( agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer );
+AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer ( agpu_framebuffer* framebuffer, agpu_texture* buffer );
 
 /* Methods for interface agpu_shader_resource_binding. */
 typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
@@ -677,6 +684,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuBindAttributeLocation_FUN agpuBindAttributeLocation;
 	agpuAddFramebufferReference_FUN agpuAddFramebufferReference;
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
+	agpuAttachColorBuffer_FUN agpuAttachColorBuffer;
+	agpuAttachDepthStencilBuffer_FUN agpuAttachDepthStencilBuffer;
 	agpuAddShaderResourceBindingReference_FUN agpuAddShaderResourceBindingReference;
 	agpuReleaseShaderResourceBinding_FUN agpuReleaseShaderResourceBinding;
 	agpuBindUniformBuffer_FUN agpuBindUniformBuffer;

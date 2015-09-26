@@ -5,30 +5,30 @@ void _agpu_texture::allocateTexture1D(agpu_device *device, GLuint handle, GLenum
 {
     glBindTexture(target, handle);
     if(description->depthOrArraySize)
-        device->glTexStorage2D(target, description->miplevels, mapTextureFormat(description->format), description->width, description->depthOrArraySize);
+        device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->depthOrArraySize);
     else
-        device->glTexStorage1D(target, description->miplevels, mapTextureFormat(description->format), description->width);
+        device->glTexStorage1D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width);
 }
 
 void _agpu_texture::allocateTexture2D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
     if(description->depthOrArraySize)
-        device->glTexStorage3D(target, description->miplevels, mapTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+        device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
     else
-        device->glTexStorage2D(target, description->miplevels, mapTextureFormat(description->format), description->width, description->height);
+        device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
 }
 
 void _agpu_texture::allocateTexture3D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    device->glTexStorage3D(target, description->miplevels, mapTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+    device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
 }
 
 void _agpu_texture::allocateTextureCube(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    device->glTexStorage2D(target, description->miplevels, mapTextureFormat(description->format), description->width, description->height);
+    device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
 }
 
 void _agpu_texture::allocateTextureBuffer(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)

@@ -30,12 +30,40 @@ inline GLenum findTextureTarget(agpu_texture_description *description)
     }
 }
 
-inline GLenum mapTextureFormat(agpu_texture_format format)
+inline GLenum mapInternalTextureFormat(agpu_texture_format format)
 {
     switch(format)
     {
+    case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return GL_RGBA8;
+    case AGPU_TEXTURE_FORMAT_D16_UNORM: return GL_DEPTH_COMPONENT16;
     default:
         abort();
+    }
+}
+
+inline bool hasDepthComponent(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT:
+    case AGPU_TEXTURE_FORMAT_D32_FLOAT:
+    case AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT:
+    case AGPU_TEXTURE_FORMAT_D16_UNORM:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool hasStencilComponent(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT:
+    case AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT:
+        return true;
+    default:
+        return false;
     }
 }
 

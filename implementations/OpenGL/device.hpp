@@ -20,6 +20,8 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
 #endif
 
 #include <string>
+#include <map>
+#include <list>
 
 #include "object.hpp"
 #include "job_queue.hpp"
@@ -63,6 +65,8 @@ struct OpenGLContext
 
     static OpenGLContext *getCurrent();
 
+    std::map<agpu_framebuffer*, std::pair<GLuint, int> > framebufferObjects;
+
 #ifdef _WIN32
     HWND window;
     HDC hDC;
@@ -90,7 +94,7 @@ public:
     static bool isExtensionSupported(const char *extList, const char *extension);
     static agpu_device *open(agpu_device_open_info* openInfo);
 
-    OpenGLContext createSecondaryContext(bool useMainWindow);
+    OpenGLContext* createSecondaryContext(bool useMainWindow);
 
     void readVersionInformation();
     void loadExtensions();
@@ -118,8 +122,11 @@ public:
     agpu_command_queue *defaultCommandQueue;
 
     // OpenGL API
-    OpenGLContext mainContext;
+    OpenGLContext *mainContext;
     JobQueue mainContextJobQueue;
+
+    std::mutex allContextMutex;
+    std::list<OpenGLContext*> allContexts;
 
     // Vertex buffer object
     PFNGLGENBUFFERSPROC glGenBuffers;
@@ -187,6 +194,8 @@ public:
     PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
     PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
     PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+    PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
+    PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
 
     // Texture storage.
     PFNGLTEXSTORAGE1DPROC glTexStorage1D;

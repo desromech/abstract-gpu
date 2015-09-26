@@ -77,6 +77,7 @@ public:
 _agpu_command_queue::_agpu_command_queue()
     : isRunning_(false)
 {
+    context = nullptr;
 }
 
 agpu_command_queue *_agpu_command_queue::create(agpu_device *device)
@@ -162,7 +163,10 @@ void _agpu_command_queue::queueThreadEntry()
     }
 
     // Destroy the context.
-    context.destroy();
+    context->destroy();
+    delete context;
+    context = nullptr;
+
 }
 
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* command_queue )
