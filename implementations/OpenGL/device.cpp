@@ -30,6 +30,144 @@ OpenGLVersion GLContextVersionPriorities[] = {
     OpenGLVersion::Invalid
 };
 
+std::pair<GLuint, bool> OpenGLContext::getFrameBufferObject(agpu_framebuffer *framebuffer, int newDirtyCount)
+{
+    std::unique_lock<std::mutex> l(clientResourceMutex);
+    assert(isCurrent());
+
+    // Find an existing framebuffer object.
+    auto it = framebufferObjects.find(framebuffer);
+    if(it == framebufferObjects.end())
+    {
+        // Create the new framebuffer object.
+        GLuint handle;
+        device->glGenFramebuffers(1, &handle);
+        framebufferObjects.insert(std::make_pair(framebuffer, std::make_pair(handle, newDirtyCount)));
+        return std::make_pair(handle, true);
+    }
+
+    // Get the existing handle.
+    auto &handleDirtyPair = it->second;
+    bool changed = handleDirtyPair.second != newDirtyCount;
+    handleDirtyPair.second = newDirtyCount;
+    return std::make_pair(handleDirtyPair.first, changed);
+}
+
+std::pair<GLuint, bool> OpenGLContext::getVertexArrayObject(agpu_vertex_binding *vertexBinding, int newDirtyCount)
+{
+    std::unique_lock<std::mutex> l(clientResourceMutex);
+    assert(isCurrent());
+
+    // Find an existing vertex array object.
+    auto it = vertexArrayObjects.find(vertexBinding);
+    if(it == vertexArrayObjects.end())
+    {
+        // Create the new framebuffer object.
+        GLuint handle;
+        device->glGenVertexArrays(1, &handle);
+        vertexArrayObjects.insert(std::make_pair(vertexBinding, std::make_pair(handle, newDirtyCount)));
+        return std::make_pair(handle, true);
+    }
+
+    // Get the existing handle.
+    auto handleDirtyPair = it->second;
+    bool changed = handleDirtyPair.second != newDirtyCount;
+    handleDirtyPair.second = newDirtyCount;
+    return std::make_pair(handleDirtyPair.first, changed);
+}
+
+bool OpenGLContext::isCurrent() const
+{
+    return getCurrent() == this;
+}
+
+void OpenGLContext::framebufferDeleted(agpu_framebuffer *framebuffer)
+{
+    std::unique_lock<std::mutex> l(clientResourceMutex);
+
+    auto it = framebufferObjects.find(framebuffer);
+    if(it == framebufferObjects.end())
+        return;
+
+    if(isCurrent())
+    {
+        auto handle = it->second.first;
+        device->glDeleteFramebuffers(1, &handle);
+        framebufferObjects.erase(it);
+    }
+    else
+    {
+        framebufferCleanQueue.push_back(framebuffer);
+        waitResourceCleanup(l);
+    }
+}
+
+void OpenGLContext::vertexBindingDeleted(agpu_vertex_binding *vertexBinding)
+{
+    std::unique_lock<std::mutex> l(clientResourceMutex);
+
+    auto it = vertexArrayObjects.find(vertexBinding);
+    if(it == vertexArrayObjects.end())
+        return;
+
+    if(isCurrent())
+    {
+
+        auto handle = it->second.first;
+        device->glDeleteVertexArrays(1, &handle);
+        vertexArrayObjects.erase(it);
+    }
+    else
+    {
+        vaoCleanQueue.push_back(vertexBinding);
+        waitResourceCleanup(l);
+    }
+}
+
+void OpenGLContext::cleanClientResources()
+{
+    std::unique_lock<std::mutex> l(clientResourceMutex);
+
+    // Clean FBO.
+    for(auto &fb : framebufferCleanQueue)
+    {
+        auto it = framebufferObjects.find(fb);
+        if(it == framebufferObjects.end())
+            continue;
+
+        auto handle = it->second.first;
+        device->glDeleteFramebuffers(1, &handle);
+        framebufferObjects.erase(it);
+    }
+
+    // Clean VAO.
+    for(auto &vb : vaoCleanQueue)
+    {
+        auto it = vertexArrayObjects.find(vb);
+        if(it == vertexArrayObjects.end())
+            continue;
+
+        auto handle = it->second.first;
+        device->glDeleteVertexArrays(1, &handle);
+        vertexArrayObjects.erase(it);
+    }
+
+    framebufferCleanQueue.clear();
+    vaoCleanQueue.clear();
+    ++resourceCleanCount;
+}
+
+void OpenGLContext::waitResourceCleanup(std::unique_lock<std::mutex> &lock)
+{
+    auto oldCleanCount = resourceCleanCount;
+
+    if(ownerWaitCondition)
+        ownerWaitCondition->notify_all();
+
+    while(resourceCleanCount != oldCleanCount && (!framebufferCleanQueue.empty() || !vaoCleanQueue.empty()))
+        clientResourceCleanMutex.wait(lock);
+}
+
 _agpu_device:: _agpu_device()
 {
 }

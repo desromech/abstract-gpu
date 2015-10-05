@@ -148,7 +148,7 @@ void _agpu_command_queue::queueThreadEntry()
         {
             std::unique_lock<std::mutex> l(controlMutex);
             while(!isShuttingDown_ && queuedCommands.empty())
-                wakeCondition.wait(l);
+                context->waitCondition(wakeCondition, l);
 
             if(isShuttingDown_)
                 break;
@@ -162,21 +162,6 @@ void _agpu_command_queue::queueThreadEntry()
         nextCommand->destroy();
     }
 
-    printf("Shutting down\n");
-
-    // Unset the VAO.
-    device->glBindVertexArray(0);
-    device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Delete the VAO
-    for(auto &kv : context->vertexArrayObjects)
-    {
-        auto &vaoDirty = kv.second;
-        auto vao = vaoDirty.first;
-        device->glDeleteVertexArrays(1, &vao);
-    }
-
-    printf("Destroy %p\n", context);
     // Destroy the context.
     context->destroy();
     delete context;

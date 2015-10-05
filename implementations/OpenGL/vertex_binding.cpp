@@ -11,6 +11,10 @@ _agpu_vertex_binding::_agpu_vertex_binding()
 
 void _agpu_vertex_binding::lostReferences()
 {
+    device->allContextDo([&](OpenGLContext *context) {
+        context->vertexBindingDeleted(this);
+    });
+
     for(auto &vb : vertexBuffers)
     {
         if(vb)
@@ -31,26 +35,13 @@ agpu_vertex_binding *_agpu_vertex_binding::createVertexBinding(agpu_device *devi
 void _agpu_vertex_binding::bind()
 {
     auto context = OpenGLContext::getCurrent();
-    auto &allVaos = context->vertexArrayObjects;
-    auto it = allVaos.find(this);
-    if(it != allVaos.end())
-    {
-        auto &data = it->second;
-        device->glBindVertexArray(data.first);
-        if(data.second != dirtyCount)
-        {
-            updateBindings();
-            data.second = dirtyCount;
-        }
-    }
-    else
-    {
-        GLuint handle;
-        device->glGenVertexArrays(1, &handle);
-        allVaos.insert(std::make_pair(this, std::make_pair(handle, dirtyCount)));
-        device->glBindVertexArray(handle);
+    auto handleChangedPair = context->getVertexArrayObject(this, dirtyCount);
+    auto handle = handleChangedPair.first;
+    auto changed = handleChangedPair.second;
+
+    device->glBindVertexArray(handle);
+    if(changed)
         updateBindings();
-    }
 }
 
 agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
@@ -59,6 +50,9 @@ agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer*
         return AGPU_ERROR;
 
     ++dirtyCount;
+    for(size_t i = 0; i < count; ++i)
+        vertex_buffers[i]->retain();
+
     for(auto &vb : vertexBuffers)
     {
         if(vb)
@@ -67,10 +61,7 @@ agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer*
 
     vertexBuffers.resize(count);
     for(size_t i = 0; i < count; ++i)
-    {
-        vertex_buffers[i]->retain();
-        vertexBuffers[i] = vertex_buffers[i];
-    }
+        this->vertexBuffers[i] = vertex_buffers[i];
 
 	return AGPU_OK;
 }

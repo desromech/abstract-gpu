@@ -11,6 +11,10 @@ _agpu_framebuffer::_agpu_framebuffer()
 
 void _agpu_framebuffer::lostReferences()
 {
+    device->allContextDo([&](OpenGLContext *context) {
+        context->framebufferDeleted(this);
+    });
+
 	for(int i = 0; i < MaxRenderTargetCount; ++i)
 	{
 		if(colorBuffers[i])
@@ -56,28 +60,15 @@ agpu_error _agpu_framebuffer::attachDepthStencilBuffer( agpu_texture* buffer )
 
 void _agpu_framebuffer::bind(GLenum target)
 {
+    // Get the FBO present in the current context.
     auto context = OpenGLContext::getCurrent();
-    auto &allFbos = context->framebufferObjects;
-    auto it = allFbos.find(this);
-    if(it != allFbos.end())
-    {
-        auto &data = it->second;
-        device->glBindFramebuffer(target, data.first);
-        if(data.second != dirtyCount)
-        {
-            updateAttachments(target);
-            data.second = dirtyCount;
-        }
-    }
-    else
-    {
-        GLuint handle;
-        device->glGenFramebuffers(1, &handle);
-        allFbos.insert(std::make_pair(this, std::make_pair(handle, dirtyCount)));
-        device->glBindFramebuffer(target, handle);
-        updateAttachments(target);
-    }
+    auto handleChangedPair = context->getFrameBufferObject(this, dirtyCount);
+    auto handle = handleChangedPair.first;
+    auto changed = handleChangedPair.second;
 
+    device->glBindFramebuffer(target, handle);
+    if(changed)
+        updateAttachments(target);
 }
 
 void _agpu_framebuffer::updateAttachments(GLenum target)

@@ -23,7 +23,7 @@ static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
 OpenGLContext::OpenGLContext()
-    : ownsWindow(false), display(nullptr), window(0), context(0)
+    : device(nullptr), ownsWindow(false), display(nullptr), window(0), context(0), resourceCleanCount(0)
 {
 }
 
@@ -69,6 +69,12 @@ void OpenGLContext::destroy()
     if(!context)
         return;
 
+    device->glBindVertexArray(0);
+    device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    device->glBindBuffer(GL_ARRAY_BUFFER, 0);
+    device->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    device->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
     glXMakeCurrent(display, None, 0);
     glXDestroyContext(display, context);
     context = 0;
@@ -78,6 +84,7 @@ OpenGLContext *agpu_device::createSecondaryContext(bool useMainWindow)
 {
     std::unique_lock<std::mutex> l(contextErrorMutex);
     std::unique_ptr<OpenGLContext> result(new OpenGLContext());
+    result->device = this;
     result->framebufferConfig = mainContext->framebufferConfig;
     result->display = mainContext->display;
     result->window = mainContext->window;
@@ -404,6 +411,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 
         // Initialize the device objects.
         device->mainContext = contextWrapper.release();
+        device->mainContext->device = device.get();
         device->allContexts.push_back(device->mainContext);
         device->initializeObjects();
 

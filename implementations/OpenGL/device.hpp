@@ -60,13 +60,12 @@ struct OpenGLContext
     void swapBuffersOfWindow(agpu_pointer window);
     void destroy();
 
-    bool ownsWindow;
-    OpenGLVersion version;
-
     static OpenGLContext *getCurrent();
 
-    std::map<agpu_framebuffer*, std::pair<GLuint, int> > framebufferObjects;
-    std::map<agpu_vertex_binding*, std::pair<GLuint, int> > vertexArrayObjects;
+    agpu_device *device;
+
+    bool ownsWindow;
+    OpenGLVersion version;
 
 #ifdef _WIN32
     HWND window;
@@ -80,6 +79,47 @@ struct OpenGLContext
     Window window;
     GLXContext context;
 #endif
+
+    std::pair<GLuint, bool> getFrameBufferObject(agpu_framebuffer *framebuffer, int newDirtyCount);
+    std::pair<GLuint, bool> getVertexArrayObject(agpu_vertex_binding *vertexBinding, int newDirtyCount);
+
+    bool isCurrent() const;
+
+    void framebufferDeleted(agpu_framebuffer *framebuffer);
+    void vertexBindingDeleted(agpu_vertex_binding *vertexBinding);
+    void cleanClientResources();
+
+    template<typename LT>
+    void waitCondition(std::condition_variable &waitCondition, LT &lock)
+    {
+        // Store the wait condition.
+        {
+            std::unique_lock<std::mutex> l2(clientResourceMutex);
+            ownerWaitCondition = &waitCondition;
+        }
+
+        // Wait the condition.
+        waitCondition.wait(lock);
+        cleanClientResources();
+
+        // Unstore the wait condition.
+        {
+            std::unique_lock<std::mutex> l2(clientResourceMutex);
+            ownerWaitCondition = nullptr;
+        }
+    }
+private:
+    void waitResourceCleanup(std::unique_lock<std::mutex> &lock);
+
+    std::map<agpu_framebuffer*, std::pair<GLuint, int> > framebufferObjects;
+    std::map<agpu_vertex_binding*, std::pair<GLuint, int> > vertexArrayObjects;
+    std::vector<agpu_framebuffer*> framebufferCleanQueue;
+    std::vector<agpu_vertex_binding*> vaoCleanQueue;
+
+    std::mutex clientResourceMutex;
+    std::condition_variable clientResourceCleanMutex;
+    int resourceCleanCount;
+    std::condition_variable *ownerWaitCondition;
 };
 
 /**
@@ -115,6 +155,14 @@ public:
         AsyncJob job(f);
         mainContextJobQueue.addJob(&job);
         job.wait();
+    }
+
+    template<typename FT>
+    void allContextDo(const FT &f)
+    {
+        std::unique_lock<std::mutex> l(allContextMutex);
+        for(auto context : allContexts)
+            f(context);
     }
 
     OpenGLVersion versionNumber;
