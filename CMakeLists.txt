@@ -13,7 +13,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Output paths.
 set(CMAKE_DEBUG_POSTFIX "_d")
- 
+
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/;${CMAKE_MODULE_PATH}")
 
@@ -59,7 +59,7 @@ else()
     find_path(D3D12_INCLUDE_DIRS
       NAMES d3d12.h
     )
-    
+
     find_library(D3D12_LIBRARY NAMES d3d12)
 
     # For VisualStudio in Window
@@ -80,7 +80,7 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS})
 
 # Samples libraries
-set(AGPU_MAIN_LIB AgpuOpenGL)
+set(AGPU_MAIN_LIB Agpu)
 set(AGPU_SAMPLES_LIBS ${AGPU_SAMPLES_LIBS} ${SDL2_LIBRARIES} ${AGPU_MAIN_LIB})
 
 # Build the implementations

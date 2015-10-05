@@ -46,8 +46,9 @@ def convertToUnderscore(s):
     return re.sub('(?!^)([0-9A-Z]+)', r'_\1', s).upper().replace('__', '_')
 
 class MakeHeaderVisitor:
-    def __init__(self, out):
+    def __init__(self, out, icdInc):
         self.out = out
+        self.icdInc = icdInc
         self.variables = {}
 
     def processText(self, text, **extraVariables):
@@ -181,12 +182,15 @@ class MakeHeaderVisitor:
         self.printLine('/* Installable client driver interface. */')
         self.printLine('typedef struct _agpu_icd_dispatch {')
         self.printLine('\tint icd_interface_version;')
+        self.icdInc.write('10')
         for function in fragment.globals:
             self.printLine('\t$FunctionPrefix${FunctionName}_FUN $FunctionPrefix${FunctionName};', FunctionName = function.cname)
+            self.icdInc.write(self.processText(',\n$FunctionPrefix${FunctionName}', FunctionName = function.cname))
 
         for interface in fragment.interfaces:
             for method in interface.methods:
                 self.printLine('\t$FunctionPrefix${FunctionName}_FUN $FunctionPrefix${FunctionName};', FunctionName = method.cname)
+                self.icdInc.write(self.processText(',\n$FunctionPrefix${FunctionName}', FunctionName = method.cname))
 
         self.printLine('} agpu_icd_dispatch;')
 
@@ -240,5 +244,6 @@ if __name__ == '__main__':
         print "make-headers <definitions> <output dir>"
     api = ApiDefinition.loadFromFileNamed(sys.argv[1])
     with open(sys.argv[2] + '/' + api.headerFileName, 'w') as out:
-        visitor = MakeHeaderVisitor(out)
-        api.accept(visitor)
+        with open(sys.argv[2] + '/agpu_icd.10.inc', 'w') as out2:
+            visitor = MakeHeaderVisitor(out, out2)
+            api.accept(visitor)

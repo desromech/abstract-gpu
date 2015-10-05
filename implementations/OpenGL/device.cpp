@@ -13,6 +13,7 @@
 #include "vertex_layout.hpp"
 #include "framebuffer.hpp"
 #include "swap_chain.hpp"
+#include "texture.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -419,4 +420,20 @@ AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_swa
     if(!device)
         return nullptr;
     return agpu_swap_chain::create(device, swapChainInfo);
+}
+
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil )
+{
+    if(!device)
+        return nullptr;
+
+    return agpu_framebuffer::create(device, width, height, renderTargetCount, hasDepth, hasStencil);
+}
+
+AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description, agpu_pointer initialData )
+{
+    if(!device)
+        return nullptr;
+
+    return agpu_texture::create(device, description, initialData);
 }
