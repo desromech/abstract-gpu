@@ -66,6 +66,7 @@ struct OpenGLContext
     static OpenGLContext *getCurrent();
 
     std::map<agpu_framebuffer*, std::pair<GLuint, int> > framebufferObjects;
+    std::map<agpu_vertex_binding*, std::pair<GLuint, int> > vertexArrayObjects;
 
 #ifdef _WIN32
     HWND window;

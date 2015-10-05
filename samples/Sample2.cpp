@@ -69,8 +69,6 @@ public:
 
     void render()
     {
-        return;
-        
         // Compute the projection matrix
         float aspect = float(screenWidth) / float(screenHeight);
         float h = 2.0;
@@ -83,7 +81,7 @@ public:
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, pipeline);
-        //agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(device));
+        agpuBeginFrame(commandList, agpuGetCurrentBackBuffer(swapChain));
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
@@ -107,6 +105,7 @@ public:
         // Queue the command list
         auto queue = agpuGetDefaultCommandQueue(device);
         agpuAddCommandList(queue, commandList);
+        agpuFinishQueueExecution(queue);
 
         swapBuffers();
     }

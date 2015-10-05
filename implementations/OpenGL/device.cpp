@@ -69,6 +69,8 @@ bool _agpu_device::isExtensionSupported(const char *extList, const char *extensi
 
 void _agpu_device::lostReferences()
 {
+    defaultCommandQueue->release();
+
     if(mainContext)
     {
         onMainContextBlocking([&]() {

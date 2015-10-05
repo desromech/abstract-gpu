@@ -66,7 +66,12 @@ void OpenGLContext::swapBuffersOfWindow(agpu_pointer window)
 
 void OpenGLContext::destroy()
 {
+    if(!context)
+        return;
 
+    glXMakeCurrent(display, None, 0);
+    glXDestroyContext(display, context);
+    context = 0;
 }
 
 OpenGLContext *agpu_device::createSecondaryContext(bool useMainWindow)

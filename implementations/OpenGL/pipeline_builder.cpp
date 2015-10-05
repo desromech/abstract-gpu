@@ -39,7 +39,11 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
 void _agpu_pipeline_builder::lostReferences()
 {
 	if(programHandle && !linked)
-		device->glDeleteProgram(programHandle);
+    {
+        device->onMainContextBlocking([&]{
+            device->glDeleteProgram(programHandle);
+        });
+    }
 }
 
 agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device)
@@ -52,31 +56,36 @@ agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device
 
 agpu_error _agpu_pipeline_builder::reset()
 {
-	if(programHandle && !linked)
-		device->glDeleteProgram(programHandle);
-		
-	programHandle = device->glCreateProgram();
+    device->onMainContextBlocking([&]{
+    	if(programHandle && !linked)
+    		device->glDeleteProgram(programHandle);
+
+    	programHandle = device->glCreateProgram();
+    });
 	linked = false;
 	return AGPU_OK;
 }
 
 agpu_pipeline_state* _agpu_pipeline_builder::build ()
 {
-	// Link the program.
-	device->glLinkProgram(programHandle);
-	
-	// Check the link status
-	GLint status;
-	device->glGetProgramiv(programHandle, GL_LINK_STATUS, &status);
-	linked = status == GL_TRUE;
+    device->onMainContextBlocking([&]{
+    	// Link the program.
+    	device->glLinkProgram(programHandle);
+
+    	// Check the link status
+    	GLint status;
+    	device->glGetProgramiv(programHandle, GL_LINK_STATUS, &status);
+    	linked = status == GL_TRUE;
+    });
+
 	if(!linked)
-		return nullptr;	
-	
+		return nullptr;
+
 	// Create the pipeline state object
 	auto pipeline = new agpu_pipeline_state();
 	pipeline->device = device;
 	pipeline->programHandle = programHandle;
-	
+
 	// Depth state
     pipeline->depthEnabled = depthEnabled;
     pipeline->depthWriteMask = depthWriteMask;
@@ -97,9 +106,11 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
 	CHECK_POINTER(shader);
-	device->glAttachShader(programHandle, shader->handle);
-	for(auto &locationBinding : shader->attributeBindings )
-		device->glBindAttribLocation(programHandle, locationBinding.location, locationBinding.name.c_str());
+    device->onMainContextBlocking([&]{
+    	device->glAttachShader(programHandle, shader->handle);
+    	for(auto &locationBinding : shader->attributeBindings )
+    		device->glBindAttribLocation(programHandle, locationBinding.location, locationBinding.name.c_str());
+    });
 
 	return AGPU_OK;
 }
@@ -107,13 +118,17 @@ agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
 {
 	GLint size;
-	device->glGetProgramiv(programHandle, GL_INFO_LOG_LENGTH, &size);
+    device->onMainContextBlocking([&]{
+    	device->glGetProgramiv(programHandle, GL_INFO_LOG_LENGTH, &size);
+    });
 	return size;
 }
 
 agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
 {
-	device->glGetProgramInfoLog(programHandle, (GLsizei)(buffer_size - 1), nullptr, buffer);
+    device->onMainContextBlocking([&]{
+        device->glGetProgramInfoLog(programHandle, (GLsizei)(buffer_size - 1), nullptr, buffer);
+    });
 	return AGPU_OK;
 }
 

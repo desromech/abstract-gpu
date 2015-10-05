@@ -22,7 +22,9 @@ _agpu_shader::_agpu_shader()
 
 void _agpu_shader::lostReferences()
 {
-	device->glDeleteShader(handle);
+    device->onMainContextBlocking([&]() {
+        device->glDeleteShader(handle);
+    });
 }
 
 agpu_shader *_agpu_shader::createShader(agpu_device *device, agpu_shader_type type)
@@ -30,8 +32,14 @@ agpu_shader *_agpu_shader::createShader(agpu_device *device, agpu_shader_type ty
     // A device is needed.
     if(!device)
         return nullptr;
+	GLuint handle;
+    device->onMainContextBlocking([&]() {
+        handle = device->glCreateShader(mapShaderType(type));
+    });
 
-	auto handle = device->glCreateShader(mapShaderType(type));
+    if(!handle)
+        return nullptr;
+
 	auto shader = new agpu_shader();
 	shader->device = device;
 	shader->type = type;
@@ -46,37 +54,48 @@ agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_str
 		return AGPU_UNSUPPORTED;
 
 	// Check the source code
-	CHECK_POINTER(sourceText);		
+	CHECK_POINTER(sourceText);
 	if(sourceTextLength < 0)
 		sourceTextLength = (agpu_string_length)strlen(sourceText);
-		
+
 	// Set the shader source
-	device->glShaderSource(handle, 1, &sourceText, &sourceTextLength);
+    device->onMainContextBlocking([&]() {
+        device->glShaderSource(handle, 1, &sourceText, &sourceTextLength);
+    });
+
 	return AGPU_OK;
 }
 
 agpu_error _agpu_shader::compileShader(agpu_cstring options)
 {
-	// Compile the shader.
-	device->glCompileShader(handle);
-	
-	// Get the compile status
-	GLint status;
-	device->glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
-	compiled = status == GL_TRUE;
+    bool compiled;
+    device->onMainContextBlocking([&]() {
+        // Compile the shader.
+        device->glCompileShader(handle);
+
+        // Get the compile status
+        GLint status;
+        device->glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
+        compiled = status == GL_TRUE;
+    });
+
 	return compiled ? AGPU_OK : AGPU_COMPILATION_ERROR;
 }
 
 agpu_size _agpu_shader::getShaderCompilationLogLength()
 {
 	GLint length;
-	device->glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &length);
+    device->onMainContextBlocking([&]() {
+        device->glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &length);
+    });
 	return length;
 }
 
 agpu_error _agpu_shader::getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
-	device->glGetShaderInfoLog(handle, (GLsizei)(buffer_size - 1), nullptr, buffer);
+    device->onMainContextBlocking([&]() {
+        device->glGetShaderInfoLog(handle, (GLsizei)(buffer_size - 1), nullptr, buffer);
+    });
 	return AGPU_OK;
 }
 
@@ -105,7 +124,7 @@ AGPU_EXPORT agpu_error agpuReleaseShader ( agpu_shader* shader )
 AGPU_EXPORT agpu_error agpuSetShaderSource ( agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength )
 {
 	CHECK_POINTER(shader);
-	return shader->setShaderSource(language, sourceText, sourceTextLength);	
+	return shader->setShaderSource(language, sourceText, sourceTextLength);
 }
 
 AGPU_EXPORT agpu_error agpuCompileShader ( agpu_shader* shader, agpu_cstring options )
