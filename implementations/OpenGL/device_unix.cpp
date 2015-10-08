@@ -23,7 +23,7 @@ static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
 OpenGLContext::OpenGLContext()
-    : device(nullptr), ownsWindow(false), display(nullptr), window(0), context(0), resourceCleanCount(0)
+    : device(nullptr), ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0), resourceCleanCount(0)
 {
 }
 
@@ -78,6 +78,9 @@ void OpenGLContext::destroy()
     glXMakeCurrent(display, None, 0);
     glXDestroyContext(display, context);
     context = 0;
+
+    if(ownsDisplay)
+        XCloseDisplay(display);
 }
 
 OpenGLContext *agpu_device::createSecondaryContext(bool useMainWindow)
@@ -254,6 +257,17 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     AsyncJob contextCreationJob([&] {
         std::unique_ptr<OpenGLContext> contextWrapper(new OpenGLContext());
         contextWrapper->display = (Display*)openInfo->display;
+        if(!contextWrapper->display)
+        {
+            contextWrapper->display = XOpenDisplay(NULL);
+            if(!contextWrapper->display)
+            {
+                failure = true;
+                return;
+            }
+
+            contextWrapper->ownsDisplay = true;
+        }
 
         // Create a simple context.
         int visualAttributes[] {

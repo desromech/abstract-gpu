@@ -94,7 +94,7 @@ class MakePharoBindingsVisitor:
     def visitInterface(self, interface):
         cname = typedefName = self.processText("$TypePrefix$Name", Name=interface.name)
         self.interfaceTypeMap[interface.name + '*'] = 'AGPU' + convertToCamelCase(interface.name)
-        self.typeBindings[cname] = 'NBExternalAddress'
+        self.typeBindings[cname] = "#'void*'"
 
     def processFragment(self, fragment):
         # Visit the constants.
@@ -231,15 +231,40 @@ class MakePharoBindingsVisitor:
                 pharoName = "AGPU" + convertToCamelCase(interface.name)
                 self.emitSubclass('AGPUInterface', pharoName, '', '', '')
 
+    def emitStructure(self, struct):
+        cname = self.processText("$TypePrefix$StructName" , StructName = struct.name)
+        pharoName = 'AGPU' + convertToCamelCase(struct.name)
+        self.typeBindings[cname] = pharoName
+        self.emitSubclass('NBExternalStructure', pharoName, '', '', 'AGPUConstants AGPUTypes')
+
+        self.beginMethod(pharoName + ' class', 'definition')
+        self.printLine(
+"""fieldsDesc
+	"
+	self initializeAccessors
+	"
+	^ #(""")
+        for field in struct.fields:
+            self.printLine("\t\t $TypePrefix$FieldType $FieldName;", FieldType = field.type, FieldName = field.name)
+
+        self.printLine("\t\t)")
+        self.endMethod()
+
+    def emitStructures(self, api):
+        for version in api.versions.values():
+            for struct in version.structs:
+                self.emitStructure(struct)
+
     def emitBaseClasses(self, api):
         self.emitConstants()
         self.emitInterfaceClasses(api)
+        self.emitStructures(api)
         self.emitTypeBindings()
         self.emitCBindings(api)
         self.emitPharoBindings(api)
 
     def emitPharoBindings(self, api):
-        self.emitSubclass('Object', 'AGPU', '', '', '')
+        self.emitSubclass('AGPUBindingsBase', 'AGPU', '', '', '')
         for version in api.versions.values():
             for interface in version.interfaces:
                 self.emitInterfaceBindings(interface)

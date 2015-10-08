@@ -65,6 +65,7 @@ struct OpenGLContext
     agpu_device *device;
 
     bool ownsWindow;
+    bool ownsDisplay;
     OpenGLVersion version;
 
 #ifdef _WIN32
