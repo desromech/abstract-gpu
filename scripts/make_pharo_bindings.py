@@ -88,6 +88,9 @@ class MakePharoBindingsVisitor:
         if mappingType.startswith('unsigned '):
             mappingType = 'u' + mappingType[len('unsigned '):]
 
+        if mappingType.startswith('signed '):
+            mappingType = mappingType[len('signed '):]
+
         typedefName = self.processText("$TypePrefix$Name", Name=typedef.name)
         self.typeBindings[typedefName] = "#'" + mappingType + "'"
 
