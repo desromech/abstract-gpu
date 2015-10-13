@@ -13,19 +13,19 @@ public:
 
     static agpu_framebuffer* create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil);
     
-    agpu_error attachRawColorBuffer(agpu_uint index, const ComPtr<ID3D12Resource> &colorBuffer);
-    agpu_error createImplicitDepthStencil(agpu_uint depthSize, agpu_uint stencilSize);
+    agpu_error attachColorBuffer(agpu_int index, agpu_texture* buffer);
+    agpu_error attachDepthStencilBuffer(agpu_texture* buffer);
 
     size_t getColorBufferCount() const;
     D3D12_CPU_DESCRIPTOR_HANDLE getColorBufferCpuHandle(size_t i);
     D3D12_CPU_DESCRIPTOR_HANDLE getDepthStencilCpuHandle();
 
+    
 public:
     agpu_device *device;
 
     agpu_uint width;
     agpu_uint height;
-    bool isMainFrameBuffer;
     bool hasDepth;
     bool hasStencil;
 
@@ -35,8 +35,8 @@ public:
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> colorBufferDescriptors;
 
-    std::vector<ComPtr<ID3D12Resource>> colorBuffers;
-    ComPtr<ID3D12Resource> depthStencil;
+    std::vector<agpu_texture*> colorBuffers;
+    agpu_texture* depthStencil;
 };
 
 #endif //AGPU_D3D12_FRAMEBUFFER_HPP

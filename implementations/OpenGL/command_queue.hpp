@@ -1,6 +1,7 @@
 #ifndef AGPU_COMMAND_QUEUE_HPP_
 #define AGPU_COMMAND_QUEUE_HPP_
 
+#include <functional>
 #include <mutex>
 #include <thread>
 #include <condition_variable>
@@ -15,6 +16,8 @@ public:
     _agpu_command_queue();
 
     static agpu_command_queue *create(agpu_device *device);
+
+    agpu_error addCustomCommand(const std::function<void()> &command);
 
     void lostReferences();
     agpu_error addCommandList ( agpu_command_list* command_list );

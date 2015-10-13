@@ -204,12 +204,7 @@ agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_
     });
 }
 
-agpu_error _agpu_command_list::setStencilReference(agpu_float reference)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setAlphaReference(agpu_float reference)
+agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 {
     return AGPU_UNIMPLEMENTED;
 }
@@ -380,16 +375,10 @@ AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect(agpu_command_list* command_
     return command_list->multiDrawElementsIndirect(offset, drawcount);
 }
 
-AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_float reference)
+AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_uint reference)
 {
     CHECK_POINTER(command_list);
     return command_list->setStencilReference(reference);
-}
-
-AGPU_EXPORT agpu_error agpuSetAlphaReference(agpu_command_list* command_list, agpu_float reference)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setAlphaReference(reference);
 }
 
 AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)

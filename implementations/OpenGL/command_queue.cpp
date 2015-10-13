@@ -74,6 +74,31 @@ public:
     agpu_command_list *command_list;
 };
 
+class GpuCustomCommand : public GpuCommand
+{
+public:
+    GpuCustomCommand(const std::function<void()> &command)
+        : command(command)
+    {
+    }
+
+    ~GpuCustomCommand()
+    {
+    }
+
+    virtual void execute()
+    {
+        command();
+    }
+
+    virtual void destroy()
+    {
+        delete this;
+    }
+
+    std::function<void()> command;
+};
+    
 _agpu_command_queue::_agpu_command_queue()
     : isRunning_(false)
 {
@@ -98,6 +123,12 @@ agpu_error _agpu_command_queue::addCommandList ( agpu_command_list* command_list
 	CHECK_POINTER(command_list);
     addCommand(new GpuExecuteCommandList(command_list));
 	return AGPU_OK;
+}
+
+agpu_error _agpu_command_queue::addCustomCommand(const std::function<void()> &command)
+{
+    addCommand(new GpuCustomCommand(command));
+    return AGPU_OK;
 }
 
 void _agpu_command_queue::addCommand(GpuCommand *command)

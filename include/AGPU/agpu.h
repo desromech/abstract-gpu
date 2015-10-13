@@ -128,6 +128,9 @@ typedef enum {
 	AGPU_TEXTURE_FLAG_DEPTH_STENCIL = 2,
 	AGPU_TEXTURE_FLAG_UNORDERED_ACCESS = 4,
 	AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY = 8,
+	AGPU_TEXTURE_FLAG_READED_BACK = 16,
+	AGPU_TEXTURE_FLAG_UPLOADED = 32,
+	AGPU_TEXTURE_FLAG_UPLOADED_ONCE = 64,
 } agpu_texture_flags;
 
 typedef enum {
@@ -372,7 +375,7 @@ AGPU_EXPORT agpu_bool agpuIsNativePlatform ( agpu_platform* platform );
 typedef agpu_error (*agpuAddDeviceReference_FUN) ( agpu_device* device );
 typedef agpu_error (*agpuReleaseDevice_FUN) ( agpu_device* device );
 typedef agpu_command_queue* (*agpuGetDefaultCommandQueue_FUN) ( agpu_device* device );
-typedef agpu_swap_chain* (*agpuCreateSwapChain_FUN) ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo );
+typedef agpu_swap_chain* (*agpuCreateSwapChain_FUN) ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo );
 typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
 typedef agpu_vertex_layout* (*agpuCreateVertexLayout_FUN) ( agpu_device* device );
 typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device, agpu_vertex_layout* layout );
@@ -390,7 +393,7 @@ typedef agpu_texture* (*agpuCreateTexture_FUN) ( agpu_device* device, agpu_textu
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
 AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue ( agpu_device* device );
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo );
+AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo );
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout ( agpu_device* device );
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, agpu_vertex_layout* layout );
@@ -489,8 +492,7 @@ typedef agpu_error (*agpuDrawArrays_FUN) ( agpu_command_list* command_list, agpu
 typedef agpu_error (*agpuDrawElements_FUN) ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
 typedef agpu_error (*agpuDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset );
 typedef agpu_error (*agpuMultiDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
-typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_list, agpu_float reference );
-typedef agpu_error (*agpuSetAlphaReference_FUN) ( agpu_command_list* command_list, agpu_float reference );
+typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_list, agpu_uint reference );
 typedef agpu_error (*agpuExecuteBundle_FUN) ( agpu_command_list* command_list, agpu_command_list* bundle );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
@@ -515,8 +517,7 @@ AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_ui
 AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
 AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset );
 AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
-AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_float reference );
-AGPU_EXPORT agpu_error agpuSetAlphaReference ( agpu_command_list* command_list, agpu_float reference );
+AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_uint reference );
 AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
@@ -685,7 +686,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuDrawElementsIndirect_FUN agpuDrawElementsIndirect;
 	agpuMultiDrawElementsIndirect_FUN agpuMultiDrawElementsIndirect;
 	agpuSetStencilReference_FUN agpuSetStencilReference;
-	agpuSetAlphaReference_FUN agpuSetAlphaReference;
 	agpuExecuteBundle_FUN agpuExecuteBundle;
 	agpuCloseCommandList_FUN agpuCloseCommandList;
 	agpuResetCommandList_FUN agpuResetCommandList;

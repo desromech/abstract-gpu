@@ -73,12 +73,12 @@ AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue ( agpu_device* device
 	return (*dispatchTable)->agpuGetDefaultCommandQueue ( device );
 }
 
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo )
+AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
 {
 	if (device == nullptr)
 		return (agpu_swap_chain*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateSwapChain ( device, swapChainInfo );
+	return (*dispatchTable)->agpuCreateSwapChain ( device, commandQueue, swapChainInfo );
 }
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
@@ -529,20 +529,12 @@ AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_command_list* comman
 	return (*dispatchTable)->agpuMultiDrawElementsIndirect ( command_list, offset, drawcount );
 }
 
-AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_float reference )
+AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_uint reference )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuSetStencilReference ( command_list, reference );
-}
-
-AGPU_EXPORT agpu_error agpuSetAlphaReference ( agpu_command_list* command_list, agpu_float reference )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuSetAlphaReference ( command_list, reference );
 }
 
 AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle )

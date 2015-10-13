@@ -62,6 +62,7 @@ protected:
 
     agpu_device *device;
     agpu_swap_chain *swapChain;
+    agpu_command_queue *commandQueue;
     agpu_shader_language preferredShaderLanguage;
     bool quit;
 };

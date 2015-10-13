@@ -166,6 +166,8 @@
     <ClCompile Include="..\..\..\implementations\Direct3D12\platform.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\shader.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\shader_resource_binding.cpp" />
+    <ClCompile Include="..\..\..\implementations\Direct3D12\swap_chain.cpp" />
+    <ClCompile Include="..\..\..\implementations\Direct3D12\texture.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_layout.cpp" />
   </ItemGroup>
@@ -184,6 +186,9 @@
     <ClInclude Include="..\..\..\implementations\Direct3D12\platform.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\shader.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\shader_resource_binding.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\swap_chain.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\texture.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\texture_formats.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\vertex_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\vertex_layout.hpp" />
     <ClInclude Include="..\..\..\include\AGPU\agpu.h" />

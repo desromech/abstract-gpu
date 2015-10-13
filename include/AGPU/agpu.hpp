@@ -156,9 +156,9 @@ public:
 		return agpuGetDefaultCommandQueue( this );
 	}
 
-	inline agpu_swap_chain* createSwapChain ( agpu_swap_chain_create_info* swapChainInfo )
+	inline agpu_swap_chain* createSwapChain ( agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
 	{
-		return agpuCreateSwapChain( this, swapChainInfo );
+		return agpuCreateSwapChain( this, commandQueue, swapChainInfo );
 	}
 
 	inline agpu_buffer* createBuffer ( agpu_buffer_description* description, agpu_pointer initial_data )
@@ -495,14 +495,9 @@ public:
 		AgpuThrowIfFailed(agpuMultiDrawElementsIndirect( this, offset, drawcount ));
 	}
 
-	inline void setStencilReference ( agpu_float reference )
+	inline void setStencilReference ( agpu_uint reference )
 	{
 		AgpuThrowIfFailed(agpuSetStencilReference( this, reference ));
-	}
-
-	inline void setAlphaReference ( agpu_float reference )
-	{
-		AgpuThrowIfFailed(agpuSetAlphaReference( this, reference ));
 	}
 
 	inline void executeBundle ( agpu_command_list* bundle )

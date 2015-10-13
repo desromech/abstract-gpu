@@ -6,6 +6,7 @@
 #include "vertex_binding.hpp"
 #include "shader_resource_binding.hpp"
 #include "framebuffer.hpp"
+#include "texture.hpp"
 
 inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topology)
 {
@@ -36,17 +37,29 @@ void _agpu_command_list::lostReferences()
         currentFramebuffer->release();
 }
 
-_agpu_command_list *_agpu_command_list::create(agpu_device *device, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
+inline D3D12_COMMAND_LIST_TYPE mapCommandListType(CommandListType type)
+{
+    switch (type)
+    {
+    case CommandListType::Direct: return D3D12_COMMAND_LIST_TYPE_DIRECT;
+    case CommandListType::Bundle: return D3D12_COMMAND_LIST_TYPE_BUNDLE;
+    case CommandListType::Compute: return D3D12_COMMAND_LIST_TYPE_COMPUTE;
+    default: abort();
+    }
+}
+
+_agpu_command_list *_agpu_command_list::create(agpu_device *device, CommandListType type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
 {
     ComPtr<ID3D12GraphicsCommandList> commandList;
     ID3D12PipelineState *state = nullptr;
     if (initialState)
         state = initialState->state.Get();
 
-    if (FAILED(device->d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator->allocator.Get(), state, IID_PPV_ARGS(&commandList))))
+    if (FAILED(device->d3dDevice->CreateCommandList(0, mapCommandListType(type), allocator->allocator.Get(), state, IID_PPV_ARGS(&commandList))))
         return nullptr;
 
-    auto list = new _agpu_command_list();
+    std::unique_ptr<agpu_command_list> list(new _agpu_command_list());
+    list->type = type;
     list->device = device;
     list->commandList = commandList;
     if (list->setCommonState() < 0)
@@ -55,7 +68,7 @@ _agpu_command_list *_agpu_command_list::create(agpu_device *device, _agpu_comman
         return nullptr;
     }
 
-    return list;
+    return list.release();
 }
 
 agpu_error _agpu_command_list::setCommonState()
@@ -222,14 +235,20 @@ agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::setStencilReference(agpu_float reference)
+agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 {
-    return AGPU_UNIMPLEMENTED;
+    commandList->OMSetStencilRef(reference);
+    return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setAlphaReference(agpu_float reference)
+agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(bundle);
+    if (bundle->type != CommandListType::Bundle)
+        return AGPU_INVALID_PARAMETER;
+
+    commandList->ExecuteBundle(bundle->commandList.Get());
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::close()
@@ -267,11 +286,11 @@ agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer)
     // Perform the resource transitions
     for (size_t i = 0; i < framebuffer->getColorBufferCount(); ++i)
     {
-        auto &colorBuffer = framebuffer->colorBuffers[i];
+        auto colorBuffer = framebuffer->colorBuffers[i];
         if (!colorBuffer)
             return AGPU_ERROR;
 
-        auto barrier = resourceTransitionBarrier(colorBuffer.Get(), prevState, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        auto barrier = resourceTransitionBarrier(colorBuffer->gpuResource.Get(), prevState, D3D12_RESOURCE_STATE_RENDER_TARGET);
         commandList->ResourceBarrier(1, &barrier);
     }
 
@@ -303,7 +322,7 @@ agpu_error _agpu_command_list::endFrame()
         if (!colorBuffer)
             return AGPU_ERROR;
 
-        auto barrier = resourceTransitionBarrier(colorBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, newState);
+        auto barrier = resourceTransitionBarrier(colorBuffer->gpuResource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, newState);
         commandList->ResourceBarrier(1, &barrier);
     }
 
@@ -420,71 +439,16 @@ AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect(agpu_command_list* command_
     return command_list->multiDrawElementsIndirect(offset, drawcount);
 }
 
-AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_float reference)
+AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_uint reference)
 {
     CHECK_POINTER(command_list);
     return command_list->setStencilReference(reference);
 }
 
-AGPU_EXPORT agpu_error agpuSetAlphaReference(agpu_command_list* command_list, agpu_float reference)
+AGPU_EXPORT agpu_error agpuExecuteBundle(agpu_command_list* command_list, agpu_command_list* bundle)
 {
     CHECK_POINTER(command_list);
-    return command_list->setAlphaReference(reference);
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformi(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform2i(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform3i(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform4i(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_int* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformf(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform2f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform3f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniform4f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformMatrix2f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformMatrix3f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSetUniformMatrix4f(agpu_command_list* command_list, agpu_int location, agpu_size count, agpu_bool transpose, agpu_float* data)
-{
-    return AGPU_UNIMPLEMENTED;
+    return command_list->executeBundle(bundle);
 }
 
 AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)

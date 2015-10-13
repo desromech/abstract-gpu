@@ -1,39 +1,22 @@
 #include "framebuffer.hpp"
-
-inline DXGI_FORMAT findDepthStencilFormat(agpu_uint depthSize, agpu_uint stencilSize)
-{
-    if (depthSize >= 32)
-    {
-        if (stencilSize)
-            return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-        return DXGI_FORMAT_D32_FLOAT;
-    }
-    else if(depthSize >= 24)
-    {
-        return DXGI_FORMAT_D24_UNORM_S8_UINT;
-    }
-    else if (depthSize >= 16)
-    {
-        if(stencilSize)
-            return DXGI_FORMAT_D24_UNORM_S8_UINT;
-        return DXGI_FORMAT_D16_UNORM;
-    }
-    else
-    {
-        if(stencilSize)
-            return DXGI_FORMAT_D24_UNORM_S8_UINT;
-        return DXGI_FORMAT_D16_UNORM;
-    }
-}
+#include "texture.hpp"
 
 _agpu_framebuffer::_agpu_framebuffer()
 {
-    isMainFrameBuffer = false;
+    depthStencil = nullptr;
 }
 
 void _agpu_framebuffer::lostReferences()
 {
+    for (size_t i = 0; i < colorBuffers.size(); ++i)
+    {
+        auto colorBuffer = colorBuffers[i];
+        if (colorBuffer)
+            colorBuffer->release();
+    }
 
+    if (depthStencil)
+        depthStencil->release();
 }
 
 agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil)
@@ -70,7 +53,7 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
     framebuffer->width = width;
     framebuffer->height = height;
     framebuffer->device = device;
-    framebuffer->colorBuffers.resize(renderTargetCount);
+    framebuffer->colorBuffers.resize(renderTargetCount, nullptr);
     framebuffer->hasDepth = hasDepth;
     framebuffer->hasStencil = hasStencil;
     framebuffer->heap = heap;
@@ -84,58 +67,37 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
     return framebuffer;
 }
 
-agpu_error _agpu_framebuffer::attachRawColorBuffer(agpu_uint index, const ComPtr<ID3D12Resource> &colorBuffer)
+agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture* buffer)
 {
+    CHECK_POINTER(buffer);
     if (index >= colorBuffers.size())
         return AGPU_OUT_OF_BOUNDS;
 
-    colorBuffers[index] = colorBuffer;
+    // Store the new color buffer.
+    buffer->retain();
+    if (colorBuffers[index])
+        colorBuffers[index]->release();
+    colorBuffers[index] = buffer;
 
     // Perform the actual attachment.
     D3D12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
     handle.ptr += index * descriptorSize;
-    device->d3dDevice->CreateRenderTargetView(colorBuffer.Get(), nullptr, handle);
+    device->d3dDevice->CreateRenderTargetView(buffer->gpuResource.Get(), nullptr, handle);
     return AGPU_OK;
 }
 
-agpu_error _agpu_framebuffer::createImplicitDepthStencil(agpu_uint depthSize, agpu_uint stencilSize)
+agpu_error _agpu_framebuffer::attachDepthStencilBuffer(agpu_texture* buffer)
 {
-    if (!depthSize && !stencilSize)
-        return AGPU_OK;
+    CHECK_POINTER(buffer);
 
-    DXGI_FORMAT format = findDepthStencilFormat(depthSize, stencilSize);
-    if (format == DXGI_FORMAT_UNKNOWN)
-        return AGPU_ERROR;
+    // Store the new depth stencil buffer.
+    buffer->retain();
+    if (depthStencil)
+        depthStencil->release();
+    depthStencil = buffer;
 
-    D3D12_HEAP_PROPERTIES heapProperties;
-    memset(&heapProperties, 0, sizeof(heapProperties));
-    heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-    heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-    D3D12_RESOURCE_DESC desc;
-    memset(&desc, 0, sizeof(desc));
-    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    desc.Alignment = 0;
-    desc.Width = width;
-    desc.Height = height;
-    desc.DepthOrArraySize = 1;
-    desc.MipLevels = 1;
-    desc.Format = format;
-    desc.SampleDesc.Count = 1;
-    desc.SampleDesc.Quality = 0;
-    desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
-
-
-    // Try to create already cleared.
-    D3D12_CLEAR_VALUE clearValue;
-    clearValue.Format = format;
-    clearValue.DepthStencil.Depth = 1.0f;
-    clearValue.DepthStencil.Stencil = 0;
-
-    ERROR_IF_FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&depthStencil)));
-    device->d3dDevice->CreateDepthStencilView(depthStencil.Get(), nullptr, depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+    // Perform the actual attachment.
+    device->d3dDevice->CreateDepthStencilView(depthStencil->gpuResource.Get(), nullptr, depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
     return AGPU_OK;
 }
 
@@ -169,9 +131,14 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer(agpu_framebuffer* framebuffer)
     return framebuffer->release();
 }
 
-AGPU_EXPORT agpu_bool agpuisMainFrameBuffer(agpu_framebuffer* framebuffer)
+AGPU_EXPORT agpu_error agpuAttachColorBuffer(agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer)
 {
-    if (!framebuffer)
-        return false;
-    return framebuffer->isMainFrameBuffer;
+    CHECK_POINTER(framebuffer);
+    return framebuffer->attachColorBuffer(index, buffer);
+}
+
+AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer(agpu_framebuffer* framebuffer, agpu_texture* buffer)
+{
+    CHECK_POINTER(framebuffer);
+    return framebuffer->attachDepthStencilBuffer(buffer);
 }

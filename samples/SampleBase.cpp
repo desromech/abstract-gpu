@@ -151,8 +151,11 @@ int SampleBase::main(int argc, const char **argv)
         return false;
     }
 
+    // Get the default command queue
+    commandQueue = agpuGetDefaultCommandQueue(device);
+
     // Create the swap chain.
-    swapChain = agpuCreateSwapChain(device, &swapChainCreateInfo);
+    swapChain = agpuCreateSwapChain(device, commandQueue, &swapChainCreateInfo);
     if(!swapChain)
     {
         printError("Failed to create the swap chain\n");
@@ -176,6 +179,7 @@ int SampleBase::main(int argc, const char **argv)
 
     shutdownSample();
     agpuReleaseSwapChain(swapChain);
+    agpuReleaseCommandQueue(commandQueue);
     agpuReleaseDevice(device);
 
     SDL_DestroyWindow(window);

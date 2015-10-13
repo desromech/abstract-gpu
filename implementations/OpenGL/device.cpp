@@ -427,6 +427,8 @@ AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
 {
     if (!device)
         return nullptr;
+
+    device->defaultCommandQueue->retain();
     return device->defaultCommandQueue;
 }
 
@@ -447,11 +449,11 @@ AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu
     return agpu_shader_resource_binding::create(device, bindingBank);
 }
 
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_swap_chain_create_info* swapChainInfo )
+AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
 {
     if(!device)
         return nullptr;
-    return agpu_swap_chain::create(device, swapChainInfo);
+    return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
 }
 
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil )

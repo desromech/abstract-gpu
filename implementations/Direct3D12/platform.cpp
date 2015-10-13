@@ -22,3 +22,36 @@ AGPU_EXPORT agpu_device* agpuOpenDevice(agpu_platform* platform, agpu_device_ope
     return agpu_device::open(openInfo);
 }
 
+AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* platform)
+{
+    if (platform != &theD3D12Platform)
+        return nullptr;
+
+    return "Direct3D 12";
+}
+
+AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* platform)
+{
+    if (platform != &theD3D12Platform)
+        return 0;
+
+    return 10;
+}
+
+AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platform)
+{
+    if (platform != &theD3D12Platform)
+        return 0;
+
+    return 120;
+}
+
+AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform)
+{
+    return platform == &theD3D12Platform;
+}
+
+AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform)
+{
+    return platform == &theD3D12Platform;
+}

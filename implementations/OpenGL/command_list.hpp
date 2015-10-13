@@ -32,8 +32,7 @@ public:
     agpu_error drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
     agpu_error drawElementsIndirect(agpu_size offset);
     agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
-    agpu_error setStencilReference(agpu_float reference);
-    agpu_error setAlphaReference(agpu_float reference);
+    agpu_error setStencilReference(agpu_uint reference);
     agpu_error executeBundle ( agpu_command_list* bundle );
     agpu_error close();
     agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);

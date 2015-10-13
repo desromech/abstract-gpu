@@ -33,11 +33,12 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     bool canBeSubUpdated = (description->mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
     bool hasInitialData = initial_data != nullptr;
     bool canBeMapped = (description->mapping_flags & AGPU_MAP_READ_BIT) || (description->mapping_flags & AGPU_MAP_WRITE_BIT);
+    bool canBeReaded = description->mapping_flags & AGPU_MAP_READ_BIT;
     bool hasCoherentMapping = (description->mapping_flags & AGPU_MAP_COHERENT_BIT) != 0;
 
     bool keepUploadBuffer = canBeMapped || canBeSubUpdated;
     bool needsUploadBuffer = keepUploadBuffer || hasInitialData;
-    bool needsDefaultBuffer = !hasCoherentMapping && !streaming;
+    bool needsDefaultBuffer = !hasCoherentMapping && !streaming && !canBeReaded;
 
     ComPtr<ID3D12Resource> uploadResource;
     ComPtr<ID3D12Resource> gpuResource;
@@ -232,6 +233,30 @@ agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu
     });
 }
 
+agpu_error _agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+{
+    bool canBeSubUpdated = (description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
+    if (!canBeSubUpdated)
+        return AGPU_UNSUPPORTED;
+
+    // Check the limits
+    if (offset + size > description.size)
+        return AGPU_ERROR;
+
+    // Check the data.
+    CHECK_POINTER(data);
+
+    // Map the read buffer.
+    uint8_t *srcPtr;
+    ERROR_IF_FAILED(uploadResource->Map(0, nullptr, reinterpret_cast<void**> (&srcPtr)));
+
+    // Copy and unmap.
+    memcpy(data, srcPtr + offset, size);
+    uploadResource->Unmap(0, nullptr);
+
+    return AGPU_OK;
+}
+
 // Exported C interface
 AGPU_EXPORT agpu_error agpuAddBufferReference(agpu_buffer* buffer)
 {
@@ -258,8 +283,21 @@ AGPU_EXPORT agpu_error agpuUnmapBuffer(agpu_buffer* buffer)
     return buffer->unmapBuffer();
 }
 
+AGPU_EXPORT agpu_error agpuGetBufferDescription(agpu_buffer* buffer, agpu_buffer_description* description)
+{
+    CHECK_POINTER(buffer);
+    *description = buffer->description;
+    return AGPU_OK;
+}
+
 AGPU_EXPORT agpu_error agpuUploadBufferData(agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data)
 {
     CHECK_POINTER(buffer);
     return buffer->uploadBufferData(offset, size, data);
+}
+
+AGPU_EXPORT agpu_error agpuReadBufferData(agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data)
+{
+    CHECK_POINTER(buffer);
+    return buffer->readBufferData(offset, size, data);
 }

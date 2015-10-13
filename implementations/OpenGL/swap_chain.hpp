@@ -11,7 +11,7 @@ public:
 
     void lostReferences();
 
-    static agpu_swap_chain *create(agpu_device *device, agpu_swap_chain_create_info *create_info);
+    static agpu_swap_chain *create(agpu_device *device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info *create_info);
     agpu_framebuffer* getCurrentBackBuffer ();
 
     agpu_error swapBuffers();
@@ -25,6 +25,7 @@ public:
     agpu_uint height;
     agpu_uint backBufferIndex;
     agpu_framebuffer* framebuffers[2];
+    agpu_command_queue* commandQueue;
 };
 
 

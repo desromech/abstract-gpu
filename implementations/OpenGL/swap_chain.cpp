@@ -1,5 +1,6 @@
 #include <string.h>
 #include "framebuffer.hpp"
+#include "command_queue.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
 #include "texture_formats.hpp"
@@ -18,9 +19,10 @@ void _agpu_swap_chain::lostReferences()
         if(framebuffer)
             framebuffer->release();
     }
+    commandQueue->release();
 }
 
-agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_create_info *create_info)
+agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info *create_info)
 {
     // Create the framebuffer objects.
     agpu_framebuffer *framebuffers[2] = {nullptr, nullptr};
@@ -61,9 +63,11 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
 
             // Attach the color buffer.
             fb->attachColorBuffer(0, colorBuffer);
+            colorBuffer->release();
         }
 
         // Create the depth buffer.
+        if(hasDepth || hasStencil)
         {
             agpu_texture_description desc;
             memset(&desc, 0, sizeof(desc));
@@ -81,8 +85,9 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
                 break;
             }
 
-            // Attach the color buffer.
+            // Attach the depth stencil buffer.
             fb->attachDepthStencilBuffer(depthStencilBuffer);
+            depthStencilBuffer->release();
         }
     }
 
@@ -104,6 +109,8 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
     chain->doublebuffer = create_info->doublebuffer;
     chain->width = create_info->width;
     chain->height = create_info->height;
+    chain->commandQueue = commandQueue;
+    commandQueue->retain();
 
     // Set the window pixel format.
     device->setWindowPixelFormat(chain->window);
@@ -117,15 +124,13 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
 
 agpu_error _agpu_swap_chain::swapBuffers()
 {
-    agpu_error error = AGPU_OK;
-    device->onMainContextBlocking([&](){
+    auto presentBuffer = getCurrentBackBuffer();
+    device->onMainContextBlocking([this, presentBuffer](){
         // Use the window.
-        auto res = device->mainContext->makeCurrentWithWindow(window);
+        auto currentContext = OpenGLContext::getCurrent();
+        auto res = currentContext->makeCurrentWithWindow(window);
         if(!res)
-        {
-            error = AGPU_ERROR;
             return;
-        }
 
         // Blit the framebuffer.
         auto backBuffer = getCurrentBackBuffer();
@@ -134,26 +139,23 @@ agpu_error _agpu_swap_chain::swapBuffers()
         device->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         device->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-        device->mainContext->finish();
-
         // Swap the window buffers.
-        device->mainContext->swapBuffersOfWindow(window);
+        currentContext->swapBuffersOfWindow(window);
 
-        // Restore the main window.
-        device->mainContext->makeCurrent();
+        // Restore the context window.
+        currentContext->makeCurrent();
     });
-
-    if(error != AGPU_OK)
-        return error;
 
     if(doublebuffer)
         backBufferIndex = (backBufferIndex + 1) % 2;
-    return error;
+    return AGPU_OK;
 }
 
 agpu_framebuffer* _agpu_swap_chain::getCurrentBackBuffer ()
 {
-    return framebuffers[backBufferIndex];
+    auto fb = framebuffers[backBufferIndex];
+    fb->retain();
+    return fb;
 }
 
 // The exported C interface

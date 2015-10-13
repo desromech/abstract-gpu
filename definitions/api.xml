@@ -157,6 +157,9 @@
             <constant name="TextureFlagDepthStencil" value="2" />
             <constant name="TextureFlagUnorderedAccess" value="4" />
             <constant name="TextureFlagRenderbufferOnly" value="8" />
+            <constant name="TextureFlagReadedBack" value="16" />
+            <constant name="TextureFlagUploaded" value="32" />
+            <constant name="TextureFlagUploadedOnce" value="64" />
         </enum>
 
 		<enum name="shader_type">
@@ -374,6 +377,7 @@
             </method>
 
             <method name="createSwapChain" cname="CreateSwapChain" returnType="swap_chain*">
+                <arg name="commandQueue" type="command_queue*" />
                 <arg name="swapChainInfo" type="swap_chain_create_info*" />
             </method>
 
@@ -623,14 +627,10 @@
             </method>
 
             <method name="setStencilReference" cname="SetStencilReference" returnType="error">
-                <arg name="reference" type="float" />
+                <arg name="reference" type="uint" />
             </method>
 
-            <method name="setAlphaReference" cname="SetAlphaReference" returnType="error">
-                <arg name="reference" type="float" />
-            </method>
-
-            <method name="executeBundle" cname="ExecuteBundle" returnType="error">
+             <method name="executeBundle" cname="ExecuteBundle" returnType="error">
                 <arg name="bundle" type="command_list*" />
             </method>
 

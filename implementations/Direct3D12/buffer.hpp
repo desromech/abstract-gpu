@@ -15,6 +15,7 @@ public:
     agpu_pointer mapBuffer(agpu_mapping_access flags);
     agpu_error unmapBuffer();
     agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
+    agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
 
 public:
 

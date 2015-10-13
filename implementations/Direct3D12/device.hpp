@@ -17,7 +17,6 @@
 #include "object.hpp"
 
 using Microsoft::WRL::ComPtr;
-const int MaxFrameCount = 3; // Triple buffering.
 const int ShaderTypeCount = 6;
 
 /**
@@ -37,8 +36,6 @@ public:
     agpu_error waitForPreviousFrame();
     agpu_framebuffer* getCurrentBackBuffer();
 
-    HWND window;
-
     agpu_command_queue *defaultCommandQueue;
 
 public:
@@ -48,11 +45,7 @@ public:
     agpu_error waitForMemoryTransfer();
 
     // Device objects
-    ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> d3dDevice;
-
-    // Frame buffers
-    agpu_framebuffer *mainFrameBuffer[MaxFrameCount];
 
     // Descriptor heaprs.
     ComPtr<ID3D12DescriptorHeap> shaderResourcesViewHeaps[4];
@@ -61,15 +54,6 @@ public:
 
     UINT renderTargetViewDescriptorSize;
     UINT shaderResourceViewDescriptorSize;
-
-    int frameCount;
-    int windowWidth, windowHeight;
-
-    // Frame synchronization
-    int frameIndex;
-    HANDLE frameFenceEvent;
-    ComPtr<ID3D12Fence> frameFence;
-    UINT64 frameFenceValue;
 
     // Some states
     bool isOpened;
@@ -81,7 +65,6 @@ public:
     ComPtr<ID3D12RootSignature> graphicsRootSignature;
 
 private:
-    bool getWindowSize();
     agpu_error createGraphicsRootSignature();
 
     // For immediate and blocking data transferring.

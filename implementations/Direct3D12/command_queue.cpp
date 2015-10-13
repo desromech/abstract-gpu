@@ -21,10 +21,27 @@ _agpu_command_queue *_agpu_command_queue::createDefault(agpu_device *device)
     if (FAILED(device->d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&d3dQueue))))
         return nullptr;
 
-    auto queue = new agpu_command_queue();
+    std::unique_ptr<agpu_command_queue> queue(new agpu_command_queue());
     queue->device = device;
     queue->queue = d3dQueue;
-    return queue;
+    if (!queue->createFinishFence())
+        return nullptr;
+
+    return queue.release();
+}
+
+bool _agpu_command_queue::createFinishFence()
+{
+    // Create transfer synchronization fence.
+    if (FAILED(device->d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&finishFence))))
+        return false;
+    finishFenceValue = 1;
+
+    // Create an event handle to use for frame synchronization.
+    finishFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+    if (finishFenceEvent == nullptr)
+        return false;
+    return true;
 }
 
 agpu_error _agpu_command_queue::addCommandList(agpu_command_list* command_list)
@@ -32,6 +49,25 @@ agpu_error _agpu_command_queue::addCommandList(agpu_command_list* command_list)
     ID3D12CommandList *lists[] = { command_list->commandList.Get() };
 
     queue->ExecuteCommandLists(1, lists);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_queue::finish()
+{
+    std::unique_lock<std::mutex> l(finishLock);
+
+    // Signal the fence.
+    auto fence = finishFenceValue;
+    ERROR_IF_FAILED(queue->Signal(finishFence.Get(), fence));
+    ++finishFenceValue;
+
+    // Wait until previous frame is finished.
+    if (finishFence->GetCompletedValue() < fence)
+    {
+        ERROR_IF_FAILED(finishFence->SetEventOnCompletion(fence, finishFenceEvent));
+        WaitForSingleObject(finishFenceEvent, INFINITE);
+    }
+
     return AGPU_OK;
 }
 
@@ -52,4 +88,10 @@ AGPU_EXPORT agpu_error agpuAddCommandList(agpu_command_queue* command_queue, agp
 {
     CHECK_POINTER(command_queue);
     return command_queue->addCommandList(command_list);
+}
+
+AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queue)
+{
+    CHECK_POINTER(command_queue);
+    return command_queue->finish();
 }
