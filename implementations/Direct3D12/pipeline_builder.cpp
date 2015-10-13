@@ -173,6 +173,18 @@ agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
+{
+    description.RTVFormats[index] = (DXGI_FORMAT)format;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format format)
+{
+    description.DSVFormat = (DXGI_FORMAT)format;
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_type type)
 {
     description.PrimitiveTopologyType = mapPrimitiveType(type);
@@ -246,6 +258,18 @@ AGPU_EXPORT agpu_error agpuSetRenderTargetCount(agpu_pipeline_builder* pipeline_
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setRenderTargetCount(count);
+}
+
+AGPU_EXPORT agpu_error agpuSetRenderTargetFormat(agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setRenderTargetFormat(index, format);
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthStencilFormat(agpu_pipeline_builder* pipeline_builder, agpu_texture_format format)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setDepthStencilFormat(format);
 }
 
 AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type)

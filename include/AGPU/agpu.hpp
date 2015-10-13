@@ -309,6 +309,16 @@ public:
 		AgpuThrowIfFailed(agpuSetRenderTargetCount( this, count ));
 	}
 
+	inline void setRenderTargetFormat ( agpu_uint index, agpu_texture_format format )
+	{
+		AgpuThrowIfFailed(agpuSetRenderTargetFormat( this, index, format ));
+	}
+
+	inline void setDepthStencilFormat ( agpu_texture_format format )
+	{
+		AgpuThrowIfFailed(agpuSetDepthStencilFormat( this, format ));
+	}
+
 	inline void setPrimitiveType ( agpu_primitive_type type )
 	{
 		AgpuThrowIfFailed(agpuSetPrimitiveType( this, type ));

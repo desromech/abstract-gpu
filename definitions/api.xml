@@ -490,6 +490,15 @@
                 <arg name="count" type="int" />
             </method>
 
+            <method name="setRenderTargetFormat" cname="SetRenderTargetFormat" returnType="error">
+                <arg name="index" type="uint" />
+                <arg name="format" type="texture_format" />
+            </method>
+
+            <method name="setDepthStencilFormat" cname="SetDepthStencilFormat" returnType="error">
+                <arg name="format" type="texture_format" />
+            </method>
+
             <method name="setPrimitiveType" cname="SetPrimitiveType" returnType="error">
                 <arg name="type" type="primitive_type" />
             </method>

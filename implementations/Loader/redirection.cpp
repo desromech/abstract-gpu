@@ -289,6 +289,22 @@ AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipelin
 	return (*dispatchTable)->agpuSetRenderTargetCount ( pipeline_builder, count );
 }
 
+AGPU_EXPORT agpu_error agpuSetRenderTargetFormat ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetRenderTargetFormat ( pipeline_builder, index, format );
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetDepthStencilFormat ( pipeline_builder, format );
+}
+
 AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type )
 {
 	if (pipeline_builder == nullptr)

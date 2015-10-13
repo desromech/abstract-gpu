@@ -429,6 +429,8 @@ typedef agpu_error (*agpuGetPipelineBuildingLog_FUN) ( agpu_pipeline_builder* pi
 typedef agpu_error (*agpuSetDepthState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 typedef agpu_error (*agpuSetStencilState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
 typedef agpu_error (*agpuSetRenderTargetCount_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
+typedef agpu_error (*agpuSetRenderTargetFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format );
+typedef agpu_error (*agpuSetDepthStencilFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
 typedef agpu_error (*agpuSetPrimitiveType_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
 typedef agpu_error (*agpuSetVertexLayout_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
 
@@ -441,6 +443,8 @@ AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipel
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
+AGPU_EXPORT agpu_error agpuSetRenderTargetFormat ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format );
+AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
 AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
 AGPU_EXPORT agpu_error agpuSetVertexLayout ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
 
@@ -655,6 +659,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetDepthState_FUN agpuSetDepthState;
 	agpuSetStencilState_FUN agpuSetStencilState;
 	agpuSetRenderTargetCount_FUN agpuSetRenderTargetCount;
+	agpuSetRenderTargetFormat_FUN agpuSetRenderTargetFormat;
+	agpuSetDepthStencilFormat_FUN agpuSetDepthStencilFormat;
 	agpuSetPrimitiveType_FUN agpuSetPrimitiveType;
 	agpuSetVertexLayout_FUN agpuSetVertexLayout;
 	agpuAddPipelineStateReference_FUN agpuAddPipelineStateReference;

@@ -24,6 +24,9 @@ public:
     agpu_error setPrimitiveType(agpu_primitive_type type);
     agpu_error setVertexLayout(agpu_vertex_layout* layout);
 
+    agpu_error setRenderTargetFormat(agpu_uint index, agpu_texture_format format);
+    agpu_error setDepthStencilFormat(agpu_texture_format format);
+
     agpu_error reset();
         
 public:
