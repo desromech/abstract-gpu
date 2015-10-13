@@ -6,6 +6,8 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#undef max
+#undef min
 #elif defined(__unix__)
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,11 +46,70 @@ PlatformInfo::~PlatformInfo()
 static bool hasBeenLoaded = false;
 static std::vector<PlatformInfo*> loadedPlatforms;
 
+static std::wstring utf8ToUtf16(const std::string &utf8)
+{
+    int c = 0;
+    size_t position = 0;
+    std::wstring utf16;
+    while (position < utf8.size())
+    {
+        int startChar = utf8[position++];
+        if ((startChar & 0x80) == 0)
+        {
+            utf16.push_back(startChar);
+            continue;
+        }
+
+        int charSize = 1;
+        while ((startChar & (1 << (7 - charSize))) != 0)
+        {
+            charSize++;
+        }
+
+        --charSize;
+        if (size_t(position + charSize) > utf8.size())
+            break;
+
+        printf("char size %d\n", charSize);
+    }
+
+    return utf16;
+}
+
+static std::string utf16ToUtf8(const std::wstring &utf16)
+{
+    int c = 0;
+    size_t position = 0;
+    std::string utf8;
+    while (position < utf16.size())
+    {
+        int startChar = utf16[position++];
+        if (startChar < 128)
+        {
+            utf8.push_back(startChar);
+            continue;
+        }
+
+        abort();
+    }
+
+    return utf8;
+}
 template<typename FT>
 void dirEntriesDo(const std::string &dirPath, const FT &f)
 {
 #if defined(_WIN32)
-#error unimplemented
+    auto dirPathUtf16 = utf8ToUtf16(dirPath) + L"*";
+    WIN32_FIND_DATAW findData;
+    auto handle = FindFirstFileW(dirPathUtf16.c_str(), &findData);
+    if (handle == INVALID_HANDLE_VALUE)
+        return;
+
+    f(utf16ToUtf8(findData.cFileName));
+    while(FindNextFileW(handle, &findData))
+        f(utf16ToUtf8(findData.cFileName));
+
+    FindClose(handle);
 #elif defined(__unix__)
     auto dir = opendir(dirPath.c_str());
     if(!dir)
@@ -72,7 +133,7 @@ static std::string dirname(const std::string &path)
     if(lastPos == std::string::npos)
         lastPos = lastBPos;
     else if(lastPos != std::string::npos && lastBPos != std::string::npos)
-        lastPos = std::max(lastPos, lastBPos;
+        lastPos = std::max(lastPos, lastBPos);
 #endif
     if(lastPos == std::string::npos)
         return path;
@@ -80,6 +141,13 @@ static std::string dirname(const std::string &path)
     return path.substr(0, lastPos);
 }
 
+static std::string extension(const std::string &path)
+{
+    auto dotPos = path.rfind('.');
+    if (dotPos == std::string::npos)
+        return std::string();
+    return path.substr(dotPos + 1);
+}
 static bool isAbsolutePath(const std::string &path)
 {
 #if defined(_WIN32)
@@ -92,7 +160,9 @@ static bool isAbsolutePath(const std::string &path)
 static bool isFile(const std::string &path)
 {
 #if defined(_WIN32)
-#error unimplemented
+    auto pathUtf16 = utf8ToUtf16(path);
+    auto attributes = GetFileAttributesW(pathUtf16.c_str());
+    return (attributes != INVALID_FILE_ATTRIBUTES) && ((attributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
 #else
     struct stat s;
     auto res = stat(path.c_str(), &s);
@@ -107,6 +177,7 @@ static std::string joinPath(const std::string &path1, const std::string &path2)
 #if defined(_WIN32)
     if(path1.back() == '\\' || path1.back() == '/')
         return path1 + path2;
+    return path1 + "\\" + path2;
 #else
     if(path1.back() == '/')
         return path1 + path2;
@@ -118,7 +189,35 @@ static std::string joinPath(const std::string &path1, const std::string &path2)
 static void loadDriver(const std::string &path)
 {
 #if defined(_WIN32)
-#error unimplemented
+    auto ext = extension(path);
+    if (ext != "dll")
+        return;
+
+    auto pathUtf16 = utf8ToUtf16(path);
+    auto handle = LoadLibraryW(pathUtf16.c_str());
+    if (handle == NULL)
+        return;
+
+    // Try to get the platform defined by the library.
+    agpuGetPlatforms_FUN getPlatforms = (agpuGetPlatforms_FUN)GetProcAddress(handle, "agpuGetPlatforms");
+    if (!getPlatforms)
+    {
+        FreeLibrary(handle);
+        return;
+    }
+
+    // Get the driver platform
+    agpu_platform *platform;
+    agpu_size platformCount;
+    getPlatforms(1, &platform, &platformCount);
+
+    // Ensure there is at least one platform defined.
+    if (!platformCount)
+    {
+        FreeLibrary(handle);
+        return;
+    }
+
 #else
     int flags = RTLD_NOW | RTLD_LOCAL;
 #if defined(__linux__)
@@ -155,12 +254,13 @@ static void loadDriver(const std::string &path)
         return;
     }
 
+#endif
+
     // Got the platform, store it.
     auto platformInfo = new PlatformInfo();
     platformInfo->platform = platform;
     platformInfo->moduleHandle = handle;
     loadedPlatforms.push_back(platformInfo);
-#endif
 }
 
 static void loadDriversInPath(const std::string &folder)
@@ -192,6 +292,18 @@ static void loadPlatforms()
     Dl_info info;
     if(dladdr((void*)&loadPlatforms, &info))
         loadDriversInPath(joinPath(dirname(info.dli_fname), "AgpuIcd/"));
+#elif defined(_WIN32)
+    HMODULE handle;
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&loadPlatforms, &handle))
+    {
+        WCHAR modulePathBuffer[MAX_PATH];
+        auto pathLength = GetModuleFileNameW(handle, modulePathBuffer, MAX_PATH);
+        if (pathLength != MAX_PATH && pathLength != 0)
+        {
+            std::wstring modulePath(modulePathBuffer, modulePathBuffer + pathLength);
+            loadDriversInPath(joinPath(dirname(utf16ToUtf8(modulePath)), "AgpuIcd\\"));
+        }
+    }
 #endif
 
     // TODO: Executable relative path

@@ -1,6 +1,7 @@
 Debug
 Release
 x64
+dist
 .vs
 *.sdf
 *.vcxproj.user

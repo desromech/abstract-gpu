@@ -105,6 +105,9 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
     chain->width = create_info->width;
     chain->height = create_info->height;
 
+    // Set the window pixel format.
+    device->setWindowPixelFormat(chain->window);
+
     // Store the framebuffers.
     for(int i = 0; i < fbCount; ++i)
         chain->framebuffers[i] = framebuffers[i];

@@ -20,31 +20,43 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\implementations\OpenGL\buffer.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\command_allocator.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\command_list.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\command_queue.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\device.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\device_unix.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\device_win32.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\framebuffer.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\icd.c" />
     <ClCompile Include="..\..\..\implementations\OpenGL\pipeline_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\pipeline_state.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\platform.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\shader.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\shader_resource_binding.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\swap_chain.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\texture.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\utility.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\vertex_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\vertex_layout.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\implementations\OpenGL\buffer.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\command_allocator.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\command_list.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\common.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\device.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\framebuffer.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\job_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\object.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\pipeline_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\pipeline_state.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\platform.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\shader.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\shader_resource_binding.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\swap_chain.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\texture.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\texture_formats.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\utility.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\vertex_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\vertex_layout.hpp" />
@@ -108,15 +120,19 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>D:\deps\include\SDL2;$(IncludePath)</IncludePath>
     <LibraryPath>D:\deps\lib\x86;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -124,7 +140,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>AGPU_BUILD;WIN32;_DEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;WIN32;_DEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\opengl\include;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -140,7 +156,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>AGPU_BUILD;_DEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;_DEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\opengl\include;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -158,7 +174,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>AGPU_BUILD;WIN32;NDEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;WIN32;NDEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\opengl\include;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -178,7 +194,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>AGPU_BUILD;NDEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;NDEBUG;_WINDOWS;_USRDLL;AGPUOPENGL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\opengl\include;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>

@@ -85,7 +85,7 @@ void _agpu_framebuffer::updateAttachments(GLenum target)
 
     auto status = device->glCheckFramebufferStatus(target);
     if(status != GL_FRAMEBUFFER_COMPLETE)
-        fprintf(stderr, "Warning: using incomplete framebuffer.\n");
+        printError("Warning: using incomplete framebuffer.\n");
 }
 
 void _agpu_framebuffer::attachTo(GLenum target, agpu_texture *attachment, GLenum attachmentPoint)

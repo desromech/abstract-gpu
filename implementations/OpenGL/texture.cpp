@@ -170,12 +170,12 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
         break;
     case AGPU_TEXTURE_2D:
         if(isArray)
-            glTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+            device->glTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
         else
             glTexSubImage2D(target, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
         break;
     case AGPU_TEXTURE_3D:
-        glTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        device->glTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
         break;
     case AGPU_TEXTURE_CUBE:
         glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + arrayIndex, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
@@ -263,7 +263,7 @@ agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex,
 
     auto height = description.height >> level;
     auto fsrc = src + (height - 1) *srcPitch;
-    ptrdiff_t fsrcPitch = -srcPitch;
+    ptrdiff_t fsrcPitch = -ptrdiff_t(srcPitch);
     for(size_t y = 0; y < height; ++y)
     {
         memcpy(dst + dstPitch*y, fsrc + fsrcPitch*y, srcPitch);
@@ -300,7 +300,7 @@ agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayInde
 
     auto height = description.height >> level;
     auto fdst = dst + (height - 1)*dstPitch;
-    ptrdiff_t fdstPitch = -dstPitch;
+    ptrdiff_t fdstPitch = -ptrdiff_t(dstPitch);
     for(size_t y = 0; y < height; ++y)
     {
         memcpy(fdst + fdstPitch*y, src + pitch*y, srcPitchAbs);

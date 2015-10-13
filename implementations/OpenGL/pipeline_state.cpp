@@ -7,7 +7,9 @@ _agpu_pipeline_state::_agpu_pipeline_state()
 
 void _agpu_pipeline_state::lostReferences()
 {
-	device->glDeleteProgram(programHandle);
+    device->onMainContextBlocking([&] {
+        device->glDeleteProgram(programHandle);
+    });
 }
 
 agpu_int _agpu_pipeline_state::getUniformLocation ( agpu_cstring name )

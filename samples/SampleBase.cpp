@@ -75,7 +75,19 @@ int SampleBase::main(int argc, const char **argv)
     screenWidth = 640;
     screenHeight = 480;
 
-    SDL_Window * window = SDL_CreateWindow("AGPU Sample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_OPENGL);
+    int flags = 0;
+#ifndef _WIN32
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    flags |= SDL_WINDOW_OPENGL;
+#endif
+
+    SDL_Window * window = SDL_CreateWindow("AGPU Sample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
     if(!window)
     {
         printError("Failed to open window\n");
@@ -105,7 +117,7 @@ int SampleBase::main(int argc, const char **argv)
     {
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     case SDL_SYSWM_WINDOWS:
-        openInfo.window = (agpu_pointer)windowInfo.info.win.window;
+        swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.win.window;
         swapChainCreateInfo.surface = (agpu_pointer)windowInfo.info.win.hdc;
         break;
 #endif
@@ -127,7 +139,7 @@ int SampleBase::main(int argc, const char **argv)
     swapChainCreateInfo.doublebuffer = 1;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
-    openInfo.debugLayer = true;
+    openInfo.debug_layer= true;
 #endif
 
     device = agpuOpenDevice(platform, &openInfo);

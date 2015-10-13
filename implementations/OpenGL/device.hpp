@@ -6,6 +6,10 @@
 #include <windows.h>
 #include <GL/GL.h>
 #include <GL/glext.h>
+
+typedef HGLRC(WINAPI * wglCreateContextAttribsARBProc) (HDC hDC, HGLRC hShareContext, const int *attribList);
+typedef BOOL(WINAPI * wglChoosePixelFormatARBProc) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
 #elif defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -70,9 +74,13 @@ struct OpenGLContext
     OpenGLVersion version;
 
 #ifdef _WIN32
+    wglCreateContextAttribsARBProc wglCreateContextAttribsARB;
+    wglChoosePixelFormatARBProc wglChoosePixelFormatARB;
+
     HWND window;
     HDC hDC;
     HGLRC context;
+
 #elif defined(__linux__)
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
     GLXFBConfig framebufferConfig;
@@ -138,6 +146,8 @@ public:
     static agpu_device *open(agpu_device_open_info* openInfo);
 
     OpenGLContext* createSecondaryContext(bool useMainWindow);
+
+    void setWindowPixelFormat(agpu_pointer window);
 
     void readVersionInformation();
     void loadExtensions();
@@ -253,6 +263,9 @@ public:
     PFNGLTEXSTORAGE1DPROC glTexStorage1D;
     PFNGLTEXSTORAGE2DPROC glTexStorage2D;
     PFNGLTEXSTORAGE3DPROC glTexStorage3D;
+
+    // Texture
+    PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
 
     // Depth range
     PFNGLDEPTHRANGEDNVPROC glDepthRangedNV;

@@ -205,7 +205,7 @@ static bool findFramebufferConfig(Display *display, int *visualAttributes, GLXFB
     if ( !glXQueryVersion( display, &glx_major, &glx_minor ) ||
        ( ( glx_major == 1 ) && ( glx_minor < 3 ) ) || ( glx_major < 1 ) )
     {
-        fprintf(stderr, "Invalid GLX version");
+        printError("Invalid GLX version");
         return false;
     }
 
@@ -213,7 +213,7 @@ static bool findFramebufferConfig(Display *display, int *visualAttributes, GLXFB
     GLXFBConfig* fbc = glXChooseFBConfig(display, DefaultScreen(display), visualAttributes, &fbcount);
     if (!fbc)
     {
-        fprintf( stderr, "Failed to retrieve a framebuffer config\n" );
+        printError("Failed to retrieve a framebuffer config\n" );
         return false;
     }
 
@@ -241,6 +241,11 @@ static bool findFramebufferConfig(Display *display, int *visualAttributes, GLXFB
     config = fbc[ best_fbc ];
     XFree( fbc );
     return true;
+}
+
+void _agpu_device::setWindowPixelFormat(agpu_pointer window)
+{
+    // Do nothing here.
 }
 
 agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
@@ -347,7 +352,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         if ( !agpu_device::isExtensionSupported( glxExts, "GLX_ARB_create_context" ) ||
            !glXCreateContextAttribsARB )
         {
-            fprintf(stderr, "glXCreateContextAttribsARB() not found... using old-style GLX context\n" );
+            printError("glXCreateContextAttribsARB() not found... using old-style GLX context\n" );
             context = glXCreateNewContext( contextWrapper->display, framebufferConfig, GLX_RGBA_TYPE, 0, True );
         }
         else
@@ -408,7 +413,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 
         if ( ctxErrorOccurred || !context )
         {
-            fprintf( stderr, "Failed to create an OpenGL context\n" );
+            printError("Failed to create an OpenGL context\n" );
             failure = true;
             return;
         }
@@ -417,7 +422,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         contextWrapper->context = context;
         if(!contextWrapper->makeCurrent())
         {
-            fprintf(stderr, "Failed to make current the main OpenGL context.\n");
+            printError("Failed to make current the main OpenGL context.\n");
             contextWrapper->destroy();
             failure = true;
             return;

@@ -7,7 +7,140 @@
 #if defined(_WIN32)
 #include <GL/wglext.h>
 
-static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, std::vector<int> &visualInfo)
+static thread_local OpenGLContext *currentGLContext = nullptr;
+
+OpenGLContext::OpenGLContext()
+    : device(nullptr), ownsWindow(false), window(0), hDC(0), context(0), resourceCleanCount(0), ownerWaitCondition(nullptr)
+{
+}
+
+OpenGLContext::~OpenGLContext()
+{
+}
+
+OpenGLContext *OpenGLContext::getCurrent()
+{
+    return currentGLContext;
+}
+
+static bool printLastError()
+{
+    LPSTR *tempBuffer = nullptr;
+    auto error = GetLastError();
+    auto messageSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_ARGUMENT_ARRAY, nullptr, error, LANG_NEUTRAL, (LPSTR)&tempBuffer, 0, nullptr);
+    if (messageSize && tempBuffer) {
+        tempBuffer[strlen((const char*)tempBuffer) - 2] = 0;
+        printError((const char*)tempBuffer);
+        LocalFree((HLOCAL)tempBuffer);
+        return true;
+    }
+    return false;
+}
+
+bool OpenGLContext::makeCurrentWithWindow(agpu_pointer window)
+{
+    auto windowDC = GetDC((HWND)window);
+    auto res = wglMakeCurrent(windowDC, context) == TRUE;
+    if (res)
+    {
+        currentGLContext = this;
+    }
+    else
+    {
+        if (!printLastError())
+            printError("Failed to set context with window.\n");
+    }
+    return res;
+}
+
+bool OpenGLContext::makeCurrent()
+{
+    auto res = wglMakeCurrent(hDC, context) == TRUE;
+    if (res)
+    {
+        currentGLContext = this;
+    }
+    else
+    {
+        printError("Failed to use context.\n");
+    }
+    return res;
+}
+
+void OpenGLContext::swapBuffers()
+{
+    glFlush();
+    SwapBuffers(hDC);
+}
+
+void OpenGLContext::swapBuffersOfWindow(agpu_pointer window)
+{
+    glFlush();
+    auto windowDC = GetDC((HWND)window);
+    SwapBuffers(windowDC);
+}
+
+void OpenGLContext::destroy()
+{
+    if (!context)
+        return;
+
+    device->glBindVertexArray(0);
+    device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    device->glBindBuffer(GL_ARRAY_BUFFER, 0);
+    device->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    device->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    wglMakeCurrent(wglGetCurrentDC(), 0);
+    wglDeleteContext(context);
+    context = 0;
+}
+
+OpenGLContext *agpu_device::createSecondaryContext(bool useMainWindow)
+{
+    std::unique_ptr<OpenGLContext> result(new OpenGLContext());
+    result->device = this;
+    result->window = mainContext->window;
+    result->hDC = mainContext->hDC;
+
+    auto version = (int)mainContext->version;
+    // Now create the actual context.
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+    int contextAttributes[] =
+    {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, version / 10,
+        WGL_CONTEXT_MINOR_VERSION_ARB, version % 10,
+        //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+        0
+    };
+
+    // Create the new context
+    result->context = mainContext->wglCreateContextAttribsARB(result->hDC, mainContext->context, contextAttributes);
+    if (!result->context)
+    {
+        printError("Failed to create a secondary OpenGL context\n");
+        return nullptr;
+    }
+
+    // Set the current context.
+    if (useMainWindow && !result->makeCurrent())
+    {
+        printError("Failed to make current a secondary OpenGL context\n");
+        result->destroy();
+        return nullptr;
+    }
+
+    {
+        std::unique_lock<std::mutex> l(allContextMutex);
+        allContexts.push_back(result.get());
+    }
+
+    return result.release();
+}
+
+/*static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, std::vector<int> &visualInfo)
 {
     visualInfo.clear();
     visualInfo.push_back(WGL_DRAW_TO_WINDOW_ARB); visualInfo.push_back(GL_TRUE);
@@ -67,33 +200,32 @@ static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, st
 
     visualInfo.push_back(0);
 }
+*/
 
 static LRESULT CALLBACK dummyWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     return DefWindowProc(hWnd, message, wParam, lParam);;
 }
 
-agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+void _agpu_device::setWindowPixelFormat(agpu_pointer window)
 {
-    // Cast the open info
-    HWND window = (HWND)openInfo->window;
-    HDC windowDC = (HDC)openInfo->surface;
+    auto hwnd = (HWND)window;
+    auto dc = GetDC(hwnd);
 
-    // Window for context creation.
-    HINSTANCE hInstance = GetModuleHandle(nullptr);
-    WNDCLASSW wc;
-    memset(&wc, 0, sizeof(wc));
-    wc.lpfnWndProc = dummyWindowProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = L"agpuDummyOGLWindow";
-    wc.style = CS_OWNDC;
-    if (!RegisterClassW(&wc))
-        return nullptr;
+    UINT numFormats;
+    int pixelAttributes[] = {
+        WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+        WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+        WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+        WGL_RED_BITS_ARB, 8,
+        WGL_GREEN_BITS_ARB, 8,
+        WGL_BLUE_BITS_ARB, 8,
+        WGL_ALPHA_BITS_ARB, 8,
+        WGL_DEPTH_BITS_ARB, 0,
+        0
+    };
 
-    HWND dummyWindow = CreateWindowW(wc.lpszClassName, L"agpuDummyOGLWindow", WS_OVERLAPPEDWINDOW, 0, 0, 640, 480, 0, 0, hInstance, 0);
-
-    // Need to create a dummy context first.
-    PIXELFORMATDESCRIPTOR dummyPfd =
+    PIXELFORMATDESCRIPTOR pixelFormatDescriptor =
     {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,
@@ -105,113 +237,205 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         0,
         0,
         0, 0, 0, 0,
-        24,                        //Number of bits for the depthbuffer
-        8,                        //Number of bits for the stencilbuffer
+        0,                        //Number of bits for the depthbuffer
+        0,                        //Number of bits for the stencilbuffer
         0,                        //Number of Aux buffers in the framebuffer.
         PFD_MAIN_PLANE,
         0,
         0, 0, 0
     };
 
-    // Set the pixel format.
-    auto dummyDC = GetDC(dummyWindow);
-    int dummyPixelFormat = ChoosePixelFormat(dummyDC, &dummyPfd);
-    SetPixelFormat(dummyDC, dummyPixelFormat, &dummyPfd);
+    int pixelFormat= 0;
+    mainContext->wglChoosePixelFormatARB(dc, &pixelAttributes[0], nullptr, 1, &pixelFormat, &numFormats);
 
-    // Create the context.
-    auto dummyContext = wglCreateContext(dummyDC);
-    if (!dummyContext)
+    auto res = SetPixelFormat(dc, pixelFormat, &pixelFormatDescriptor);
+    if (res == FALSE)
     {
-        DestroyWindow(dummyWindow);
-        return nullptr;
-    }
-
-    // Use the context.
-    if (!wglMakeCurrent(dummyDC, dummyContext))
-    {
-        wglDeleteContext(dummyContext);
-        DestroyWindow(dummyWindow);
-        return nullptr;
+        if (!printLastError())
+            printError("Failed to set window pixel format.\n");
 
     }
+}
 
-    // Choose a proper pixel format
-    PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
-    if (wglChoosePixelFormatARB)
-    {
-        int pixelFormat;
-        UINT numFormats;
-        std::vector<int> attributes;
-        deviceOpenInfoToVisualAttributes(openInfo, attributes);
+agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+{
+    // Create the device.
+    std::unique_ptr<agpu_device> device(new agpu_device);
+    bool failure = false;
 
-        wglChoosePixelFormatARB(windowDC, &attributes[0], nullptr, 1, &pixelFormat, &numFormats);
-        SetPixelFormat(windowDC, dummyPixelFormat, &dummyPfd);
-    }
-    else
-    {
-        // Use the old pfd
-        dummyPfd.cRedBits = openInfo->red_size;
-        dummyPfd.cGreenBits = openInfo->green_size;
-        dummyPfd.cBlueBits = openInfo->blue_size;
-        dummyPfd.cAlphaBits = openInfo->alpha_size;
-        dummyPfd.cStencilBits = openInfo->stencil_size;
-        dummyPfd.cDepthBits = openInfo->depth_size;
-        
-        int pixelFormat = ChoosePixelFormat(windowDC, &dummyPfd);
-        SetPixelFormat(windowDC, pixelFormat, &dummyPfd);
-    }
+    // Perform the main context creation in
+    device->mainContextJobQueue.start();
+    AsyncJob contextCreationJob([&] {
+        std::unique_ptr<OpenGLContext> contextWrapper(new OpenGLContext());
 
-    // Now create the actual context.
-    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-    HGLRC context;
-    if (wglCreateContextAttribsARB)
-    {
-        int contextAttributes[] =
+        // Window for context creation.
+        HINSTANCE hInstance = GetModuleHandle(nullptr);
+        WNDCLASSW wc;
+        memset(&wc, 0, sizeof(wc));
+        wc.lpfnWndProc = dummyWindowProc;
+        wc.hInstance = hInstance;
+        wc.lpszClassName = L"agpuDummyOGLWindow";
+        wc.style = CS_OWNDC;
+        if (!RegisterClassW(&wc))
         {
-            WGL_CONTEXT_MAJOR_VERSION_ARB, 0,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 0,
-            //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-            0
+            failure = true;
+            return;
+        }
+
+        HWND dummyWindow = CreateWindowW(wc.lpszClassName, L"agpuDummyOGLWindow", WS_OVERLAPPEDWINDOW, 0, 0, 16, 16, 0, 0, hInstance, 0);
+
+        // Need to create a dummy context first.
+        PIXELFORMATDESCRIPTOR pixelFormatDescriptor =
+        {
+            sizeof(PIXELFORMATDESCRIPTOR),
+            1,
+            PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
+            PFD_TYPE_RGBA,            //The kind of framebuffer. RGBA or palette.
+            32,                        //Colordepth of the framebuffer.
+            0, 0, 0, 0, 0, 0,
+            0,
+            0,
+            0,
+            0, 0, 0, 0,
+            24,                        //Number of bits for the depthbuffer
+            8,                        //Number of bits for the stencilbuffer
+            0,                        //Number of Aux buffers in the framebuffer.
+            PFD_MAIN_PLANE,
+            0,
+            0, 0, 0
         };
 
-        for (int versionIndex = 0; GLContextVersionPriorities[versionIndex] != OpenGLVersion::Invalid; ++versionIndex)
+        // Set the pixel format.
+        auto dummyDC = GetDC(dummyWindow);
+        int dummyPixelFormat = ChoosePixelFormat(dummyDC, &pixelFormatDescriptor);
+        auto pfRes = SetPixelFormat(dummyDC, dummyPixelFormat, &pixelFormatDescriptor);;
+        if (pfRes == FALSE)
         {
-            auto version = (int)GLContextVersionPriorities[versionIndex];
+            if (!printLastError())
+                printError("Failed to set window pixel format.\n");
 
-            // GLX_CONTEXT_MAJOR_VERSION_ARB
-            contextAttributes[1] = version / 10;
-            // GLX_CONTEXT_MINOR_VERSION_ARB
-            contextAttributes[3] = version % 10;
-
-            context = wglCreateContextAttribsARB(windowDC, NULL, contextAttributes);//glXCreateContextAttribsARB(display, framebufferConfig, 0, True, contextAttributes);
-
-            // Check for success.
-            if (context)
-                break;
         }
-    }
-    else
-    {
-        context = wglCreateContext(windowDC);
-    }
 
-    // Destroy the dummy context
-    wglMakeCurrent(windowDC, NULL);
-    wglDeleteContext(dummyContext);
-    DestroyWindow(dummyWindow);
+        // Create the context.
+        auto dummyContext = wglCreateContext(dummyDC);
+        if (!dummyContext)
+        {
+            DestroyWindow(dummyWindow);
+            failure = true;
+            return;
+        }
 
-    // Set the current context.
-    if (!context || !wglMakeCurrent(windowDC, context))
+        // Use the context.
+        if (!wglMakeCurrent(dummyDC, dummyContext))
+        {
+            wglDeleteContext(dummyContext);
+            DestroyWindow(dummyWindow);
+            failure = true;
+            return;
+        }
+
+        // Create the context window.
+        HWND contextWindow = CreateWindowW(wc.lpszClassName, L"agpuOGLWindow", WS_OVERLAPPEDWINDOW, 0, 0, 16, 16, 0, 0, hInstance, 0);
+        auto contextDC = GetDC(contextWindow);
+
+        // Choose a proper pixel format
+        contextWrapper->wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+        if (contextWrapper->wglChoosePixelFormatARB)
+        {
+            int pixelFormat;
+            UINT numFormats;
+            int pixelAttributes[] = {
+                WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+                WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+                WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+                WGL_RED_BITS_ARB, 8,
+                WGL_GREEN_BITS_ARB, 8,
+                WGL_BLUE_BITS_ARB, 8,
+                WGL_ALPHA_BITS_ARB, 8,
+                WGL_DEPTH_BITS_ARB, 0,
+                0
+            };
+
+            contextWrapper->wglChoosePixelFormatARB(contextDC, &pixelAttributes[0], nullptr, 1, &pixelFormat, &numFormats);
+            auto res = SetPixelFormat(contextDC, pixelFormat, &pixelFormatDescriptor);
+            if (res == FALSE)
+            {
+                printError("Failed to set the pixel format.\n");
+                failure = true;
+                return;
+            }
+        }
+        else
+        {
+            printError("Missing a required extension.\n");
+            failure = true;
+            return;
+        }
+
+        // Now create the actual context.
+        contextWrapper->wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc)wglGetProcAddress("wglCreateContextAttribsARB");
+        if (contextWrapper->wglCreateContextAttribsARB)
+        {
+            int contextAttributes[] =
+            {
+                WGL_CONTEXT_MAJOR_VERSION_ARB, 0,
+                WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+                //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                0
+            };
+
+            for (int versionIndex = 0; GLContextVersionPriorities[versionIndex] != OpenGLVersion::Invalid; ++versionIndex)
+            {
+                auto version = (int)GLContextVersionPriorities[versionIndex];
+
+                // GLX_CONTEXT_MAJOR_VERSION_ARB
+                contextAttributes[1] = version / 10;
+                // GLX_CONTEXT_MINOR_VERSION_ARB
+                contextAttributes[3] = version % 10;
+
+                contextWrapper->context = contextWrapper->wglCreateContextAttribsARB(contextDC, NULL, contextAttributes);//glXCreateContextAttribsARB(display, framebufferConfig, 0, True, contextAttributes);
+
+                // Check for success.
+                if (contextWrapper->context)
+                {
+                    contextWrapper->version = OpenGLVersion(version);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            contextWrapper->context = wglCreateContext(contextDC);
+        }
+
+        // Destroy the dummy context
+        wglMakeCurrent(dummyDC, NULL);
+        wglDeleteContext(dummyContext);
+        DestroyWindow(dummyWindow);
+
+        // Set the current context.
+        if (!contextWrapper->context || !wglMakeCurrent(contextDC, contextWrapper->context))
+        {
+            failure = true;
+            return;
+        }
+
+        // Create the device and load the extensions.
+        contextWrapper->window = contextWindow;
+        contextWrapper->hDC = contextDC;
+        contextWrapper->makeCurrent();
+        device->mainContext = contextWrapper.release();
+        device->mainContext->device = device.get();
+        device->allContexts.push_back(device->mainContext);
+        device->initializeObjects();
+    });
+
+    device->mainContextJobQueue.addJob(&contextCreationJob);
+    contextCreationJob.wait();
+    if (failure)
         return nullptr;
 
-    // Create the device and load the extensions.
-    auto device = new agpu_device();
-    device->window = window;
-    device->hDC = windowDC;
-    device->context = context;
-    device->initializeObjects();
-
-    return device;
+    return device.release();
 }
 
 void *agpu_device::getProcAddress(const char *symbolName)
@@ -219,7 +443,7 @@ void *agpu_device::getProcAddress(const char *symbolName)
     return (void*) wglGetProcAddress(symbolName);
 }
 
-agpu_error agpu_device::swapBuffers()
+/*agpu_error agpu_device::swapBuffers()
 {
     return SwapBuffers(hDC) ? AGPU_OK : AGPU_ERROR;
 }
@@ -228,6 +452,7 @@ bool agpu_device::makeCurrent()
 {
     return wglMakeCurrent(hDC, context) == TRUE;
 }
+*/
 
 #endif
 
