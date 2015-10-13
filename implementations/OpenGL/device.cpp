@@ -169,6 +169,14 @@ void OpenGLContext::waitResourceCleanup(std::unique_lock<std::mutex> &lock)
         clientResourceCleanMutex.wait(lock);
 }
 
+void OpenGLContext::finish()
+{
+    auto fence = device->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    glFlush();
+    device->glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, -1);
+    device->glDeleteSync(fence);
+}
+
 _agpu_device:: _agpu_device()
 {
 }
@@ -238,6 +246,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glDeleteBuffers);
     LOAD_FUNCTION(glBindBuffer);
     LOAD_FUNCTION(glBufferData);
+    LOAD_FUNCTION(glGetBufferSubData);
     LOAD_FUNCTION(glBufferSubData);
     LOAD_FUNCTION(glMapBuffer);
     LOAD_FUNCTION(glUnmapBuffer);
@@ -309,6 +318,12 @@ void _agpu_device::loadExtensions()
 
     // Depth range
     LOAD_FUNCTION(glDepthRangedNV);
+
+    // Synchronization objects
+    LOAD_FUNCTION(glDeleteSync);
+    LOAD_FUNCTION(glFenceSync);
+    LOAD_FUNCTION(glClientWaitSync);
+    LOAD_FUNCTION(glWaitSync);
 }
 
 void _agpu_device::initializeObjects()

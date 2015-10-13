@@ -524,6 +524,31 @@ public:
 		AgpuThrowIfFailed(agpuReleaseTexture( this ));
 	}
 
+	inline void getDescription ( agpu_texture_description* description )
+	{
+		AgpuThrowIfFailed(agpuGetTextureDescription( this, description ));
+	}
+
+	inline agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+	{
+		return agpuMapTextureLevel( this, level, arrayIndex, flags );
+	}
+
+	inline void unmapLevel (  )
+	{
+		AgpuThrowIfFailed(agpuUnmapTextureLevel( this ));
+	}
+
+	inline void readTextureLevel ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+	{
+		AgpuThrowIfFailed(agpuReadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
+	}
+
+	inline void uploadTextureLevel ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+	{
+		AgpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
+	}
+
 };
 
 // Interface wrapper for agpu_buffer.
@@ -553,9 +578,19 @@ public:
 		AgpuThrowIfFailed(agpuUnmapBuffer( this ));
 	}
 
+	inline void getDescription ( agpu_buffer_description* description )
+	{
+		AgpuThrowIfFailed(agpuGetBufferDescription( this, description ));
+	}
+
 	inline void uploadBufferData ( agpu_size offset, agpu_size size, agpu_pointer data )
 	{
 		AgpuThrowIfFailed(agpuUploadBufferData( this, offset, size, data ));
+	}
+
+	inline void readBufferData ( agpu_size offset, agpu_size size, agpu_pointer data )
+	{
+		AgpuThrowIfFailed(agpuReadBufferData( this, offset, size, data ));
 	}
 
 };

@@ -320,7 +320,7 @@ class MakePharoBindingsVisitor:
             value = name
 
             if arg.type in self.interfaceTypeMap:
-                value = self.processText("($ArgName validHandle)", ArgName = name)
+                value = self.processText("(self validHandleOf: $ArgName)", ArgName = name)
 
             if first:
                 if first and clazz is not None:

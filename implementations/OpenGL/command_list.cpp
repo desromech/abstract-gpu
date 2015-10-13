@@ -250,6 +250,9 @@ agpu_error _agpu_command_list::beginFrame (agpu_framebuffer* framebuffer)
 
 agpu_error _agpu_command_list::endFrame()
 {
+    return addCommand([=] {
+        device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    });
     return AGPU_OK;
 }
 

@@ -59,6 +59,7 @@ struct OpenGLContext
     void swapBuffers();
     void swapBuffersOfWindow(agpu_pointer window);
     void destroy();
+    void finish();
 
     static OpenGLContext *getCurrent();
 
@@ -183,6 +184,7 @@ public:
     PFNGLDELETEBUFFERSPROC glDeleteBuffers;
     PFNGLBINDBUFFERPROC glBindBuffer;
     PFNGLBUFFERDATAPROC glBufferData;
+    PFNGLGETBUFFERSUBDATAPROC glGetBufferSubData;
     PFNGLBUFFERSUBDATAPROC glBufferSubData;
     PFNGLMAPBUFFERPROC glMapBuffer;
     PFNGLUNMAPBUFFERPROC glUnmapBuffer;
@@ -254,6 +256,12 @@ public:
 
     // Depth range
     PFNGLDEPTHRANGEDNVPROC glDepthRangedNV;
+
+    // Synchronization
+    PFNGLDELETESYNCPROC glDeleteSync;
+    PFNGLFENCESYNCPROC glFenceSync;
+    PFNGLCLIENTWAITSYNCPROC glClientWaitSync;
+    PFNGLWAITSYNCPROC glWaitSync;
 };
 
 #endif //_AGPU_DEVICE_HPP_

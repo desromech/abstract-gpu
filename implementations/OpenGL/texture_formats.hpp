@@ -9,12 +9,12 @@ inline GLenum findTextureTarget(agpu_texture_description *description)
     switch(description->type)
     {
     case AGPU_TEXTURE_1D:
-        if(description->depthOrArraySize > 0)
+        if(description->depthOrArraySize > 1)
             return GL_TEXTURE_1D_ARRAY;
         else
             return GL_TEXTURE_1D;
     case AGPU_TEXTURE_2D:
-        if(description->depthOrArraySize > 0)
+        if(description->depthOrArraySize > 1)
             return GL_TEXTURE_2D_ARRAY;
         else
             return GL_TEXTURE_2D;
@@ -36,6 +36,39 @@ inline GLenum mapInternalTextureFormat(agpu_texture_format format)
     {
     case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return GL_RGBA8;
     case AGPU_TEXTURE_FORMAT_D16_UNORM: return GL_DEPTH_COMPONENT16;
+    default:
+        abort();
+    }
+}
+
+inline GLenum mapExternalFormat(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return GL_RGBA;
+    case AGPU_TEXTURE_FORMAT_D16_UNORM: return GL_RED;
+    default:
+        abort();
+    }
+}
+
+inline GLenum mapExternalFormatType(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return GL_UNSIGNED_BYTE;
+    case AGPU_TEXTURE_FORMAT_D16_UNORM: return GL_UNSIGNED_SHORT;
+    default:
+        abort();
+    }
+}
+
+inline size_t pixelSizeOfTextureFormat(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return 4;
+    case AGPU_TEXTURE_FORMAT_D16_UNORM: return 2;
     default:
         abort();
     }

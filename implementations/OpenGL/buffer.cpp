@@ -12,36 +12,6 @@ inline GLenum mapBinding(agpu_buffer_binding_type binding)
 	}
 }
 
-inline GLbitfield mapMappingFlags(agpu_bitfield flags)
-{
-    GLbitfield glflags = 0;
-
-    if(flags & AGPU_MAP_READ_BIT)
-        glflags |= GL_MAP_READ_BIT;
-    if(flags & AGPU_MAP_WRITE_BIT)
-        glflags |= GL_MAP_WRITE_BIT;
-    if(flags & AGPU_MAP_PERSISTENT_BIT)
-        glflags |= GL_MAP_PERSISTENT_BIT;
-    if(flags & AGPU_MAP_COHERENT_BIT)
-        glflags |= GL_MAP_COHERENT_BIT;
-    if(flags & AGPU_MAP_DYNAMIC_STORAGE_BIT)
-        glflags |= GL_DYNAMIC_STORAGE_BIT;
-
-    return glflags;
-}
-
-inline GLenum mapMappingAccess(agpu_mapping_access flags)
-{
-    switch(flags)
-    {
-    case AGPU_READ_ONLY: return GL_READ_ONLY;
-    case AGPU_WRITE_ONLY: return GL_WRITE_ONLY;
-    case AGPU_READ_WRITE: return GL_READ_WRITE;
-    default: abort();
-    }
-
-}
-
 _agpu_buffer::_agpu_buffer()
 {
     mappedPointer = nullptr;
@@ -84,6 +54,7 @@ agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_de
     return buffer;
 }
 
+
 agpu_pointer agpu_buffer::mapBuffer(agpu_mapping_access access)
 {
     if(mappedPointer)
@@ -117,6 +88,15 @@ agpu_error agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_
     return AGPU_OK;
 }
 
+agpu_error agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+{
+    device->onMainContextBlocking([&]{
+        bind();
+        device->glGetBufferSubData(target, offset, size, data);
+    });
+    return AGPU_OK;
+}
+
 void agpu_buffer::bind()
 {
     device->glBindBuffer(target, handle);
@@ -136,6 +116,14 @@ AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer )
     return buffer->release();
 }
 
+AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buffer_description* description )
+{
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(description);
+    *description = buffer->description;
+    return AGPU_OK;
+}
+
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags )
 
 {
@@ -153,4 +141,10 @@ AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size off
 {
     CHECK_POINTER(buffer);
     return buffer->uploadBufferData(offset, size, data);
+}
+
+AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
+{
+    CHECK_POINTER(buffer);
+    return buffer->readBufferData(offset, size, data);
 }

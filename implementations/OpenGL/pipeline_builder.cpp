@@ -21,6 +21,9 @@ GLenum mapCompareFunction(agpu_compare_function function)
 
 _agpu_pipeline_builder::_agpu_pipeline_builder()
 {
+    programHandle = 0;
+    linked = false;
+
     // Depth buffer
     depthEnabled = false;
     depthWriteMask = true;
@@ -99,6 +102,10 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     // Miscellaneous
     pipeline->primitiveType = primitiveType;
     pipeline->renderTargetCount = renderTargetCount;
+
+    // Do not own the program.
+    this->programHandle = 0;
+    this->linked = false;
 
 	return pipeline;
 }

@@ -24,6 +24,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
 {
     // Create the framebuffer objects.
     agpu_framebuffer *framebuffers[2] = {nullptr, nullptr};
+
     int fbCount = create_info->doublebuffer ? 2 : 1;
     bool failure = false;
     bool hasDepth = hasDepthComponent(create_info->depth_stencil_format);
@@ -47,6 +48,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
             desc.type = AGPU_TEXTURE_2D;
             desc.width = create_info->width;
             desc.height = create_info->height;
+            desc.depthOrArraySize = 1;
             desc.format = create_info->colorbuffer_format;
             desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
             desc.miplevels = 1;
@@ -68,6 +70,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_swap_chain_c
             desc.type = AGPU_TEXTURE_2D;
             desc.width = create_info->width;
             desc.height = create_info->height;
+            desc.depthOrArraySize = 1;
             desc.format = create_info->depth_stencil_format;
             desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
             desc.miplevels = 1;
@@ -128,7 +131,7 @@ agpu_error _agpu_swap_chain::swapBuffers()
         device->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         device->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-        glFinish();
+        device->mainContext->finish();
 
         // Swap the window buffers.
         device->mainContext->swapBuffersOfWindow(window);

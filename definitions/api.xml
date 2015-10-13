@@ -643,6 +643,35 @@
             <method name="release" cname="ReleaseTexture" returnType="error">
             </method>
 
+            <method name="getDescription" cname="GetTextureDescription" returnType="error">
+                <arg name="description" type="texture_description*" />
+            </method>
+
+            <method name="mapLevel" cname="MapTextureLevel" returnType="pointer">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="flags" type="mapping_access"/>
+            </method>
+
+            <method name="unmapLevel" cname="UnmapTextureLevel" returnType="error">
+            </method>
+
+            <method name="readTextureLevel" cname="ReadTextureData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="data" type="pointer" />
+            </method>
+
+            <method name="uploadTextureLevel" cname="UploadTextureData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="data" type="pointer" />
+            </method>
+
         </interface>
 
         <interface name="buffer">
@@ -659,7 +688,17 @@
             <method name="unmapBuffer" cname="UnmapBuffer" returnType="error">
             </method>
 
+            <method name="getDescription" cname="GetBufferDescription" returnType="error">
+                <arg name="description" type="buffer_description*" />
+            </method>
+
             <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+                <arg name="data" type="pointer"/>
+            </method>
+
+            <method name="readBufferData" cname="ReadBufferData" returnType="error">
                 <arg name="offset" type="size" />
                 <arg name="size" type="size" />
                 <arg name="data" type="pointer"/>

@@ -12,11 +12,23 @@ public:
 
     static agpu_texture *create(agpu_device *device, agpu_texture_description *description, agpu_pointer initialData);
 
+    agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
+    agpu_error unmapLevel ( );
+
+    agpu_error readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+    agpu_error uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+
 public:
     agpu_device *device;
     agpu_texture_description description;
     GLuint handle;
     GLenum target;
+
+    GLuint transferBuffer;
+    agpu_mapping_access mappingAccess;
+    agpu_int mappedLevel;
+    agpu_int mappedArrayIndex;
+    agpu_pointer mappedPointer;
 
 private:
     static void allocateTexture(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
@@ -25,6 +37,14 @@ private:
     static void allocateTexture3D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
     static void allocateTextureCube(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
     static void allocateTextureBuffer(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
+
+    size_t getPixelSize();
+    size_t pitchOfLevel(int level);
+    size_t sizeOfLevel(int level);
+
+    void createTransferBuffer(GLenum target);
+    void performTransferToCpu(int level, int arrayIndex);
+    void performTransferToGpu(int level, int arrayIndex);
 };
 
 #endif //AGPU_TEXTURE_HPP

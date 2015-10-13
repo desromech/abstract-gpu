@@ -23,7 +23,7 @@ static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
 OpenGLContext::OpenGLContext()
-    : device(nullptr), ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0), resourceCleanCount(0)
+    : device(nullptr), ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0), resourceCleanCount(0), ownerWaitCondition(nullptr)
 {
 }
 

@@ -21,7 +21,7 @@ public:
 
     virtual void execute()
     {
-        glFinish();
+        OpenGLContext::getCurrent()->finish();
     }
 
     virtual void destroy()

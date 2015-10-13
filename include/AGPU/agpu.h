@@ -516,22 +516,36 @@ AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list );
 /* Methods for interface agpu_texture. */
 typedef agpu_error (*agpuAddTextureReference_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuReleaseTexture_FUN) ( agpu_texture* texture );
+typedef agpu_error (*agpuGetTextureDescription_FUN) ( agpu_texture* texture, agpu_texture_description* description );
+typedef agpu_pointer (*agpuMapTextureLevel_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
+typedef agpu_error (*agpuUnmapTextureLevel_FUN) ( agpu_texture* texture );
+typedef agpu_error (*agpuReadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+typedef agpu_error (*agpuUploadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
 
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture );
+AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description );
+AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
+AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture );
+AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
 
 /* Methods for interface agpu_buffer. */
 typedef agpu_error (*agpuAddBufferReference_FUN) ( agpu_buffer* buffer );
 typedef agpu_error (*agpuReleaseBuffer_FUN) ( agpu_buffer* buffer );
 typedef agpu_pointer (*agpuMapBuffer_FUN) ( agpu_buffer* buffer, agpu_mapping_access flags );
 typedef agpu_error (*agpuUnmapBuffer_FUN) ( agpu_buffer* buffer );
+typedef agpu_error (*agpuGetBufferDescription_FUN) ( agpu_buffer* buffer, agpu_buffer_description* description );
 typedef agpu_error (*agpuUploadBufferData_FUN) ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
+typedef agpu_error (*agpuReadBufferData_FUN) ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags );
 AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer );
+AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buffer_description* description );
 AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
+AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 
 /* Methods for interface agpu_vertex_binding. */
 typedef agpu_error (*agpuAddVertexBindingReference_FUN) ( agpu_vertex_binding* vertex_binding );
@@ -664,11 +678,18 @@ typedef struct _agpu_icd_dispatch {
 	agpuEndFrame_FUN agpuEndFrame;
 	agpuAddTextureReference_FUN agpuAddTextureReference;
 	agpuReleaseTexture_FUN agpuReleaseTexture;
+	agpuGetTextureDescription_FUN agpuGetTextureDescription;
+	agpuMapTextureLevel_FUN agpuMapTextureLevel;
+	agpuUnmapTextureLevel_FUN agpuUnmapTextureLevel;
+	agpuReadTextureData_FUN agpuReadTextureData;
+	agpuUploadTextureData_FUN agpuUploadTextureData;
 	agpuAddBufferReference_FUN agpuAddBufferReference;
 	agpuReleaseBuffer_FUN agpuReleaseBuffer;
 	agpuMapBuffer_FUN agpuMapBuffer;
 	agpuUnmapBuffer_FUN agpuUnmapBuffer;
+	agpuGetBufferDescription_FUN agpuGetBufferDescription;
 	agpuUploadBufferData_FUN agpuUploadBufferData;
+	agpuReadBufferData_FUN agpuReadBufferData;
 	agpuAddVertexBindingReference_FUN agpuAddVertexBindingReference;
 	agpuReleaseVertexBinding_FUN agpuReleaseVertexBinding;
 	agpuBindVertexBuffers_FUN agpuBindVertexBuffers;

@@ -561,6 +561,46 @@ AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture )
 	return (*dispatchTable)->agpuReleaseTexture ( texture );
 }
 
+AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuGetTextureDescription ( texture, description );
+}
+
+AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+{
+	if (texture == nullptr)
+		return (agpu_pointer)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuMapTextureLevel ( texture, level, arrayIndex, flags );
+}
+
+AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuUnmapTextureLevel ( texture );
+}
+
+AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuReadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
+}
+
+AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuUploadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
+}
+
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
 {
 	if (buffer == nullptr)
@@ -593,12 +633,28 @@ AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer )
 	return (*dispatchTable)->agpuUnmapBuffer ( buffer );
 }
 
+AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buffer_description* description )
+{
+	if (buffer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (buffer);
+	return (*dispatchTable)->agpuGetBufferDescription ( buffer, description );
+}
+
 AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
 {
 	if (buffer == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (buffer);
 	return (*dispatchTable)->agpuUploadBufferData ( buffer, offset, size, data );
+}
+
+AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
+{
+	if (buffer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (buffer);
+	return (*dispatchTable)->agpuReadBufferData ( buffer, offset, size, data );
 }
 
 AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding )
