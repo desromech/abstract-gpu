@@ -103,6 +103,8 @@ int SampleBase::main(int argc, const char **argv)
         return -1;
     }
 
+    printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
+
     // Get the window info.
     SDL_SysWMinfo windowInfo;
     SDL_VERSION(&windowInfo.version);

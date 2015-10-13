@@ -9,6 +9,46 @@ AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_o
 	return (*dispatchTable)->agpuOpenDevice ( platform, openInfo );
 }
 
+AGPU_EXPORT agpu_cstring agpuGetPlatformName ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_cstring)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetPlatformName ( platform );
+}
+
+AGPU_EXPORT agpu_int agpuGetPlatformVersion ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_int)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetPlatformVersion ( platform );
+}
+
+AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_int)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetPlatformImplementationVersion ( platform );
+}
+
+AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuPlatformHasRealMultithreading ( platform );
+}
+
+AGPU_EXPORT agpu_bool agpuIsNativePlatform ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuIsNativePlatform ( platform );
+}
+
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device )
 {
 	if (device == nullptr)

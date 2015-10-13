@@ -33,6 +33,10 @@ public:
 #else
     void *moduleHandle;
 #endif
+
+    agpu_bool hasRealMultithreading;
+    agpu_bool isNative;
+
 };
 
 PlatformInfo::PlatformInfo()
@@ -256,10 +260,13 @@ static void loadDriver(const std::string &path)
 
 #endif
 
+
     // Got the platform, store it.
     auto platformInfo = new PlatformInfo();
     platformInfo->platform = platform;
     platformInfo->moduleHandle = handle;
+    platformInfo->isNative = agpuIsNativePlatform(platform);
+    platformInfo->hasRealMultithreading = agpuPlatformHasRealMultithreading(platform);
     loadedPlatforms.push_back(platformInfo);
 }
 
@@ -309,6 +316,16 @@ static void loadPlatforms()
     // TODO: Executable relative path
     //loadDriversInPath("AgpuIcd");
     hasBeenLoaded = true;
+
+    // Sort the platforms.
+    std::sort(loadedPlatforms.begin(), loadedPlatforms.end(), [](PlatformInfo *a, PlatformInfo *b) {
+        if (a->hasRealMultithreading == b->hasRealMultithreading)
+        {
+            return a->isNative > b->isNative;
+        }
+
+        return a->hasRealMultithreading > b->hasRealMultithreading;
+    });
 }
 
 AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms )

@@ -22,3 +22,37 @@ AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_o
     return agpu_device::open(openInfo);
 }
 
+AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* platform)
+{
+    if (platform != &theGLPlatform)
+        return nullptr;
+
+    return "OpenGL 4.x Core";
+}
+
+AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* platform)
+{
+    if (platform != &theGLPlatform)
+        return -1;
+
+    return 100;
+}
+
+AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platform)
+{
+    if (platform != &theGLPlatform)
+        return -1;
+
+    return 1;
+}
+
+AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform)
+{
+    return false;
+}
+
+AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform)
+{
+    return false;
+}
+

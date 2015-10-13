@@ -107,6 +107,31 @@ public:
 		return agpuOpenDevice( this, openInfo );
 	}
 
+	inline agpu_cstring getName (  )
+	{
+		return agpuGetPlatformName( this );
+	}
+
+	inline agpu_int getVersion (  )
+	{
+		return agpuGetPlatformVersion( this );
+	}
+
+	inline agpu_int getImplementationVersion (  )
+	{
+		return agpuGetPlatformImplementationVersion( this );
+	}
+
+	inline agpu_bool hasRealMultithreading (  )
+	{
+		return agpuPlatformHasRealMultithreading( this );
+	}
+
+	inline agpu_bool isNative (  )
+	{
+		return agpuIsNativePlatform( this );
+	}
+
 };
 
 // Interface wrapper for agpu_device.

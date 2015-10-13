@@ -345,6 +345,21 @@
             <method name="openDevice" cname="OpenDevice" returnType="device*">
                 <arg name="openInfo" type="device_open_info*" />
             </method>
+            
+            <method name="getName" cname="GetPlatformName" returnType="cstring">
+            </method>
+
+            <method name="getVersion" cname="GetPlatformVersion" returnType="int">
+            </method>
+
+            <method name="getImplementationVersion" cname="GetPlatformImplementationVersion" returnType="int">
+            </method>
+
+            <method name="hasRealMultithreading" cname="PlatformHasRealMultithreading" returnType="bool">
+            </method>
+
+            <method name="isNative" cname="IsNativePlatform" returnType="bool">
+            </method>
 
         </interface>
 
