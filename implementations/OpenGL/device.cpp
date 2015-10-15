@@ -4,7 +4,7 @@
 #include "device.hpp"
 #include "buffer.hpp"
 #include "shader.hpp"
-#include "shader_resource_binding.hpp"
+#include "shader_signature_builder.hpp"
 #include "pipeline_builder.hpp"
 #include "command_allocator.hpp"
 #include "command_list.hpp"
@@ -395,6 +395,13 @@ AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_typ
     return agpu_shader::createShader(device, type);
 }
 
+AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device)
+{
+    if (!device)
+        return nullptr;
+    return agpu_shader_signature_builder::create(device);
+}
+
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device )
 {
     if (!device)
@@ -442,13 +449,6 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_de
     return AGPU_SHADER_LANGUAGE_GLSL;
 }
 
-AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_device* device, agpu_int bindingBank )
-{
-    if(!device)
-        return nullptr;
-    return agpu_shader_resource_binding::create(device, bindingBank);
-}
-
 AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
 {
     if(!device)
@@ -464,10 +464,10 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_
     return agpu_framebuffer::create(device, width, height, renderTargetCount, hasDepth, hasStencil);
 }
 
-AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description, agpu_pointer initialData )
+AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
 {
     if(!device)
         return nullptr;
 
-    return agpu_texture::create(device, description, initialData);
+    return agpu_texture::create(device, description);
 }

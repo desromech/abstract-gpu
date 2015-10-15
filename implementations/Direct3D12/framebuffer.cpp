@@ -70,7 +70,7 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
 agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture* buffer)
 {
     CHECK_POINTER(buffer);
-    if (index >= colorBuffers.size())
+    if ((size_t)index >= colorBuffers.size())
         return AGPU_OUT_OF_BOUNDS;
 
     // Store the new color buffer.

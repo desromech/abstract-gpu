@@ -10,15 +10,18 @@ public:
 
     void lostReferences();
 
-    static agpu_texture* create(agpu_device* device, agpu_texture_description* description, agpu_pointer initialData);
+    static agpu_texture* create(agpu_device* device, agpu_texture_description* description);
     static agpu_texture* createFromResource(agpu_device* device, agpu_texture_description* description, const ComPtr<ID3D12Resource> &resource);
 
-    agpu_pointer mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags);
-    agpu_error unmapLevel();
     agpu_error readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data);
     agpu_error uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data);
 
+    agpu_error discardUploadBuffer();
+    agpu_error discardReadbackBuffer();
+
 public:
+    UINT subresourceIndexFor(agpu_uint level, agpu_uint arrayIndex);
+
     agpu_device* device;
     agpu_texture_description description;
 
@@ -28,10 +31,7 @@ public:
     ComPtr<ID3D12Resource> readbackResource;
 
 private:
-    size_t getPixelSize();
-    size_t pitchOfLevel(int level);
-    size_t slicePitchOfLevel(int level);
-    size_t sizeOfLevel(int level);
+
 
 };
 

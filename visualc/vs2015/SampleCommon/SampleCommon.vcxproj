@@ -44,6 +44,27 @@
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\samples\data\shaders\texturedFragment.glsl">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\samples\data\shaders\texturedVertex.glsl">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\samples\data\shaders\texturedFragment.hlsl">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="..\..\..\samples\data\shaders\texturedVertex.hlsl">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\samples\data\textures\checkboard.bmp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9B7B2C60-6536-4694-9FAF-F50436576C7E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

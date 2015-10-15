@@ -55,6 +55,11 @@ agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_
     return list;
 }
 
+agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature* signature)
+{
+    return AGPU_OK;
+}
+
 agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
     return addCommand([=] {
@@ -277,6 +282,12 @@ AGPU_EXPORT agpu_error agpuReleaseCommandList(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
     return command_list->release();
+}
+
+AGPU_EXPORT agpu_error agpuSetShaderSignature(agpu_command_list* command_list, agpu_shader_signature* signature)
+{
+    CHECK_POINTER(command_list);
+    return command_list->setShaderSignature(signature);
 }
 
 AGPU_EXPORT agpu_error agpuSetViewport(agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h)

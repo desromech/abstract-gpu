@@ -364,3 +364,35 @@ agpu_buffer *SampleBase::createUploadableUniformBuffer(size_t capacity, void *in
     desc.stride = 0;
     return agpuCreateBuffer(device, &desc, initialData);
 }
+
+agpu_texture *SampleBase::loadTexture(const char *fileName)
+{
+    auto surface = SDL_LoadBMP(fileName);
+    if (!surface)
+        return nullptr;
+
+    auto convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_BGRA8888, 0);
+    SDL_FreeSurface(convertedSurface);
+    if (!convertedSurface)
+        return nullptr;
+
+    agpu_texture_description desc;
+    memset(&desc, 0, sizeof(desc));
+    desc.type = AGPU_TEXTURE_2D;
+    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
+    desc.width = convertedSurface->w;
+    desc.height = convertedSurface->h;
+    desc.depthOrArraySize = 1;
+    desc.miplevels = 1;
+    desc.flags = AGPU_TEXTURE_FLAG_UPLOADED;
+    auto texture = agpuCreateTexture(device, &desc);
+    if (!texture)
+        return nullptr;
+
+    void *garbage = malloc(desc.width*desc.height * 4);
+
+    agpuUploadTextureData(texture, 0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, garbage);
+
+    return texture;
+
+}

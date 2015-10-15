@@ -15,6 +15,7 @@ public:
 public:
     
     agpu_device *device;
+    agpu_shader_signature *shaderSignature;
     GLuint programHandle;
     
     // States

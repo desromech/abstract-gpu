@@ -159,7 +159,6 @@
             <constant name="TextureFlagRenderbufferOnly" value="8" />
             <constant name="TextureFlagReadedBack" value="16" />
             <constant name="TextureFlagUploaded" value="32" />
-            <constant name="TextureFlagUploadedOnce" value="64" />
         </enum>
 
 		<enum name="shader_type">
@@ -204,6 +203,14 @@
 			<constant name="ColorBufferBit" value="4" />
 		</enum>
 
+        <enum name="shader_binding_type" >
+            <constant name="ShaderBindingTypeSRV" value="0" />
+            <constant name="ShaderBindingTypeUAV" value="1" />
+            <constant name="ShaderBindingTypeCBV" value="2" />
+            <constant name="ShaderBindingTypeSampler" value="3" />
+            <constant name="ShaderBindingTypeCount" value="4" />
+        </enum>
+        
 		<enum name="shader_language">
             <constant name="ShaderLanguageNone" value="0" />
 			<constant name="ShaderLanguageGlsl" value="1" />
@@ -397,8 +404,7 @@
                 <arg name="type" type="shader_type" />
             </method>
 
-            <method name="createShaderResourceBinding" cname="CreateShaderResourceBinding" returnType="shader_resource_binding*">
-                <arg name="bindingBank" type="int" />
+            <method name="createShaderSignatureBuilder" cname="CreateShaderSignatureBuilder" returnType="shader_signature_builder*">
             </method>
 
             <method name="createPipelineBuilder" cname="CreatePipelineBuilder" returnType="pipeline_builder*">
@@ -507,6 +513,9 @@
                 <arg name="layout" type="vertex_layout*" />
             </method>
 
+            <method name="setShaderSignature" cname="SetPipelineShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
+            </method>
         </interface>
 
         <interface name="pipeline_state">
@@ -552,6 +561,10 @@
             </method>
 
             <method name="release" cname="ReleaseCommandList" returnType="error">
+            </method>
+
+            <method name="setShaderSignature" cname="SetShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
             </method>
 
             <method name="setViewport" cname="SetViewport" returnType="error">
@@ -693,9 +706,13 @@
                 <arg name="arrayIndex" type="int" />
                 <arg name="pitch" type="int" />
                 <arg name="slicePitch" type="int" />
-                <arg name="data" type="pointer" />
             </method>
 
+            <method name="discardUploadBuffer" cname="DiscardTextureUploadBuffer" returnType="error">
+            </method>
+
+            <method name="discardReadbackBuffer" cname="DiscardTextureReadbackBuffer" returnType="error">
+            </method>
         </interface>
 
         <interface name="buffer">
@@ -804,6 +821,44 @@
             </method>
         </interface>
 
+        <interface name="shader_signature_builder">
+            <method name="addReference" cname="AddShaderSignatureBuilderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShaderSignatureBuilder" returnType="error">
+            </method>
+
+            <method name="build" cname="BuildShaderSignature" returnType="shader_signature*">
+            </method>
+
+            <method name="addBindingConstant" cname="AddShaderSignatureBindingConstant" returnType="error">
+            </method>
+            
+            <method name="addBindingElement" cname="AddShaderSignatureBindingElement" returnType="error">
+                <arg name="type" type="shader_binding_type" />
+                <arg name="maxBindings" type="uint" />
+            </method>
+            
+            <method name="addBindingBank" cname="AddShaderSignatureBindingBank" returnType="error">
+                <arg name="type" type="shader_binding_type" />
+                <arg name="bindingPointCount" type="uint" />
+                <arg name="maxBindings" type="uint" />
+            </method>
+        </interface>
+
+        <interface name="shader_signature">
+            <method name="addReference" cname="AddShaderSignature" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShaderSignature" returnType="error">
+            </method>
+
+            <method name="createShaderResourceBinding" cname="CreateShaderResourceBinding" returnType="shader_resource_binding*">
+                <arg name="element" type="uint" />
+            </method>
+
+        </interface>
+        
         <interface name="shader_resource_binding">
             <method name="addReference" cname="AddShaderResourceBindingReference" returnType="error">
             </method>

@@ -54,6 +54,8 @@ typedef struct _agpu_vertex_binding agpu_vertex_binding;
 typedef struct _agpu_vertex_layout agpu_vertex_layout;
 typedef struct _agpu_shader agpu_shader;
 typedef struct _agpu_framebuffer agpu_framebuffer;
+typedef struct _agpu_shader_signature_builder agpu_shader_signature_builder;
+typedef struct _agpu_shader_signature agpu_shader_signature;
 typedef struct _agpu_shader_resource_binding agpu_shader_resource_binding;
 
 typedef enum {
@@ -130,7 +132,6 @@ typedef enum {
 	AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY = 8,
 	AGPU_TEXTURE_FLAG_READED_BACK = 16,
 	AGPU_TEXTURE_FLAG_UPLOADED = 32,
-	AGPU_TEXTURE_FLAG_UPLOADED_ONCE = 64,
 } agpu_texture_flags;
 
 typedef enum {
@@ -174,6 +175,14 @@ typedef enum {
 	AGPU_STENCIL_BUFFER_BIT = 2,
 	AGPU_COLOR_BUFFER_BIT = 4,
 } agpu_render_buffer_bit;
+
+typedef enum {
+	AGPU_SHADER_BINDING_TYPE_SRV = 0,
+	AGPU_SHADER_BINDING_TYPE_UAV = 1,
+	AGPU_SHADER_BINDING_TYPE_CBV = 2,
+	AGPU_SHADER_BINDING_TYPE_SAMPLER = 3,
+	AGPU_SHADER_BINDING_TYPE_COUNT = 4,
+} agpu_shader_binding_type;
 
 typedef enum {
 	AGPU_SHADER_LANGUAGE_NONE = 0,
@@ -380,7 +389,7 @@ typedef agpu_buffer* (*agpuCreateBuffer_FUN) ( agpu_device* device, agpu_buffer_
 typedef agpu_vertex_layout* (*agpuCreateVertexLayout_FUN) ( agpu_device* device );
 typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* device, agpu_vertex_layout* layout );
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
-typedef agpu_shader_resource_binding* (*agpuCreateShaderResourceBinding_FUN) ( agpu_device* device, agpu_int bindingBank );
+typedef agpu_shader_signature_builder* (*agpuCreateShaderSignatureBuilder_FUN) ( agpu_device* device );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
 typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device );
 typedef agpu_command_list* (*agpuCreateCommandListBundle_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
@@ -398,7 +407,7 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_des
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout ( agpu_device* device );
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, agpu_vertex_layout* layout );
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
-AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_device* device, agpu_int bindingBank );
+AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device );
 AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
@@ -433,6 +442,7 @@ typedef agpu_error (*agpuSetRenderTargetFormat_FUN) ( agpu_pipeline_builder* pip
 typedef agpu_error (*agpuSetDepthStencilFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
 typedef agpu_error (*agpuSetPrimitiveType_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
 typedef agpu_error (*agpuSetVertexLayout_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
+typedef agpu_error (*agpuSetPipelineShaderSignature_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature );
 
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipeline_builder );
@@ -447,6 +457,7 @@ AGPU_EXPORT agpu_error agpuSetRenderTargetFormat ( agpu_pipeline_builder* pipeli
 AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
 AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
 AGPU_EXPORT agpu_error agpuSetVertexLayout ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
+AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature ( agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature );
 
 /* Methods for interface agpu_pipeline_state. */
 typedef agpu_error (*agpuAddPipelineStateReference_FUN) ( agpu_pipeline_state* pipeline_state );
@@ -480,6 +491,7 @@ AGPU_EXPORT agpu_error agpuResetCommandAllocator ( agpu_command_allocator* comma
 /* Methods for interface agpu_command_list. */
 typedef agpu_error (*agpuAddCommandListReference_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuReleaseCommandList_FUN) ( agpu_command_list* command_list );
+typedef agpu_error (*agpuSetShaderSignature_FUN) ( agpu_command_list* command_list, agpu_shader_signature* signature );
 typedef agpu_error (*agpuSetViewport_FUN) ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 typedef agpu_error (*agpuSetScissor_FUN) ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 typedef agpu_error (*agpuSetClearColor_FUN) ( agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
@@ -505,6 +517,7 @@ typedef agpu_error (*agpuEndFrame_FUN) ( agpu_command_list* command_list );
 
 AGPU_EXPORT agpu_error agpuAddCommandListReference ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuReleaseCommandList ( agpu_command_list* command_list );
+AGPU_EXPORT agpu_error agpuSetShaderSignature ( agpu_command_list* command_list, agpu_shader_signature* signature );
 AGPU_EXPORT agpu_error agpuSetViewport ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 AGPU_EXPORT agpu_error agpuSetScissor ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h );
 AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a );
@@ -535,7 +548,9 @@ typedef agpu_error (*agpuGetTextureDescription_FUN) ( agpu_texture* texture, agp
 typedef agpu_pointer (*agpuMapTextureLevel_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
 typedef agpu_error (*agpuUnmapTextureLevel_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuReadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
-typedef agpu_error (*agpuUploadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+typedef agpu_error (*agpuUploadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch );
+typedef agpu_error (*agpuDiscardTextureUploadBuffer_FUN) ( agpu_texture* texture );
+typedef agpu_error (*agpuDiscardTextureReadbackBuffer_FUN) ( agpu_texture* texture );
 
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture );
@@ -543,7 +558,9 @@ AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_t
 AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch );
+AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture );
+AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture );
 
 /* Methods for interface agpu_buffer. */
 typedef agpu_error (*agpuAddBufferReference_FUN) ( agpu_buffer* buffer );
@@ -608,6 +625,30 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer );
 AGPU_EXPORT agpu_error agpuAttachColorBuffer ( agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer );
 AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer ( agpu_framebuffer* framebuffer, agpu_texture* buffer );
 
+/* Methods for interface agpu_shader_signature_builder. */
+typedef agpu_error (*agpuAddShaderSignatureBuilderReference_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
+typedef agpu_error (*agpuReleaseShaderSignatureBuilder_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
+typedef agpu_shader_signature* (*agpuBuildShaderSignature_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
+typedef agpu_error (*agpuAddShaderSignatureBindingConstant_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
+typedef agpu_error (*agpuAddShaderSignatureBindingElement_FUN) ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings );
+typedef agpu_error (*agpuAddShaderSignatureBindingBank_FUN) ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings );
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder );
+AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder ( agpu_shader_signature_builder* shader_signature_builder );
+AGPU_EXPORT agpu_shader_signature* agpuBuildShaderSignature ( agpu_shader_signature_builder* shader_signature_builder );
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant ( agpu_shader_signature_builder* shader_signature_builder );
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings );
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings );
+
+/* Methods for interface agpu_shader_signature. */
+typedef agpu_error (*agpuAddShaderSignature_FUN) ( agpu_shader_signature* shader_signature );
+typedef agpu_error (*agpuReleaseShaderSignature_FUN) ( agpu_shader_signature* shader_signature );
+typedef agpu_shader_resource_binding* (*agpuCreateShaderResourceBinding_FUN) ( agpu_shader_signature* shader_signature, agpu_uint element );
+
+AGPU_EXPORT agpu_error agpuAddShaderSignature ( agpu_shader_signature* shader_signature );
+AGPU_EXPORT agpu_error agpuReleaseShaderSignature ( agpu_shader_signature* shader_signature );
+AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_shader_signature* shader_signature, agpu_uint element );
+
 /* Methods for interface agpu_shader_resource_binding. */
 typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
 typedef agpu_error (*agpuReleaseShaderResourceBinding_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
@@ -637,7 +678,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateVertexLayout_FUN agpuCreateVertexLayout;
 	agpuCreateVertexBinding_FUN agpuCreateVertexBinding;
 	agpuCreateShader_FUN agpuCreateShader;
-	agpuCreateShaderResourceBinding_FUN agpuCreateShaderResourceBinding;
+	agpuCreateShaderSignatureBuilder_FUN agpuCreateShaderSignatureBuilder;
 	agpuCreatePipelineBuilder_FUN agpuCreatePipelineBuilder;
 	agpuCreateCommandAllocator_FUN agpuCreateCommandAllocator;
 	agpuCreateCommandListBundle_FUN agpuCreateCommandListBundle;
@@ -663,6 +704,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetDepthStencilFormat_FUN agpuSetDepthStencilFormat;
 	agpuSetPrimitiveType_FUN agpuSetPrimitiveType;
 	agpuSetVertexLayout_FUN agpuSetVertexLayout;
+	agpuSetPipelineShaderSignature_FUN agpuSetPipelineShaderSignature;
 	agpuAddPipelineStateReference_FUN agpuAddPipelineStateReference;
 	agpuReleasePipelineState_FUN agpuReleasePipelineState;
 	agpuGetUniformLocation_FUN agpuGetUniformLocation;
@@ -675,6 +717,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuResetCommandAllocator_FUN agpuResetCommandAllocator;
 	agpuAddCommandListReference_FUN agpuAddCommandListReference;
 	agpuReleaseCommandList_FUN agpuReleaseCommandList;
+	agpuSetShaderSignature_FUN agpuSetShaderSignature;
 	agpuSetViewport_FUN agpuSetViewport;
 	agpuSetScissor_FUN agpuSetScissor;
 	agpuSetClearColor_FUN agpuSetClearColor;
@@ -704,6 +747,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuUnmapTextureLevel_FUN agpuUnmapTextureLevel;
 	agpuReadTextureData_FUN agpuReadTextureData;
 	agpuUploadTextureData_FUN agpuUploadTextureData;
+	agpuDiscardTextureUploadBuffer_FUN agpuDiscardTextureUploadBuffer;
+	agpuDiscardTextureReadbackBuffer_FUN agpuDiscardTextureReadbackBuffer;
 	agpuAddBufferReference_FUN agpuAddBufferReference;
 	agpuReleaseBuffer_FUN agpuReleaseBuffer;
 	agpuMapBuffer_FUN agpuMapBuffer;
@@ -728,6 +773,15 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
 	agpuAttachColorBuffer_FUN agpuAttachColorBuffer;
 	agpuAttachDepthStencilBuffer_FUN agpuAttachDepthStencilBuffer;
+	agpuAddShaderSignatureBuilderReference_FUN agpuAddShaderSignatureBuilderReference;
+	agpuReleaseShaderSignatureBuilder_FUN agpuReleaseShaderSignatureBuilder;
+	agpuBuildShaderSignature_FUN agpuBuildShaderSignature;
+	agpuAddShaderSignatureBindingConstant_FUN agpuAddShaderSignatureBindingConstant;
+	agpuAddShaderSignatureBindingElement_FUN agpuAddShaderSignatureBindingElement;
+	agpuAddShaderSignatureBindingBank_FUN agpuAddShaderSignatureBindingBank;
+	agpuAddShaderSignature_FUN agpuAddShaderSignature;
+	agpuReleaseShaderSignature_FUN agpuReleaseShaderSignature;
+	agpuCreateShaderResourceBinding_FUN agpuCreateShaderResourceBinding;
 	agpuAddShaderResourceBindingReference_FUN agpuAddShaderResourceBindingReference;
 	agpuReleaseShaderResourceBinding_FUN agpuReleaseShaderResourceBinding;
 	agpuBindUniformBuffer_FUN agpuBindUniformBuffer;

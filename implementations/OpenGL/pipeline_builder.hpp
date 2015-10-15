@@ -14,6 +14,8 @@ public:
 
     agpu_pipeline_state* build ();
     
+    agpu_error setShaderSignature(agpu_shader_signature* signature);
+
     agpu_error attachShader ( agpu_shader* shader );
     
     agpu_size getBuildingLogLength (  );
@@ -47,6 +49,8 @@ public:
     // Miscellaneos
     int renderTargetCount;
     agpu_primitive_type primitiveType;
+
+    agpu_shader_signature *shaderSignature;
 };
 
 

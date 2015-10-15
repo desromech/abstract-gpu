@@ -1,12 +1,15 @@
 #include "pipeline_state.hpp"
+#include "shader_signature.hpp"
 
 _agpu_pipeline_state::_agpu_pipeline_state()
 {
-	
+    shaderSignature = nullptr; 
 }
 
 void _agpu_pipeline_state::lostReferences()
 {
+    if (shaderSignature)
+        shaderSignature->release();
     device->onMainContextBlocking([&] {
         device->glDeleteProgram(programHandle);
     });

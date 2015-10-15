@@ -1,4 +1,5 @@
 #include "shader_resource_binding.hpp"
+#include "shader_signature.hpp"
 #include "buffer.hpp"
 
 _agpu_shader_resource_binding::_agpu_shader_resource_binding()
@@ -7,20 +8,39 @@ _agpu_shader_resource_binding::_agpu_shader_resource_binding()
 
 void _agpu_shader_resource_binding::lostReferences()
 {
-    for (int i = 0; i < 4; ++i)
+    for(auto &binding : uniformBuffers)
     {
-        auto &binding = uniformBuffers[i];
         if (binding.buffer)
             binding.buffer->release();
     }
 }
 
-agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_device *device, int bank)
+agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_signature *signature, int elementIndex)
 {
-	auto binding = new agpu_shader_resource_binding();
-	binding->device = device;
-	binding->bank = bank;
-	return binding;
+	std::unique_ptr<agpu_shader_resource_binding> binding(new agpu_shader_resource_binding());
+	binding->device = signature->device;
+    binding->signature = signature;
+    signature->retain();
+	binding->elementIndex = elementIndex;
+    
+    auto &element = signature->elements[elementIndex];
+    binding->type = element.type;
+    binding->startIndex = element.startIndex;
+
+    switch (binding->type)
+    {
+    case AGPU_SHADER_BINDING_TYPE_SRV:
+        break;
+    case AGPU_SHADER_BINDING_TYPE_CBV:
+        binding->uniformBuffers.resize(element.bindingPointCount);
+        break;
+    case AGPU_SHADER_BINDING_TYPE_UAV:
+    case AGPU_SHADER_BINDING_TYPE_SAMPLER:
+    default:
+        abort();
+        break;
+    }
+	return binding.release();
 }
 
 agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
@@ -44,7 +64,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 {
 	if(location < 0)
 		return AGPU_OK;
-	if(location >= 4)
+	if(location >= (int)uniformBuffers.size())
 		return AGPU_ERROR;
 
 	if(uniform_buffer)
@@ -61,17 +81,20 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 
 void _agpu_shader_resource_binding::activate()
 {
-	for(int i = 0; i < 4; ++i)
-	{
-		auto &binding = uniformBuffers[i];
-		if(!binding.buffer)
-			continue;
-		
-		if(binding.range)
-			device->glBindBufferRange(GL_UNIFORM_BUFFER, bank*4 + i, binding.buffer->handle, binding.offset, binding.size);
-		else
-			device->glBindBufferBase(GL_UNIFORM_BUFFER, bank*4 + i, binding.buffer->handle);
-	}
+    if (type == AGPU_SHADER_BINDING_TYPE_CBV)
+    {
+        for (size_t i = 0; i < uniformBuffers.size(); ++i)
+        {
+            auto &binding = uniformBuffers[i];
+            if (!binding.buffer)
+                continue;
+
+            if (binding.range)
+                device->glBindBufferRange(GL_UNIFORM_BUFFER, GLuint(startIndex + i), binding.buffer->handle, binding.offset, binding.size);
+            else
+                device->glBindBufferBase(GL_UNIFORM_BUFFER, GLuint(startIndex + i), binding.buffer->handle);
+        }
+    }
 }
 
 // Exported C interace

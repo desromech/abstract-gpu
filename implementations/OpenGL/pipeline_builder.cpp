@@ -1,6 +1,7 @@
 #include "pipeline_builder.hpp"
 #include "pipeline_state.hpp"
 #include "shader.hpp"
+#include "shader_signature.hpp"
 
 GLenum mapCompareFunction(agpu_compare_function function)
 {
@@ -23,6 +24,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
 {
     programHandle = 0;
     linked = false;
+    shaderSignature = nullptr;
 
     // Depth buffer
     depthEnabled = false;
@@ -41,6 +43,9 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
 
 void _agpu_pipeline_builder::lostReferences()
 {
+    if (shaderSignature)
+        shaderSignature->release();
+
 	if(programHandle && !linked)
     {
         device->onMainContextBlocking([&]{
@@ -88,6 +93,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 	auto pipeline = new agpu_pipeline_state();
 	pipeline->device = device;
 	pipeline->programHandle = programHandle;
+    pipeline->shaderSignature = shaderSignature;
+    if (shaderSignature)
+        shaderSignature->retain();
 
 	// Depth state
     pipeline->depthEnabled = depthEnabled;
@@ -137,6 +145,15 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
         device->glGetProgramInfoLog(programHandle, (GLsizei)(buffer_size - 1), nullptr, buffer);
     });
 	return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setShaderSignature(agpu_shader_signature* signature)
+{
+    signature->retain();
+    if (shaderSignature)
+        shaderSignature->release();
+    shaderSignature = signature;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
@@ -193,6 +210,12 @@ AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipel
 {
 	CHECK_POINTER(pipeline_builder);
 	return pipeline_builder->release();
+}
+
+AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature(agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setShaderSignature(signature);
 }
 
 AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState ( agpu_pipeline_builder* pipeline_builder )

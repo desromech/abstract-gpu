@@ -59,7 +59,7 @@ void _agpu_texture::allocateTexture(agpu_device *device, GLuint handle, GLenum t
 }
 
 _agpu_texture::_agpu_texture()
-    : transferBuffer(0), mappedLevel(0), mappedArrayIndex(0), mappedPointer(nullptr)
+    : transferBuffer(0), mappedLevel(0), mappedPointer(nullptr)
 {
 }
 
@@ -76,7 +76,7 @@ void _agpu_texture::lostReferences()
     });
 }
 
-agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_description *description, agpu_pointer initialData)
+agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_description *description)
 {
     GLuint handle;
     GLenum target = findTextureTarget(description);
@@ -110,18 +110,25 @@ size_t _agpu_texture::pitchOfLevel(int level)
 size_t _agpu_texture::sizeOfLevel(int level)
 {
     auto pitch = pitchOfLevel(level);
+    int height = (description.height >> level);
+    if (!height)
+        height = 1;
+    int depth = (description.height >> level);
+    if (!depth)
+        depth = 1;
+
     switch(description.type)
     {
     case AGPU_TEXTURE_1D:
-        return pitch;
+        return pitch * description.depthOrArraySize;
     case AGPU_TEXTURE_BUFFER:
-        return pitch;
+        return pitch * description.depthOrArraySize;
     case AGPU_TEXTURE_2D:
-        return pitch * (description.height >> level);
+        return pitch * height * description.depthOrArraySize;
     case AGPU_TEXTURE_3D:
-        return pitch * (description.height >> level) * (description.depthOrArraySize >> level);
+        return pitch * height * (description.depthOrArraySize >> level);
     case AGPU_TEXTURE_CUBE:
-        return pitch * (description.height >> level);
+        return pitch * height * description.depthOrArraySize;
     default:
         abort();
     }
@@ -135,7 +142,7 @@ void _agpu_texture::createTransferBuffer(GLenum target)
     device->glBufferStorage(target, bufferSize, nullptr, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT |  GL_CLIENT_STORAGE_BIT);
 }
 
-void _agpu_texture::performTransferToCpu(int level, int arrayIndex)
+void _agpu_texture::performTransferToCpu(int level)
 {
     device->glBindBuffer(GL_PIXEL_PACK_BUFFER, transferBuffer);
     glBindTexture(target, handle);
@@ -155,8 +162,15 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
     glBindTexture(target, handle);
     bool isArray = description.depthOrArraySize > 1;
     int width = description.width >> level;
+    if (!width)
+        width = 1;
     int height = description.height >> level;
+    if (!height)
+        height = 1;
     int depth = description.depthOrArraySize >> level;
+    if (!depth)
+        depth = 1;
+    int arraySize = description.depthOrArraySize;
 
     switch(description.type)
     {
@@ -195,7 +209,6 @@ agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu
 
     this->mappingAccess = flags;
     this->mappedLevel = level;
-    this->mappedArrayIndex = arrayIndex;
     bool isRead = mappingAccess == AGPU_READ_ONLY || mappingAccess == AGPU_READ_WRITE;
     bool isWrite = mappingAccess == AGPU_WRITE_ONLY || mappingAccess == AGPU_READ_WRITE;
 
@@ -207,12 +220,14 @@ agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu
             createTransferBuffer(GL_PIXEL_PACK_BUFFER);
 
         if(isRead)
-            performTransferToCpu(level, arrayIndex);
+            performTransferToCpu(level);
 
         device->glBindBuffer(target, transferBuffer);
         mappedPointer = device->glMapBuffer(target, access);
         device->glBindBuffer(target, 0);
     });
+
+    mappedArrayIndex = arrayIndex;
 
     return mappedPointer;
 }
@@ -310,6 +325,17 @@ agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayInde
     return AGPU_OK;
 }
 
+agpu_error _agpu_texture::discardUploadBuffer()
+{
+    return AGPU_OK;
+}
+
+agpu_error _agpu_texture::discardReadbackBuffer()
+{
+    return AGPU_OK;
+
+}
+
 // Exported C interface.
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
 {
@@ -356,4 +382,16 @@ AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int l
 {
     CHECK_POINTER(texture);
     return texture->uploadTextureData(level, arrayIndex, pitch, slicePitch, data);
+}
+
+AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* texture)
+{
+    CHECK_POINTER(texture);
+    return texture->discardUploadBuffer();
+}
+
+AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* texture)
+{
+    CHECK_POINTER(texture);
+    return texture->discardReadbackBuffer();
 }

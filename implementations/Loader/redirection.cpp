@@ -113,12 +113,12 @@ AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_typ
 	return (*dispatchTable)->agpuCreateShader ( device, type );
 }
 
-AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_device* device, agpu_int bindingBank )
+AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device )
 {
 	if (device == nullptr)
-		return (agpu_shader_resource_binding*)0;
+		return (agpu_shader_signature_builder*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateShaderResourceBinding ( device, bindingBank );
+	return (*dispatchTable)->agpuCreateShaderSignatureBuilder ( device );
 }
 
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device )
@@ -321,6 +321,14 @@ AGPU_EXPORT agpu_error agpuSetVertexLayout ( agpu_pipeline_builder* pipeline_bui
 	return (*dispatchTable)->agpuSetVertexLayout ( pipeline_builder, layout );
 }
 
+AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature ( agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetPipelineShaderSignature ( pipeline_builder, signature );
+}
+
 AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state )
 {
 	if (pipeline_state == nullptr)
@@ -415,6 +423,14 @@ AGPU_EXPORT agpu_error agpuReleaseCommandList ( agpu_command_list* command_list 
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuReleaseCommandList ( command_list );
+}
+
+AGPU_EXPORT agpu_error agpuSetShaderSignature ( agpu_command_list* command_list, agpu_shader_signature* signature )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuSetShaderSignature ( command_list, signature );
 }
 
 AGPU_EXPORT agpu_error agpuSetViewport ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
@@ -641,12 +657,28 @@ AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int lev
 	return (*dispatchTable)->agpuReadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
 }
 
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch )
 {
 	if (texture == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
-	return (*dispatchTable)->agpuUploadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
+	return (*dispatchTable)->agpuUploadTextureData ( texture, level, arrayIndex, pitch, slicePitch );
+}
+
+AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuDiscardTextureUploadBuffer ( texture );
+}
+
+AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuDiscardTextureReadbackBuffer ( texture );
 }
 
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
@@ -839,6 +871,78 @@ AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer ( agpu_framebuffer* framebuf
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
 	return (*dispatchTable)->agpuAttachDepthStencilBuffer ( framebuffer, buffer );
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuAddShaderSignatureBuilderReference ( shader_signature_builder );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder ( agpu_shader_signature_builder* shader_signature_builder )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuReleaseShaderSignatureBuilder ( shader_signature_builder );
+}
+
+AGPU_EXPORT agpu_shader_signature* agpuBuildShaderSignature ( agpu_shader_signature_builder* shader_signature_builder )
+{
+	if (shader_signature_builder == nullptr)
+		return (agpu_shader_signature*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuBuildShaderSignature ( shader_signature_builder );
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant ( agpu_shader_signature_builder* shader_signature_builder )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuAddShaderSignatureBindingConstant ( shader_signature_builder );
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuAddShaderSignatureBindingElement ( shader_signature_builder, type, maxBindings );
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuAddShaderSignatureBindingBank ( shader_signature_builder, type, bindingPointCount, maxBindings );
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignature ( agpu_shader_signature* shader_signature )
+{
+	if (shader_signature == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature);
+	return (*dispatchTable)->agpuAddShaderSignature ( shader_signature );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseShaderSignature ( agpu_shader_signature* shader_signature )
+{
+	if (shader_signature == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature);
+	return (*dispatchTable)->agpuReleaseShaderSignature ( shader_signature );
+}
+
+AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_shader_signature* shader_signature, agpu_uint element )
+{
+	if (shader_signature == nullptr)
+		return (agpu_shader_resource_binding*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature);
+	return (*dispatchTable)->agpuCreateShaderResourceBinding ( shader_signature, element );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference ( agpu_shader_resource_binding* shader_resource_binding )

@@ -5,6 +5,12 @@ class Sample1: public SampleBase
 public:
     bool initializeSample()
     {
+        auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
+        shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
+        agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);
+        if (!shaderSignature)
+            return false;
+
         commandAllocator = agpuCreateCommandAllocator(device);
         commandList = agpuCreateCommandList(device, commandAllocator, nullptr);
         agpuCloseCommandList(commandList);
@@ -41,8 +47,10 @@ public:
     {
         agpuReleaseCommandList(commandList);
         agpuReleaseCommandAllocator(commandAllocator);
+        agpuReleaseShaderSignature(shaderSignature);
     }
 
+    agpu_shader_signature *shaderSignature;
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
 };

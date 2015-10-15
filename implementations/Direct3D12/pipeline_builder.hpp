@@ -13,6 +13,7 @@ public:
     static _agpu_pipeline_builder *create(agpu_device *device);
 
     agpu_pipeline_state* buildPipelineState();
+    agpu_error setShaderSignature(agpu_shader_signature* signature);
     agpu_error attachShader(agpu_shader* shader);
     agpu_size getPipelineBuildingLogLength();
     agpu_error getPipelineBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer);
@@ -31,6 +32,7 @@ public:
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC description;
 
+    ComPtr<ID3D12RootSignature> rootSignature;
     std::string buildingLog;
 };
 

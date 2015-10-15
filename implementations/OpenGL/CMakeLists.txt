@@ -27,6 +27,10 @@ set(AGPU_OpenGL_SOURCES
     shader.hpp
     shader_resource_binding.cpp
     shader_resource_binding.hpp
+    shader_signature.cpp
+    shader_signature.hpp
+    shader_signature_builder.cpp
+    shader_signature_builder.hpp
     swap_chain.cpp
     swap_chain.hpp
     texture.cpp

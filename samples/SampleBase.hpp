@@ -29,6 +29,11 @@ struct SampleVertex
         return SampleVertex(glm::vec3(x, y, z), glm::vec3(0,0,0), glm::vec4(r, g, b, a), glm::vec2(0, 1));
     }
 
+    static SampleVertex onlyColorTc(float x, float y, float z, float r, float g, float b, float a, float u, float v)
+    {
+        return SampleVertex(glm::vec3(x, y, z), glm::vec3(0, 0, 0), glm::vec4(r, g, b, a), glm::vec2(u, v));
+    }
+
     static agpu_vertex_attrib_description Description[];
     static const int DescriptionSize;
 };
@@ -56,6 +61,7 @@ protected:
     agpu_buffer *createUploadableUniformBuffer(size_t capacity, void *initialData);
 
     agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
+    agpu_texture *loadTexture(const char *fileName);
 
     int screenWidth, screenHeight;
     SDL_Window *window;

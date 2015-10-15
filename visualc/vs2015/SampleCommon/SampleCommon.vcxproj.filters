@@ -41,4 +41,25 @@
       <Filter>Assets</Filter>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\samples\data\shaders\texturedFragment.glsl">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\..\..\samples\data\shaders\texturedVertex.glsl">
+      <Filter>Assets</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\..\samples\data\shaders\texturedFragment.hlsl">
+      <Filter>Assets</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\..\samples\data\shaders\texturedVertex.hlsl">
+      <Filter>Assets</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\samples\data\textures\checkboard.bmp">
+      <Filter>Assets</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

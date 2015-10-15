@@ -19,33 +19,33 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{82551A25-D6CA-469E-8D03-6E0196AC2797}</ProjectGuid>
+    <ProjectGuid>{D934883A-5155-4090-954D-F9CAA49BCB2C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>AgpuD3D12</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <RootNamespace>Sample3</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -71,19 +71,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\</OutDir>
+    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\deps\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\</OutDir>
+    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\deps\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\</OutDir>
+    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\deps\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\</OutDir>
+    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\deps\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -91,13 +99,14 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;WIN32;_DEBUG;_WINDOWS;_USRDLL;AGPUD3D12_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\glm;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SampleCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -106,13 +115,14 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;_DEBUG;_WINDOWS;_USRDLL;AGPUD3D12_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\glm;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SampleCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,15 +133,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;WIN32;NDEBUG;_WINDOWS;_USRDLL;AGPUD3D12_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\glm;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SampleCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,60 +153,20 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AGPU_BUILD;NDEBUG;_WINDOWS;_USRDLL;AGPUD3D12_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\glm;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SampleCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\implementations\Direct3D12\buffer.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\command_allocator.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\command_list.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\command_queue.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\device.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\framebuffer.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\icd.c" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_builder.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_state.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\platform.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\shader.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\shader_resource_binding.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\shader_signature.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\shader_signature_builder.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\swap_chain.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\texture.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_binding.cpp" />
-    <ClCompile Include="..\..\..\implementations\Direct3D12\vertex_layout.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\implementations\Direct3D12\buffer.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\command_allocator.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\command_list.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\command_queue.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\common.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\common_commands.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\device.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\framebuffer.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\object.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_builder.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_state.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\platform.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\shader.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\shader_resource_binding.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\shader_signature.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\shader_signature_builder.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\swap_chain.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\texture.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\texture_formats.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\vertex_binding.hpp" />
-    <ClInclude Include="..\..\..\implementations\Direct3D12\vertex_layout.hpp" />
-    <ClInclude Include="..\..\..\include\AGPU\agpu.h" />
+    <ClCompile Include="..\..\..\samples\Sample3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

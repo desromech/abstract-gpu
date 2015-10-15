@@ -10,13 +10,16 @@ public:
 
     void lostReferences();
 
-    static agpu_texture *create(agpu_device *device, agpu_texture_description *description, agpu_pointer initialData);
+    static agpu_texture *create(agpu_device *device, agpu_texture_description *description);
 
     agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
     agpu_error unmapLevel ( );
 
     agpu_error readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
     agpu_error uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+
+    agpu_error discardUploadBuffer();
+    agpu_error discardReadbackBuffer();
 
 public:
     agpu_device *device;
@@ -27,7 +30,7 @@ public:
     GLuint transferBuffer;
     agpu_mapping_access mappingAccess;
     agpu_int mappedLevel;
-    agpu_int mappedArrayIndex;
+    agpu_uint mappedArrayIndex;
     agpu_pointer mappedPointer;
 
 private:
@@ -43,7 +46,7 @@ private:
     size_t sizeOfLevel(int level);
 
     void createTransferBuffer(GLenum target);
-    void performTransferToCpu(int level, int arrayIndex);
+    void performTransferToCpu(int level);
     void performTransferToGpu(int level, int arrayIndex);
 };
 

@@ -108,7 +108,7 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
                 desc.format = createInfo->depth_stencil_format;
                 desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
                 desc.miplevels = 1;
-                auto depthStencilBuffer = agpu_texture::create(device, &desc, nullptr);
+                auto depthStencilBuffer = agpu_texture::create(device, &desc);
                 if (!depthStencilBuffer)
                 {
                     failure = true;

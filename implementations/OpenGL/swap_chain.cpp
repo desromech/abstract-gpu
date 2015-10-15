@@ -54,7 +54,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
             desc.format = create_info->colorbuffer_format;
             desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
             desc.miplevels = 1;
-            auto colorBuffer = agpu_texture::create(device, &desc, nullptr);
+            auto colorBuffer = agpu_texture::create(device, &desc);
             if(!colorBuffer)
             {
                 failure = true;
@@ -78,7 +78,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
             desc.format = create_info->depth_stencil_format;
             desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
             desc.miplevels = 1;
-            auto depthStencilBuffer = agpu_texture::create(device, &desc, nullptr);
+            auto depthStencilBuffer = agpu_texture::create(device, &desc);
             if(!depthStencilBuffer)
             {
                 failure = true;

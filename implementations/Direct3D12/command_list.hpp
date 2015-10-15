@@ -19,6 +19,8 @@ public:
 
     static _agpu_command_list *create(agpu_device *device, CommandListType type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState);
 
+    agpu_error setShaderSignature(agpu_shader_signature *signature);
+
     agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
     agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
     agpu_error setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a);

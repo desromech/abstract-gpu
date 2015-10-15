@@ -1,6 +1,7 @@
 #include "pipeline_builder.hpp"
 #include "pipeline_state.hpp"
 #include "shader.hpp"
+#include "shader_signature.hpp"
 #include "vertex_layout.hpp"
 
 inline D3D12_COMPARISON_FUNC mapCompareFunction(agpu_compare_function function)
@@ -79,6 +80,14 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     vertexLayout = nullptr;
 }
 
+agpu_error _agpu_pipeline_builder::setShaderSignature(agpu_shader_signature* signature)
+{
+    CHECK_POINTER(signature);
+    rootSignature = signature->rootSignature;
+    description.pRootSignature = rootSignature.Get();
+    return AGPU_OK;
+}
+
 void _agpu_pipeline_builder::lostReferences()
 {
     if (vertexLayout)
@@ -94,9 +103,6 @@ _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
 
 agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
 {
-    // Set the root signature
-    description.pRootSignature = device->graphicsRootSignature.Get();
-
     // Build the pipeline
     ComPtr<ID3D12PipelineState> pipelineState;
 
@@ -221,6 +227,12 @@ AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState(agpu_pipeline_builder* p
     if (!pipeline_builder)
         return nullptr;
     return pipeline_builder->buildPipelineState();
+}
+
+AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature(agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setShaderSignature(signature);
 }
 
 AGPU_EXPORT agpu_error agpuAttachShader(agpu_pipeline_builder* pipeline_builder, agpu_shader* shader)

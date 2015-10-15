@@ -4,6 +4,7 @@
 #include "pipeline_state.hpp"
 #include "buffer.hpp"
 #include "vertex_binding.hpp"
+#include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 #include "framebuffer.hpp"
 #include "texture.hpp"
@@ -71,12 +72,24 @@ _agpu_command_list *_agpu_command_list::create(agpu_device *device, CommandListT
     return list.release();
 }
 
+agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature *signature)
+{
+    CHECK_POINTER(signature);
+    ID3D12DescriptorHeap *heaps[2];
+    int heapCount = 0;
+    if (signature->shaderResourceViewHeap)
+        heaps[heapCount++] = signature->shaderResourceViewHeap.Get();
+    if (signature->samplerHeap)
+        heaps[heapCount++] = signature->samplerHeap.Get();
+    if(heapCount)
+        commandList->SetDescriptorHeaps(heapCount, heaps);
+
+    commandList->SetGraphicsRootSignature(signature->rootSignature.Get());
+    return AGPU_OK;
+}
+
 agpu_error _agpu_command_list::setCommonState()
 {
-    ID3D12DescriptorHeap *heaps[] = { device->shaderResourcesViewHeaps[0].Get() };
-    commandList->SetDescriptorHeaps(1, heaps);
-    commandList->SetGraphicsRootSignature(device->graphicsRootSignature.Get());
-
     // Reset some state
     memset(clearColor, 0, sizeof(clearColor));
     clearDepth = 1;
@@ -206,10 +219,13 @@ agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* 
 {
     CHECK_POINTER(binding);
 
-    auto &heap = device->shaderResourcesViewHeaps[binding->bank];
+    auto &heap = binding->signature->shaderResourceViewHeap;
     auto desc = heap->GetGPUDescriptorHandleForHeapStart();
-    desc.ptr += binding->heapOffset;
-    commandList->SetGraphicsRootDescriptorTable(binding->bank, desc);
+    desc.ptr += binding->descriptorOffset;
+    if(binding->isBank)
+        commandList->SetGraphicsRootDescriptorTable(binding->element, desc);
+    else
+        return AGPU_UNIMPLEMENTED;
     return AGPU_OK;
 }
 
@@ -342,6 +358,12 @@ AGPU_EXPORT agpu_error agpuReleaseCommandList(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
     return command_list->release();
+}
+
+AGPU_EXPORT agpu_error agpuSetShaderSignature(agpu_command_list* command_list, agpu_shader_signature *signature)
+{
+    CHECK_POINTER(command_list);
+    return command_list->setShaderSignature(signature);
 }
 
 AGPU_EXPORT agpu_error agpuSetViewport(agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h)

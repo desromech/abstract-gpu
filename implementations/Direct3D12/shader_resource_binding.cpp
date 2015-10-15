@@ -1,36 +1,46 @@
 #include "shader_resource_binding.hpp"
+#include "shader_signature.hpp"
 #include "buffer.hpp"
+#include "texture.hpp"
 
 _agpu_shader_resource_binding::_agpu_shader_resource_binding()
 {
-    for (int i = 0; i < 4; ++i)
-    {
-        constantBuffers[i] = nullptr;
-    }
 }
 
 void _agpu_shader_resource_binding::lostReferences()
 {
-    for (int i = 0; i < 4; ++i)
+    if (signature)
+        signature->release();
+
+    for (auto &buffer : buffers)
     {
-        auto buffer = constantBuffers[i];
         if (buffer)
             buffer->release();
     }
 
+    for (auto &texture : textures)
+    {
+        if (texture)
+            texture->release();
+    }
 }
 
-agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_device *device, int bank)
+agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_signature *signature, agpu_uint element, UINT descriptorOffset)
 {
-    if (bank < 0 || bank >= 4)
-        return nullptr;
+    std::unique_ptr<agpu_shader_resource_binding> binding(new agpu_shader_resource_binding());
+    binding->device = signature->device;
+    binding->signature = signature;
+    signature->retain();
+    binding->element= element;
+    binding->descriptorOffset = descriptorOffset;
 
-    auto binding = new agpu_shader_resource_binding();
-    binding->device = device;
-    binding->bank = bank;
-    binding->heapOffset = device->shaderResourceBindingOffsets[bank];
-    device->shaderResourceBindingOffsets[bank] += device->shaderResourceViewDescriptorSize * 4;
-    return binding;
+    auto &elementDesc = signature->elementsDescription[element];
+    binding->isBank = elementDesc.bank;
+    binding->type = elementDesc.type;
+    
+    binding->buffers.resize(elementDesc.bindingPointCount);
+    binding->textures.resize(elementDesc.bindingPointCount);
+    return binding.release();
 }
 
 agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
@@ -41,20 +51,22 @@ agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, a
 
 agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
 {
-    
+    if (type != AGPU_SHADER_BINDING_TYPE_CBV)
+        return AGPU_INVALID_OPERATION;
+
     if (uniform_buffer->description.binding != AGPU_UNIFORM_BUFFER)
         return AGPU_ERROR;
 
     if (location < 0)
         return AGPU_OK;
-    if (location >= 4)
+    if (location >= (int)buffers.size())
         return AGPU_ERROR;
 
     // Store the uniform buffer
     uniform_buffer->retain();
-    if (constantBuffers[location])
-        constantBuffers[location]->release();
-    constantBuffers[location] = uniform_buffer;
+    if (buffers[location])
+        buffers[location]->release();
+    buffers[location] = uniform_buffer;
 
     // Compute the actual view.
     auto view = uniform_buffer->view.constantBuffer;
@@ -62,8 +74,8 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
     view.SizeInBytes = (size + 255) & (~255);
 
     // Set the descriptor location
-    auto desc = device->shaderResourcesViewHeaps[bank]->GetCPUDescriptorHandleForHeapStart();
-    desc.ptr += heapOffset + location*device->shaderResourceViewDescriptorSize;
+    auto desc = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
+    desc.ptr += descriptorOffset;
     device->d3dDevice->CreateConstantBufferView(&view, desc);
 
     return AGPU_OK;

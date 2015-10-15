@@ -5,6 +5,7 @@
 #include "pipeline_state.hpp"
 #include "pipeline_builder.hpp"
 #include "shader.hpp"
+#include "shader_signature_builder.hpp"
 #include "shader_resource_binding.hpp"
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
@@ -13,15 +14,24 @@
 #include "swap_chain.hpp"
 #include "texture.hpp"
 
+void printError(const char *format, ...)
+{
+    char buffer[1024];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, 1024, format, args);
+#ifdef _WIN32
+    OutputDebugStringA(buffer);
+#else
+    fputs(buffer, stderr);
+#endif
+    va_end(args);
+}
+
 _agpu_device::_agpu_device()
 {
     defaultCommandQueue = nullptr;
     isOpened = false;
-
-    for (int i = 0; i < 4; ++i)
-    {
-        shaderResourceBindingOffsets[i] = 0;
-    }
 }
 
 void _agpu_device::lostReferences()
@@ -72,22 +82,6 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     if (!defaultCommandQueue)
         return false;
 
-    {
-        // Describe and create a constant buffer view descriptor heap.
-        D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-        heapDesc.NumDescriptors = 16;
-        heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        shaderResourceViewDescriptorSize= d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-        for (int i = 0; i < 4; ++i)
-        {
-            if (FAILED(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&shaderResourcesViewHeaps[i]))))
-                return false;
-        }
-        
-    }
-
     // Create the transfer command queue.
     {
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -123,51 +117,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     isOpened = true;
 
-    // Create the graphics root signature.
-    if (createGraphicsRootSignature() < 0)
-        return false;
-
     return true;
-}
-
-agpu_error _agpu_device::createGraphicsRootSignature()
-{
-    D3D12_ROOT_SIGNATURE_DESC desc;
-    memset(&desc, 0, sizeof(desc));
-    desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-    D3D12_DESCRIPTOR_RANGE ranges[1];
-    D3D12_ROOT_PARAMETER rootParameters[1];
-    memset(ranges, 0, sizeof(ranges));
-    memset(rootParameters, 0, sizeof(rootParameters));
-
-    // Simple descriptor table
-    // 16 Constant buffers
-    ranges[0].BaseShaderRegister = 0;
-    ranges[0].NumDescriptors = 16;
-    ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-    ranges[0].RegisterSpace = 0;
-    ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;;
-
-    // Shared uniform buffers.
-    rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
-    rootParameters[0].DescriptorTable.pDescriptorRanges = &ranges[0];
-    rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-    rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-    desc.NumParameters = 1;
-    desc.pParameters = rootParameters;
-
-    ComPtr<ID3DBlob> signature;
-    ComPtr<ID3DBlob> error;
-    if (FAILED(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error)))
-        return AGPU_ERROR;
-
-    ComPtr<ID3D12RootSignature> rootSignature;
-    if (FAILED(d3dDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&graphicsRootSignature))))
-        return AGPU_ERROR;
-
-    return AGPU_OK;
 }
 
 agpu_error _agpu_device::withTransferQueue(std::function<agpu_error (const ComPtr<ID3D12CommandQueue> &)> function)
@@ -258,12 +208,11 @@ AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type 
     return agpu_shader::create(device, type);
 }
 
-AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding(agpu_device* device, agpu_int bindingBank)
+AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device)
 {
     if (!device)
         return nullptr;
-
-    return agpu_shader_resource_binding::create(device, bindingBank);
+    return agpu_shader_signature_builder::create(device);
 }
 
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device)
@@ -312,10 +261,10 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_ui
     return agpu_framebuffer::create(device, width, height, renderTargetCount, hasDepth, hasStencil);
 }
 
-AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description, agpu_pointer initialData)
+AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description)
 {
     if (!device)
         return nullptr;
 
-    return agpu_texture::create(device, description, initialData);
+    return agpu_texture::create(device, description);
 }

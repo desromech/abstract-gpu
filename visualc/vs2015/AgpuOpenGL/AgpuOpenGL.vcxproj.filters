@@ -72,6 +72,12 @@
     <ClCompile Include="..\..\..\implementations\OpenGL\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\implementations\OpenGL\shader_signature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\implementations\OpenGL\shader_signature_builder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\implementations\OpenGL\buffer.hpp">
@@ -135,6 +141,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\implementations\OpenGL\texture_formats.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\implementations\OpenGL\shader_signature.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\implementations\OpenGL\shader_signature_builder.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -32,10 +32,6 @@ public:
     static agpu_device *open(agpu_device_open_info* openInfo);
     bool initialize(agpu_device_open_info* openInfo);
 
-    agpu_error swapBuffers();
-    agpu_error waitForPreviousFrame();
-    agpu_framebuffer* getCurrentBackBuffer();
-
     agpu_command_queue *defaultCommandQueue;
 
 public:
@@ -47,13 +43,7 @@ public:
     // Device objects
     ComPtr<ID3D12Device> d3dDevice;
 
-    // Descriptor heaprs.
-    ComPtr<ID3D12DescriptorHeap> shaderResourcesViewHeaps[4];
-    ComPtr<ID3D12DescriptorHeap> samplersViewHeaps[4];
-    UINT shaderResourceBindingOffsets[4];
-
     UINT renderTargetViewDescriptorSize;
-    UINT shaderResourceViewDescriptorSize;
 
     // Some states
     bool isOpened;
@@ -61,12 +51,7 @@ public:
     // Extra settings.
     bool isDebugEnabled;
 
-    // Root signatures
-    ComPtr<ID3D12RootSignature> graphicsRootSignature;
-
 private:
-    agpu_error createGraphicsRootSignature();
-
     // For immediate and blocking data transferring.
     ComPtr<ID3D12CommandAllocator> transferCommandAllocator;
     ComPtr<ID3D12GraphicsCommandList> transferCommandList;

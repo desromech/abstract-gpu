@@ -2,13 +2,15 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 static SampleVertex vertices[] = {
-    SampleVertex::onlyColor(-1.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0),
-    SampleVertex::onlyColor(0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0),
-    SampleVertex::onlyColor(1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0),
+    SampleVertex::onlyColor(-1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
+    SampleVertex::onlyColor(1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
+    SampleVertex::onlyColor(1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
+    SampleVertex::onlyColor(-1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
 };
 
 static uint32_t indices[] = {
-    0, 1, 2
+    0, 1, 2,
+    2, 3, 0,
 };
 
 struct TransformationState
@@ -18,21 +20,26 @@ struct TransformationState
     glm::mat4 modelMatrix;
 };
 
-class Sample2: public SampleBase
+class Sample3 : public SampleBase
 {
 public:
     bool initializeSample()
     {
         // Create the programs.
-        auto vertexShader = compileShaderFromFile("data/shaders/simpleVertex", AGPU_VERTEX_SHADER);
-        auto fragmentShader = compileShaderFromFile("data/shaders/simpleFragment", AGPU_FRAGMENT_SHADER);
+        auto vertexShader = compileShaderFromFile("data/shaders/texturedVertex", AGPU_VERTEX_SHADER);
+        auto fragmentShader = compileShaderFromFile("data/shaders/texturedFragment", AGPU_FRAGMENT_SHADER);
         if (!vertexShader || !fragmentShader)
             return false;
+
+        // Load the texture.
+        diffuseTexture = loadTexture("data/textures/checkboard.bmp");
 
         // Create the shader signature.
         auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
         agpuAddShaderSignatureBindingBank(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_CBV, 1, 1);
-        
+        agpuAddShaderSignatureBindingBank(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_SRV, 1, 1);
+        agpuAddShaderSignatureBindingBank(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1, 1);
+
         shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
         agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);
         if (!shaderSignature)
@@ -57,8 +64,8 @@ public:
             return false;
 
         // Create the vertex and the index buffer
-        vertexBuffer = createImmutableVertexBuffer(3, sizeof(vertices[0]), vertices);
-        indexBuffer = createImmutableIndexBuffer(3, sizeof(indices[0]), indices);
+        vertexBuffer = createImmutableVertexBuffer(sizeof(vertices)/sizeof(vertices[0]), sizeof(vertices[0]), vertices);
+        indexBuffer = createImmutableIndexBuffer(sizeof(indices)/sizeof(indices[0]), sizeof(indices[0]), indices);
 
         // Create the transformation buffer.
         transformationBuffer = createUploadableUniformBuffer(sizeof(TransformationState), nullptr);
@@ -109,7 +116,7 @@ public:
         agpuUseShaderResources(commandList, shaderBindings);
 
         // Draw the objects
-        agpuDrawElements(commandList, 3, 1, 0, 0, 0);
+        agpuDrawElements(commandList, sizeof(indices) / sizeof(indices[0]), 1, 0, 0, 0);
 
         // Finish the command list
         agpuEndFrame(commandList);
@@ -134,7 +141,7 @@ public:
         agpuReleaseShaderSignature(shaderSignature);
 
         agpuReleaseVertexLayout(vertexLayout);
-        
+
         agpuReleasePipelineState(pipeline);
         agpuReleaseCommandList(commandList);
         agpuReleaseCommandAllocator(commandAllocator);
@@ -152,7 +159,9 @@ public:
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
 
+    agpu_texture *diffuseTexture;
+
     TransformationState transformationState;
 };
 
-SAMPLE_MAIN(Sample2)
+SAMPLE_MAIN(Sample3)

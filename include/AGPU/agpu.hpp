@@ -181,9 +181,9 @@ public:
 		return agpuCreateShader( this, type );
 	}
 
-	inline agpu_shader_resource_binding* createShaderResourceBinding ( agpu_int bindingBank )
+	inline agpu_shader_signature_builder* createShaderSignatureBuilder (  )
 	{
-		return agpuCreateShaderResourceBinding( this, bindingBank );
+		return agpuCreateShaderSignatureBuilder( this );
 	}
 
 	inline agpu_pipeline_builder* createPipelineBuilder (  )
@@ -329,6 +329,11 @@ public:
 		AgpuThrowIfFailed(agpuSetVertexLayout( this, layout ));
 	}
 
+	inline void setShaderSignature ( agpu_shader_signature* signature )
+	{
+		AgpuThrowIfFailed(agpuSetPipelineShaderSignature( this, signature ));
+	}
+
 };
 
 // Interface wrapper for agpu_pipeline_state.
@@ -423,6 +428,11 @@ public:
 	inline void release (  )
 	{
 		AgpuThrowIfFailed(agpuReleaseCommandList( this ));
+	}
+
+	inline void setShaderSignature ( agpu_shader_signature* signature )
+	{
+		AgpuThrowIfFailed(agpuSetShaderSignature( this, signature ));
 	}
 
 	inline void setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
@@ -574,9 +584,19 @@ public:
 		AgpuThrowIfFailed(agpuReadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
 	}
 
-	inline void uploadTextureLevel ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+	inline void uploadTextureLevel ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch )
 	{
-		AgpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
+		AgpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch ));
+	}
+
+	inline void discardUploadBuffer (  )
+	{
+		AgpuThrowIfFailed(agpuDiscardTextureUploadBuffer( this ));
+	}
+
+	inline void discardReadbackBuffer (  )
+	{
+		AgpuThrowIfFailed(agpuDiscardTextureReadbackBuffer( this ));
 	}
 
 };
@@ -742,6 +762,69 @@ public:
 	inline void attachDepthStencilBuffer ( agpu_texture* buffer )
 	{
 		AgpuThrowIfFailed(agpuAttachDepthStencilBuffer( this, buffer ));
+	}
+
+};
+
+// Interface wrapper for agpu_shader_signature_builder.
+struct _agpu_shader_signature_builder
+{
+private:
+	_agpu_shader_signature_builder() {}
+
+public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddShaderSignatureBuilderReference( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseShaderSignatureBuilder( this ));
+	}
+
+	inline agpu_shader_signature* build (  )
+	{
+		return agpuBuildShaderSignature( this );
+	}
+
+	inline void addBindingConstant (  )
+	{
+		AgpuThrowIfFailed(agpuAddShaderSignatureBindingConstant( this ));
+	}
+
+	inline void addBindingElement ( agpu_shader_binding_type type, agpu_uint maxBindings )
+	{
+		AgpuThrowIfFailed(agpuAddShaderSignatureBindingElement( this, type, maxBindings ));
+	}
+
+	inline void addBindingBank ( agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings )
+	{
+		AgpuThrowIfFailed(agpuAddShaderSignatureBindingBank( this, type, bindingPointCount, maxBindings ));
+	}
+
+};
+
+// Interface wrapper for agpu_shader_signature.
+struct _agpu_shader_signature
+{
+private:
+	_agpu_shader_signature() {}
+
+public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddShaderSignature( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseShaderSignature( this ));
+	}
+
+	inline agpu_shader_resource_binding* createShaderResourceBinding ( agpu_uint element )
+	{
+		return agpuCreateShaderResourceBinding( this, element );
 	}
 
 };

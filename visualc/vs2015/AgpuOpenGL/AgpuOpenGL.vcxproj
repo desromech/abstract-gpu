@@ -33,6 +33,8 @@
     <ClCompile Include="..\..\..\implementations\OpenGL\platform.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\shader.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\shader_resource_binding.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\shader_signature.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\shader_signature_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\swap_chain.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\texture.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\utility.cpp" />
@@ -54,6 +56,8 @@
     <ClInclude Include="..\..\..\implementations\OpenGL\platform.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\shader.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\shader_resource_binding.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\shader_signature.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\shader_signature_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\swap_chain.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\texture.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\texture_formats.hpp" />
