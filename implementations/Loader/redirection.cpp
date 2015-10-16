@@ -177,12 +177,12 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_
 	return (*dispatchTable)->agpuCreateFrameBuffer ( device, width, height, renderTargetCount, hasDepth, hasStencil );
 }
 
-AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description, agpu_pointer initialData )
+AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
 {
 	if (device == nullptr)
 		return (agpu_texture*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateTexture ( device, description, initialData );
+	return (*dispatchTable)->agpuCreateTexture ( device, description );
 }
 
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
@@ -649,20 +649,20 @@ AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
 	return (*dispatchTable)->agpuUnmapTextureLevel ( texture );
 }
 
-AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
 {
 	if (texture == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
-	return (*dispatchTable)->agpuReadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
+	return (*dispatchTable)->agpuReadTextureData ( texture, level, arrayIndex, pitch, slicePitch, buffer );
 }
 
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch )
+AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
 	if (texture == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
-	return (*dispatchTable)->agpuUploadTextureData ( texture, level, arrayIndex, pitch, slicePitch );
+	return (*dispatchTable)->agpuUploadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
 }
 
 AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
@@ -975,5 +975,29 @@ AGPU_EXPORT agpu_error agpuBindUniformBufferRange ( agpu_shader_resource_binding
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
 	return (*dispatchTable)->agpuBindUniformBufferRange ( shader_resource_binding, location, uniform_buffer, offset, size );
+}
+
+AGPU_EXPORT agpu_error agpuBindTexture ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindTexture ( shader_resource_binding, location, texture, startMiplevel, miplevels, lodclamp );
+}
+
+AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindTextureArrayRange ( shader_resource_binding, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp );
+}
+
+AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuCreateSampler ( shader_resource_binding, location, description );
 }
 

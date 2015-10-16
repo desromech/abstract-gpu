@@ -22,6 +22,32 @@ private:
     std::vector<int> freeList;
 };
 
+enum class ShaderResourceViewType
+{
+    Buffer = 0,
+    Texture1D,
+    Texture1DArray,
+    Texture2D,
+    Texture2DArray,
+    Texture2DMS,
+    Texture2DMSArray,
+    Texture3D,
+    TextureCube,
+    TextureCubeArray,
+    Count
+};
+
+enum class UnorderedAccessViewType
+{
+    Buffer = 0,
+    Texture1D,
+    Texture1DArray,
+    Texture2D,
+    Texture2DArray,
+    Texture3D,
+    Count
+};
+
 struct _agpu_shader_signature : public Object<_agpu_shader_signature>
 {
 public:
@@ -41,13 +67,21 @@ public:
 
     ShaderSignatureElementDescription elementsDescription[16];
 
-private:
+    UINT shaderResourceViewDescriptorSize;
+    UINT samplerDescriptorSize;
 
+private:
     agpu_uint maxBindingsCount[AGPU_SHADER_BINDING_TYPE_COUNT];
     DescriptorAllocator *descriptorAllocators[16];
 
-    UINT shaderResourceViewDescriptorSize;
-    UINT samplerDescriptorSize;
+   
+    UINT shaderResourceViewDescriptorReservedSize;
+    UINT samplerDescriptorReservedSize;
+
+    UINT nullCbvDescriptorOffset;
+    UINT nullUavDescriptorOffset[(int)UnorderedAccessViewType::Count];
+    UINT nullSrvDescriptorOffset[(int)ShaderResourceViewType::Count];
+    UINT nullSamplerDescriptorOffset;
 
     std::mutex allocationMutex;
 };

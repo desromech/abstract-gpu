@@ -77,6 +77,8 @@ agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature *signatu
     CHECK_POINTER(signature);
     ID3D12DescriptorHeap *heaps[2];
     int heapCount = 0;
+    commandList->SetGraphicsRootSignature(signature->rootSignature.Get());
+
     if (signature->shaderResourceViewHeap)
         heaps[heapCount++] = signature->shaderResourceViewHeap.Get();
     if (signature->samplerHeap)
@@ -84,7 +86,6 @@ agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature *signatu
     if(heapCount)
         commandList->SetDescriptorHeaps(heapCount, heaps);
 
-    commandList->SetGraphicsRootSignature(signature->rootSignature.Get());
     return AGPU_OK;
 }
 
@@ -219,7 +220,12 @@ agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* 
 {
     CHECK_POINTER(binding);
 
-    auto &heap = binding->signature->shaderResourceViewHeap;
+    ID3D12DescriptorHeap *heap = nullptr;
+    if (binding->type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
+        heap = binding->signature->samplerHeap.Get();
+    else
+        heap = binding->signature->shaderResourceViewHeap.Get();
+
     auto desc = heap->GetGPUDescriptorHandleForHeapStart();
     desc.ptr += binding->descriptorOffset;
     if(binding->isBank)

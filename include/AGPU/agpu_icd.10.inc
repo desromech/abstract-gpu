@@ -121,4 +121,7 @@ agpuCreateShaderResourceBinding,
 agpuAddShaderResourceBindingReference,
 agpuReleaseShaderResourceBinding,
 agpuBindUniformBuffer,
-agpuBindUniformBufferRange
+agpuBindUniformBufferRange,
+agpuBindTexture,
+agpuBindTextureArrayRange,
+agpuCreateSampler

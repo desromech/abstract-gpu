@@ -58,6 +58,9 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
+    D3D12_RANGE nullRange;
+    memset(&nullRange, 0, sizeof(nullRange));
+
     // Create the upload buffer.
     if (needsUploadBuffer)
     {
@@ -75,7 +78,7 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         if (initial_data)
         {
             void *bufferBegin;
-            if (FAILED(uploadResource->Map(0, nullptr, &bufferBegin)))
+            if (FAILED(uploadResource->Map(0, &nullRange, &bufferBegin)))
                 return nullptr;
 
             memcpy(bufferBegin, initial_data, description->size);
@@ -176,7 +179,9 @@ agpu_pointer _agpu_buffer::mapBuffer(agpu_mapping_access flags)
         return nullptr;
 
     // Check the flags more properly.
-    if (FAILED(uploadResource->Map(0, nullptr, (void**)&mappedPointer)))
+    D3D12_RANGE readRange;
+    memset(&readRange, 0, sizeof(readRange));
+    if (FAILED(uploadResource->Map(0, canBeReaded ? nullptr : &readRange, (void**)&mappedPointer)))
         return nullptr;
 
     return mappedPointer;
@@ -208,12 +213,18 @@ agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu
     CHECK_POINTER(data);
 
     // Map the upload buffer.
+    D3D12_RANGE readRange;
+    memset(&readRange, 0, sizeof(readRange));
     uint8_t *dstPtr;
-    ERROR_IF_FAILED(uploadResource->Map(0, nullptr, reinterpret_cast<void**> (&dstPtr)));
+    ERROR_IF_FAILED(uploadResource->Map(0, &readRange, reinterpret_cast<void**> (&dstPtr)));
 
     // Copy and unmap.
     memcpy(dstPtr + offset, data, size);
-    uploadResource->Unmap(0, nullptr);
+
+    D3D12_RANGE writtenRange;
+    writtenRange.Begin = offset;
+    writtenRange.End = offset + size;
+    uploadResource->Unmap(0, &writtenRange);
 
     // Transfer the data to the gpu buffer.
     if (!gpuResource)

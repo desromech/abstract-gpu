@@ -221,9 +221,9 @@ public:
 		return agpuCreateFrameBuffer( this, width, height, renderTargetCount, hasDepth, hasStencil );
 	}
 
-	inline agpu_texture* createTexture ( agpu_texture_description* description, agpu_pointer initialData )
+	inline agpu_texture* createTexture ( agpu_texture_description* description )
 	{
-		return agpuCreateTexture( this, description, initialData );
+		return agpuCreateTexture( this, description );
 	}
 
 };
@@ -579,14 +579,14 @@ public:
 		AgpuThrowIfFailed(agpuUnmapTextureLevel( this ));
 	}
 
-	inline void readTextureLevel ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+	inline void readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
 	{
-		AgpuThrowIfFailed(agpuReadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
+		AgpuThrowIfFailed(agpuReadTextureData( this, level, arrayIndex, pitch, slicePitch, buffer ));
 	}
 
-	inline void uploadTextureLevel ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch )
+	inline void uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 	{
-		AgpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch ));
+		AgpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
 	}
 
 	inline void discardUploadBuffer (  )
@@ -854,6 +854,21 @@ public:
 	inline void bindUniformBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size )
 	{
 		AgpuThrowIfFailed(agpuBindUniformBufferRange( this, location, uniform_buffer, offset, size ));
+	}
+
+	inline void bindTexture ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )
+	{
+		AgpuThrowIfFailed(agpuBindTexture( this, location, texture, startMiplevel, miplevels, lodclamp ));
+	}
+
+	inline void bindTextureArrayRange ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp )
+	{
+		AgpuThrowIfFailed(agpuBindTextureArrayRange( this, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp ));
+	}
+
+	inline void createSampler ( agpu_int location, agpu_sampler_description* description )
+	{
+		AgpuThrowIfFailed(agpuCreateSampler( this, location, description ));
 	}
 
 };

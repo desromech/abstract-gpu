@@ -1,5 +1,9 @@
+#include <algorithm>
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
+
+#undef min
+#undef max
 
 DescriptorAllocator::DescriptorAllocator(int startIndex, int descriptorCount)
     : startIndex(startIndex), descriptorCount(descriptorCount)
@@ -59,12 +63,29 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
     signature->shaderResourceViewDescriptorSize = device->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     signature->samplerDescriptorSize = device->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
+    agpu_uint maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_COUNT];
+    memset(maxDescriptorBindingPoints, 0, sizeof(maxDescriptorBindingPoints));
+    for (int i = 0; i < 16; ++i)
+    {
+        auto &element = elementsDescription[i];
+        if (!element.valid)
+            continue;
+
+        maxDescriptorBindingPoints[element.type] = std::max(maxDescriptorBindingPoints[element.type], element.bindingPointCount);
+    }
+    
+    auto nullSrvDescriptorCount = 
+        maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_CBV] +
+        maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_SRV]*(int)ShaderResourceViewType::Count +
+        maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_UAV] * (int)UnorderedAccessViewType::Count;
+    auto nullSamplerDescriptorCount = maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_SAMPLER];
+
     // Allocate shader resource view description heap.
     if(maxSrvDescriptorCount)
     {
         // Describe and create a constant buffer view descriptor heap.
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-        heapDesc.NumDescriptors = maxSrvDescriptorCount;
+        heapDesc.NumDescriptors = maxSrvDescriptorCount + nullSrvDescriptorCount;
         heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         
@@ -77,7 +98,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
     {
         // Describe and create a constant buffer view descriptor heap.
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-        heapDesc.NumDescriptors = maxSamplerDescriptorCount;
+        heapDesc.NumDescriptors = maxSamplerDescriptorCount + nullSamplerDescriptorCount;
         heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -88,12 +109,14 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
     // Create the bank allocators
     int samplerDescriptorCount = 0;
     int srvDescriptorCount = 0;
+
     for (int i = 0; i < 16; ++i)
     {
         auto &element = elementsDescription[i];
         if (!element.valid)
             continue;
-        
+
+    
         if (element.type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
         {
             signature->descriptorAllocators[i] = new DescriptorAllocator(samplerDescriptorCount, element.maxBindings);
@@ -109,6 +132,62 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
     assert(samplerDescriptorCount == maxSamplerDescriptorCount);
     assert(srvDescriptorCount == maxSrvDescriptorCount);
 
+    signature->shaderResourceViewDescriptorReservedSize = maxSrvDescriptorCount * signature->shaderResourceViewDescriptorSize;
+    signature->samplerDescriptorReservedSize = maxSamplerDescriptorCount * signature->samplerDescriptorSize;
+    UINT currentOffset = signature->shaderResourceViewDescriptorReservedSize;
+
+    // Create the null descriptors
+    signature->nullCbvDescriptorOffset = currentOffset;
+    for (agpu_uint i = 0; i < maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_CBV]; ++i)
+    {
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+        memset(&cbvDesc, 0, sizeof(cbvDesc));
+
+        auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
+        cpuHandle.ptr += currentOffset;
+
+        device->d3dDevice->CreateConstantBufferView(&cbvDesc, cpuHandle);
+        currentOffset += signature->shaderResourceViewDescriptorSize;
+    }
+
+    for (int t = 0; t < (int)UnorderedAccessViewType::Count; ++t)
+    {
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+        memset(&uavDesc, 0, sizeof(uavDesc));
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION(t + D3D12_UAV_DIMENSION_BUFFER);
+        uavDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+        signature->nullUavDescriptorOffset[t] = currentOffset;
+        for (agpu_uint i = 0; i < maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_UAV]; ++i)
+        {
+            auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
+            cpuHandle.ptr += currentOffset;
+
+            device->d3dDevice->CreateUnorderedAccessView(nullptr, nullptr, &uavDesc, cpuHandle);
+            currentOffset += signature->shaderResourceViewDescriptorSize;
+        }
+
+    }
+
+    for (int t = 0; t < (int)ShaderResourceViewType::Count; ++t)
+    {
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+        memset(&srvDesc, 0, sizeof(srvDesc));
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION(t + D3D12_SRV_DIMENSION_BUFFER);
+        srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+        signature->nullSrvDescriptorOffset[t] = currentOffset;
+        for (agpu_uint i = 0; i < maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_SRV]; ++i)
+        {
+            auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
+            cpuHandle.ptr += currentOffset;
+
+            device->d3dDevice->CreateShaderResourceView(nullptr, &srvDesc, cpuHandle);
+            currentOffset += signature->shaderResourceViewDescriptorSize;
+        }
+    }
+
     return signature.release();
 }
 
@@ -119,7 +198,7 @@ agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBindin
         return nullptr;
 
     auto &elementDesc = elementsDescription[element];
-    if (!elementDesc.valid || elementDesc.type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
+    if (!elementDesc.valid)
         return nullptr;
 
     auto allocator = descriptorAllocators[element];
@@ -128,7 +207,11 @@ agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBindin
     if (index < 0)
         return nullptr;
 
-    UINT descriptorOffset = (startIndex + index*elementDesc.bindingPointCount)*shaderResourceViewDescriptorSize;
+    UINT descriptorOffset;
+    if(elementDesc.type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
+        descriptorOffset = (startIndex + index*elementDesc.bindingPointCount)*samplerDescriptorSize;
+    else
+        descriptorOffset = (startIndex + index*elementDesc.bindingPointCount)*shaderResourceViewDescriptorSize;
 
     return agpu_shader_resource_binding::create(this, element, descriptorOffset);
 }

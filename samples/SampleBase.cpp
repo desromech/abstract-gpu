@@ -174,7 +174,7 @@ int SampleBase::main(int argc, const char **argv)
         processEvents();
         render();
 
-        SDL_Delay(20);
+        SDL_Delay(3);
     }
 
     shutdownSample();
@@ -371,7 +371,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     if (!surface)
         return nullptr;
 
-    auto convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_BGRA8888, 0);
+    auto convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
     SDL_FreeSurface(convertedSurface);
     if (!convertedSurface)
         return nullptr;
@@ -389,9 +389,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     if (!texture)
         return nullptr;
 
-    void *garbage = malloc(desc.width*desc.height * 4);
-
-    agpuUploadTextureData(texture, 0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, garbage);
+    agpuUploadTextureData(texture, 0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, convertedSurface->pixels);
 
     return texture;
 

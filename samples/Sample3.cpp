@@ -1,11 +1,13 @@
 #include "SampleBase.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+static const float MaxLod = 10000.0;
+
 static SampleVertex vertices[] = {
-    SampleVertex::onlyColor(-1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
-    SampleVertex::onlyColor(1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
-    SampleVertex::onlyColor(1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
-    SampleVertex::onlyColor(-1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0),
+    SampleVertex::onlyColorTc(-1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0),
+    SampleVertex::onlyColorTc(1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
+    SampleVertex::onlyColorTc(1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0),
+    SampleVertex::onlyColorTc(-1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0),
 };
 
 static uint32_t indices[] = {
@@ -72,7 +74,19 @@ public:
 
         // Create the shader bindings.
         shaderBindings = agpuCreateShaderResourceBinding(shaderSignature, 0);
+        textureBindings = agpuCreateShaderResourceBinding(shaderSignature, 1);
+        samplerBindings = agpuCreateShaderResourceBinding(shaderSignature, 2);
         agpuBindUniformBuffer(shaderBindings, 0, transformationBuffer);
+        agpuBindTexture(textureBindings, 0, diffuseTexture, 0, -1, 0.0f);
+
+        agpu_sampler_description samplerDesc;
+        memset(&samplerDesc, 0, sizeof(samplerDesc));
+        samplerDesc.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+        samplerDesc.address_u = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.address_v = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.address_w = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.max_lod = MaxLod;
+        agpuCreateSampler(samplerBindings, 0, &samplerDesc);
 
         // Create the vertex buffer binding.
         vertexBinding = agpuCreateVertexBinding(device, vertexLayout);
@@ -114,6 +128,8 @@ public:
         agpuUseIndexBuffer(commandList, indexBuffer);
         agpuSetPrimitiveTopology(commandList, AGPU_TRIANGLES);
         agpuUseShaderResources(commandList, shaderBindings);
+        agpuUseShaderResources(commandList, textureBindings);
+        agpuUseShaderResources(commandList, samplerBindings);
 
         // Draw the objects
         agpuDrawElements(commandList, sizeof(indices) / sizeof(indices[0]), 1, 0, 0, 0);
@@ -138,9 +154,12 @@ public:
         agpuReleaseVertexBinding(vertexBinding);
 
         agpuReleaseShaderResourceBinding(shaderBindings);
+        agpuReleaseShaderResourceBinding(textureBindings);
+        agpuReleaseShaderResourceBinding(samplerBindings);
         agpuReleaseShaderSignature(shaderSignature);
 
         agpuReleaseVertexLayout(vertexLayout);
+        agpuReleaseTexture(diffuseTexture);
 
         agpuReleasePipelineState(pipeline);
         agpuReleaseCommandList(commandList);
@@ -150,6 +169,8 @@ public:
     agpu_buffer *transformationBuffer;
     agpu_shader_signature *shaderSignature;
     agpu_shader_resource_binding *shaderBindings;
+    agpu_shader_resource_binding *textureBindings;
+    agpu_shader_resource_binding *samplerBindings;
 
     agpu_buffer *vertexBuffer;
     agpu_buffer *indexBuffer;

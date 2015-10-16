@@ -79,6 +79,21 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 	return AGPU_OK;
 }
 
+agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 void _agpu_shader_resource_binding::activate()
 {
     if (type == AGPU_SHADER_BINDING_TYPE_CBV)
@@ -121,4 +136,22 @@ AGPU_EXPORT agpu_error agpuBindUniformBufferRange ( agpu_shader_resource_binding
 {
 	CHECK_POINTER(shader_resource_binding);
 	return shader_resource_binding->bindUniformBufferRange(location, uniform_buffer, offset, size);
+}
+
+AGPU_EXPORT agpu_error agpuBindTexture(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindTexture(location, texture, startMiplevel, miplevels, lodclamp);
+}
+
+AGPU_EXPORT agpu_error agpuBindTextureArrayRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindTextureArrayRange(location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
+}
+
+AGPU_EXPORT agpu_error agpuCreateSampler(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description)
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->createSampler(location, description);
 }

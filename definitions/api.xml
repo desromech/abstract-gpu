@@ -79,6 +79,26 @@
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
         </struct>
+        
+        <struct name="color4f">
+            <field name="r" type="float" />
+            <field name="g" type="float" />
+            <field name="b" type="float" />
+            <field name="a" type="float" />
+        </struct>
+            
+        <struct name="sampler_description">
+            <field name="filter" type="filter" />
+            <field name="address_u" type="texture_address_mode" />
+            <field name="address_v" type="texture_address_mode" />
+            <field name="address_w" type="texture_address_mode" />
+            <field name="mip_lod_bias" type="float" />
+            <field name="maxanisotropy" type="uint" />
+            <field name="comparison_function" type="compare_function" />
+            <field name="border_color" type="color4f" />
+            <field name="min_lod" type="float" />
+            <field name="max_lod" type="float" />
+        </struct>
 	</structs>
 
     <constants>
@@ -340,6 +360,26 @@
             <constant name="TextureFormatB8G8R8X8_Typeless" value="92" />
             <constant name="TextureFormatB8G8R8X8_UNormSRGB" value="93" />
         </enum>
+        
+        <enum name="filter">
+            <constant name="FilterMinNearestMagNearestMipmapNearest" value="0x0" />
+            <constant name="FilterMinNearestMagNearestMipmapLinear" value="0x1" />
+            <constant name="FilterMinNearestMagLinearMipmapNearest" value="0x4" />
+            <constant name="FilterMinNearestMagLinearMipmapLinear" value="0x5" />
+            <constant name="FilterMinLinearMagNearestMipmapNearest" value="0x10" />
+            <constant name="FilterMinLinearMagNearestMipmapLinear" value="0x10" />
+            <constant name="FilterMinLinearMagLinearMipmapNearest" value="0x14" />
+            <constant name="FilterMinLinearMagLinearMipmapLinear" value="0x15" />
+            <constant name="FilterAnisotropic" value="0x15" />
+        </enum>
+        
+        <enum name="texture_address_mode">
+            <constant name="TextureAddressModeWrap" value="1" />
+            <constant name="TextureAddressModeMirror" value="2" />
+            <constant name="TextureAddressModeClamp" value="3" />
+            <constant name="TextureAddressModeBorder" value="4" />
+            <constant name="TextureAddressModeMirrorOnce" value="4" />
+        </enum>
     </constants>
 
     <globals>
@@ -439,7 +479,6 @@
 
             <method name="createTexture" cname="CreateTexture" returnType="texture*">
                 <arg name="description" type="texture_description*" />
-                <arg name="initialData" type="pointer" />
             </method>
 
         </interface>
@@ -693,7 +732,15 @@
             <method name="unmapLevel" cname="UnmapTextureLevel" returnType="error">
             </method>
 
-            <method name="readTextureLevel" cname="ReadTextureData" returnType="error">
+            <method name="readTextureData" cname="ReadTextureData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="buffer" type="pointer" />
+            </method>
+
+            <method name="uploadTextureData" cname="UploadTextureData" returnType="error">
                 <arg name="level" type="int" />
                 <arg name="arrayIndex" type="int" />
                 <arg name="pitch" type="int" />
@@ -701,18 +748,21 @@
                 <arg name="data" type="pointer" />
             </method>
 
-            <method name="uploadTextureLevel" cname="UploadTextureData" returnType="error">
-                <arg name="level" type="int" />
-                <arg name="arrayIndex" type="int" />
-                <arg name="pitch" type="int" />
-                <arg name="slicePitch" type="int" />
-            </method>
-
             <method name="discardUploadBuffer" cname="DiscardTextureUploadBuffer" returnType="error">
             </method>
 
             <method name="discardReadbackBuffer" cname="DiscardTextureReadbackBuffer" returnType="error">
             </method>
+
+<!--            
+            <method name="getLevelLayout" cname="GetTextureLevelLayout" returnType="error">
+                <arg name="level" type="uint" />
+                <arg name="w" type="int*" />
+                <arg name="h" type="int*" />
+                <arg name="pitch" type="int*" />
+                <arg name="slicePitch" type="int*" />
+            </method>
+-->
         </interface>
 
         <interface name="buffer">
@@ -877,6 +927,30 @@
                 <arg name="offset" type="size" />
                 <arg name="size" type="size" />
             </method>
+            
+            <method name="bindTexture" cname="BindTexture" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="texture" type="texture*" />
+                <arg name="startMiplevel" type="uint" />
+                <arg name="miplevels" type="int" />
+                <arg name="lodclamp" type="float" />
+            </method>
+            
+            <method name="bindTextureArrayRange" cname="BindTextureArrayRange" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="texture" type="texture*" />
+                <arg name="startMiplevel" type="uint" />
+                <arg name="miplevels" type="int" />
+                <arg name="firstElement" type="int" />
+                <arg name="numberOfElements" type="int" />
+                <arg name="lodclamp" type="float" />
+            </method>
+            
+            <method name="createSampler" cname="CreateSampler" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="description" type="sampler_description*" />
+            </method>
+            
         </interface>
     </interfaces>
 </version>

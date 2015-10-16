@@ -48,14 +48,12 @@
     <None Include="..\..\..\samples\data\shaders\texturedVertex.glsl">
       <Filter>Assets</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="..\..\..\samples\data\shaders\texturedFragment.hlsl">
+    <None Include="..\..\..\samples\data\shaders\texturedFragment.hlsl">
       <Filter>Assets</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\..\samples\data\shaders\texturedVertex.hlsl">
+    </None>
+    <None Include="..\..\..\samples\data\shaders\texturedVertex.hlsl">
       <Filter>Assets</Filter>
-    </FxCompile>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\samples\data\textures\checkboard.bmp">
