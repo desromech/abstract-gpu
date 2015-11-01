@@ -745,11 +745,6 @@ public:
 		AgpuThrowIfFailed(agpuGetShaderCompilationLog( this, buffer_size, buffer ));
 	}
 
-	inline void bindAttributeLocation ( agpu_cstring name, agpu_int location )
-	{
-		AgpuThrowIfFailed(agpuBindAttributeLocation( this, name, location ));
-	}
-
 };
 
 // Interface wrapper for agpu_framebuffer.

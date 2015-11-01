@@ -103,19 +103,15 @@ size_t _agpu_texture::getPixelSize()
 size_t _agpu_texture::pitchOfLevel(int level)
 {
     size_t pixelSize = getPixelSize();
-    auto width = description.width >> level;
+    auto width = std::max(1u, description.width >> level);
     return (pixelSize * width + 3) & (~3);
 }
 
 size_t _agpu_texture::sizeOfLevel(int level)
 {
     auto pitch = pitchOfLevel(level);
-    int height = (description.height >> level);
-    if (!height)
-        height = 1;
-    int depth = (description.height >> level);
-    if (!depth)
-        depth = 1;
+    int height = std::max(1u, description.height >> level);
+    int depth = std::max(1u, description.height >> level);
 
     switch(description.type)
     {
@@ -126,7 +122,7 @@ size_t _agpu_texture::sizeOfLevel(int level)
     case AGPU_TEXTURE_2D:
         return pitch * height * description.depthOrArraySize;
     case AGPU_TEXTURE_3D:
-        return pitch * height * (description.depthOrArraySize >> level);
+        return pitch * height * depth;
     case AGPU_TEXTURE_CUBE:
         return pitch * height * description.depthOrArraySize;
     default:
@@ -317,7 +313,9 @@ agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayInde
     ptrdiff_t fdstPitch = -ptrdiff_t(dstPitch);
     for(size_t y = 0; y < height; ++y)
     {
-        memcpy(fdst + fdstPitch*y, src + pitch*y, srcPitchAbs);
+        memcpy(fdst, src, srcPitchAbs);
+        fdst += fdstPitch;
+        src += pitch;
     }
 
     unmapLevel();

@@ -282,10 +282,10 @@
             <constant name="TextureFormatR32_Float_S8X24_Typeless" value="21" />
             <constant name="TextureFormatX32_Typeless_G8X24_UInt" value="22" />
 
-            <constant name="TextureFormatR10G10B10A3_Typeless" value="23" />
-            <constant name="TextureFormatR10G10B10A3_UNorm" value="24" />
-            <constant name="TextureFormatR10G10B10A3_UInt" value="25" />
-            <constant name="TextureFormatR11G11B10A3_Float" value="26" />
+            <constant name="TextureFormatR10G10B10A2_Typeless" value="23" />
+            <constant name="TextureFormatR10G10B10A2_UNorm" value="24" />
+            <constant name="TextureFormatR10G10B10A2_UInt" value="25" />
+            <constant name="TextureFormatR11G11B10A2_Float" value="26" />
 
             <constant name="TextureFormatR8G8B8A8_Typeless" value="27" />
             <constant name="TextureFormatR8G8B8A8_UNorm" value="28" />
@@ -857,11 +857,6 @@
             <method name="getCompilationLog" cname="GetShaderCompilationLog" returnType="error">
                 <arg name="buffer_size" type="size" />
                 <arg name="buffer" type="string_buffer" />
-            </method>
-
-            <method name="bindAttributeLocation" cname="BindAttributeLocation" returnType="error">
-                <arg name="name" type="cstring" />
-                <arg name="location" type="int" />
             </method>
         </interface>
 

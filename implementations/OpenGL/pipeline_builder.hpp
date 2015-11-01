@@ -2,22 +2,23 @@
 #define AGPU_PIPELINE_BUILDER_HPP_
 
 #include "device.hpp"
+#include "shader.hpp"
 
 struct _agpu_pipeline_builder: public Object<_agpu_pipeline_builder>
 {
 public:
     _agpu_pipeline_builder();
-    
+
     static agpu_pipeline_builder *createBuilder(agpu_device *device);
 
     void lostReferences();
 
     agpu_pipeline_state* build ();
-    
+
     agpu_error setShaderSignature(agpu_shader_signature* signature);
 
     agpu_error attachShader ( agpu_shader* shader );
-    
+
     agpu_size getBuildingLogLength (  );
     agpu_error getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
     agpu_error setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
@@ -30,12 +31,12 @@ public:
     agpu_error setDepthStencilFormat(agpu_texture_format format);
 
     agpu_error reset();
-        
+
 public:
     agpu_device *device;
     GLuint programHandle;
     bool linked;
-    
+
     // States
     agpu_bool depthEnabled;
     agpu_bool depthWriteMask;
@@ -51,6 +52,9 @@ public:
     agpu_primitive_type primitiveType;
 
     agpu_shader_signature *shaderSignature;
+
+    std::vector<LocationBinding> uniformBindings;
+    std::vector<LocationBinding> samplerBindings;
 };
 
 

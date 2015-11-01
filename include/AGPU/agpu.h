@@ -231,10 +231,10 @@ typedef enum {
 	AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT = 20,
 	AGPU_TEXTURE_FORMAT_R32_FLOAT_S8X24_TYPELESS = 21,
 	AGPU_TEXTURE_FORMAT_X32_TYPELESS_G8X24_UINT = 22,
-	AGPU_TEXTURE_FORMAT_R10G10B10A3_TYPELESS = 23,
-	AGPU_TEXTURE_FORMAT_R10G10B10A3_UNORM = 24,
-	AGPU_TEXTURE_FORMAT_R10G10B10A3_UINT = 25,
-	AGPU_TEXTURE_FORMAT_R11G11B10A3_FLOAT = 26,
+	AGPU_TEXTURE_FORMAT_R10G10B10A2_TYPELESS = 23,
+	AGPU_TEXTURE_FORMAT_R10G10B10A2_UNORM = 24,
+	AGPU_TEXTURE_FORMAT_R10G10B10A2_UINT = 25,
+	AGPU_TEXTURE_FORMAT_R11G11B10A2_FLOAT = 26,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_TYPELESS = 27,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM = 28,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM_SRGB = 29,
@@ -653,7 +653,6 @@ typedef agpu_error (*agpuSetShaderSource_FUN) ( agpu_shader* shader, agpu_shader
 typedef agpu_error (*agpuCompileShader_FUN) ( agpu_shader* shader, agpu_cstring options );
 typedef agpu_size (*agpuGetShaderCompilationLogLength_FUN) ( agpu_shader* shader );
 typedef agpu_error (*agpuGetShaderCompilationLog_FUN) ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer );
-typedef agpu_error (*agpuBindAttributeLocation_FUN) ( agpu_shader* shader, agpu_cstring name, agpu_int location );
 
 AGPU_EXPORT agpu_error agpuAddShaderReference ( agpu_shader* shader );
 AGPU_EXPORT agpu_error agpuReleaseShader ( agpu_shader* shader );
@@ -661,7 +660,6 @@ AGPU_EXPORT agpu_error agpuSetShaderSource ( agpu_shader* shader, agpu_shader_la
 AGPU_EXPORT agpu_error agpuCompileShader ( agpu_shader* shader, agpu_cstring options );
 AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength ( agpu_shader* shader );
 AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer );
-AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cstring name, agpu_int location );
 
 /* Methods for interface agpu_framebuffer. */
 typedef agpu_error (*agpuAddFramebufferReference_FUN) ( agpu_framebuffer* framebuffer );
@@ -835,7 +833,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuCompileShader_FUN agpuCompileShader;
 	agpuGetShaderCompilationLogLength_FUN agpuGetShaderCompilationLogLength;
 	agpuGetShaderCompilationLog_FUN agpuGetShaderCompilationLog;
-	agpuBindAttributeLocation_FUN agpuBindAttributeLocation;
 	agpuAddFramebufferReference_FUN agpuAddFramebufferReference;
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
 	agpuAttachColorBuffer_FUN agpuAttachColorBuffer;

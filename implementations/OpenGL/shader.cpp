@@ -1,3 +1,4 @@
+#include <regex>
 #include <string.h>
 #include "shader.hpp"
 
@@ -58,12 +59,74 @@ agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_str
 	if(sourceTextLength < 0)
 		sourceTextLength = (agpu_string_length)strlen(sourceText);
 
+    // Parse the AGPU pragmas.
+    parseShaderPragmas(sourceText, sourceText + sourceTextLength);
+
 	// Set the shader source
     device->onMainContextBlocking([&]() {
         device->glShaderSource(handle, 1, &sourceText, &sourceTextLength);
     });
 
 	return AGPU_OK;
+}
+
+void _agpu_shader::parseShaderPragmas(agpu_string sourceTextBegin, agpu_string sourceTextEnd)
+{
+    const std::string pattern = "#pragma agpu ";
+    std::vector<std::string> parameters;
+    std::vector<char> parameterCharacters;
+
+    // Find the pragmas
+    std::string source(sourceTextBegin, sourceTextEnd);
+    for(size_t pos = source.find(pattern); pos < source.size(); pos = source.find(pattern, pos))
+    {
+        pos += pattern.size();
+        parameters.clear();
+        parameterCharacters.clear();
+
+        bool inParameter = false;
+        while(pos < source.size())
+        {
+            char c = source[pos++];
+            if(c <= ' ' && inParameter)
+            {
+                parameters.push_back(std::string(parameterCharacters.begin(), parameterCharacters.end()));
+                parameterCharacters.clear();
+                inParameter = false;
+            }
+            else if(c > ' ')
+            {
+                inParameter = true;
+                parameterCharacters.push_back(c);
+            }
+
+            if(c == '\r' || c == '\n')
+                break;
+        }
+
+        if(parameters.empty())
+            continue;
+
+        processPragma(parameters);
+    }
+
+}
+
+void _agpu_shader::processPragma(std::vector<std::string> &pragma)
+{
+    auto &name = pragma[0];
+    if(name == "attribute_location" && pragma.size() >= 3)
+    {
+        attributeBindings.push_back(LocationBinding(pragma[1], atoi(pragma[2].c_str())));
+    }
+    else if(name == "uniform_binding" && pragma.size() >= 3)
+    {
+        uniformBindings.push_back(LocationBinding(pragma[1], atoi(pragma[2].c_str())));
+    }
+    else if(name == "sampler_binding" && pragma.size() >= 3)
+    {
+        samplerBindings.push_back(LocationBinding(pragma[1], atoi(pragma[2].c_str())));
+    }
 }
 
 agpu_error _agpu_shader::compileShader(agpu_cstring options)
@@ -96,15 +159,6 @@ agpu_error _agpu_shader::getShaderCompilationLog(agpu_size buffer_size, agpu_str
     device->onMainContextBlocking([&]() {
         device->glGetShaderInfoLog(handle, (GLsizei)(buffer_size - 1), nullptr, buffer);
     });
-	return AGPU_OK;
-}
-
-agpu_error _agpu_shader::bindAttributeLocation ( agpu_cstring name, agpu_int location )
-{
-	LocationBinding lb;
-	lb.location = location;
-	lb.name = name;
-	attributeBindings.push_back(lb);
 	return AGPU_OK;
 }
 
@@ -143,10 +197,4 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_s
 {
 	CHECK_POINTER(shader);
 	return shader->getShaderCompilationLog(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cstring name, agpu_int location )
-{
-	CHECK_POINTER(shader);
-	return shader->bindAttributeLocation(name, location);
 }

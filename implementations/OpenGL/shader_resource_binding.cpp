@@ -1,5 +1,6 @@
 #include "shader_resource_binding.hpp"
 #include "shader_signature.hpp"
+#include "texture.hpp"
 #include "buffer.hpp"
 
 _agpu_shader_resource_binding::_agpu_shader_resource_binding()
@@ -13,6 +14,12 @@ void _agpu_shader_resource_binding::lostReferences()
         if (binding.buffer)
             binding.buffer->release();
     }
+
+    for(auto &texture : textures)
+    {
+        if(texture)
+            texture->release();
+    }
 }
 
 agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_signature *signature, int elementIndex)
@@ -22,7 +29,7 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
     binding->signature = signature;
     signature->retain();
 	binding->elementIndex = elementIndex;
-    
+
     auto &element = signature->elements[elementIndex];
     binding->type = element.type;
     binding->startIndex = element.startIndex;
@@ -30,12 +37,15 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
     switch (binding->type)
     {
     case AGPU_SHADER_BINDING_TYPE_SRV:
+        binding->textures.resize(element.bindingPointCount);
         break;
     case AGPU_SHADER_BINDING_TYPE_CBV:
         binding->uniformBuffers.resize(element.bindingPointCount);
         break;
-    case AGPU_SHADER_BINDING_TYPE_UAV:
     case AGPU_SHADER_BINDING_TYPE_SAMPLER:
+        binding->samplers.resize(element.bindingPointCount);
+        break;
+    case AGPU_SHADER_BINDING_TYPE_UAV:
     default:
         abort();
         break;
@@ -81,7 +91,20 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 
 agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp)
 {
-    return AGPU_UNIMPLEMENTED;
+    if(location < 0)
+		return AGPU_OK;
+	if(location >= (int)textures.size())
+		return AGPU_ERROR;
+
+    if(texture)
+        texture->retain();
+    if(textures[location])
+		textures[location]->release();
+    textures[location] = texture;
+
+    // TODO: Use the remaining parameters.
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp)
@@ -96,6 +119,19 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
 
 void _agpu_shader_resource_binding::activate()
 {
+    if (type == AGPU_SHADER_BINDING_TYPE_SRV)
+    {
+        for (size_t i = 0; i < textures.size(); ++i)
+        {
+            auto texture = textures[i];
+            if(!texture)
+                continue;
+
+            device->glActiveTexture(GL_TEXTURE0 + startIndex + i);
+            glBindTexture(texture->target, texture->handle);
+        }
+    }
+
     if (type == AGPU_SHADER_BINDING_TYPE_CBV)
     {
         for (size_t i = 0; i < uniformBuffers.size(); ++i)

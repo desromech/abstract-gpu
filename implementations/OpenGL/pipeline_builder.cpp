@@ -36,7 +36,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     stencilWriteMask = ~0;
     stencilReadMask = ~0;
 
-    // Miscellaneos
+    // Miscellaneous
     renderTargetCount = 1;
     primitiveType = AGPU_PRIMITIVE_TYPE_POINT;
 }
@@ -84,6 +84,30 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     	GLint status;
     	device->glGetProgramiv(programHandle, GL_LINK_STATUS, &status);
     	linked = status == GL_TRUE;
+        if(linked)
+        {
+            // Set the uniform block bindings
+            for(auto &binding : uniformBindings)
+            {
+                auto blockIndex = device->glGetUniformBlockIndex(programHandle, binding.name.c_str());
+                device->glUniformBlockBinding(programHandle, blockIndex, binding.location);
+            }
+
+            if(!samplerBindings.empty())
+            {
+                device->glUseProgram(programHandle);
+
+                // Set the sampler bindings.
+                for(auto &binding : samplerBindings)
+                {
+                    auto location = device->glGetUniformLocation(programHandle, binding.name.c_str());
+                    device->glUniform1i(location, binding.location);
+
+                }
+
+                device->glUseProgram(0);
+            }
+        }
     });
 
 	if(!linked)
@@ -125,6 +149,13 @@ agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
     	device->glAttachShader(programHandle, shader->handle);
     	for(auto &locationBinding : shader->attributeBindings )
     		device->glBindAttribLocation(programHandle, locationBinding.location, locationBinding.name.c_str());
+
+        for(auto &binding : shader->samplerBindings )
+            samplerBindings.push_back(binding);
+
+        for(auto &binding : shader->uniformBindings )
+            uniformBindings.push_back(binding);
+
     });
 
 	return AGPU_OK;
@@ -150,7 +181,7 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
 agpu_error _agpu_pipeline_builder::setShaderSignature(agpu_shader_signature* signature)
 {
     CHECK_POINTER(signature);
-    
+
     signature->retain();
     if (shaderSignature)
         shaderSignature->release();

@@ -250,6 +250,9 @@ public:
     PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
     PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
     PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+    PFNGLGETUNIFORMBLOCKINDEXPROC glGetUniformBlockIndex;
+    PFNGLUNIFORMBLOCKBINDINGPROC glUniformBlockBinding;
+    PFNGLUNIFORM1IPROC glUniform1i;
 
     // Framebuffer object
     PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
@@ -265,6 +268,7 @@ public:
     PFNGLTEXSTORAGE3DPROC glTexStorage3D;
 
     // Texture
+    PFNGLACTIVETEXTUREPROC glActiveTexture;
     PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
 
     // Depth range

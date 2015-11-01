@@ -1,6 +1,12 @@
-#version 420
+#version 400
 
-layout(std140, binding=0) uniform TransformationBuffer
+#pragma agpu uniform_binding TransformationBuffer 0
+
+#pragma agpu attribute_location vPosition 0
+#pragma agpu attribute_location vColor 1
+#pragma agpu attribute_location vTexCoord 3
+
+layout(std140) uniform TransformationBuffer
 {
     mat4 projectionMatrix;
     mat4 modelMatrix;
@@ -17,6 +23,6 @@ out vec2 fTexCoord;
 void main()
 {
     fColor = vColor;
-    fTexCoord = vTexCoord;
+    fTexCoord = vTexCoord*2.0;
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vPosition, 1.0);
 }

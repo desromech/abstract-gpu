@@ -6,7 +6,7 @@
 struct UniformBinding
 {
     UniformBinding() : buffer(nullptr), range(false), offset(0), size(-1) {}
-    
+
     agpu_buffer *buffer;
     bool range;
     size_t offset;
@@ -32,7 +32,7 @@ public:
 
 public:
     void activate();
-    
+
     agpu_device *device;
     agpu_shader_signature *signature;
     int elementIndex;
@@ -40,6 +40,8 @@ public:
 private:
     std::mutex bindMutex;
     std::vector<UniformBinding> uniformBuffers;
+    std::vector<agpu_texture*> textures;
+    std::vector<int> samplers;
     agpu_shader_binding_type type;
     int startIndex;
 };

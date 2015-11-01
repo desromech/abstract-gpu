@@ -291,15 +291,6 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
         return nullptr;
     }
 
-    // Bind some attributes.
-    if (type == AGPU_VERTEX_SHADER)
-    {
-        agpuBindAttributeLocation(shader, "vPosition", 0);
-        agpuBindAttributeLocation(shader, "vColor", 1);
-        agpuBindAttributeLocation(shader, "vNormal", 2);
-        agpuBindAttributeLocation(shader, "vTexCoord", 3);
-    }
-
     return shader;
 }
 

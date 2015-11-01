@@ -35,6 +35,8 @@ public:
 
         // Load the texture.
         diffuseTexture = loadTexture("data/textures/checkboard.bmp");
+        if(!diffuseTexture)
+            return false;
 
         // Create the shader signature.
         auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);

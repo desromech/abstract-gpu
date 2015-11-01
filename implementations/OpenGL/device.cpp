@@ -317,6 +317,9 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glEnableVertexAttribArray);
     LOAD_FUNCTION(glGetAttribLocation);
     LOAD_FUNCTION(glGetUniformLocation);
+    LOAD_FUNCTION(glGetUniformBlockIndex);
+    LOAD_FUNCTION(glUniformBlockBinding);
+    LOAD_FUNCTION(glUniform1i);
 
     // Framebuffer object
     LOAD_FUNCTION(glBindFramebuffer);
@@ -332,6 +335,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glTexStorage3D);
 
     // Texture functions
+    LOAD_FUNCTION(glActiveTexture);
     LOAD_FUNCTION(glTexSubImage3D);
 
     // Depth range
@@ -477,6 +481,6 @@ AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
 {
     if(!device)
         return nullptr;
-        
+
     return agpu_fence::create(device);
 }

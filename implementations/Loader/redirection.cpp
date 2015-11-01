@@ -857,14 +857,6 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_s
 	return (*dispatchTable)->agpuGetShaderCompilationLog ( shader, buffer_size, buffer );
 }
 
-AGPU_EXPORT agpu_error agpuBindAttributeLocation ( agpu_shader* shader, agpu_cstring name, agpu_int location )
-{
-	if (shader == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader);
-	return (*dispatchTable)->agpuBindAttributeLocation ( shader, name, location );
-}
-
 AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer )
 {
 	if (framebuffer == nullptr)
