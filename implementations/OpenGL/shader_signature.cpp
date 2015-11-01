@@ -1,3 +1,4 @@
+#include <string.h>
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 

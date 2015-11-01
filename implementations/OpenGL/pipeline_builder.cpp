@@ -149,6 +149,8 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
 
 agpu_error _agpu_pipeline_builder::setShaderSignature(agpu_shader_signature* signature)
 {
+    CHECK_POINTER(signature);
+    
     signature->retain();
     if (shaderSignature)
         shaderSignature->release();

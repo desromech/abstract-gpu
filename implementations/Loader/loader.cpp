@@ -50,7 +50,7 @@ PlatformInfo::~PlatformInfo()
 static bool hasBeenLoaded = false;
 static std::vector<PlatformInfo*> loadedPlatforms;
 
-static std::wstring utf8ToUtf16(const std::string &utf8)
+std::wstring utf8ToUtf16(const std::string &utf8)
 {
     int c = 0;
     size_t position = 0;
@@ -80,7 +80,7 @@ static std::wstring utf8ToUtf16(const std::string &utf8)
     return utf16;
 }
 
-static std::string utf16ToUtf8(const std::wstring &utf16)
+std::string utf16ToUtf8(const std::wstring &utf16)
 {
     int c = 0;
     size_t position = 0;

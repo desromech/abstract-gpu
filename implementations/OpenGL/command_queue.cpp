@@ -1,5 +1,6 @@
 #include "command_queue.hpp"
 #include "command_list.hpp"
+#include "fence.hpp"
 
 class GpuCommand
 {
@@ -45,6 +46,47 @@ public:
     bool finished;
     std::mutex mutex;
     std::condition_variable finishedCondition;
+};
+
+class GpuSignalFenceCommand: public GpuCommand
+{
+public:
+    GpuSignalFenceCommand(agpu_fence *fence)
+        : fence(fence), signaled(false)
+    {
+
+    }
+
+    virtual void execute()
+    {
+        std::unique_lock<std::mutex> l(fence->mutex);
+
+        auto device = OpenGLContext::getCurrent()->device;
+        if(fence->fenceObject)
+            device->glDeleteSync(fence->fenceObject);
+
+        fence->fenceObject = device->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        glFlush();
+    }
+
+    virtual void destroy()
+    {
+        std::unique_lock<std::mutex> l(fence->mutex);
+        signaled = true;
+        fence->sendCommandCondition.notify_all();
+    }
+
+    void wait()
+    {
+        {
+            std::unique_lock<std::mutex> l(fence->mutex);
+            while(!signaled)
+                fence->sendCommandCondition.wait(l);
+        }
+    }
+
+    agpu_fence *fence;
+    bool signaled;
 };
 
 class GpuExecuteCommandList: public GpuCommand
@@ -98,7 +140,7 @@ public:
 
     std::function<void()> command;
 };
-    
+
 _agpu_command_queue::_agpu_command_queue()
     : isRunning_(false)
 {
@@ -168,6 +210,29 @@ void _agpu_command_queue::shutdown()
     queueThread.join();
 }
 
+agpu_error _agpu_command_queue::signalFence ( agpu_fence* fence )
+{
+    GpuSignalFenceCommand signalCommand(fence);
+    addCommand(&signalCommand);
+    signalCommand.wait();
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_queue::waitFence ( agpu_fence* fence )
+{
+    GLsync fenceObject = nullptr;
+    {
+        std::unique_lock<std::mutex> l(fence->mutex);
+        fenceObject = fence->fenceObject;
+    }
+    if(fenceObject)
+        addCustomCommand([=]() {
+            glFlush();
+            device->glWaitSync(fenceObject, 0, -1);
+        });
+    return AGPU_OK;
+}
+
 void _agpu_command_queue::queueThreadEntry()
 {
     context = device->createSecondaryContext(true);
@@ -222,4 +287,16 @@ AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queu
 {
     CHECK_POINTER(command_queue);
 	return command_queue->finish();
+}
+
+AGPU_EXPORT agpu_error agpuSignalFence ( agpu_command_queue* command_queue, agpu_fence* fence )
+{
+    CHECK_POINTER(command_queue);
+    return command_queue->signalFence(fence);
+}
+
+AGPU_EXPORT agpu_error agpuWaitFence ( agpu_command_queue* command_queue, agpu_fence* fence )
+{
+    CHECK_POINTER(command_queue);
+    return command_queue->waitFence(fence);
 }

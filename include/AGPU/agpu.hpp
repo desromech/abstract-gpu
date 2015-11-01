@@ -226,6 +226,11 @@ public:
 		return agpuCreateTexture( this, description );
 	}
 
+	inline agpu_fence* createFence (  )
+	{
+		return agpuCreateFence( this );
+	}
+
 };
 
 // Interface wrapper for agpu_swap_chain.
@@ -385,6 +390,16 @@ public:
 	inline void finishExecution (  )
 	{
 		AgpuThrowIfFailed(agpuFinishQueueExecution( this ));
+	}
+
+	inline void signalFence ( agpu_fence* fence )
+	{
+		AgpuThrowIfFailed(agpuSignalFence( this, fence ));
+	}
+
+	inline void waitFence ( agpu_fence* fence )
+	{
+		AgpuThrowIfFailed(agpuWaitFence( this, fence ));
 	}
 
 };
@@ -869,6 +884,30 @@ public:
 	inline void createSampler ( agpu_int location, agpu_sampler_description* description )
 	{
 		AgpuThrowIfFailed(agpuCreateSampler( this, location, description ));
+	}
+
+};
+
+// Interface wrapper for agpu_fence.
+struct _agpu_fence
+{
+private:
+	_agpu_fence() {}
+
+public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddFenceReference( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseFenceReference( this ));
+	}
+
+	inline void waitOnClient (  )
+	{
+		AgpuThrowIfFailed(agpuWaitOnClient( this ));
 	}
 
 };

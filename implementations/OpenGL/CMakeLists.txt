@@ -12,6 +12,8 @@ set(AGPU_OpenGL_SOURCES
     device.hpp
     device_unix.cpp
     device_win32.cpp
+    fence.cpp
+    fence.hpp
     framebuffer.cpp
     framebuffer.hpp
     icd.c

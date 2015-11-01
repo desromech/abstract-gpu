@@ -152,7 +152,7 @@ void _agpu_texture::performTransferToCpu(int level)
 
     glGetTexImage(target, level, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
     glFinish();
-    
+
     device->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
@@ -170,7 +170,6 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
     int depth = description.depthOrArraySize >> level;
     if (!depth)
         depth = 1;
-    int arraySize = description.depthOrArraySize;
 
     switch(description.type)
     {

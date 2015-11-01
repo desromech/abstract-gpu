@@ -57,6 +57,7 @@ typedef struct _agpu_framebuffer agpu_framebuffer;
 typedef struct _agpu_shader_signature_builder agpu_shader_signature_builder;
 typedef struct _agpu_shader_signature agpu_shader_signature;
 typedef struct _agpu_shader_resource_binding agpu_shader_resource_binding;
+typedef struct _agpu_fence agpu_fence;
 
 typedef enum {
 	AGPU_OK = 0,
@@ -440,6 +441,7 @@ typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
 typedef agpu_texture* (*agpuCreateTexture_FUN) ( agpu_device* device, agpu_texture_description* description );
+typedef agpu_fence* (*agpuCreateFence_FUN) ( agpu_device* device );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -458,6 +460,7 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* d
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description );
+AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -515,11 +518,15 @@ typedef agpu_error (*agpuAddCommandQueueReference_FUN) ( agpu_command_queue* com
 typedef agpu_error (*agpuReleaseCommandQueue_FUN) ( agpu_command_queue* command_queue );
 typedef agpu_error (*agpuAddCommandList_FUN) ( agpu_command_queue* command_queue, agpu_command_list* command_list );
 typedef agpu_error (*agpuFinishQueueExecution_FUN) ( agpu_command_queue* command_queue );
+typedef agpu_error (*agpuSignalFence_FUN) ( agpu_command_queue* command_queue, agpu_fence* fence );
+typedef agpu_error (*agpuWaitFence_FUN) ( agpu_command_queue* command_queue, agpu_fence* fence );
 
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* command_queue );
 AGPU_EXPORT agpu_error agpuReleaseCommandQueue ( agpu_command_queue* command_queue );
 AGPU_EXPORT agpu_error agpuAddCommandList ( agpu_command_queue* command_queue, agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuFinishQueueExecution ( agpu_command_queue* command_queue );
+AGPU_EXPORT agpu_error agpuSignalFence ( agpu_command_queue* command_queue, agpu_fence* fence );
+AGPU_EXPORT agpu_error agpuWaitFence ( agpu_command_queue* command_queue, agpu_fence* fence );
 
 /* Methods for interface agpu_command_allocator. */
 typedef agpu_error (*agpuAddCommandAllocatorReference_FUN) ( agpu_command_allocator* command_allocator );
@@ -708,6 +715,15 @@ AGPU_EXPORT agpu_error agpuBindTexture ( agpu_shader_resource_binding* shader_re
 AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description );
 
+/* Methods for interface agpu_fence. */
+typedef agpu_error (*agpuAddFenceReference_FUN) ( agpu_fence* fence );
+typedef agpu_error (*agpuReleaseFenceReference_FUN) ( agpu_fence* fence );
+typedef agpu_error (*agpuWaitOnClient_FUN) ( agpu_fence* fence );
+
+AGPU_EXPORT agpu_error agpuAddFenceReference ( agpu_fence* fence );
+AGPU_EXPORT agpu_error agpuReleaseFenceReference ( agpu_fence* fence );
+AGPU_EXPORT agpu_error agpuWaitOnClient ( agpu_fence* fence );
+
 /* Installable client driver interface. */
 typedef struct _agpu_icd_dispatch {
 	int icd_interface_version;
@@ -735,6 +751,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetPreferredHighLevelShaderLanguage_FUN agpuGetPreferredHighLevelShaderLanguage;
 	agpuCreateFrameBuffer_FUN agpuCreateFrameBuffer;
 	agpuCreateTexture_FUN agpuCreateTexture;
+	agpuCreateFence_FUN agpuCreateFence;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
@@ -760,6 +777,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseCommandQueue_FUN agpuReleaseCommandQueue;
 	agpuAddCommandList_FUN agpuAddCommandList;
 	agpuFinishQueueExecution_FUN agpuFinishQueueExecution;
+	agpuSignalFence_FUN agpuSignalFence;
+	agpuWaitFence_FUN agpuWaitFence;
 	agpuAddCommandAllocatorReference_FUN agpuAddCommandAllocatorReference;
 	agpuReleaseCommandAllocator_FUN agpuReleaseCommandAllocator;
 	agpuResetCommandAllocator_FUN agpuResetCommandAllocator;
@@ -837,6 +856,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuBindTexture_FUN agpuBindTexture;
 	agpuBindTextureArrayRange_FUN agpuBindTextureArrayRange;
 	agpuCreateSampler_FUN agpuCreateSampler;
+	agpuAddFenceReference_FUN agpuAddFenceReference;
+	agpuReleaseFenceReference_FUN agpuReleaseFenceReference;
+	agpuWaitOnClient_FUN agpuWaitOnClient;
 } agpu_icd_dispatch;
 
 

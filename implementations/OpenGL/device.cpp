@@ -14,6 +14,7 @@
 #include "framebuffer.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
+#include "fence.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -470,4 +471,12 @@ AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_
         return nullptr;
 
     return agpu_texture::create(device, description);
+}
+
+AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
+{
+    if(!device)
+        return nullptr;
+        
+    return agpu_fence::create(device);
 }

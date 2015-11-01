@@ -1,3 +1,4 @@
+#include <string.h>
 #include "shader_signature_builder.hpp"
 #include "shader_signature.hpp"
 
@@ -30,6 +31,7 @@ agpu_error _agpu_shader_signature_builder::addBindingConstant()
         return AGPU_INVALID_OPERATION;
 
     auto &element = elements[elementCount++];
+    (void)element;
     return AGPU_UNIMPLEMENTED;
 }
 

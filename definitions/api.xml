@@ -79,14 +79,14 @@
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
         </struct>
-        
+
         <struct name="color4f">
             <field name="r" type="float" />
             <field name="g" type="float" />
             <field name="b" type="float" />
             <field name="a" type="float" />
         </struct>
-            
+
         <struct name="sampler_description">
             <field name="filter" type="filter" />
             <field name="address_u" type="texture_address_mode" />
@@ -230,7 +230,7 @@
             <constant name="ShaderBindingTypeSampler" value="3" />
             <constant name="ShaderBindingTypeCount" value="4" />
         </enum>
-        
+
 		<enum name="shader_language">
             <constant name="ShaderLanguageNone" value="0" />
 			<constant name="ShaderLanguageGlsl" value="1" />
@@ -360,7 +360,7 @@
             <constant name="TextureFormatB8G8R8X8_Typeless" value="92" />
             <constant name="TextureFormatB8G8R8X8_UNormSRGB" value="93" />
         </enum>
-        
+
         <enum name="filter">
             <constant name="FilterMinNearestMagNearestMipmapNearest" value="0x0" />
             <constant name="FilterMinNearestMagNearestMipmapLinear" value="0x1" />
@@ -372,7 +372,7 @@
             <constant name="FilterMinLinearMagLinearMipmapLinear" value="0x15" />
             <constant name="FilterAnisotropic" value="0x15" />
         </enum>
-        
+
         <enum name="texture_address_mode">
             <constant name="TextureAddressModeWrap" value="1" />
             <constant name="TextureAddressModeMirror" value="2" />
@@ -395,7 +395,7 @@
             <method name="openDevice" cname="OpenDevice" returnType="device*">
                 <arg name="openInfo" type="device_open_info*" />
             </method>
-            
+
             <method name="getName" cname="GetPlatformName" returnType="cstring">
             </method>
 
@@ -481,6 +481,8 @@
                 <arg name="description" type="texture_description*" />
             </method>
 
+            <method name="createFence" cname="CreateFence" returnType="fence*">
+            </method>
         </interface>
 
         <interface name="swap_chain">
@@ -582,6 +584,15 @@
 
             <method name="finishExecution" cname="FinishQueueExecution" returnType="error">
             </method>
+
+            <method name="signalFence" cname="SignalFence" returnType="error">
+                <arg name="fence" type="fence*" />
+            </method>
+
+            <method name="waitFence" cname="WaitFence" returnType="error">
+                <arg name="fence" type="fence*" />
+            </method>
+
         </interface>
 
         <interface name="command_allocator">
@@ -754,7 +765,7 @@
             <method name="discardReadbackBuffer" cname="DiscardTextureReadbackBuffer" returnType="error">
             </method>
 
-<!--            
+<!--
             <method name="getLevelLayout" cname="GetTextureLevelLayout" returnType="error">
                 <arg name="level" type="uint" />
                 <arg name="w" type="int*" />
@@ -883,12 +894,12 @@
 
             <method name="addBindingConstant" cname="AddShaderSignatureBindingConstant" returnType="error">
             </method>
-            
+
             <method name="addBindingElement" cname="AddShaderSignatureBindingElement" returnType="error">
                 <arg name="type" type="shader_binding_type" />
                 <arg name="maxBindings" type="uint" />
             </method>
-            
+
             <method name="addBindingBank" cname="AddShaderSignatureBindingBank" returnType="error">
                 <arg name="type" type="shader_binding_type" />
                 <arg name="bindingPointCount" type="uint" />
@@ -908,7 +919,7 @@
             </method>
 
         </interface>
-        
+
         <interface name="shader_resource_binding">
             <method name="addReference" cname="AddShaderResourceBindingReference" returnType="error">
             </method>
@@ -927,7 +938,7 @@
                 <arg name="offset" type="size" />
                 <arg name="size" type="size" />
             </method>
-            
+
             <method name="bindTexture" cname="BindTexture" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="texture" type="texture*" />
@@ -935,7 +946,7 @@
                 <arg name="miplevels" type="int" />
                 <arg name="lodclamp" type="float" />
             </method>
-            
+
             <method name="bindTextureArrayRange" cname="BindTextureArrayRange" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="texture" type="texture*" />
@@ -945,13 +956,24 @@
                 <arg name="numberOfElements" type="int" />
                 <arg name="lodclamp" type="float" />
             </method>
-            
+
             <method name="createSampler" cname="CreateSampler" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="description" type="sampler_description*" />
             </method>
-            
         </interface>
+
+        <interface name="fence">
+            <method name="addReference" cname="AddFenceReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseFenceReference" returnType="error">
+            </method>
+
+            <method name="waitOnClient" cname="WaitOnClient" returnType="error">
+            </method>
+        </interface>
+
     </interfaces>
 </version>
 </api>

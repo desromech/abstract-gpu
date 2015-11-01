@@ -185,6 +185,14 @@ AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_
 	return (*dispatchTable)->agpuCreateTexture ( device, description );
 }
 
+AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_fence*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateFence ( device );
+}
+
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
 {
 	if (swap_chain == nullptr)
@@ -383,6 +391,22 @@ AGPU_EXPORT agpu_error agpuFinishQueueExecution ( agpu_command_queue* command_qu
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_queue);
 	return (*dispatchTable)->agpuFinishQueueExecution ( command_queue );
+}
+
+AGPU_EXPORT agpu_error agpuSignalFence ( agpu_command_queue* command_queue, agpu_fence* fence )
+{
+	if (command_queue == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_queue);
+	return (*dispatchTable)->agpuSignalFence ( command_queue, fence );
+}
+
+AGPU_EXPORT agpu_error agpuWaitFence ( agpu_command_queue* command_queue, agpu_fence* fence )
+{
+	if (command_queue == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_queue);
+	return (*dispatchTable)->agpuWaitFence ( command_queue, fence );
 }
 
 AGPU_EXPORT agpu_error agpuAddCommandAllocatorReference ( agpu_command_allocator* command_allocator )
@@ -999,5 +1023,29 @@ AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
 	return (*dispatchTable)->agpuCreateSampler ( shader_resource_binding, location, description );
+}
+
+AGPU_EXPORT agpu_error agpuAddFenceReference ( agpu_fence* fence )
+{
+	if (fence == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (fence);
+	return (*dispatchTable)->agpuAddFenceReference ( fence );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseFenceReference ( agpu_fence* fence )
+{
+	if (fence == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (fence);
+	return (*dispatchTable)->agpuReleaseFenceReference ( fence );
+}
+
+AGPU_EXPORT agpu_error agpuWaitOnClient ( agpu_fence* fence )
+{
+	if (fence == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (fence);
+	return (*dispatchTable)->agpuWaitOnClient ( fence );
 }
 

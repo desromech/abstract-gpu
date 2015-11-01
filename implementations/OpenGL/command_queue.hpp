@@ -22,6 +22,9 @@ public:
     void lostReferences();
     agpu_error addCommandList ( agpu_command_list* command_list );
     agpu_error finish();
+    agpu_error signalFence ( agpu_fence* fence );
+    agpu_error waitFence ( agpu_fence* fence );
+
 
 public:
     void start();

@@ -12,7 +12,7 @@ in vec4 vColor;
 in vec2 vTexCoord;
 
 out vec4 fColor;
-out vec4 fTexCoord;
+out vec2 fTexCoord;
 
 void main()
 {
@@ -20,4 +20,3 @@ void main()
     fTexCoord = vTexCoord;
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vPosition, 1.0);
 }
-
