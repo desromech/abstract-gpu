@@ -361,6 +361,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
             {
                 GLX_CONTEXT_MAJOR_VERSION_ARB, 0,
                 GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+                GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
                 //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
                 None
             };
@@ -373,6 +374,8 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
                 contextAttributes[1] = version / 10;
                 // GLX_CONTEXT_MINOR_VERSION_ARB
                 contextAttributes[3] = version % 10;
+                if(contextAttributes[1] < 3)
+                    contextAttributes[4] = 0;
 
                 context = glXCreateContextAttribsARB( contextWrapper->display, framebufferConfig, 0, True, contextAttributes );
 
@@ -380,11 +383,13 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
                 XSync( contextWrapper->display, False );
 
                 // Check for success.
+                printf("Try version %d %p %d\n", version, context, ctxErrorOccurred);
                 if(!ctxErrorOccurred && context)
                 {
                     contextWrapper->version = OpenGLVersion(version);
                     break;
                 }
+                ctxErrorOccurred = false;
             }
 
             // Check failure.
@@ -398,6 +403,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
                 contextAttributes[1] = 1;
                 // GLX_CONTEXT_MINOR_VERSION_ARB = 0
                 contextAttributes[3] = 0;
+                contextAttributes[4] = 0;
                 contextWrapper->version = OpenGLVersion::Version10;
 
                 ctxErrorOccurred = false;

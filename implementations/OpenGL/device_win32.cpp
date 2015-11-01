@@ -12,6 +12,7 @@ static thread_local OpenGLContext *currentGLContext = nullptr;
 OpenGLContext::OpenGLContext()
     : device(nullptr), ownsWindow(false), window(0), hDC(0), context(0), resourceCleanCount(0), ownerWaitCondition(nullptr)
 {
+    textureTargets.resize(16, GL_TEXTURE_2D);
 }
 
 OpenGLContext::~OpenGLContext()
@@ -455,4 +456,3 @@ bool agpu_device::makeCurrent()
 */
 
 #endif
-

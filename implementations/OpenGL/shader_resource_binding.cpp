@@ -15,10 +15,17 @@ void _agpu_shader_resource_binding::lostReferences()
             binding.buffer->release();
     }
 
-    for(auto &texture : textures)
+    for(auto &binding : textures)
     {
-        if(texture)
-            texture->release();
+        if(binding.texture)
+            binding.texture->release();
+    }
+
+    if(!samplers.empty())
+    {
+        device->onMainContextBlocking([&]{
+            device->glDeleteSamplers(samplers.size(), &samplers[0]);
+        });
     }
 }
 
@@ -44,6 +51,9 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
         break;
     case AGPU_SHADER_BINDING_TYPE_SAMPLER:
         binding->samplers.resize(element.bindingPointCount);
+        binding->device->onMainContextBlocking([&]{
+            binding->device->glGenSamplers(binding->samplers.size(), &binding->samplers[0]);
+        });
         break;
     case AGPU_SHADER_BINDING_TYPE_UAV:
     default:
@@ -60,6 +70,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, a
 	if(location >= 4)
 		return AGPU_ERROR;
 
+    std::unique_lock<std::mutex> l(bindMutex);
 	if(uniform_buffer)
 		uniform_buffer->retain();
 	if(uniformBuffers[location].buffer)
@@ -77,6 +88,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 	if(location >= (int)uniformBuffers.size())
 		return AGPU_ERROR;
 
+    std::unique_lock<std::mutex> l(bindMutex);
 	if(uniform_buffer)
 		uniform_buffer->retain();
 	if(uniformBuffers[location].buffer)
@@ -96,13 +108,18 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
 	if(location >= (int)textures.size())
 		return AGPU_ERROR;
 
+    std::unique_lock<std::mutex> l(bindMutex);
+    auto &binding = textures[location];
     if(texture)
         texture->retain();
-    if(textures[location])
-		textures[location]->release();
-    textures[location] = texture;
+    if(binding.texture)
+		binding.texture->release();
+    binding.texture = texture;
 
-    // TODO: Use the remaining parameters.
+    // Store some of the texture parameters.
+    binding.startMiplevel = startMiplevel;
+    binding.miplevels = miplevels;
+    binding.lodClamp = lodClamp;
 
     return AGPU_OK;
 }
@@ -114,25 +131,44 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int locatio
 
 agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
 {
-    return AGPU_UNIMPLEMENTED;
+    if(location < 0)
+        return AGPU_OK;
+    if(location >= (int)samplers.size())
+        return AGPU_ERROR;
+
+    auto sampler = samplers[location];
+    device->onMainContextBlocking([&]{
+        std::unique_lock<std::mutex> l(bindMutex);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    });
+
+    return AGPU_OK;
 }
 
 void _agpu_shader_resource_binding::activate()
 {
+    std::unique_lock<std::mutex> l(bindMutex);
     if (type == AGPU_SHADER_BINDING_TYPE_SRV)
     {
+        auto context = OpenGLContext::getCurrent();
         for (size_t i = 0; i < textures.size(); ++i)
         {
-            auto texture = textures[i];
-            if(!texture)
+            auto &binding = textures[i];
+            if(!binding.texture)
                 continue;
 
-            device->glActiveTexture(GL_TEXTURE0 + startIndex + i);
-            glBindTexture(texture->target, texture->handle);
+            auto id = startIndex + i;
+
+            auto target = binding.texture->target;
+            device->glActiveTexture(GL_TEXTURE0 + id);
+            glBindTexture(target, binding.texture->handle);
         }
     }
-
-    if (type == AGPU_SHADER_BINDING_TYPE_CBV)
+    else if (type == AGPU_SHADER_BINDING_TYPE_CBV)
     {
         for (size_t i = 0; i < uniformBuffers.size(); ++i)
         {
@@ -146,7 +182,17 @@ void _agpu_shader_resource_binding::activate()
                 device->glBindBufferBase(GL_UNIFORM_BUFFER, GLuint(startIndex + i), binding.buffer->handle);
         }
     }
+    else if(type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
+    {
+        for (size_t i = 0; i < samplers.size(); ++i)
+        {
+            auto sampler = samplers[i];
+            if(sampler)
+                device->glBindSampler(i, sampler);
+        }
+    }
 }
+
 
 // Exported C interace
 

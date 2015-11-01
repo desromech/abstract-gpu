@@ -338,6 +338,13 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glActiveTexture);
     LOAD_FUNCTION(glTexSubImage3D);
 
+    // Samplers
+    LOAD_FUNCTION(glGenSamplers);
+    LOAD_FUNCTION(glDeleteSamplers);
+    LOAD_FUNCTION(glBindSampler);
+    LOAD_FUNCTION(glSamplerParameteri);
+    LOAD_FUNCTION(glSamplerParameterf);
+
     // Depth range
     LOAD_FUNCTION(glDepthRangedNV);
 

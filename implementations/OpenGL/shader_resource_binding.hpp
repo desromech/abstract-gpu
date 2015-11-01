@@ -13,6 +13,17 @@ struct UniformBinding
     size_t size;
 };
 
+struct TextureBinding
+{
+    TextureBinding()
+        : texture(nullptr) {}
+
+    agpu_texture *texture;
+    agpu_uint startMiplevel;
+    agpu_int miplevels;
+    agpu_float lodClamp;
+};
+
 struct _agpu_shader_resource_binding : public Object<_agpu_shader_resource_binding>
 {
 public:
@@ -38,10 +49,11 @@ public:
     int elementIndex;
 
 private:
+
     std::mutex bindMutex;
     std::vector<UniformBinding> uniformBuffers;
-    std::vector<agpu_texture*> textures;
-    std::vector<int> samplers;
+    std::vector<TextureBinding> textures;
+    std::vector<GLuint> samplers;
     agpu_shader_binding_type type;
     int startIndex;
 };

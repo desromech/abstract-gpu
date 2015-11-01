@@ -118,6 +118,7 @@ struct OpenGLContext
             ownerWaitCondition = nullptr;
         }
     }
+
 private:
     void waitResourceCleanup(std::unique_lock<std::mutex> &lock);
 
@@ -270,6 +271,13 @@ public:
     // Texture
     PFNGLACTIVETEXTUREPROC glActiveTexture;
     PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
+
+    // Sampler
+    PFNGLGENSAMPLERSPROC glGenSamplers;
+    PFNGLDELETESAMPLERSPROC glDeleteSamplers;
+    PFNGLBINDSAMPLERPROC glBindSampler;
+    PFNGLSAMPLERPARAMETERIPROC glSamplerParameteri;
+    PFNGLSAMPLERPARAMETERFPROC glSamplerParameterf;
 
     // Depth range
     PFNGLDEPTHRANGEDNVPROC glDepthRangedNV;
