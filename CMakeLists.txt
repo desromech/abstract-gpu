@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(AGPU)
 
+option(AGPU_BUILD_SAMPLES "Build AGPU Samples" OFF)
+
 # Check the build type
 if (CMAKE_BUILD_TYPE STREQUAL "")
 	# CMake defaults to leaving CMAKE_BUILD_TYPE empty. This screws up
@@ -46,7 +48,7 @@ find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
 
     # Find SDL2
-    pkg_check_modules(SDL2 REQUIRED sdl2)
+    pkg_check_modules(SDL2 sdl2)
 
     # Find unittest++
     pkg_check_modules(UNITTESTMM unittest++)
@@ -86,7 +88,10 @@ set(AGPU_SAMPLES_LIBS ${AGPU_SAMPLES_LIBS} ${SDL2_LIBRARIES} ${AGPU_MAIN_LIB})
 # Build the implementations
 add_subdirectory(implementations)
 
+# Build the samples
+if(SDL2_FOUND AND AGPU_BUILD_SAMPLES)
 add_subdirectory(samples)
+endif()
 
 # Build the tests.
 if(UNITTESTMM_FOUND)
