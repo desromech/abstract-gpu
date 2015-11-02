@@ -107,24 +107,30 @@ size_t _agpu_texture::pitchOfLevel(int level)
     return (pixelSize * width + 3) & (~3);
 }
 
-size_t _agpu_texture::sizeOfLevel(int level)
+size_t _agpu_texture::slicePitchOfLevel(int level)
 {
     auto pitch = pitchOfLevel(level);
     int height = std::max(1u, description.height >> level);
-    int depth = std::max(1u, description.height >> level);
+    return pitch*height;
+}
+
+size_t _agpu_texture::sizeOfLevel(int level)
+{
+    auto slicePitch = slicePitchOfLevel(level);
+    size_t depth = std::max(1, description.depthOrArraySize >> level);
 
     switch(description.type)
     {
     case AGPU_TEXTURE_1D:
-        return pitch * description.depthOrArraySize;
+        return slicePitch * description.depthOrArraySize;
     case AGPU_TEXTURE_BUFFER:
-        return pitch * description.depthOrArraySize;
+        return slicePitch * description.depthOrArraySize;
     case AGPU_TEXTURE_2D:
-        return pitch * height * description.depthOrArraySize;
+        return slicePitch * description.depthOrArraySize;
     case AGPU_TEXTURE_3D:
-        return pitch * height * depth;
+        return slicePitch * depth;
     case AGPU_TEXTURE_CUBE:
-        return pitch * height * description.depthOrArraySize;
+        return slicePitch * description.depthOrArraySize;
     default:
         abort();
     }

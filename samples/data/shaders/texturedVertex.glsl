@@ -23,6 +23,6 @@ out vec2 fTexCoord;
 void main()
 {
     fColor = vColor;
-    fTexCoord = vTexCoord*2.0;
+    fTexCoord = vTexCoord;
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vPosition, 1.0);
 }

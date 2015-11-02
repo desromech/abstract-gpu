@@ -154,7 +154,6 @@ void _agpu_shader_resource_binding::activate()
     std::unique_lock<std::mutex> l(bindMutex);
     if (type == AGPU_SHADER_BINDING_TYPE_SRV)
     {
-        auto context = OpenGLContext::getCurrent();
         for (size_t i = 0; i < textures.size(); ++i)
         {
             auto &binding = textures[i];

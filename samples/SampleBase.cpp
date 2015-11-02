@@ -363,7 +363,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
         return nullptr;
 
     auto convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
-    SDL_FreeSurface(convertedSurface);
+    SDL_FreeSurface(surface);
     if (!convertedSurface)
         return nullptr;
 
@@ -381,6 +381,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
         return nullptr;
 
     agpuUploadTextureData(texture, 0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, convertedSurface->pixels);
+    SDL_FreeSurface(convertedSurface);
 
     return texture;
 

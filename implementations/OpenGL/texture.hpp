@@ -43,6 +43,7 @@ private:
 
     size_t getPixelSize();
     size_t pitchOfLevel(int level);
+    size_t slicePitchOfLevel(int level);
     size_t sizeOfLevel(int level);
 
     void createTransferBuffer(GLenum target);

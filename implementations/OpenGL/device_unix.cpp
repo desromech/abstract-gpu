@@ -383,7 +383,6 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
                 XSync( contextWrapper->display, False );
 
                 // Check for success.
-                printf("Try version %d %p %d\n", version, context, ctxErrorOccurred);
                 if(!ctxErrorOccurred && context)
                 {
                     contextWrapper->version = OpenGLVersion(version);

@@ -4,10 +4,19 @@
 static const float MaxLod = 10000.0;
 
 static SampleVertex vertices[] = {
-    SampleVertex::onlyColorTc(-1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0),
-    SampleVertex::onlyColorTc(1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-    SampleVertex::onlyColorTc(1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0),
-    SampleVertex::onlyColorTc(-1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0),
+    SampleVertex::onlyColorTc(
+        -1.0, -1.0, 0.0,
+        1.0, 1.0, 1.0, 1.0,
+        0.0, 1.0),
+    SampleVertex::onlyColorTc(1.0, -1.0, 0.0,
+        1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0),
+    SampleVertex::onlyColorTc(1.0, 1.0, 0.0,
+        1.0, 1.0, 1.0, 1.0,
+        1.0, 0.0),
+    SampleVertex::onlyColorTc(-1.0, 1.0, 0.0, 1.0,
+        1.0, 1.0, 1.0,
+        0.0, 0.0),
 };
 
 static uint32_t indices[] = {
