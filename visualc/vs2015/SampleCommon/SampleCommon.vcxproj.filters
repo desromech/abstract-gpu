@@ -54,6 +54,7 @@
     <None Include="..\..\..\samples\data\shaders\texturedVertex.hlsl">
       <Filter>Assets</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\samples\data\textures\checkboard.bmp">

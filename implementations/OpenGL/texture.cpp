@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <string.h>
 #include "buffer.hpp"
 #include "texture.hpp"
@@ -314,14 +315,22 @@ agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayInde
         return AGPU_OK;
     }
 
-    auto height = description.height >> level;
-    auto fdst = dst + (height - 1)*dstPitch;
-    ptrdiff_t fdstPitch = -ptrdiff_t(dstPitch);
-    for(size_t y = 0; y < height; ++y)
+    // Copy the 2D texture slice.
+    if (pitch >= 0 && slicePitch == slicePitchOfLevel(level))
     {
-        memcpy(fdst, src, srcPitchAbs);
-        fdst += fdstPitch;
-        src += pitch;
+        memcpy(dst, src, slicePitch);
+    }
+    else
+    {
+        auto height = std::max(1u, description.height >> level);
+        auto fdst = dst + (height - 1)*dstPitch;
+        ptrdiff_t fdstPitch = -ptrdiff_t(dstPitch);
+        for (size_t y = 0; y < height; ++y)
+        {
+            memcpy(fdst, src, srcPitchAbs);
+            fdst += fdstPitch;
+            src += pitch;
+        }
     }
 
     unmapLevel();

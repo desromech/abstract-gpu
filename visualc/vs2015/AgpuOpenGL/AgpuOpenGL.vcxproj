@@ -26,6 +26,7 @@
     <ClCompile Include="..\..\..\implementations\OpenGL\device.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\device_unix.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\device_win32.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\fence.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\framebuffer.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\icd.c" />
     <ClCompile Include="..\..\..\implementations\OpenGL\pipeline_builder.cpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\..\implementations\OpenGL\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\common.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\device.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\fence.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\framebuffer.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\job_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\object.hpp" />

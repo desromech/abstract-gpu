@@ -120,7 +120,6 @@ int SampleBase::main(int argc, const char **argv)
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     case SDL_SYSWM_WINDOWS:
         swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.win.window;
-        swapChainCreateInfo.surface = (agpu_pointer)windowInfo.info.win.hdc;
         break;
 #endif
 #if defined(SDL_VIDEO_DRIVER_X11)

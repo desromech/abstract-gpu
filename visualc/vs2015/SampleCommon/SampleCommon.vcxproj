@@ -51,6 +51,7 @@
     <None Include="..\..\..\samples\data\shaders\texturedVertex.glsl">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\samples\data\shaders\texturedFragment.hlsl">
@@ -117,14 +118,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\deps\lib\x86;$(LibraryPath)</LibraryPath>
     <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
     <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\deps\include\SDL2;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\deps\lib\x64;$(LibraryPath)</LibraryPath>
     <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
     <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\</OutDir>
   </PropertyGroup>
@@ -151,7 +148,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>Agpu.lib;SDL2.lib;SDL2main.lib</AdditionalDependencies>
+      <AdditionalDependencies>Agpu.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <CustomBuildStep>
@@ -174,7 +171,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>Agpu.lib;SDL2.lib;SDL2main.lib</AdditionalDependencies>
+      <AdditionalDependencies>Agpu.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <CustomBuildStep>
@@ -202,7 +199,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Agpu.lib;SDL2.lib;SDL2main.lib</AdditionalDependencies>
+      <AdditionalDependencies>Agpu.lib;</AdditionalDependencies>
     </Lib>
     <CustomBuildStep>
       <Command>xcopy "$(SolutionDir)\..\..\samples\data" "$(OutputPath)\data" /e /i /h /Y</Command>
@@ -229,7 +226,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Agpu.lib;SDL2.lib;SDL2main.lib</AdditionalDependencies>
+      <AdditionalDependencies>Agpu.lib;</AdditionalDependencies>
     </Lib>
     <CustomBuildStep>
       <Command>xcopy "$(SolutionDir)\..\..\samples\data" "$(OutputPath)\data" /e /i /h /Y</Command>
@@ -238,5 +235,14 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\sdl2.v140.redist.2.0.3\build\native\sdl2.v140.redist.targets" Condition="Exists('..\packages\sdl2.v140.redist.2.0.3\build\native\sdl2.v140.redist.targets')" />
+    <Import Project="..\packages\sdl2.v140.2.0.3\build\native\sdl2.v140.targets" Condition="Exists('..\packages\sdl2.v140.2.0.3\build\native\sdl2.v140.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\sdl2.v140.redist.2.0.3\build\native\sdl2.v140.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sdl2.v140.redist.2.0.3\build\native\sdl2.v140.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\sdl2.v140.2.0.3\build\native\sdl2.v140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sdl2.v140.2.0.3\build\native\sdl2.v140.targets'))" />
+  </Target>
 </Project>

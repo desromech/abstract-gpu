@@ -3,6 +3,57 @@
 #include "texture.hpp"
 #include "buffer.hpp"
 
+inline GLenum mapMinFilter(agpu_filter filter)
+{
+    switch (filter)
+    {
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:
+        return GL_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:
+    case AGPU_FILTER_ANISOTROPIC:
+    default:
+        return GL_LINEAR;
+    }
+}
+
+inline GLenum mapMagFilter(agpu_filter filter)
+{
+    switch (filter)
+    {
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:    return GL_NEAREST_MIPMAP_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:     return GL_NEAREST_MIPMAP_LINEAR;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:     return GL_LINEAR_MIPMAP_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:      return GL_LINEAR_MIPMAP_LINEAR;
+
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:     return GL_NEAREST_MIPMAP_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:      return GL_NEAREST_MIPMAP_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:      return GL_LINEAR_MIPMAP_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:       return GL_LINEAR_MIPMAP_LINEAR;
+    case AGPU_FILTER_ANISOTROPIC:                               return GL_LINEAR_MIPMAP_LINEAR;
+    default:
+        return GL_NEAREST;
+    }
+}
+
+inline GLenum mapAddressMode(agpu_texture_address_mode mode)
+{
+    switch (mode)
+    {
+    default:
+    case AGPU_TEXTURE_ADDRESS_MODE_WRAP:    return GL_REPEAT;
+    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR:  return GL_MIRRORED_REPEAT;
+    case AGPU_TEXTURE_ADDRESS_MODE_CLAMP:   return GL_CLAMP_TO_EDGE;
+    case AGPU_TEXTURE_ADDRESS_MODE_BORDER:  return GL_CLAMP;
+    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return GL_MIRROR_CLAMP_TO_EDGE;
+    }
+}
+
 _agpu_shader_resource_binding::_agpu_shader_resource_binding()
 {
 }
@@ -139,11 +190,11 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
     auto sampler = samplers[location];
     device->onMainContextBlocking([&]{
         std::unique_lock<std::mutex> l(bindMutex);
-        device->glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, GL_REPEAT);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, mapMagFilter(description->filter));
+        device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, mapMinFilter(description->filter));
+        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, mapAddressMode(description->address_u));
+        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, mapAddressMode(description->address_v));
+        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, mapAddressMode(description->address_w));
     });
 
     return AGPU_OK;

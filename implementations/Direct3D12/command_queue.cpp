@@ -1,5 +1,6 @@
 #include "command_queue.hpp"
 #include "command_list.hpp"
+#include "fence.hpp"
 
 _agpu_command_queue::_agpu_command_queue()
 {
@@ -8,7 +9,7 @@ _agpu_command_queue::_agpu_command_queue()
 
 void _agpu_command_queue::lostReferences()
 {
-
+    CloseHandle(finishFenceEvent);
 }
 
 _agpu_command_queue *_agpu_command_queue::createDefault(agpu_device *device)
@@ -71,6 +72,25 @@ agpu_error _agpu_command_queue::finish()
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_queue::signalFence(agpu_fence* fence)
+{
+    CHECK_POINTER(fence);
+
+    std::unique_lock<std::mutex> l(fence->fenceMutex);
+    queue->Signal(fence->fence.Get(), fence->fenceValue++);
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_queue::waitFence(agpu_fence* fence)
+{
+    CHECK_POINTER(fence);
+
+    std::unique_lock<std::mutex> l(fence->fenceMutex);
+    queue->Wait(fence->fence.Get(), fence->fenceValue - 1);
+    return AGPU_OK;
+}
+
 // Exported C interface
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference(agpu_command_queue* command_queue)
 {
@@ -94,4 +114,16 @@ AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queu
 {
     CHECK_POINTER(command_queue);
     return command_queue->finish();
+}
+
+AGPU_EXPORT agpu_error agpuSignalFence(agpu_command_queue* command_queue, agpu_fence* fence)
+{
+    CHECK_POINTER(command_queue);
+    return command_queue->signalFence(fence);
+}
+
+AGPU_EXPORT agpu_error agpuWaitFence(agpu_command_queue* command_queue, agpu_fence* fence)
+{
+    CHECK_POINTER(command_queue);
+    return command_queue->waitFence(fence);
 }

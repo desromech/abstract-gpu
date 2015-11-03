@@ -13,6 +13,7 @@
 #include "framebuffer.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
+#include "fence.hpp"
 
 void printError(const char *format, ...)
 {
@@ -267,4 +268,12 @@ AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_de
         return nullptr;
 
     return agpu_texture::create(device, description);
+}
+
+AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device)
+{
+    if (!device)
+        return nullptr;
+
+    return agpu_fence::create(device);
 }

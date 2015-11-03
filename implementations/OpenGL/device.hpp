@@ -7,6 +7,9 @@
 #include <GL/GL.h>
 #include <GL/glext.h>
 
+#undef min
+#undef max
+
 typedef HGLRC(WINAPI * wglCreateContextAttribsARBProc) (HDC hDC, HGLRC hShareContext, const int *attribList);
 typedef BOOL(WINAPI * wglChoosePixelFormatARBProc) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
 

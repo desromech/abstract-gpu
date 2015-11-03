@@ -367,10 +367,10 @@
             <constant name="FilterMinNearestMagLinearMipmapNearest" value="0x4" />
             <constant name="FilterMinNearestMagLinearMipmapLinear" value="0x5" />
             <constant name="FilterMinLinearMagNearestMipmapNearest" value="0x10" />
-            <constant name="FilterMinLinearMagNearestMipmapLinear" value="0x10" />
+            <constant name="FilterMinLinearMagNearestMipmapLinear" value="0x11" />
             <constant name="FilterMinLinearMagLinearMipmapNearest" value="0x14" />
             <constant name="FilterMinLinearMagLinearMipmapLinear" value="0x15" />
-            <constant name="FilterAnisotropic" value="0x15" />
+            <constant name="FilterAnisotropic" value="0x55" />
         </enum>
 
         <enum name="texture_address_mode">
@@ -378,7 +378,7 @@
             <constant name="TextureAddressModeMirror" value="2" />
             <constant name="TextureAddressModeClamp" value="3" />
             <constant name="TextureAddressModeBorder" value="4" />
-            <constant name="TextureAddressModeMirrorOnce" value="4" />
+            <constant name="TextureAddressModeMirrorOnce" value="5" />
         </enum>
     </constants>
 
