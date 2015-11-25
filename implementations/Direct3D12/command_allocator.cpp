@@ -9,11 +9,11 @@ void _agpu_command_allocator::lostReferences()
 {
 }
 
-_agpu_command_allocator *_agpu_command_allocator::create(agpu_device *device)
+_agpu_command_allocator *_agpu_command_allocator::create(agpu_device *device, agpu_command_list_type type)
 {
     // Create the command allocator.
     ComPtr<ID3D12CommandAllocator> allocator;
-    if (FAILED(device->d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator))))
+    if (FAILED(device->d3dDevice->CreateCommandAllocator(mapCommandListType(type), IID_PPV_ARGS(&allocator))))
         return nullptr;
 
     auto res = new agpu_command_allocator();

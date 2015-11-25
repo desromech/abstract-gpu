@@ -10,10 +10,11 @@ void _agpu_command_allocator::lostReferences()
 	
 }
 
-_agpu_command_allocator *_agpu_command_allocator::create(agpu_device *device)
+_agpu_command_allocator *_agpu_command_allocator::create(agpu_device *device, agpu_command_list_type type)
 {
 	auto allocator = new _agpu_command_allocator();
 	allocator->device = device;
+    allocator->type = type;
 	return allocator;
 }
 

@@ -12,7 +12,7 @@ struct _agpu_command_list: public Object<_agpu_command_list>
 public:
     _agpu_command_list();
     
-    static agpu_command_list *create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, bool isBundle);
+    static agpu_command_list *create(agpu_device *device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
 
     void lostReferences();
 
@@ -49,7 +49,7 @@ public:
     agpu_buffer *currentIndexBuffer;
     agpu_buffer *currentDrawBuffer;
     GLenum primitiveMode;
-    bool isBundle;
+    agpu_command_list_type type;
 
     void execute();
 

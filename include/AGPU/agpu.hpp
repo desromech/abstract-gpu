@@ -191,19 +191,14 @@ public:
 		return agpuCreatePipelineBuilder( this );
 	}
 
-	inline agpu_command_allocator* createCommandAllocator (  )
+	inline agpu_command_allocator* createCommandAllocator ( agpu_command_list_type type )
 	{
-		return agpuCreateCommandAllocator( this );
+		return agpuCreateCommandAllocator( this, type );
 	}
 
-	inline agpu_command_list* createCommandListBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+	inline agpu_command_list* createCommandList ( agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
 	{
-		return agpuCreateCommandListBundle( this, allocator, initial_pipeline_state );
-	}
-
-	inline agpu_command_list* createCommandList ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
-	{
-		return agpuCreateCommandList( this, allocator, initial_pipeline_state );
+		return agpuCreateCommandList( this, type, allocator, initial_pipeline_state );
 	}
 
 	inline agpu_shader_language getPreferredShaderLanguage (  )

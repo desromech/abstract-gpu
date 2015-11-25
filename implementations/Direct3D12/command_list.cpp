@@ -38,18 +38,7 @@ void _agpu_command_list::lostReferences()
         currentFramebuffer->release();
 }
 
-inline D3D12_COMMAND_LIST_TYPE mapCommandListType(CommandListType type)
-{
-    switch (type)
-    {
-    case CommandListType::Direct: return D3D12_COMMAND_LIST_TYPE_DIRECT;
-    case CommandListType::Bundle: return D3D12_COMMAND_LIST_TYPE_BUNDLE;
-    case CommandListType::Compute: return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-    default: abort();
-    }
-}
-
-_agpu_command_list *_agpu_command_list::create(agpu_device *device, CommandListType type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
+_agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_list_type type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState)
 {
     ComPtr<ID3D12GraphicsCommandList> commandList;
     ID3D12PipelineState *state = nullptr;
@@ -266,7 +255,7 @@ agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
 {
     CHECK_POINTER(bundle);
-    if (bundle->type != CommandListType::Bundle)
+    if (bundle->type != AGPU_COMMAND_LIST_TYPE_BUNDLE)
         return AGPU_INVALID_PARAMETER;
 
     commandList->ExecuteBundle(bundle->commandList.Get());

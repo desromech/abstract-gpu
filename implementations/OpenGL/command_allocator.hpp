@@ -10,13 +10,14 @@ public:
 
     void lostReferences();
 
-    static _agpu_command_allocator *create(agpu_device *device);
+    static _agpu_command_allocator *create(agpu_device *device, agpu_command_list_type type);
 
     agpu_error reset();
 
 public:
 
     agpu_device *device;
+    agpu_command_list_type type;
 };
 
 #endif //AGPU_GL_COMMAND_ALLOCATOR_HPP_

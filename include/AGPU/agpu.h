@@ -320,6 +320,13 @@ typedef enum {
 	AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE = 5,
 } agpu_texture_address_mode;
 
+typedef enum {
+	AGPU_COMMAND_LIST_TYPE_DIRECT = 1,
+	AGPU_COMMAND_LIST_TYPE_BUNDLE = 2,
+	AGPU_COMMAND_LIST_TYPE_COMPUTE = 3,
+	AGPU_COMMAND_LIST_TYPE_COPY = 4,
+} agpu_command_list_type;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -434,9 +441,8 @@ typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* devic
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
 typedef agpu_shader_signature_builder* (*agpuCreateShaderSignatureBuilder_FUN) ( agpu_device* device );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
-typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device );
-typedef agpu_command_list* (*agpuCreateCommandListBundle_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
-typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device, agpu_command_list_type type );
+typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
@@ -453,9 +459,8 @@ AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device );
-AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type );
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil );
@@ -743,7 +748,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateShaderSignatureBuilder_FUN agpuCreateShaderSignatureBuilder;
 	agpuCreatePipelineBuilder_FUN agpuCreatePipelineBuilder;
 	agpuCreateCommandAllocator_FUN agpuCreateCommandAllocator;
-	agpuCreateCommandListBundle_FUN agpuCreateCommandListBundle;
 	agpuCreateCommandList_FUN agpuCreateCommandList;
 	agpuGetPreferredShaderLanguage_FUN agpuGetPreferredShaderLanguage;
 	agpuGetPreferredHighLevelShaderLanguage_FUN agpuGetPreferredHighLevelShaderLanguage;

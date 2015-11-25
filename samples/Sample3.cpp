@@ -104,8 +104,8 @@ public:
         agpuBindVertexBuffers(vertexBinding, 1, &vertexBuffer);
 
         // Create the command list
-        commandAllocator = agpuCreateCommandAllocator(device);
-        commandList = agpuCreateCommandList(device, commandAllocator, nullptr);
+        commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT);
+        commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         agpuCloseCommandList(commandList);
         return true;
     }

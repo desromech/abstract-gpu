@@ -129,28 +129,20 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
 	return (*dispatchTable)->agpuCreatePipelineBuilder ( device );
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device )
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type )
 {
 	if (device == nullptr)
 		return (agpu_command_allocator*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateCommandAllocator ( device );
+	return (*dispatchTable)->agpuCreateCommandAllocator ( device, type );
 }
 
-AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
 {
 	if (device == nullptr)
 		return (agpu_command_list*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateCommandListBundle ( device, allocator, initial_pipeline_state );
-}
-
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
-{
-	if (device == nullptr)
-		return (agpu_command_list*)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateCommandList ( device, allocator, initial_pipeline_state );
+	return (*dispatchTable)->agpuCreateCommandList ( device, type, allocator, initial_pipeline_state );
 }
 
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device )

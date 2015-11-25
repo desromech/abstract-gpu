@@ -380,6 +380,13 @@
             <constant name="TextureAddressModeBorder" value="4" />
             <constant name="TextureAddressModeMirrorOnce" value="5" />
         </enum>
+
+        <enum name="command_list_type">
+            <constant name="CommandListTypeDirect" value="1" />
+            <constant name="CommandListTypeBundle" value="2" />
+            <constant name="CommandListTypeCompute" value="3" />
+            <constant name="CommandListTypeCopy" value="4" />
+        </enum>
     </constants>
 
     <globals>
@@ -451,14 +458,11 @@
             </method>
 
             <method name="createCommandAllocator" cname="CreateCommandAllocator" returnType="command_allocator*">
-            </method>
-
-            <method name="createCommandListBundle" cname="CreateCommandListBundle" returnType="command_list*">
-                <arg name="allocator" type="command_allocator*" />
-                <arg name="initial_pipeline_state" type="pipeline_state*" />
+                <arg name="type" type="command_list_type" />
             </method>
 
             <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
+                <arg name="type" type="command_list_type" />
                 <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
             </method>

@@ -224,26 +224,20 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device
     return agpu_pipeline_builder::create(device);
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device)
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type)
 {
     if (!device)
         return nullptr;
-    return agpu_command_allocator::create(device);
+    return agpu_command_allocator::create(device, type);
 }
 
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     if (!device)
         return nullptr;
-    return agpu_command_list::create(device, CommandListType::Direct, allocator, initial_pipeline_state);
+    return agpu_command_list::create(device, type, allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_command_list* agpuCreateCommandListBundle(agpu_device* device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
-{
-    if (!device)
-        return nullptr;
-    return agpu_command_list::create(device, CommandListType::Bundle, allocator, initial_pipeline_state);
-}
 
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)
 {

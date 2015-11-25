@@ -3,12 +3,17 @@
 
 #include "device.hpp"
 
-enum class CommandListType
+inline D3D12_COMMAND_LIST_TYPE mapCommandListType(agpu_command_list_type type)
 {
-    Direct = 0,
-    Bundle,
-    Compute
-};
+    switch (type)
+    {
+    case AGPU_COMMAND_LIST_TYPE_COPY: return D3D12_COMMAND_LIST_TYPE_COPY;
+    case AGPU_COMMAND_LIST_TYPE_DIRECT: return D3D12_COMMAND_LIST_TYPE_DIRECT;
+    case AGPU_COMMAND_LIST_TYPE_BUNDLE: return D3D12_COMMAND_LIST_TYPE_BUNDLE;
+    case AGPU_COMMAND_LIST_TYPE_COMPUTE: return D3D12_COMMAND_LIST_TYPE_COMPUTE;
+    default: abort();
+    }
+}
 
 struct _agpu_command_list : public Object<_agpu_command_list>
 {
@@ -17,7 +22,7 @@ public:
 
     void lostReferences();
 
-    static _agpu_command_list *create(agpu_device *device, CommandListType type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState);
+    static _agpu_command_list *create(agpu_device *device, agpu_command_list_type type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState);
 
     agpu_error setShaderSignature(agpu_shader_signature *signature);
 
@@ -49,7 +54,7 @@ public:
     ComPtr<ID3D12GraphicsCommandList> commandList;
 
     // Some flags
-    CommandListType type;
+    agpu_command_list_type type;
 
     // Clearing state.
     float clearColor[4];

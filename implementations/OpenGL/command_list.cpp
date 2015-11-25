@@ -37,7 +37,6 @@ inline GLenum mapIndexType(agpu_size stride)
 _agpu_command_list::_agpu_command_list()
 {
     closed = false;
-    isBundle = false;
 }
 
 void _agpu_command_list::lostReferences()
@@ -45,11 +44,11 @@ void _agpu_command_list::lostReferences()
 
 }
 
-agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, bool isBundle)
+agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     auto list = new agpu_command_list();
     list->device = device;
-    list->isBundle = isBundle;
+    list->type = type;;
     if(initial_pipeline_state)
         list->usePipelineState(initial_pipeline_state);
     return list;
@@ -217,7 +216,7 @@ agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 agpu_error _agpu_command_list::executeBundle ( agpu_command_list* bundle )
 {
     CHECK_POINTER(bundle)
-    if(!bundle->isBundle)
+    if(bundle->type != AGPU_COMMAND_LIST_TYPE_BUNDLE)
         return AGPU_INVALID_PARAMETER;
 
     return addCommand([=] {
