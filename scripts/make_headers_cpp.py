@@ -221,7 +221,8 @@ class MakeHeaderVisitor:
         for method in interface.methods:
             self.emitMethodWrapper(method)
         self.printLine('};')
-
+        self.newline()
+        self.printLine('typedef agpu_ref<$TypePrefix$Name> $TypePrefix${Name}_ref;', Name = interface.name)
         self.newline()
 
     def emitFragment(self, fragment):

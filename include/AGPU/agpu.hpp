@@ -134,6 +134,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_platform> agpu_platform_ref;
+
 // Interface wrapper for agpu_device.
 struct _agpu_device
 {
@@ -228,6 +230,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_device> agpu_device_ref;
+
 // Interface wrapper for agpu_swap_chain.
 struct _agpu_swap_chain
 {
@@ -256,6 +260,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_swap_chain> agpu_swap_chain_ref;
 
 // Interface wrapper for agpu_pipeline_builder.
 struct _agpu_pipeline_builder
@@ -336,6 +342,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_pipeline_builder> agpu_pipeline_builder_ref;
+
 // Interface wrapper for agpu_pipeline_state.
 struct _agpu_pipeline_state
 {
@@ -359,6 +367,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_pipeline_state> agpu_pipeline_state_ref;
 
 // Interface wrapper for agpu_command_queue.
 struct _agpu_command_queue
@@ -399,6 +409,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_command_queue> agpu_command_queue_ref;
+
 // Interface wrapper for agpu_command_allocator.
 struct _agpu_command_allocator
 {
@@ -422,6 +434,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_command_allocator> agpu_command_allocator_ref;
 
 // Interface wrapper for agpu_command_list.
 struct _agpu_command_list
@@ -557,6 +571,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_command_list> agpu_command_list_ref;
+
 // Interface wrapper for agpu_texture.
 struct _agpu_texture
 {
@@ -611,6 +627,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_texture> agpu_texture_ref;
+
 // Interface wrapper for agpu_buffer.
 struct _agpu_buffer
 {
@@ -655,6 +673,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_buffer> agpu_buffer_ref;
+
 // Interface wrapper for agpu_vertex_binding.
 struct _agpu_vertex_binding
 {
@@ -679,6 +699,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_vertex_binding> agpu_vertex_binding_ref;
+
 // Interface wrapper for agpu_vertex_layout.
 struct _agpu_vertex_layout
 {
@@ -702,6 +724,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_vertex_layout> agpu_vertex_layout_ref;
 
 // Interface wrapper for agpu_shader.
 struct _agpu_shader
@@ -742,6 +766,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_shader> agpu_shader_ref;
+
 // Interface wrapper for agpu_framebuffer.
 struct _agpu_framebuffer
 {
@@ -770,6 +796,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_framebuffer> agpu_framebuffer_ref;
 
 // Interface wrapper for agpu_shader_signature_builder.
 struct _agpu_shader_signature_builder
@@ -810,6 +838,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_shader_signature_builder> agpu_shader_signature_builder_ref;
+
 // Interface wrapper for agpu_shader_signature.
 struct _agpu_shader_signature
 {
@@ -833,6 +863,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_shader_signature> agpu_shader_signature_ref;
 
 // Interface wrapper for agpu_shader_resource_binding.
 struct _agpu_shader_resource_binding
@@ -878,6 +910,8 @@ public:
 
 };
 
+typedef agpu_ref<agpu_shader_resource_binding> agpu_shader_resource_binding_ref;
+
 // Interface wrapper for agpu_fence.
 struct _agpu_fence
 {
@@ -901,6 +935,8 @@ public:
 	}
 
 };
+
+typedef agpu_ref<agpu_fence> agpu_fence_ref;
 
 
 #endif /* AGPU_HPP_ */
