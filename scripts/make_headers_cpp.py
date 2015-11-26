@@ -46,11 +46,11 @@ public:
     {
     }
 
-    agpu_ref(const agpu_ref<T*> &other)
+    agpu_ref(const agpu_ref<T> &other)
     {
         if(other.pointer)
             other.pointer->addReference();
-        pointer = other.pointer();
+        pointer = other.pointer;
     }
 
     agpu_ref(T* pointer)
@@ -58,7 +58,21 @@ public:
     {
     }
 
-    agpu_ref<T> &operator=(const agpu_ref<T*> &other)
+    ~agpu_ref()
+    {
+        if (pointer)
+            pointer->release();
+    }
+
+    agpu_ref<T> &operator=(T *newPointer)
+    {
+        if (pointer)
+            pointer->release();
+        pointer = newPointer;
+        return *this;
+    }
+
+    agpu_ref<T> &operator=(const agpu_ref<T> &other)
     {
         if(pointer != other.pointer)
         {
