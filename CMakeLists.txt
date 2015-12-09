@@ -90,7 +90,7 @@ add_subdirectory(implementations)
 
 # Build the samples
 if(SDL2_FOUND AND AGPU_BUILD_SAMPLES)
-add_subdirectory(samples)
+	add_subdirectory(samples)
 endif()
 
 # Build the tests.
