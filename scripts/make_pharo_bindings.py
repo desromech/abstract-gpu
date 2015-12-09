@@ -150,6 +150,8 @@ class MakePharoBindingsVisitor:
         self.printLine('\t^ #(')
         for constantName in self.constants.keys():
             constantValue = self.constants[constantName]
+            if constantValue.startswith('0x'):
+                constantValue = '16r' + constantValue[2:]
             self.printLine("\t\t$ConstantName $ConstantValue" , ConstantName = constantName, ConstantValue = constantValue)
         self.printLine('\t)')
         self.endMethod()
