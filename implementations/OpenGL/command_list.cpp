@@ -37,6 +37,8 @@ inline GLenum mapIndexType(agpu_size stride)
 _agpu_command_list::_agpu_command_list()
 {
     closed = false;
+    currentPipeline = nullptr;
+    stencilReference = 0;
 }
 
 void _agpu_command_list::lostReferences()
@@ -114,6 +116,8 @@ agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
     return addCommand([=] {
         this->currentPipeline = pipeline;
         this->currentPipeline->activate();
+        if (stencilReference != 0)
+            this->currentPipeline->updateStencilReference(stencilReference);
     });
 }
 
@@ -210,7 +214,12 @@ agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_
 
 agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 {
-    return AGPU_UNIMPLEMENTED;
+    return addCommand([=] {
+        if (currentPipeline)
+            currentPipeline->updateStencilReference(reference);
+        stencilReference = reference;
+
+    });
 }
 
 agpu_error _agpu_command_list::executeBundle ( agpu_command_list* bundle )
@@ -233,6 +242,7 @@ agpu_error _agpu_command_list::close()
 agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     closed = false;
+    stencilReference = 0;
     commands.clear();
     if (initial_pipeline_state)
         usePipelineState(initial_pipeline_state);

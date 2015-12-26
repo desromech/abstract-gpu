@@ -265,6 +265,30 @@ AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipel
 	return (*dispatchTable)->agpuGetPipelineBuildingLog ( pipeline_builder, buffer_size, buffer );
 }
 
+AGPU_EXPORT agpu_error agpuSetBlendState ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetBlendState ( pipeline_builder, renderTargetMask, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuSetBlendFunction ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetBlendFunction ( pipeline_builder, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation );
+}
+
+AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetColorMask ( pipeline_builder, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled );
+}
+
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
 	if (pipeline_builder == nullptr)
@@ -279,6 +303,22 @@ AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_bui
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
 	return (*dispatchTable)->agpuSetStencilState ( pipeline_builder, enabled, writeMask, readMask );
+}
+
+AGPU_EXPORT agpu_error agpuSetStencilFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetStencilFrontFace ( pipeline_builder, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
+}
+
+AGPU_EXPORT agpu_error agpuSetStencilBackFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetStencilBackFace ( pipeline_builder, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
 }
 
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count )

@@ -38,9 +38,26 @@ void _agpu_pipeline_state::activate()
 		device->glDepthRangedNV(-1, 1);
 	else
 		glDepthRange(-1, 1);
+
+    // Color buffer
+    glColorMask(redMask, greenMask, blueMask, alphaMask);
+    enableState(blendingEnabled, GL_BLEND);
+    if (blendingEnabled)
+    {
+        device->glBlendEquationSeparate(blendOperation, blendOperationAlpha);
+        device->glBlendFuncSeparate(sourceBlendFactor, destBlendFactor, sourceBlendFactorAlpha, destBlendFactorAlpha);
+    }
 		
 	// Stencil
 	enableState(stencilEnabled, GL_STENCIL_TEST);
+
+    if (stencilEnabled)
+    {
+        glStencilMask(stencilWriteMask);
+        updateStencilReference(0);
+        device->glStencilOpSeparate(GL_FRONT, stencilFrontFailOp, stencilFrontDepthFailOp, stencilFrontDepthPassOp);
+        device->glStencilOpSeparate(GL_BACK, stencilBackFailOp, stencilBackDepthFailOp, stencilBackDepthPassOp);
+    }
 }
 
 void _agpu_pipeline_state::enableState(bool enabled, GLenum state)
@@ -49,6 +66,15 @@ void _agpu_pipeline_state::enableState(bool enabled, GLenum state)
 		glEnable(state);
 	else
 		glDisable(state);
+}
+
+void _agpu_pipeline_state::updateStencilReference(int reference)
+{
+    if (!stencilEnabled)
+        return;
+
+    device->glStencilFuncSeparate(GL_FRONT, stencilFrontFunc, reference, stencilReadMask);
+    device->glStencilFuncSeparate(GL_BACK, stencilBackFunc, reference, stencilReadMask);
 }
 
 // C functions

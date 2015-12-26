@@ -13,7 +13,6 @@ public:
     agpu_int getUniformLocation ( agpu_cstring name );
     
 public:
-    
     agpu_device *device;
     agpu_shader_signature *shaderSignature;
     GLuint programHandle;
@@ -23,10 +22,33 @@ public:
     agpu_bool depthWriteMask;
     GLenum depthFunction;
 
+    // Color buffer
+    agpu_bool blendingEnabled;
+    agpu_bool redMask;
+    agpu_bool greenMask;
+    agpu_bool blueMask;
+    agpu_bool alphaMask;
+    GLenum sourceBlendFactor;
+    GLenum destBlendFactor;
+    GLenum blendOperation;
+    GLenum sourceBlendFactorAlpha;
+    GLenum destBlendFactorAlpha;
+    GLenum blendOperationAlpha;
+
     // Stencil testing
-    bool stencilEnabled;
+    agpu_bool stencilEnabled;
     int stencilWriteMask;
     int stencilReadMask;
+
+    GLenum stencilFrontFailOp;
+    GLenum stencilFrontDepthFailOp;
+    GLenum stencilFrontDepthPassOp;
+    GLenum stencilFrontFunc;
+
+    GLenum stencilBackFailOp;
+    GLenum stencilBackDepthFailOp;
+    GLenum stencilBackDepthPassOp;
+    GLenum stencilBackFunc;
     
     // Alpha testing
     bool alphaTestEnabled;
@@ -39,6 +61,7 @@ public:
 public:
     void activate();
     void enableState(bool enabled, GLenum state);
+    void updateStencilReference(int reference);
 };
 
 

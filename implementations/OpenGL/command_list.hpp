@@ -51,6 +51,8 @@ public:
     GLenum primitiveMode;
     agpu_command_list_type type;
 
+    agpu_uint stencilReference;
+
     void execute();
 
 private:

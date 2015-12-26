@@ -327,6 +327,34 @@ typedef enum {
 	AGPU_COMMAND_LIST_TYPE_COPY = 4,
 } agpu_command_list_type;
 
+typedef enum {
+	AGPU_BLENDING_ZERO = 1,
+	AGPU_BLENDING_ONE = 2,
+	AGPU_BLENDING_SRC_COLOR = 3,
+	AGPU_BLENDING_INVERTED_SRC_COLOR = 4,
+	AGPU_BLENDING_SRC_ALPHA = 5,
+	AGPU_BLENDING_INVERTED_SRC_ALPHA = 6,
+	AGPU_BLENDING_DEST_ALPHA = 7,
+	AGPU_BLENDING_INVERTED_DEST_ALPHA = 8,
+	AGPU_BLENDING_DEST_COLOR = 9,
+	AGPU_BLENDING_INVERTED_DEST_COLOR = 10,
+	AGPU_BLENDING_SRC_ALPHA_SAT = 11,
+	AGPU_BLENDING_CONSTANT_FACTOR = 14,
+	AGPU_BLENDING_INVERTED_CONSTANT_FACTOR = 15,
+	AGPU_BLENDING_SRC_1COLOR = 16,
+	AGPU_BLENDING_INVERTED_SRC_1COLOR = 17,
+	AGPU_BLENDING_SRC_1ALPHA = 18,
+	AGPU_BLENDING_INVERTED_SRC_1ALPHA = 19,
+} agpu_blending_factor;
+
+typedef enum {
+	AGPU_BLENDING_OPERATION_ADD = 1,
+	AGPU_BLENDING_OPERATION_SUBTRACT = 2,
+	AGPU_BLENDING_OPERATION_REVERSE_SUBTRACT = 3,
+	AGPU_BLENDING_OPERATION_MIN = 4,
+	AGPU_BLENDING_OPERATION_MAX = 5,
+} agpu_blending_operation;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -386,6 +414,7 @@ typedef struct agpu_vertex_attrib_description {
 	agpu_bool normalized;
 	agpu_size offset;
 	agpu_uint divisor;
+	agpu_texture_format internal_format;
 } agpu_vertex_attrib_description;
 
 /* Structure agpu_color4f. */
@@ -485,8 +514,13 @@ typedef agpu_pipeline_state* (*agpuBuildPipelineState_FUN) ( agpu_pipeline_build
 typedef agpu_error (*agpuAttachShader_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader );
 typedef agpu_size (*agpuGetPipelineBuildingLogLength_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_error (*agpuGetPipelineBuildingLog_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
+typedef agpu_error (*agpuSetBlendState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
+typedef agpu_error (*agpuSetBlendFunction_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation );
+typedef agpu_error (*agpuSetColorMask_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
 typedef agpu_error (*agpuSetDepthState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 typedef agpu_error (*agpuSetStencilState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
+typedef agpu_error (*agpuSetStencilFrontFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
+typedef agpu_error (*agpuSetStencilBackFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
 typedef agpu_error (*agpuSetRenderTargetCount_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
 typedef agpu_error (*agpuSetRenderTargetFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format );
 typedef agpu_error (*agpuSetDepthStencilFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
@@ -500,8 +534,13 @@ AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState ( agpu_pipeline_builder*
 AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader );
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
+AGPU_EXPORT agpu_error agpuSetBlendState ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
+AGPU_EXPORT agpu_error agpuSetBlendFunction ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation );
+AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
+AGPU_EXPORT agpu_error agpuSetStencilFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
+AGPU_EXPORT agpu_error agpuSetStencilBackFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
 AGPU_EXPORT agpu_error agpuSetRenderTargetFormat ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format );
 AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
@@ -764,8 +803,13 @@ typedef struct _agpu_icd_dispatch {
 	agpuAttachShader_FUN agpuAttachShader;
 	agpuGetPipelineBuildingLogLength_FUN agpuGetPipelineBuildingLogLength;
 	agpuGetPipelineBuildingLog_FUN agpuGetPipelineBuildingLog;
+	agpuSetBlendState_FUN agpuSetBlendState;
+	agpuSetBlendFunction_FUN agpuSetBlendFunction;
+	agpuSetColorMask_FUN agpuSetColorMask;
 	agpuSetDepthState_FUN agpuSetDepthState;
 	agpuSetStencilState_FUN agpuSetStencilState;
+	agpuSetStencilFrontFace_FUN agpuSetStencilFrontFace;
+	agpuSetStencilBackFace_FUN agpuSetStencilBackFace;
 	agpuSetRenderTargetCount_FUN agpuSetRenderTargetCount;
 	agpuSetRenderTargetFormat_FUN agpuSetRenderTargetFormat;
 	agpuSetDepthStencilFormat_FUN agpuSetDepthStencilFormat;

@@ -22,8 +22,6 @@ void _agpu_framebuffer::lostReferences()
 agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil)
 {
     int heapSize = renderTargetCount;
-    if (hasDepth || hasStencil)
-        ++heapSize;
 
     // Describe and create a render target view (RTV) descriptor heap.
     ComPtr<ID3D12DescriptorHeap> heap;
@@ -41,7 +39,7 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
     if (hasDepth || hasStencil)
     {
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-        heapDesc.NumDescriptors = heapSize;
+        heapDesc.NumDescriptors = 1;
         heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
         if (FAILED(device->d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&depthStencilHeap))))

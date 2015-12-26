@@ -83,6 +83,21 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     texture->device = device;
     texture->description = *description;
 
+    // The clear value
+    D3D12_CLEAR_VALUE clearValueData;
+    memset(&clearValueData, 0, sizeof(clearValueData));
+    clearValueData.Format = desc.Format;
+    auto clearValuePtr = &clearValueData;
+    if (flags & AGPU_TEXTURE_FLAG_DEPTH_STENCIL)
+    {
+        clearValueData.DepthStencil.Depth = 1;
+        clearValueData.DepthStencil.Stencil = 0;
+    }
+    else if((flags & AGPU_TEXTURE_FLAG_RENDER_TARGET) == 0)
+    {
+        clearValuePtr = nullptr;
+    }
+
     if (uploaded)
     {
         D3D12_HEAP_PROPERTIES heapProperties;
@@ -106,7 +121,7 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
         if (flags & AGPU_TEXTURE_FLAG_DEPTH_STENCIL)
             initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 
-        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, nullptr, IID_PPV_ARGS(&gpuResource))))
+        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, clearValuePtr, IID_PPV_ARGS(&gpuResource))))
             return nullptr;
     }
 

@@ -290,6 +290,14 @@ public:
     PFNGLFENCESYNCPROC glFenceSync;
     PFNGLCLIENTWAITSYNCPROC glClientWaitSync;
     PFNGLWAITSYNCPROC glWaitSync;
+
+    // Separate stencil
+    PFNGLSTENCILFUNCSEPARATEPROC glStencilFuncSeparate;
+    PFNGLSTENCILOPSEPARATEPROC glStencilOpSeparate;
+
+    // Separate blending
+    PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
+    PFNGLBLENDEQUATIONSEPARATEPROC glBlendEquationSeparate;
 };
 
 #endif //_AGPU_DEVICE_HPP_

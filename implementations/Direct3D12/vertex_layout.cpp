@@ -178,7 +178,10 @@ agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buff
 
         D3D12_INPUT_ELEMENT_DESC element;
         element.SemanticName = VertexAttributeSemantics[attrib.binding];
-        element.Format = mapImageFormat(attrib.type, attrib.components, attrib.normalized);
+        if (attrib.internal_format != AGPU_TEXTURE_FORMAT_UNKNOWN)
+            element.Format = (DXGI_FORMAT)attrib.internal_format;
+        else
+            element.Format = mapImageFormat(attrib.type, attrib.components, attrib.normalized);
         element.InputSlot = attrib.buffer;
         element.AlignedByteOffset = (UINT)attrib.offset;
         element.InputSlotClass = attrib.divisor ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;

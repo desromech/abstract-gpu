@@ -353,6 +353,15 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glFenceSync);
     LOAD_FUNCTION(glClientWaitSync);
     LOAD_FUNCTION(glWaitSync);
+
+    // Stencil buffer
+    LOAD_FUNCTION(glStencilFuncSeparate);
+    LOAD_FUNCTION(glStencilOpSeparate);
+
+    // Stencil buffer
+    LOAD_FUNCTION(glBlendFuncSeparate);
+    LOAD_FUNCTION(glBlendEquationSeparate);
+
 }
 
 void _agpu_device::initializeObjects()

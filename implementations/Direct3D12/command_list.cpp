@@ -162,9 +162,9 @@ agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
     {
         D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS(0);
         if (buffers & AGPU_DEPTH_BUFFER_BIT)
-            flags = D3D12_CLEAR_FLAG_DEPTH;
+            flags |= D3D12_CLEAR_FLAG_DEPTH;
         if (buffers & AGPU_STENCIL_BUFFER_BIT)
-            flags = D3D12_CLEAR_FLAG_STENCIL;
+            flags |= D3D12_CLEAR_FLAG_STENCIL;
         commandList->ClearDepthStencilView(currentFramebuffer->getDepthStencilCpuHandle(), flags, clearDepth, clearStencil, 0, nullptr);
     }
 

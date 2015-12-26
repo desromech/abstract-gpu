@@ -78,6 +78,7 @@
             <field name="normalized" type="bool" />
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
+            <field name="internal_format" type="texture_format" />
         </struct>
 
         <struct name="color4f">
@@ -387,6 +388,35 @@
             <constant name="CommandListTypeCompute" value="3" />
             <constant name="CommandListTypeCopy" value="4" />
         </enum>
+
+        <enum name="blending_factor">
+            <constant name="BlendingZero" value="1" />
+            <constant name="BlendingOne" value="2" />
+            <constant name="BlendingSrcColor" value="3" />
+            <constant name="BlendingInvertedSrcColor" value="4" />
+            <constant name="BlendingSrcAlpha" value="5" />
+            <constant name="BlendingInvertedSrcAlpha" value="6" />
+            <constant name="BlendingDestAlpha" value="7" />
+            <constant name="BlendingInvertedDestAlpha" value="8" />
+            <constant name="BlendingDestColor" value="9" />
+            <constant name="BlendingInvertedDestColor" value="10" />
+            <constant name="BlendingSrcAlphaSat" value="11" />
+            <constant name="BlendingConstantFactor" value="14" />
+            <constant name="BlendingInvertedConstantFactor" value="15" />
+            <constant name="BlendingSrc1Color" value="16" />
+            <constant name="BlendingInvertedSrc1Color" value="17" />
+            <constant name="BlendingSrc1Alpha" value="18" />
+            <constant name="BlendingInvertedSrc1Alpha" value="19" />
+        </enum>
+
+        <enum name="blending_operation">
+            <constant name="BlendingOperationAdd" value="1" />
+            <constant name="BlendingOperationSubtract" value="2" />
+            <constant name="BlendingOperationReverseSubtract" value="3" />
+            <constant name="BlendingOperationMin" value="4" />
+            <constant name="BlendingOperationMax" value="5" />
+        </enum>
+
     </constants>
 
     <globals>
@@ -525,6 +555,29 @@
                 <arg name="buffer" type="string_buffer" />
             </method>
 
+            <method name="setBlendState" cname="SetBlendState" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setBlendFunction" cname="SetBlendFunction" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="sourceFactor" type="blending_factor" />
+                <arg name="destFactor" type="blending_factor" />
+                <arg name="colorOperation" type="blending_operation" />
+                <arg name="sourceAlphaFactor" type="blending_factor" />
+                <arg name="destAlphaFactor" type="blending_factor" />
+                <arg name="alphaOperation" type="blending_operation" />
+            </method>
+
+            <method name="setColorMask" cname="SetColorMask" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="redEnabled" type="bool" />
+                <arg name="greenEnabled" type="bool" />
+                <arg name="blueEnabled" type="bool" />
+                <arg name="alphaEnabled" type="bool" />
+            </method>
+
             <method name="setDepthState" cname="SetDepthState" returnType="error">
                 <arg name="enabled" type="bool" />
                 <arg name="writeMask" type="bool" />
@@ -535,6 +588,20 @@
                 <arg name="enabled" type="bool" />
                 <arg name="writeMask" type="int" />
                 <arg name="readMask" type="int" />
+            </method>
+
+            <method name="setStencilFrontFace" cname="SetStencilFrontFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setStencilBackFace" cname="SetStencilBackFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
             </method>
 
             <method name="setRenderTargetCount" cname="SetRenderTargetCount" returnType="error">

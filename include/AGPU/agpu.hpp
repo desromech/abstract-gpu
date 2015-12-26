@@ -314,6 +314,21 @@ public:
 		AgpuThrowIfFailed(agpuGetPipelineBuildingLog( this, buffer_size, buffer ));
 	}
 
+	inline void setBlendState ( agpu_int renderTargetMask, agpu_bool enabled )
+	{
+		AgpuThrowIfFailed(agpuSetBlendState( this, renderTargetMask, enabled ));
+	}
+
+	inline void setBlendFunction ( agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
+	{
+		AgpuThrowIfFailed(agpuSetBlendFunction( this, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation ));
+	}
+
+	inline void setColorMask ( agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
+	{
+		AgpuThrowIfFailed(agpuSetColorMask( this, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled ));
+	}
+
 	inline void setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 	{
 		AgpuThrowIfFailed(agpuSetDepthState( this, enabled, writeMask, function ));
@@ -322,6 +337,16 @@ public:
 	inline void setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
 	{
 		AgpuThrowIfFailed(agpuSetStencilState( this, enabled, writeMask, readMask ));
+	}
+
+	inline void setStencilFrontFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+	{
+		AgpuThrowIfFailed(agpuSetStencilFrontFace( this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction ));
+	}
+
+	inline void setStencilBackFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+	{
+		AgpuThrowIfFailed(agpuSetStencilBackFace( this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction ));
 	}
 
 	inline void setRenderTargetCount ( agpu_int count )

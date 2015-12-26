@@ -21,6 +21,23 @@ inline D3D12_COMPARISON_FUNC mapCompareFunction(agpu_compare_function function)
     }
 }
 
+inline D3D12_STENCIL_OP mapStencilOperation(agpu_stencil_operation operation)
+{
+    switch (operation)
+    {
+    case AGPU_KEEP: return D3D12_STENCIL_OP_KEEP;
+    case AGPU_ZERO: return D3D12_STENCIL_OP_ZERO;
+    case AGPU_REPLACE: return D3D12_STENCIL_OP_REPLACE;
+    case AGPU_INVERT: return D3D12_STENCIL_OP_INVERT;
+    case AGPU_INCREASE: return D3D12_STENCIL_OP_INCR_SAT;
+    case AGPU_INCREASE_WRAP: return D3D12_STENCIL_OP_INCR;
+    case AGPU_DECREASE: return D3D12_STENCIL_OP_DECR_SAT;
+    case AGPU_DECREASE_WRAP: return D3D12_STENCIL_OP_DECR;
+    default:
+        abort();
+    }
+}
+
 inline D3D12_PRIMITIVE_TOPOLOGY_TYPE mapPrimitiveType(agpu_primitive_type type)
 {
     switch (type)
@@ -29,6 +46,46 @@ inline D3D12_PRIMITIVE_TOPOLOGY_TYPE mapPrimitiveType(agpu_primitive_type type)
     case AGPU_PRIMITIVE_TYPE_LINE: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
     case AGPU_PRIMITIVE_TYPE_TRIANGLE: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     case AGPU_PRIMITIVE_TYPE_PATCH: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+    default:
+        abort();
+    }
+}
+
+inline D3D12_BLEND mapBlendingFactor(agpu_blending_factor factor)
+{
+    switch (factor)
+    {
+    case AGPU_BLENDING_ZERO: return D3D12_BLEND_ZERO;
+    case AGPU_BLENDING_ONE: return D3D12_BLEND_ONE;
+    case AGPU_BLENDING_SRC_COLOR: return D3D12_BLEND_SRC_COLOR;
+    case AGPU_BLENDING_INVERTED_SRC_COLOR: return D3D12_BLEND_INV_SRC_COLOR;
+    case AGPU_BLENDING_SRC_ALPHA: return D3D12_BLEND_SRC_ALPHA;
+    case AGPU_BLENDING_INVERTED_SRC_ALPHA: return D3D12_BLEND_INV_SRC_ALPHA;
+    case AGPU_BLENDING_DEST_ALPHA: return D3D12_BLEND_DEST_ALPHA;
+    case AGPU_BLENDING_INVERTED_DEST_ALPHA: return D3D12_BLEND_INV_DEST_ALPHA;
+    case AGPU_BLENDING_DEST_COLOR: return D3D12_BLEND_DEST_COLOR;
+    case AGPU_BLENDING_INVERTED_DEST_COLOR: return D3D12_BLEND_INV_DEST_COLOR;
+    case AGPU_BLENDING_SRC_ALPHA_SAT: return D3D12_BLEND_SRC_ALPHA_SAT;
+    case AGPU_BLENDING_CONSTANT_FACTOR: return D3D12_BLEND_BLEND_FACTOR;
+    case AGPU_BLENDING_INVERTED_CONSTANT_FACTOR: return D3D12_BLEND_INV_BLEND_FACTOR;
+    case AGPU_BLENDING_SRC_1COLOR: return D3D12_BLEND_SRC1_COLOR;
+    case AGPU_BLENDING_INVERTED_SRC_1COLOR: return D3D12_BLEND_INV_SRC1_COLOR;
+    case AGPU_BLENDING_SRC_1ALPHA: return D3D12_BLEND_SRC1_ALPHA;
+    case AGPU_BLENDING_INVERTED_SRC_1ALPHA: return D3D12_BLEND_INV_SRC1_ALPHA;
+    default:
+        abort();
+    }
+}
+
+inline D3D12_BLEND_OP mapBlendingOperation(agpu_blending_operation operation)
+{
+    switch (operation)
+    {
+    case AGPU_BLENDING_OPERATION_ADD: return D3D12_BLEND_OP_ADD;
+    case AGPU_BLENDING_OPERATION_SUBTRACT: return D3D12_BLEND_OP_SUBTRACT;
+    case AGPU_BLENDING_OPERATION_REVERSE_SUBTRACT: return D3D12_BLEND_OP_REV_SUBTRACT;
+    case AGPU_BLENDING_OPERATION_MIN: return D3D12_BLEND_OP_MIN;
+    case AGPU_BLENDING_OPERATION_MAX: return D3D12_BLEND_OP_MAX;
     default:
         abort();
     }
@@ -157,6 +214,60 @@ agpu_error _agpu_pipeline_builder::getPipelineBuildingLog(agpu_size buffer_size,
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
+{
+    for (int i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+    {
+        if ((renderTargetMask & (1<<i)) == 0)
+            continue;
+        description.BlendState.RenderTarget[i].BlendEnable = enabled ? TRUE : FALSE;
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+{
+
+    for (int i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+    {
+        if ((renderTargetMask & (1<<i)) == 0)
+            continue;
+        auto &blend = description.BlendState.RenderTarget[i];
+        blend.SrcBlend = mapBlendingFactor(sourceFactor);
+        blend.DestBlend = mapBlendingFactor(destFactor);
+        blend.BlendOp = mapBlendingOperation(colorOperation);
+
+        blend.SrcBlendAlpha = mapBlendingFactor(sourceAlphaFactor);
+        blend.DestBlendAlpha = mapBlendingFactor(destAlphaFactor);
+        blend.BlendOpAlpha= mapBlendingOperation(alphaOperation);
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+{
+    int mask = 0;
+    if (redEnabled)
+        mask |= D3D12_COLOR_WRITE_ENABLE_RED;
+    if (greenEnabled)
+        mask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+    if (blueEnabled)
+        mask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+    if (alphaEnabled)
+        mask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+    auto maskEnum = D3D12_COLOR_WRITE_ENABLE(mask);
+    for (int i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+    {
+        if ((renderTargetMask & (1 << i)) == 0)
+            continue;
+        description.BlendState.RenderTarget[i].RenderTargetWriteMask = maskEnum;
+    }
+
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     description.DepthStencilState.DepthEnable = enabled;
@@ -173,9 +284,30 @@ agpu_error _agpu_pipeline_builder::setStencilState(agpu_bool enabled, agpu_int w
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+    description.DepthStencilState.FrontFace.StencilFailOp = mapStencilOperation(stencilFailOperation);
+    description.DepthStencilState.FrontFace.StencilDepthFailOp = mapStencilOperation(depthFailOperation);
+    description.DepthStencilState.FrontFace.StencilPassOp = mapStencilOperation(stencilDepthPassOperation);
+    description.DepthStencilState.FrontFace.StencilFunc = mapCompareFunction(stencilFunction);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+    description.DepthStencilState.BackFace.StencilFailOp = mapStencilOperation(stencilFailOperation);
+    description.DepthStencilState.BackFace.StencilDepthFailOp = mapStencilOperation(depthFailOperation);
+    description.DepthStencilState.BackFace.StencilPassOp = mapStencilOperation(stencilDepthPassOperation);
+    description.DepthStencilState.BackFace.StencilFunc = mapCompareFunction(stencilFunction);
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
 {
+    memset(description.RTVFormats, 0, sizeof(description.RTVFormats));
     description.NumRenderTargets = count;
+    for (int i = 0; i < count; ++i)
+        description.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
     return AGPU_OK;
 }
 
@@ -254,6 +386,24 @@ AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog(agpu_pipeline_builder* pipelin
     return pipeline_builder->getPipelineBuildingLog(buffer_size, buffer);
 }
 
+AGPU_EXPORT agpu_error agpuSetBlendState(agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setBlendState(renderTargetMask, enabled);
+}
+
+AGPU_EXPORT agpu_error agpuSetBlendFunction(agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setBlendFunction(renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation);
+}
+
+AGPU_EXPORT agpu_error agpuSetColorMask(agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
+}
+
 AGPU_EXPORT agpu_error agpuSetDepthState(agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     CHECK_POINTER(pipeline_builder);
@@ -264,6 +414,18 @@ AGPU_EXPORT agpu_error agpuSetStencilState(agpu_pipeline_builder* pipeline_build
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setStencilState(enabled, writeMask, readMask);
+}
+
+AGPU_EXPORT agpu_error agpuSetStencilFrontFace(agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setStencilFrontFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
+}
+
+AGPU_EXPORT agpu_error agpuSetStencilBackFace(agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
 }
 
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount(agpu_pipeline_builder* pipeline_builder, agpu_int count)
