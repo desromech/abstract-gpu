@@ -1,3 +1,0 @@
-[submodule "ShaderCompiler/aslc/spirthon"]
-	path = ShaderCompiler/aslc/spirthon
-	url = https://github.com/cheery/spirthon.git
