@@ -133,6 +133,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     description.DSVFormat = DXGI_FORMAT_D16_UNORM;
     description.SampleMask = UINT_MAX;
     description.SampleDesc.Count = 1;
+    description.SampleDesc.Quality = 0;
 
     vertexLayout = nullptr;
 }
@@ -341,6 +342,23 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
+{
+    description.SampleDesc.Count = sample_count;
+    description.SampleDesc.Quality = sample_quality;
+    if (sample_count > 1)
+    {
+        description.RasterizerState.MultisampleEnable = TRUE;
+        description.RasterizerState.AntialiasedLineEnable = FALSE;
+    }
+    else
+    {
+        description.RasterizerState.MultisampleEnable = FALSE;
+        description.RasterizerState.AntialiasedLineEnable = FALSE;
+    }
+    return AGPU_OK;
+}
+
 // Exported C interface
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference(agpu_pipeline_builder* pipeline_builder)
 {
@@ -456,4 +474,10 @@ AGPU_EXPORT agpu_error agpuSetVertexLayout(agpu_pipeline_builder* pipeline_build
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setVertexLayout(layout);
+}
+
+AGPU_EXPORT agpu_error agpuSetSampleDescription(agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setSampleDescription(sample_count, sample_quality);
 }

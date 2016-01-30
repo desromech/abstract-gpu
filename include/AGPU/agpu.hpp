@@ -242,6 +242,11 @@ public:
 		return agpuCreateFence( this );
 	}
 
+	inline agpu_int getMultiSampleQualityLevels ( agpu_uint sample_count )
+	{
+		return agpuGetMultiSampleQualityLevels( this, sample_count );
+	}
+
 };
 
 typedef agpu_ref<agpu_device> agpu_device_ref;
@@ -377,6 +382,11 @@ public:
 	inline void setShaderSignature ( agpu_shader_signature* signature )
 	{
 		AgpuThrowIfFailed(agpuSetPipelineShaderSignature( this, signature ));
+	}
+
+	inline void setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality )
+	{
+		AgpuThrowIfFailed(agpuSetSampleDescription( this, sample_count, sample_quality ));
 	}
 
 };
@@ -606,6 +616,11 @@ public:
 	inline void endFrame (  )
 	{
 		AgpuThrowIfFailed(agpuEndFrame( this ));
+	}
+
+	inline void resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
+	{
+		AgpuThrowIfFailed(agpuResolveFramebuffer( this, destFramebuffer, sourceFramebuffer ));
 	}
 
 };

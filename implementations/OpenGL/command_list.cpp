@@ -280,6 +280,11 @@ void _agpu_command_list::execute()
         command();
 }
 
+agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+{
+    return AGPU_OK;
+}
+
 // C API
 AGPU_EXPORT agpu_error agpuAddCommandListReference(agpu_command_list* command_list)
 {
@@ -429,4 +434,10 @@ AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
     return command_list->endFrame();
+}
+
+AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+{
+    CHECK_POINTER(command_list);
+    return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
 }

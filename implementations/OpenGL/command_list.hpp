@@ -39,6 +39,7 @@ public:
     agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
     agpu_error beginFrame (agpu_framebuffer* framebuffer);
     agpu_error endFrame();
+    agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
         
 public:
     agpu_device *device;

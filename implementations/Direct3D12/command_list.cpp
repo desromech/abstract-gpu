@@ -292,7 +292,7 @@ agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer)
         return AGPU_OK;
 
     // TODO: Use a more proper state depending if this is used as a texture or not.
-    D3D12_RESOURCE_STATES prevState = D3D12_RESOURCE_STATE_PRESENT;
+    D3D12_RESOURCE_STATES prevState = framebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
 
     // Perform the resource transitions
     for (size_t i = 0; i < framebuffer->getColorBufferCount(); ++i)
@@ -323,8 +323,10 @@ agpu_error _agpu_command_list::endFrame()
     if (!currentFramebuffer)
         return AGPU_OK;
 
+    commandList->OMSetRenderTargets(0, nullptr, FALSE, nullptr);
+
     // TODO: Use a more proper state depending if this is used as a texture or not.
-    D3D12_RESOURCE_STATES newState = D3D12_RESOURCE_STATE_PRESENT;
+    D3D12_RESOURCE_STATES newState = currentFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
 
     // Perform the resource transitions
     for (size_t i = 0; i < currentFramebuffer->getColorBufferCount(); ++i)
@@ -339,6 +341,47 @@ agpu_error _agpu_command_list::endFrame()
 
     currentFramebuffer->release();
     currentFramebuffer = nullptr;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+{
+    CHECK_POINTER(destFramebuffer);
+    CHECK_POINTER(sourceFramebuffer);
+    if (destFramebuffer == sourceFramebuffer ||
+        destFramebuffer->getColorBufferCount() != sourceFramebuffer->getColorBufferCount())
+        return AGPU_INVALID_PARAMETER;
+
+    D3D12_RESOURCE_STATES destState = destFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
+    D3D12_RESOURCE_STATES sourceState = sourceFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
+
+    // Go to resolve state
+    for (size_t i = 0; i < destFramebuffer->getColorBufferCount(); ++i)
+    {
+        auto &destColorBuffer = destFramebuffer->colorBuffers[i];
+        auto &sourceColorBuffer = sourceFramebuffer->colorBuffers[i];
+        if (!destColorBuffer || !sourceColorBuffer)
+            return AGPU_ERROR;
+
+        {
+            D3D12_RESOURCE_BARRIER barriers[2] = {
+                resourceTransitionBarrier(destColorBuffer->gpuResource.Get(), destState, D3D12_RESOURCE_STATE_RESOLVE_DEST),
+                resourceTransitionBarrier(sourceColorBuffer->gpuResource.Get(), sourceState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE)
+            };
+            commandList->ResourceBarrier(2, barriers);
+        }
+
+        commandList->ResolveSubresource(destColorBuffer->gpuResource.Get(), 0, sourceColorBuffer->gpuResource.Get(), 0, (DXGI_FORMAT)sourceColorBuffer->description.format);
+
+        {
+            D3D12_RESOURCE_BARRIER barriers[2] = {
+                resourceTransitionBarrier(destColorBuffer->gpuResource.Get(), D3D12_RESOURCE_STATE_RESOLVE_DEST, destState),
+                resourceTransitionBarrier(sourceColorBuffer->gpuResource.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, sourceState)
+            };
+            commandList->ResourceBarrier(2, barriers);
+        }
+    }
+
     return AGPU_OK;
 }
 
@@ -490,4 +533,10 @@ AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
     return command_list->endFrame();
+}
+
+AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+{
+    CHECK_POINTER(command_list);
+    return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
 }

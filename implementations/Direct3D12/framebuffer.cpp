@@ -4,6 +4,7 @@
 _agpu_framebuffer::_agpu_framebuffer()
 {
     depthStencil = nullptr;
+    swapChainBuffer = false;
 }
 
 void _agpu_framebuffer::lostReferences()
@@ -77,10 +78,19 @@ agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture* bu
         colorBuffers[index]->release();
     colorBuffers[index] = buffer;
 
+    // View description.
+    D3D12_RENDER_TARGET_VIEW_DESC viewDesc;
+    memset(&viewDesc, 0, sizeof(viewDesc));
+    viewDesc.Format = (DXGI_FORMAT)buffer->description.format;
+    if (buffer->description.sample_count > 1)
+        viewDesc.ViewDimension = buffer->description.depthOrArraySize > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D12_RTV_DIMENSION_TEXTURE2DMS;
+    else
+        viewDesc.ViewDimension = buffer->description.depthOrArraySize > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
+
     // Perform the actual attachment.
     D3D12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
     handle.ptr += index * descriptorSize;
-    device->d3dDevice->CreateRenderTargetView(buffer->gpuResource.Get(), nullptr, handle);
+    device->d3dDevice->CreateRenderTargetView(buffer->gpuResource.Get(), nullptr/*&viewDesc*/, handle);
     return AGPU_OK;
 }
 
@@ -94,8 +104,17 @@ agpu_error _agpu_framebuffer::attachDepthStencilBuffer(agpu_texture* buffer)
         depthStencil->release();
     depthStencil = buffer;
 
+    // View description.
+    D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc;
+    memset(&viewDesc, 0, sizeof(viewDesc));
+    viewDesc.Format = (DXGI_FORMAT)buffer->description.format;
+    if (buffer->description.sample_count > 1)
+        viewDesc.ViewDimension = buffer->description.depthOrArraySize > 1 ? D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY : D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    else
+        viewDesc.ViewDimension = buffer->description.depthOrArraySize > 1 ? D3D12_DSV_DIMENSION_TEXTURE2DARRAY : D3D12_DSV_DIMENSION_TEXTURE2D;
+
     // Perform the actual attachment.
-    device->d3dDevice->CreateDepthStencilView(depthStencil->gpuResource.Get(), nullptr, depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+    device->d3dDevice->CreateDepthStencilView(depthStencil->gpuResource.Get(), nullptr/*&viewDesc*/, depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
     return AGPU_OK;
 }
 

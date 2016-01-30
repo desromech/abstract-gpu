@@ -34,6 +34,8 @@ public:
 
     agpu_command_queue *defaultCommandQueue;
 
+    agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
+
 public:
     agpu_error withTransferQueue(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &)> function);
     agpu_error withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function);

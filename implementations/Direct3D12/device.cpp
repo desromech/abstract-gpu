@@ -152,6 +152,18 @@ agpu_error _agpu_device::waitForMemoryTransfer()
     return AGPU_OK;
 }
 
+agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
+{
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS levels;
+    memset(&levels, 0, sizeof(levels));
+    levels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    levels.SampleCount = sample_count;
+    if (FAILED(d3dDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &levels, sizeof(levels))))
+        return 0;
+
+    return levels.NumQualityLevels;
+}
+
 // Exported C functions
 AGPU_EXPORT agpu_error agpuAddDeviceReference(agpu_device* device)
 {
@@ -270,4 +282,11 @@ AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device)
         return nullptr;
 
     return agpu_fence::create(device);
+}
+
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count)
+{
+    if (!device)
+        return 0;
+    return device->getMultiSampleQualityLevels(sample_count);
 }

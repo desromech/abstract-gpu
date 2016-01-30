@@ -158,6 +158,8 @@ public:
     void *getProcAddress(const char *symbolName);
     void initializeObjects();
     void createDefaultCommandQueue();
+    
+    agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)

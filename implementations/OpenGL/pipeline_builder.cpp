@@ -380,6 +380,11 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
+{
+    return AGPU_OK;
+}
+
 // C Interface
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder )
 {
@@ -495,4 +500,10 @@ AGPU_EXPORT agpu_error agpuSetVertexLayout(agpu_pipeline_builder* pipeline_build
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setVertexLayout(layout);
+}
+
+AGPU_EXPORT agpu_error agpuSetSampleDescription(agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setSampleDescription(sample_count, sample_quality);
 }

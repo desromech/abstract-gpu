@@ -35,6 +35,7 @@ public:
 
     agpu_error setRenderTargetFormat(agpu_uint index, agpu_texture_format format);
     agpu_error setDepthStencilFormat(agpu_texture_format format);
+    agpu_error setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality);
 
     agpu_error reset();
 

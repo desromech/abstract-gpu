@@ -254,6 +254,11 @@ void _agpu_device::readVersionInformation()
     printf("OpenGL version %s\n", glGetString(GL_VERSION));
 }
 
+agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
+{
+    return 1;
+}
+
 void _agpu_device::loadExtensions()
 {
     // Vertex buffer object.
@@ -492,4 +497,11 @@ AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
         return nullptr;
 
     return agpu_fence::create(device);
+}
+
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count)
+{
+    if (!device)
+        return 0;
+    return device->getMultiSampleQualityLevels(sample_count);
 }

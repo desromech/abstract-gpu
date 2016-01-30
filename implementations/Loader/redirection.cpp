@@ -185,6 +185,14 @@ AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
 	return (*dispatchTable)->agpuCreateFence ( device );
 }
 
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_uint sample_count )
+{
+	if (device == nullptr)
+		return (agpu_int)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuGetMultiSampleQualityLevels ( device, sample_count );
+}
+
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
 {
 	if (swap_chain == nullptr)
@@ -367,6 +375,14 @@ AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature ( agpu_pipeline_builder* p
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
 	return (*dispatchTable)->agpuSetPipelineShaderSignature ( pipeline_builder, signature );
+}
+
+AGPU_EXPORT agpu_error agpuSetSampleDescription ( agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetSampleDescription ( pipeline_builder, sample_count, sample_quality );
 }
 
 AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state )
@@ -663,6 +679,14 @@ AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list )
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuEndFrame ( command_list );
+}
+
+AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuResolveFramebuffer ( command_list, destFramebuffer, sourceFramebuffer );
 }
 
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )

@@ -59,6 +59,8 @@
             <field name="miplevels" type="ushort" />
             <field name="format" type="texture_format" />
             <field name="flags" type="texture_flags" />
+            <field name="sample_count" type="uint" />
+            <field name="sample_quality" type="uint" />
         </struct>
 
 		<struct name="draw_elements_command">
@@ -517,6 +519,11 @@
 
             <method name="createFence" cname="CreateFence" returnType="fence*">
             </method>
+
+            <method name="getMultiSampleQualityLevels" cname="GetMultiSampleQualityLevels" returnType="int">
+                <arg name="sample_count" type="uint" />
+            </method>
+
         </interface>
 
         <interface name="swap_chain">
@@ -627,6 +634,11 @@
 
             <method name="setShaderSignature" cname="SetPipelineShaderSignature" returnType="error">
                 <arg name="signature" type="shader_signature*" />
+            </method>
+
+            <method name="setSampleDescription" cname="SetSampleDescription" returnType="error">
+                <arg name="sample_count" type="uint" />
+                <arg name="sample_quality" type="uint" />
             </method>
         </interface>
 
@@ -790,6 +802,11 @@
             </method>
 
             <method name="endFrame" cname="EndFrame" returnType="error">
+            </method>
+
+            <method name="resolveFramebuffer" cname="ResolveFramebuffer" returnType="error">
+                <arg name="destFramebuffer" type="framebuffer*" />
+                <arg name="sourceFramebuffer" type="framebuffer*" />
             </method>
 
         </interface>

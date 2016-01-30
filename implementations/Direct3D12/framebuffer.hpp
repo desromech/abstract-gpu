@@ -37,6 +37,7 @@ public:
 
     std::vector<agpu_texture*> colorBuffers;
     agpu_texture* depthStencil;
+    bool swapChainBuffer;
 };
 
 #endif //AGPU_D3D12_FRAMEBUFFER_HPP

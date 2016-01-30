@@ -374,6 +374,8 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     desc.height = convertedSurface->h;
     desc.depthOrArraySize = 1;
     desc.miplevels = 1;
+    desc.sample_count = 1;
+    desc.sample_quality = 0;
     desc.flags = AGPU_TEXTURE_FLAG_UPLOADED;
     auto texture = agpuCreateTexture(device, &desc);
     if (!texture)

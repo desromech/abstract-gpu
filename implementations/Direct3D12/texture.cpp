@@ -40,8 +40,8 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     desc.DepthOrArraySize = description->depthOrArraySize;
     desc.MipLevels = description->miplevels;
     desc.Format = (DXGI_FORMAT)description->format;
-    desc.SampleDesc.Count = 1;
-    desc.SampleDesc.Quality = 0;
+    desc.SampleDesc.Count = description->sample_count;
+    desc.SampleDesc.Quality = description->sample_quality;
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 

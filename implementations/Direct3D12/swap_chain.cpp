@@ -37,10 +37,15 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     swapChainDesc.BufferDesc.Width = swapChain->windowWidth;
     swapChainDesc.BufferDesc.Height = swapChain->windowHeight;
     swapChainDesc.BufferDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format; // TODO: Pick a proper format
+    swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+    swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+    swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+    swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.OutputWindow = swapChain->window;
     swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.Windowed = TRUE;
 
     ComPtr<IDXGIFactory4> factory;
@@ -67,6 +72,7 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
         for (int i = 0; i < swapChain->frameCount; ++i)
         {
             auto framebuffer = agpu_framebuffer::create(device, swapChain->windowWidth, swapChain->windowHeight, 1, hasDepth, hasStencil);
+            framebuffer->swapChainBuffer = true;
             swapChain->framebuffer[i] = framebuffer;
 
             ComPtr<ID3D12Resource> colorBufferResource;
@@ -84,6 +90,7 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
                 desc.format = createInfo->colorbuffer_format;
                 desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
                 desc.miplevels = 1;
+                desc.sample_count = 1;
                 auto colorBuffer = agpu_texture::createFromResource(device, &desc, colorBufferResource);
                 if (!colorBuffer)
                 {
@@ -108,6 +115,7 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
                 desc.format = createInfo->depth_stencil_format;
                 desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
                 desc.miplevels = 1;
+                desc.sample_count = 1;
                 auto depthStencilBuffer = agpu_texture::create(device, &desc);
                 if (!depthStencilBuffer)
                 {
