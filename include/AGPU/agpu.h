@@ -453,6 +453,7 @@ typedef agpu_int (*agpuGetPlatformVersion_FUN) ( agpu_platform* platform );
 typedef agpu_int (*agpuGetPlatformImplementationVersion_FUN) ( agpu_platform* platform );
 typedef agpu_bool (*agpuPlatformHasRealMultithreading_FUN) ( agpu_platform* platform );
 typedef agpu_bool (*agpuIsNativePlatform_FUN) ( agpu_platform* platform );
+typedef agpu_bool (*agpuIsCrossPlatform_FUN) ( agpu_platform* platform );
 
 AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_open_info* openInfo );
 AGPU_EXPORT agpu_cstring agpuGetPlatformName ( agpu_platform* platform );
@@ -460,6 +461,7 @@ AGPU_EXPORT agpu_int agpuGetPlatformVersion ( agpu_platform* platform );
 AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion ( agpu_platform* platform );
 AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading ( agpu_platform* platform );
 AGPU_EXPORT agpu_bool agpuIsNativePlatform ( agpu_platform* platform );
+AGPU_EXPORT agpu_bool agpuIsCrossPlatform ( agpu_platform* platform );
 
 /* Methods for interface agpu_device. */
 typedef agpu_error (*agpuAddDeviceReference_FUN) ( agpu_device* device );
@@ -784,6 +786,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetPlatformImplementationVersion_FUN agpuGetPlatformImplementationVersion;
 	agpuPlatformHasRealMultithreading_FUN agpuPlatformHasRealMultithreading;
 	agpuIsNativePlatform_FUN agpuIsNativePlatform;
+	agpuIsCrossPlatform_FUN agpuIsCrossPlatform;
 	agpuAddDeviceReference_FUN agpuAddDeviceReference;
 	agpuReleaseDevice_FUN agpuReleaseDevice;
 	agpuGetDefaultCommandQueue_FUN agpuGetDefaultCommandQueue;

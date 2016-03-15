@@ -34,6 +34,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sample3", "Sample3\Sample3.
 		{55A865C6-883F-4EAA-884F-6E858AAEB37A} = {55A865C6-883F-4EAA-884F-6E858AAEB37A}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AgpuVulkan", "AgpuVulkan\AgpuVulkan.vcxproj", "{7370B9B2-CCD3-490E-BE63-77675356D71F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug CI|Any CPU = Debug CI|Any CPU
@@ -181,6 +183,28 @@ Global
 		{D934883A-5155-4090-954D-F9CAA49BCB2C}.Release|x64.Build.0 = Release|x64
 		{D934883A-5155-4090-954D-F9CAA49BCB2C}.Release|x86.ActiveCfg = Release|Win32
 		{D934883A-5155-4090-954D-F9CAA49BCB2C}.Release|x86.Build.0 = Release|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug CI|Any CPU.ActiveCfg = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug CI|Any CPU.Build.0 = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug CI|x64.ActiveCfg = Debug|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug CI|x64.Build.0 = Debug|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug CI|x86.ActiveCfg = Debug|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug CI|x86.Build.0 = Debug|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug|x64.ActiveCfg = Debug|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug|x64.Build.0 = Debug|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug|x86.ActiveCfg = Debug|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Debug|x86.Build.0 = Debug|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release CI|Any CPU.ActiveCfg = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release CI|Any CPU.Build.0 = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release CI|x64.ActiveCfg = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release CI|x64.Build.0 = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release CI|x86.ActiveCfg = Release|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release CI|x86.Build.0 = Release|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|Any CPU.ActiveCfg = Release|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x64.ActiveCfg = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x64.Build.0 = Release|x64
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x86.ActiveCfg = Release|Win32
+		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

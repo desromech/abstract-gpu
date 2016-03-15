@@ -56,3 +56,7 @@ AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform)
     return false;
 }
 
+AGPU_EXPORT agpu_bool agpuIsCrossPlatform(agpu_platform* platform)
+{
+    return platform == &theGLPlatform;
+}

@@ -450,6 +450,8 @@
             <method name="isNative" cname="IsNativePlatform" returnType="bool">
             </method>
 
+            <method name="isCrossPlatform" cname="IsCrossPlatform" returnType="bool">
+            </method>
         </interface>
 
         <interface name="device">

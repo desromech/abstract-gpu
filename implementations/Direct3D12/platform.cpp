@@ -55,3 +55,8 @@ AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform)
 {
     return platform == &theD3D12Platform;
 }
+
+AGPU_EXPORT agpu_bool agpuIsCrossPlatform(agpu_platform* platform)
+{
+    return platform != &theD3D12Platform;
+}

@@ -36,6 +36,7 @@ public:
 
     agpu_bool hasRealMultithreading;
     agpu_bool isNative;
+    agpu_bool isCrossPlatform;
 
 };
 
@@ -267,6 +268,7 @@ static void loadDriver(const std::string &path)
     platformInfo->moduleHandle = handle;
     platformInfo->isNative = agpuIsNativePlatform(platform);
     platformInfo->hasRealMultithreading = agpuPlatformHasRealMultithreading(platform);
+    platformInfo->isCrossPlatform = agpuIsCrossPlatform(platform);
     loadedPlatforms.push_back(platformInfo);
 }
 
@@ -321,6 +323,8 @@ static void loadPlatforms()
     std::sort(loadedPlatforms.begin(), loadedPlatforms.end(), [](PlatformInfo *a, PlatformInfo *b) {
         if (a->hasRealMultithreading == b->hasRealMultithreading)
         {
+            if (a->isNative == b->isNative)
+                return a->isCrossPlatform > b->isCrossPlatform;
             return a->isNative > b->isNative;
         }
 

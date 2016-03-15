@@ -7,4 +7,4 @@ packages
 *.sdf
 *.vcxproj.user
 *.opensdf
-
+*.opendb

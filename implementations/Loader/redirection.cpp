@@ -49,6 +49,14 @@ AGPU_EXPORT agpu_bool agpuIsNativePlatform ( agpu_platform* platform )
 	return (*dispatchTable)->agpuIsNativePlatform ( platform );
 }
 
+AGPU_EXPORT agpu_bool agpuIsCrossPlatform ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuIsCrossPlatform ( platform );
+}
+
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device )
 {
 	if (device == nullptr)

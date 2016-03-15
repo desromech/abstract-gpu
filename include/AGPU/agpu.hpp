@@ -146,6 +146,11 @@ public:
 		return agpuIsNativePlatform( this );
 	}
 
+	inline agpu_bool isCrossPlatform (  )
+	{
+		return agpuIsCrossPlatform( this );
+	}
+
 };
 
 typedef agpu_ref<agpu_platform> agpu_platform_ref;
