@@ -63,5 +63,25 @@ public:
     std::vector<agpu_command_queue*> computeCommandQueues;
     std::vector<agpu_command_queue*> transferCommandQueues;
 
+public:
+    bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)
+    {
+        // Function taken from the vulkan SDK.
+        // Search memtypes to find first index with those properties
+        for (uint32_t i = 0; i < 32; i++) {
+            if ((typeBits & 1) == 1) {
+                // Type is available, does it match user properties?
+                if ((memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask) {
+                    *typeIndex = i;
+                    return true;
+                }
+            }
+            typeBits >>= 1;
+        }
+
+        // No memory types matched, return failure
+        return false;
+    }
+
 };
 #endif //AGPU_VULKAN_DEVICE_HPP

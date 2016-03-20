@@ -22,6 +22,8 @@ public:
     agpu_error discardUploadBuffer();
     agpu_error discardReadbackBuffer();
 
+    agpu_error getFullViewDescription(agpu_texture_view_description *description);
+
 public:
     UINT subresourceIndexFor(agpu_uint level, agpu_uint arrayIndex);
     bool isArray();

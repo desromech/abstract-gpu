@@ -1,4 +1,5 @@
 #include "device.hpp"
+#include "../Common/texture_formats_common.hpp"
 
 inline VkFormat mapTextureFormat(agpu_texture_format format)
 {

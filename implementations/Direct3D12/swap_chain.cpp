@@ -65,21 +65,25 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
     bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
 
+    agpu_texture_view_description colorViewDesc;
+    agpu_texture_view_description depthStencilViewDesc;
+    auto depthStencilViewPointer = &depthStencilViewDesc;
+    if (!hasDepth && !hasStencil)
+        depthStencilViewPointer = nullptr;
+
     // Create the main frame buffer.
     {
         bool hasDepthStencil = createInfo->depth_stencil_format != AGPU_TEXTURE_FORMAT_UNKNOWN;
         bool failure = false;
         for (int i = 0; i < swapChain->frameCount; ++i)
         {
-            auto framebuffer = agpu_framebuffer::create(device, swapChain->windowWidth, swapChain->windowHeight, 1, hasDepth, hasStencil);
-            framebuffer->swapChainBuffer = true;
-            swapChain->framebuffer[i] = framebuffer;
-
             ComPtr<ID3D12Resource> colorBufferResource;
             if (FAILED(dxSwapChain->GetBuffer(i, IID_PPV_ARGS(&colorBufferResource))))
                 return false;
 
             // Create the color buffer.
+            agpu_texture *colorBuffer = nullptr;
+            agpu_texture *depthStencilBuffer = nullptr;
             {
                 agpu_texture_description desc;
                 memset(&desc, 0, sizeof(desc));
@@ -91,16 +95,15 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
                 desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
                 desc.miplevels = 1;
                 desc.sample_count = 1;
-                auto colorBuffer = agpu_texture::createFromResource(device, &desc, colorBufferResource);
+                colorBuffer = agpu_texture::createFromResource(device, &desc, colorBufferResource);
                 if (!colorBuffer)
                 {
                     failure = true;
                     break;
                 }
 
-                // Attach the color buffer.
-                framebuffer->attachColorBuffer(0, colorBuffer);
-                colorBuffer->release();
+                // Get the color buffer view description.
+                colorBuffer->getFullViewDescription(&colorViewDesc);
             }
 
             // Create the depth buffer.
@@ -113,20 +116,28 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
                 desc.height = createInfo->height;
                 desc.depthOrArraySize = 1;
                 desc.format = createInfo->depth_stencil_format;
-                desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
+                desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
                 desc.miplevels = 1;
                 desc.sample_count = 1;
-                auto depthStencilBuffer = agpu_texture::create(device, &desc);
+                depthStencilBuffer = agpu_texture::create(device, &desc);
                 if (!depthStencilBuffer)
                 {
                     failure = true;
+                    colorBuffer->release();
                     break;
                 }
 
-                // Attach the depth stencil buffer.
-                framebuffer->attachDepthStencilBuffer(depthStencilBuffer);
-                depthStencilBuffer->release();
+                // Get the depth stencil buffer view description.
+                depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
             }
+
+            auto framebuffer = agpu_framebuffer::create(device, swapChain->windowWidth, swapChain->windowHeight, 1, &colorViewDesc, depthStencilViewPointer);
+            framebuffer->swapChainBuffer = true;
+            swapChain->framebuffer[i] = framebuffer;
+
+            // Release the references to the buffers.
+            colorBuffer->release();
+            depthStencilBuffer->release();
         }
 
         // Release the already created framebuffers.

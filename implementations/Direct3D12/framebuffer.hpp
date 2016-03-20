@@ -11,10 +11,10 @@ public:
 
     void lostReferences();
 
-    static agpu_framebuffer* create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil);
+    static agpu_framebuffer* create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView);
     
-    agpu_error attachColorBuffer(agpu_int index, agpu_texture* buffer);
-    agpu_error attachDepthStencilBuffer(agpu_texture* buffer);
+    agpu_error attachColorBuffer(agpu_int index, agpu_texture_view_description* buffer);
+    agpu_error attachDepthStencilBuffer(agpu_texture_view_description* buffer);
 
     size_t getColorBufferCount() const;
     D3D12_CPU_DESCRIPTOR_HANDLE getColorBufferCpuHandle(size_t i);

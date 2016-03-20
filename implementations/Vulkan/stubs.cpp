@@ -1,28 +1,5 @@
 #include <AGPU/agpu.h>
 
-/* Methods for interface agpu_swap_chain. */
-
-AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseSwapChain ( agpu_swap_chain* swap_chain )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_swap_chain* swap_chain )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_chain )
-{
-    return nullptr;
-}
-
-
 /* Methods for interface agpu_pipeline_builder. */
 
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder )
@@ -294,54 +271,6 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list,
 }
 
 
-/* Methods for interface agpu_texture. */
-
-AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
-{
-    return nullptr;
-}
-
-AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-
 /* Methods for interface agpu_buffer. */
 
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
@@ -460,17 +389,6 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer )
 {
     return AGPU_UNIMPLEMENTED;
 }
-
-AGPU_EXPORT agpu_error agpuAttachColorBuffer ( agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer ( agpu_framebuffer* framebuffer, agpu_texture* buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
 
 /* Methods for interface agpu_shader_signature_builder. */
 

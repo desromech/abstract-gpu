@@ -71,6 +71,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -78,6 +79,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)dist\$(Platform)-$(Configuration)\AgpuIcd\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -152,21 +154,35 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\implementations\Vulkan\buffer.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\command_allocator.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\common.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\device.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\fence.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\framebuffer.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\object.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\platform.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\shader_signature.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\shader_signature_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\swap_chain.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\texture.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\texture_format.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\implementations\Vulkan\buffer.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\command_allocator.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\command_queue.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\device.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\fence.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\framebuffer.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\icd.c" />
     <ClCompile Include="..\..\..\implementations\Vulkan\platform.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\shader_signature.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\shader_signature_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\stubs.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\swap_chain.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

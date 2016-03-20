@@ -20,9 +20,16 @@ void _agpu_framebuffer::lostReferences()
         depthStencil->release();
 }
 
-agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil)
+agpu_framebuffer* agpu_framebuffer::create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 {
-    int heapSize = renderTargetCount;
+    int heapSize = colorCount;
+    bool hasDepth = false;
+    bool hasStencil = false;
+    if (depthStencilView)
+    {
+        hasDepth = (depthStencilView->subresource_range.usage_flags & AGPU_TEXTURE_FLAG_DEPTH) != 0;
+        hasStencil = (depthStencilView->subresource_range.usage_flags & AGPU_TEXTURE_FLAG_STENCIL) != 0;
+    }
 
     // Describe and create a render target view (RTV) descriptor heap.
     ComPtr<ID3D12DescriptorHeap> heap;
@@ -37,7 +44,7 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
 
     // Describe and create a depth stencil view heap.
     ComPtr<ID3D12DescriptorHeap> depthStencilHeap;
-    if (hasDepth || hasStencil)
+    if (depthStencilView != nullptr)
     {
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
         heapDesc.NumDescriptors = 1;
@@ -52,22 +59,30 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
     framebuffer->width = width;
     framebuffer->height = height;
     framebuffer->device = device;
-    framebuffer->colorBuffers.resize(renderTargetCount, nullptr);
+    framebuffer->colorBuffers.resize(colorCount, nullptr);
     framebuffer->hasDepth = hasDepth;
     framebuffer->hasStencil = hasStencil;
     framebuffer->heap = heap;
     framebuffer->depthStencilHeap = depthStencilHeap;
     framebuffer->descriptorSize = device->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-    framebuffer->colorBufferDescriptors.reserve(renderTargetCount);
-    for (agpu_uint i = 0; i < renderTargetCount; ++i)
+    framebuffer->colorBufferDescriptors.reserve(colorCount);
+    for (agpu_uint i = 0; i < colorCount; ++i)
         framebuffer->colorBufferDescriptors.push_back(framebuffer->getColorBufferCpuHandle(i));
-    
+
+    // Attach the views.
+    for (agpu_uint i = 0; i < colorCount; ++i)
+        framebuffer->attachColorBuffer(i, &colorViews[i]);
+    if (depthStencilView)
+        framebuffer->attachDepthStencilBuffer(depthStencilView);
+
     return framebuffer;
 }
 
-agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture* buffer)
+agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture_view_description* bufferView)
 {
+    CHECK_POINTER(bufferView);
+    auto buffer = bufferView->texture;
     CHECK_POINTER(buffer);
     if ((size_t)index >= colorBuffers.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -81,7 +96,7 @@ agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture* bu
     // View description.
     D3D12_RENDER_TARGET_VIEW_DESC viewDesc;
     memset(&viewDesc, 0, sizeof(viewDesc));
-    viewDesc.Format = (DXGI_FORMAT)buffer->description.format;
+    viewDesc.Format = (DXGI_FORMAT)bufferView->format;
     if (buffer->description.sample_count > 1)
         viewDesc.ViewDimension = buffer->description.depthOrArraySize > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D12_RTV_DIMENSION_TEXTURE2DMS;
     else
@@ -94,9 +109,12 @@ agpu_error _agpu_framebuffer::attachColorBuffer(agpu_int index, agpu_texture* bu
     return AGPU_OK;
 }
 
-agpu_error _agpu_framebuffer::attachDepthStencilBuffer(agpu_texture* buffer)
+agpu_error _agpu_framebuffer::attachDepthStencilBuffer(agpu_texture_view_description* bufferView)
 {
+    CHECK_POINTER(bufferView);
+    auto buffer = bufferView->texture;
     CHECK_POINTER(buffer);
+
 
     // Store the new depth stencil buffer.
     buffer->retain();
@@ -107,7 +125,7 @@ agpu_error _agpu_framebuffer::attachDepthStencilBuffer(agpu_texture* buffer)
     // View description.
     D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc;
     memset(&viewDesc, 0, sizeof(viewDesc));
-    viewDesc.Format = (DXGI_FORMAT)buffer->description.format;
+    viewDesc.Format = (DXGI_FORMAT)bufferView->format;
     if (buffer->description.sample_count > 1)
         viewDesc.ViewDimension = buffer->description.depthOrArraySize > 1 ? D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY : D3D12_DSV_DIMENSION_TEXTURE2DMS;
     else
@@ -146,16 +164,4 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer(agpu_framebuffer* framebuffer)
 {
     CHECK_POINTER(framebuffer);
     return framebuffer->release();
-}
-
-AGPU_EXPORT agpu_error agpuAttachColorBuffer(agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer)
-{
-    CHECK_POINTER(framebuffer);
-    return framebuffer->attachColorBuffer(index, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer(agpu_framebuffer* framebuffer, agpu_texture* buffer)
-{
-    CHECK_POINTER(framebuffer);
-    return framebuffer->attachDepthStencilBuffer(buffer);
 }

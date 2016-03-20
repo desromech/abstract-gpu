@@ -68,6 +68,29 @@
             <field name="sample_quality" type="uint" />
         </struct>
 
+        <struct name="components_swizzle">
+            <field name="r" type="component_swizzle" />
+            <field name="g" type="component_swizzle" />
+            <field name="b" type="component_swizzle" />
+            <field name="a" type="component_swizzle" />
+        </struct>
+
+        <struct name="subresource_range" >
+            <field name="usage_flags" type="texture_flags"/>
+            <field name="base_miplevel" type="uint"/>
+            <field name="level_count" type="uint"/>
+            <field name="base_arraylayer" type="uint"/>
+            <field name="layer_count" type="uint"/>
+        </struct>
+
+        <struct name="texture_view_description">
+            <field name="type" type="texture_type" />
+            <field name="texture" type="texture*" />
+            <field name="format" type="texture_format" />
+            <field name="components" type="components_swizzle" />
+            <field name="subresource_range" type="subresource_range" />
+        </struct>
+
 		<struct name="draw_elements_command">
 			<field name="index_count" type="uint" />
 			<field name="instance_count" type="uint" />
@@ -188,11 +211,13 @@
         <enum name="texture_flags">
             <constant name="TextureFlagNone" value="0" />
             <constant name="TextureFlagRenderTarget" value="1" />
-            <constant name="TextureFlagDepthStencil" value="2" />
-            <constant name="TextureFlagUnorderedAccess" value="4" />
-            <constant name="TextureFlagRenderbufferOnly" value="8" />
-            <constant name="TextureFlagReadedBack" value="16" />
-            <constant name="TextureFlagUploaded" value="32" />
+            <constant name="TextureFlagDepth" value="2" />
+            <constant name="TextureFlagStencil" value="4" />
+            <constant name="TextureFlagUnorderedAccess" value="8" />
+            <constant name="TextureFlagRenderbufferOnly" value="16" />
+
+            <constant name="TextureFlagReadedBack" value="32" />
+            <constant name="TextureFlagUploaded" value="64" />
         </enum>
 
 		<enum name="shader_type">
@@ -430,6 +455,15 @@
             <constant name="BlendingOperationMax" value="5" />
         </enum>
 
+        <enum name="component_swizzle">
+            <constant name="ComponentSwizzleIdentity" value="0" />
+            <constant name="ComponentSwizzleOne" value="1" />
+            <constant name="ComponentSwizzleZero" value="2" />
+            <constant name="ComponentSwizzleR" value="3" />
+            <constant name="ComponentSwizzleG" value="4" />
+            <constant name="ComponentSwizzleB" value="5" />
+            <constant name="ComponentSwizzleA" value="6" />
+        </enum>
     </constants>
 
     <globals>
@@ -521,9 +555,9 @@
             <method name="createFrameBuffer" cname="CreateFrameBuffer" returnType="framebuffer*">
                 <arg name="width" type="uint" />
                 <arg name="height" type="uint" />
-                <arg name="renderTargetCount" type="uint" />
-                <arg name="hasDepth" type="bool" />
-                <arg name="hasStencil" type="bool" />
+                <arg name="colorCount" type="uint" />
+                <arg name="colorView" type="texture_view_description*" />
+                <arg name="depthStencilViews" type="texture_view_description*" />
             </method>
 
             <method name="createTexture" cname="CreateTexture" returnType="texture*">
@@ -866,6 +900,9 @@
             <method name="discardReadbackBuffer" cname="DiscardTextureReadbackBuffer" returnType="error">
             </method>
 
+            <method name="getFullViewDescription" cname="GetTextureFullViewDescription" returnType="error">
+                <arg name="result" type="texture_view_description*" />
+            </method>
 <!--
             <method name="getLevelLayout" cname="GetTextureLevelLayout" returnType="error">
                 <arg name="level" type="uint" />
@@ -966,15 +1003,6 @@
             </method>
 
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
-            </method>
-
-            <method name="attachColorBuffer" cname="AttachColorBuffer" returnType="error">
-                <arg name="index" type="int" />
-                <arg name="buffer" type="texture*" />
-            </method>
-
-            <method name="attachDepthStencilBuffer" cname="AttachDepthStencilBuffer" returnType="error">
-                <arg name="buffer" type="texture*" />
             </method>
         </interface>
 

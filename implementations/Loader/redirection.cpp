@@ -169,12 +169,12 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_
 	return (*dispatchTable)->agpuGetPreferredHighLevelShaderLanguage ( device );
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil )
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews )
 {
 	if (device == nullptr)
 		return (agpu_framebuffer*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateFrameBuffer ( device, width, height, renderTargetCount, hasDepth, hasStencil );
+	return (*dispatchTable)->agpuCreateFrameBuffer ( device, width, height, colorCount, colorView, depthStencilViews );
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
@@ -769,6 +769,14 @@ AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture 
 	return (*dispatchTable)->agpuDiscardTextureReadbackBuffer ( texture );
 }
 
+AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription ( agpu_texture* texture, agpu_texture_view_description* result )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuGetTextureFullViewDescription ( texture, result );
+}
+
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
 {
 	if (buffer == nullptr)
@@ -935,22 +943,6 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer )
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
 	return (*dispatchTable)->agpuReleaseFramebuffer ( framebuffer );
-}
-
-AGPU_EXPORT agpu_error agpuAttachColorBuffer ( agpu_framebuffer* framebuffer, agpu_int index, agpu_texture* buffer )
-{
-	if (framebuffer == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
-	return (*dispatchTable)->agpuAttachColorBuffer ( framebuffer, index, buffer );
-}
-
-AGPU_EXPORT agpu_error agpuAttachDepthStencilBuffer ( agpu_framebuffer* framebuffer, agpu_texture* buffer )
-{
-	if (framebuffer == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
-	return (*dispatchTable)->agpuAttachDepthStencilBuffer ( framebuffer, buffer );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )

@@ -232,9 +232,9 @@ public:
 		return agpuGetPreferredHighLevelShaderLanguage( this );
 	}
 
-	inline agpu_framebuffer* createFrameBuffer ( agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil )
+	inline agpu_framebuffer* createFrameBuffer ( agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews )
 	{
-		return agpuCreateFrameBuffer( this, width, height, renderTargetCount, hasDepth, hasStencil );
+		return agpuCreateFrameBuffer( this, width, height, colorCount, colorView, depthStencilViews );
 	}
 
 	inline agpu_texture* createTexture ( agpu_texture_description* description )
@@ -684,6 +684,11 @@ public:
 		AgpuThrowIfFailed(agpuDiscardTextureReadbackBuffer( this ));
 	}
 
+	inline void getFullViewDescription ( agpu_texture_view_description* result )
+	{
+		AgpuThrowIfFailed(agpuGetTextureFullViewDescription( this, result ));
+	}
+
 };
 
 typedef agpu_ref<agpu_texture> agpu_texture_ref;
@@ -842,16 +847,6 @@ public:
 	inline void release (  )
 	{
 		AgpuThrowIfFailed(agpuReleaseFramebuffer( this ));
-	}
-
-	inline void attachColorBuffer ( agpu_int index, agpu_texture* buffer )
-	{
-		AgpuThrowIfFailed(agpuAttachColorBuffer( this, index, buffer ));
-	}
-
-	inline void attachDepthStencilBuffer ( agpu_texture* buffer )
-	{
-		AgpuThrowIfFailed(agpuAttachDepthStencilBuffer( this, buffer ));
 	}
 
 };

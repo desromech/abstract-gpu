@@ -48,7 +48,7 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     auto flags = description->flags;
     if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    if (flags & AGPU_TEXTURE_FLAG_DEPTH_STENCIL)
+    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     if (flags & AGPU_TEXTURE_FLAG_UNORDERED_ACCESS)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -88,7 +88,7 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     memset(&clearValueData, 0, sizeof(clearValueData));
     clearValueData.Format = desc.Format;
     auto clearValuePtr = &clearValueData;
-    if (flags & AGPU_TEXTURE_FLAG_DEPTH_STENCIL)
+    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
     {
         clearValueData.DepthStencil.Depth = 1;
         clearValueData.DepthStencil.Stencil = 0;
@@ -118,7 +118,7 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
         heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
         heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         auto initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
-        if (flags & AGPU_TEXTURE_FLAG_DEPTH_STENCIL)
+        if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
             initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 
         if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, clearValuePtr, IID_PPV_ARGS(&gpuResource))))
@@ -377,6 +377,26 @@ bool _agpu_texture::isArray()
     return description.type != AGPU_TEXTURE_3D && description.type != AGPU_TEXTURE_BUFFER && description.depthOrArraySize > 1;
 }
 
+agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *viewDescription)
+{
+    CHECK_POINTER(viewDescription);
+    memset(viewDescription, 0, sizeof(*viewDescription));
+    viewDescription->type = description.type;
+    viewDescription->texture = this;
+    viewDescription->format = description.format;
+    viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
+    viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
+    viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
+    viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
+    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.base_miplevel = 0;
+    viewDescription->subresource_range.level_count = description.miplevels;
+    viewDescription->subresource_range.base_arraylayer = 0;
+    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+
+    return AGPU_OK;
+}
+
 // Exported C interface
 AGPU_EXPORT agpu_error agpuAddTextureReference(agpu_texture* texture)
 {
@@ -432,4 +452,10 @@ AGPU_EXPORT agpu_error agpuUnmapTextureLevel(agpu_texture* texture)
 {
     CHECK_POINTER(texture);
     return texture->unmapLevel();
+}
+
+AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description *description)
+{
+    CHECK_POINTER(texture);
+    return texture->getFullViewDescription(description);
 }

@@ -1,6 +1,9 @@
 #include "device.hpp"
 #include "command_queue.hpp"
 #include "swap_chain.hpp"
+#include "framebuffer.hpp"
+#include "texture.hpp"
+#include "buffer.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -499,14 +502,20 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_de
     return AGPU_SHADER_LANGUAGE_NONE;
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil)
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_texture::create(device, description);
 }
 
 AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device)

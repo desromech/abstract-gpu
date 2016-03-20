@@ -16,10 +16,21 @@ public:
     static _agpu_swap_chain *create(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo);
     bool initialize(agpu_swap_chain_create_info *createInfo);
 
+    agpu_error swapBuffers();
+    agpu_framebuffer *getCurrentBackBuffer();
+
     agpu_device *device;
     VkSurfaceKHR surface;
     agpu_command_queue* graphicsQueue;
     agpu_command_queue* presentationQueue;
+
+    agpu_uint swapChainWidth;
+    agpu_uint swapChainHeight;
+    VkFormat format;
+    VkColorSpaceKHR colorSpace;
+
+    VkSwapchainKHR handle;
+    std::vector<agpu_framebuffer*> framebuffers;
 };
 
 #endif //AGPU_SWAP_CHAIN_HPP
