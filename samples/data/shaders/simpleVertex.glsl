@@ -1,19 +1,18 @@
 #version 400
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
 
-#pragma agpu attribute_location vPosition 0
-#pragma agpu attribute_location vColor 1
-
-layout(std140) uniform TransformationBuffer
+layout(std140, binding = 0) uniform TransformationBuffer
 {
     mat4 projectionMatrix;
     mat4 modelMatrix;
     mat4 viewMatrix;
 };
 
-in vec3 vPosition;
-in vec4 vColor;
+layout(location = 0) in vec3 vPosition;
+layout(location = 1) in vec4 vColor;
 
-out vec4 fColor;
+layout(location = 0) out vec4 fColor;
 
 void main()
 {

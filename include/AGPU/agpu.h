@@ -75,6 +75,12 @@ typedef enum {
 } agpu_error;
 
 typedef enum {
+	AGPU_COMMAND_QUEUE_TYPE_GRAPHICS = 0,
+	AGPU_COMMAND_QUEUE_TYPE_COMPUTE = 1,
+	AGPU_COMMAND_QUEUE_TYPE_TRANSFER = 2,
+} agpu_command_queue_type;
+
+typedef enum {
 	AGPU_PRIMITIVE_TYPE_POINT = 0,
 	AGPU_PRIMITIVE_TYPE_LINE = 1,
 	AGPU_PRIMITIVE_TYPE_TRIANGLE = 2,
@@ -291,7 +297,7 @@ typedef enum {
 	AGPU_TEXTURE_FORMAT_BC5_UNORM = 83,
 	AGPU_TEXTURE_FORMAT_BC5_SNORM = 84,
 	AGPU_TEXTURE_FORMAT_B5G6R5_UNORM = 85,
-	AGPU_TEXTURE_FORMAT_B5G6R5A1_UNORM = 86,
+	AGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM = 86,
 	AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM = 87,
 	AGPU_TEXTURE_FORMAT_B8G8R8X8_UNORM = 88,
 	AGPU_TEXTURE_FORMAT_B8G8R8A8_TYPELESS = 90,
@@ -360,6 +366,11 @@ typedef enum {
 typedef struct agpu_device_open_info {
 	agpu_pointer display;
 	agpu_bool debug_layer;
+	agpu_cstring application_name;
+	agpu_uint application_version;
+	agpu_cstring engine_name;
+	agpu_uint engine_version;
+	agpu_int gpu_index;
 } agpu_device_open_info;
 
 /* Structure agpu_swap_chain_create_info. */

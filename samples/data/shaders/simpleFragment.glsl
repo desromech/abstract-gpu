@@ -1,8 +1,11 @@
-#version 420
-in vec4 fColor;
+#version 400
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout(location = 0) in vec4 fColor;
+layout(location = 0) out vec4 fbColor;
 
 void main()
 {
-    gl_FragData[0] = fColor;
+    gl_FragColor = fColor;
 }
-

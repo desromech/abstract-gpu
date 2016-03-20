@@ -163,6 +163,8 @@ int SampleBase::main(int argc, const char **argv)
 
     // Get the preferred shader language.
     preferredShaderLanguage = agpuGetPreferredHighLevelShaderLanguage(device);
+    if(preferredShaderLanguage == AGPU_SHADER_LANGUAGE_NONE)
+        preferredShaderLanguage = agpuGetPreferredShaderLanguage(device);
 
     if(!initializeSample())
         return -1;

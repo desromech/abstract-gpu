@@ -152,14 +152,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\implementations\Vulkan\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\common.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\device.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\object.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\platform.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\swap_chain.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\texture_format.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\implementations\Vulkan\command_queue.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\device.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\icd.c" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\platform.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\stubs.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\swap_chain.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

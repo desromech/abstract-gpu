@@ -131,7 +131,7 @@ inline GLenum mapInternalTextureFormat(agpu_texture_format format)
 */
 
 	case AGPU_TEXTURE_FORMAT_B5G6R5_UNORM:                 return GL_RGB5;
-	case AGPU_TEXTURE_FORMAT_B5G6R5A1_UNORM:               return GL_RGB5_A1;
+	case AGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM:               return GL_RGB5_A1;
 
 	case AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM:               return GL_RGBA8;
 	case AGPU_TEXTURE_FORMAT_B8G8R8X8_UNORM:               return GL_RGB8;
@@ -263,7 +263,7 @@ inline GLenum mapExternalFormat(agpu_texture_format format)
 
 	case AGPU_TEXTURE_FORMAT_B5G6R5_UNORM:
         return GL_BGR;
-	case AGPU_TEXTURE_FORMAT_B5G6R5A1_UNORM:
+	case AGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM:
         return GL_BGRA;
 	case AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM:
         return GL_BGRA;
@@ -382,7 +382,7 @@ inline GLenum mapExternalFormatType(agpu_texture_format format)
 */
 
 	case AGPU_TEXTURE_FORMAT_B5G6R5_UNORM:             return GL_UNSIGNED_SHORT_5_6_5;
-	case AGPU_TEXTURE_FORMAT_B5G6R5A1_UNORM:           return GL_UNSIGNED_SHORT_5_5_5_1;
+	case AGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM:           return GL_UNSIGNED_SHORT_5_5_5_1;
 	case AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM:           return GL_UNSIGNED_BYTE;
 	case AGPU_TEXTURE_FORMAT_B8G8R8X8_UNORM:           return GL_UNSIGNED_BYTE;
 

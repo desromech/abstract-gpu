@@ -120,7 +120,7 @@ inline size_t pixelSizeOfTextureFormat(agpu_texture_format format)
 */
 
 	case AGPU_TEXTURE_FORMAT_B5G6R5_UNORM:
-	case AGPU_TEXTURE_FORMAT_B5G6R5A1_UNORM:
+	case AGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM:
         return 2;
 
 	case AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM:

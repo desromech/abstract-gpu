@@ -29,6 +29,11 @@
         <struct name="device_open_info">
             <field name="display" type="pointer" />
             <field name="debug_layer" type="bool" />
+            <field name="application_name" type="cstring" />
+            <field name="application_version" type="uint" />
+            <field name="engine_name" type="cstring" />
+            <field name="engine_version" type="uint" />
+            <field name="gpu_index" type="int" />
         </struct>
 
         <struct name="swap_chain_create_info">
@@ -118,6 +123,12 @@
             <constant name="CompilationError" value="-9" />
             <constant name="LinkingError" value="-9" />
             <constant name="CommandListClosed" value="-10" />
+        </enum>
+
+        <enum name="command_queue_type">
+            <constant name="CommandQueueTypeGraphics" value="0" />
+            <constant name="CommandQueueTypeCompute" value="1" />
+            <constant name="CommandQueueTypeTransfer" value="2" />
         </enum>
 
 		<enum name="primitive_type">
@@ -354,7 +365,7 @@
             <constant name="TextureFormatBC5_SNorm" value="84" />
 
             <constant name="TextureFormatB5G6R5_UNorm" value="85" />
-            <constant name="TextureFormatB5G6R5A1_UNorm" value="86" />
+            <constant name="TextureFormatB5G5R5A1_UNorm" value="86" />
             <constant name="TextureFormatB8G8R8A8_UNorm" value="87" />
             <constant name="TextureFormatB8G8R8X8_UNorm" value="88" />
 
