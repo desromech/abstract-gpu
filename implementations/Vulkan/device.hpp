@@ -48,6 +48,12 @@ public:
 
     PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr;
 
+    // Debug layer extension pointers
+    PFN_vkCreateDebugReportCallbackEXT fpCreateDebugReportCallbackEXT;
+    PFN_vkDestroyDebugReportCallbackEXT fpDestroyDebugReportCallbackEXT;
+    bool hasDebugReportExtension;
+    VkDebugReportCallbackEXT debugReportCallback;
+
     // Required extension pointers.
     PFN_vkGetPhysicalDeviceSurfaceSupportKHR fpGetPhysicalDeviceSurfaceSupportKHR;
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
@@ -84,8 +90,11 @@ public:
         return false;
     }
 
-    bool setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout);
-    VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout);
+    bool clearImageWithColor(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue);
+    bool clearImageWithDepthStencil(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue);
+
+    bool setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
+    VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
 
 private:
     bool createSetupCommandBuffer();

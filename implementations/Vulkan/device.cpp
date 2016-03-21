@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "device.hpp"
 #include "command_queue.hpp"
 #include "swap_chain.hpp"
@@ -6,6 +7,10 @@
 #include "buffer.hpp"
 #include "command_allocator.hpp"
 #include "command_list.hpp"
+#include "pipeline_builder.hpp"
+#include "shader_signature_builder.hpp"
+#include "shader.hpp"
+#include "vertex_layout.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -32,7 +37,10 @@ void printError(const char *format, ...)
     va_start(args, format);
     vsnprintf(buffer, 1024, format, args);
 #ifdef _WIN32
-    OutputDebugStringA(buffer);
+    if(!GetConsoleCP())
+        OutputDebugStringA(buffer);
+    else
+        fputs(buffer, stderr);
 #else
     fputs(buffer, stderr);
 #endif
@@ -45,7 +53,7 @@ const char *validationLayerNames[] = {
     "VK_LAYER_LUNARG_image",
     "VK_LAYER_LUNARG_mem_tracker",
     "VK_LAYER_LUNARG_object_tracker",
-    "VK_LAYER_LUNARG_threading",
+    //"VK_LAYER_LUNARG_threading",
     "VK_LAYER_LUNARG_device_limits",
     "VK_LAYER_LUNARG_swapchain",
 };
@@ -123,6 +131,26 @@ static bool hasRequiredDeviceExtensions(const std::vector<VkExtensionProperties>
     return true;
 }
 
+VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
+    VkDebugReportFlagsEXT       flags,
+    VkDebugReportObjectTypeEXT  objectType,
+    uint64_t                    object,
+    size_t                      location,
+    int32_t                     messageCode,
+    const char*                 pLayerPrefix,
+    const char*                 pMessage,
+    void*                       pUserData)
+{
+    switch (messageCode)
+    {
+    case 50: // Use render pass clear op.
+        return VK_FALSE;
+    }
+
+    printError("%s\n", pMessage);
+    return VK_FALSE;
+}
+
 _agpu_device::_agpu_device()
 {
     vulkanInstance = nullptr;
@@ -130,6 +158,8 @@ _agpu_device::_agpu_device()
     device = nullptr;
     setupCommandPool = nullptr;
     setupCommandBuffer = nullptr;
+    hasDebugReportExtension = false;
+    debugReportCallback = nullptr;
 }
 
 void _agpu_device::lostReferences()
@@ -147,6 +177,11 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 
 bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 {
+    std::vector<const char *> instanceLayers;
+    std::vector<const char *> instanceExtensions;
+    std::vector<const char *> deviceLayers;
+    std::vector<const char *> deviceExtensions;
+
     VkApplicationInfo applicationInfo;
     memset(&applicationInfo, 0, sizeof(applicationInfo));
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -179,8 +214,8 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
         if (openInfo->debug_layer && hasValidationLayers(instanceLayerProperties))
         {
-            createInfo.enabledLayerCount = validationLayerCount;
-            createInfo.ppEnabledLayerNames = validationLayerNames;
+            for (size_t i = 0; i < validationLayerCount; ++i)
+                instanceLayers.push_back(validationLayerNames[i]);
         }
     }
 
@@ -202,8 +237,27 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     }
 
     // Enable the required extensions
-    createInfo.ppEnabledExtensionNames = requiredExtensionNames;
-    createInfo.enabledExtensionCount = requiredExtensionCount;
+    for (size_t i = 0; i < requiredExtensionCount; ++i)
+        instanceExtensions.push_back(requiredExtensionNames[i]);
+
+    // Enable the debug reporting extension
+    if (openInfo->debug_layer && hasExtension("VK_EXT_debug_report", instanceExtensionProperties))
+    {
+        hasDebugReportExtension = true;
+        instanceExtensions.push_back("VK_EXT_debug_report");
+    }
+
+    // Set the enabled layers and extensions.
+    if (!instanceLayers.empty())
+    {
+        createInfo.ppEnabledLayerNames = &instanceLayers[0];
+        createInfo.enabledLayerCount = instanceLayers.size();
+    }
+
+    createInfo.ppEnabledExtensionNames = &instanceExtensions[0];
+    createInfo.enabledExtensionCount = instanceExtensions.size();
+
+    // Create the instace
     error = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
     if (error)
         return false;
@@ -264,6 +318,10 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         return false;
     }
 
+    // Enable the required device extensions.
+    for (size_t i = 0; i < requiredDeviceExtensionCount; ++i)
+        deviceExtensions.push_back(requiredDeviceExtensionNames[i]);
+
     uint32_t queueFamilyCount;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
     if (queueFamilyCount == 0)
@@ -280,9 +338,33 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     GET_INSTANCE_PROC_ADDR(GetPhysicalDeviceSurfacePresentModesKHR);
     GET_INSTANCE_PROC_ADDR(GetSwapchainImagesKHR);
 
+    if (hasDebugReportExtension)
+    {
+        GET_INSTANCE_PROC_ADDR(CreateDebugReportCallbackEXT);
+        GET_INSTANCE_PROC_ADDR(DestroyDebugReportCallbackEXT);
+
+        VkDebugReportCallbackCreateInfoEXT debugInfo;
+        memset(&debugInfo, 0, sizeof(debugInfo));
+        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        debugInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+            VK_DEBUG_REPORT_WARNING_BIT_EXT |
+            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+        debugInfo.pfnCallback = debugReportCallbackFunction;
+        debugInfo.pUserData = this;
+
+        auto error = fpCreateDebugReportCallbackEXT(vulkanInstance, &debugInfo, nullptr, &debugReportCallback);
+        if (error)
+            printError("Failed to register debug report callback.\n");
+    }
+
     // Open all the availables queues.
     std::vector<VkDeviceQueueCreateInfo> createQueueInfos;
-    float queuePriorities[] = { 0.0f };
+    
+    uint32_t maxQueueCount = 0;
+    for (size_t i = 0; i < queueFamilyCount; ++i)
+        maxQueueCount = std::max(maxQueueCount, queueProperties[i].queueCount);
+
+    std::vector<float> queuePriorities(maxQueueCount);
     for (size_t i = 0; i < queueFamilyCount; ++i)
     {
         auto &queueProps = queueProperties[i];
@@ -292,7 +374,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         createQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         createQueueInfo.queueFamilyIndex = i;
         createQueueInfo.queueCount = queueProps.queueCount;
-        createQueueInfo.pQueuePriorities = queuePriorities;
+        createQueueInfo.pQueuePriorities = &queuePriorities[0];
         createQueueInfos.push_back(createQueueInfo);
     }
 
@@ -301,15 +383,23 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = createQueueInfos.size();
     deviceCreateInfo.pQueueCreateInfos = &createQueueInfos[0];
-    deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensionNames;
-    deviceCreateInfo.enabledExtensionCount = requiredDeviceExtensionCount;
-
     if (openInfo->debug_layer && hasValidationLayers(deviceLayerProperties))
     {
-        deviceCreateInfo.ppEnabledLayerNames = validationLayerNames;
-        deviceCreateInfo.enabledLayerCount = validationLayerCount;
+        for (size_t i = 0; i < validationLayerCount; ++i)
+            deviceLayers.push_back(validationLayerNames[i]);
     }
 
+    // Set the device layers and extensions
+    deviceCreateInfo.ppEnabledExtensionNames = &deviceExtensions[0];
+    deviceCreateInfo.enabledExtensionCount = deviceExtensions.size();
+
+    if (!deviceLayers.empty())
+    {
+        deviceCreateInfo.ppEnabledLayerNames = &deviceLayers[0];
+        deviceCreateInfo.enabledLayerCount = deviceLayers.size();
+    }
+
+    // Create the device.
     error = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
     if (error)
         return false;
@@ -456,7 +546,7 @@ bool _agpu_device::createSetupCommandBuffer()
     return true;
 }
 
-bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout)
+bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
@@ -465,11 +555,85 @@ bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, V
             return false;
     }
 
-    auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout);
+    auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout, srcAccessMask);
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    vkCmdPipelineBarrier(setupCommandBuffer, srcStages, srcStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    return submitSetupCommandBuffer();
+}
+
+bool _agpu_device::clearImageWithColor(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue)
+{
+    std::unique_lock<std::mutex> l(setupMutex);
+    if (!setupCommandBuffer)
+    {
+        if (!createSetupCommandBuffer())
+            return false;
+    }
+
+    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    // Transition to dst optimal
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    // Clear the image
+    {
+        VkImageSubresourceRange range;
+        memset(&range, 0, sizeof(range));
+        range.aspectMask = aspect;
+        range.layerCount = 1;
+        range.levelCount = 1;
+        vkCmdClearColorImage(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, clearValue, 1, &range);
+    }
+
+    // Transition to target layout
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    return submitSetupCommandBuffer();
+}
+
+bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue)
+{
+    std::unique_lock<std::mutex> l(setupMutex);
+    if (!setupCommandBuffer)
+    {
+        if (!createSetupCommandBuffer())
+            return false;
+    }
+
+    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    // Transition to dst optimal
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    // Clear the image
+    {
+        VkImageSubresourceRange range;
+        memset(&range, 0, sizeof(range));
+        range.aspectMask = aspect;
+        range.layerCount = 1;
+        range.levelCount = 1;
+        vkCmdClearDepthStencilImage(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, clearValue, 1, &range);
+    }
+
+    // Transition to target layout
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
     return submitSetupCommandBuffer();
 }
 
@@ -519,20 +683,23 @@ bool _agpu_device::submitSetupCommandBuffer()
     return true;
 }
 
-VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout)
+VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
     VkImageMemoryBarrier barrier;
     memset(&barrier, 0, sizeof(barrier));
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.image = image;
+    barrier.srcAccessMask = srcAccessMask;
     barrier.oldLayout = sourceLayout;
     barrier.newLayout = destLayout;
     barrier.subresourceRange.aspectMask = aspect;
     barrier.subresourceRange.layerCount = 1;
     barrier.subresourceRange.levelCount = 1;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     if (destLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     }
 
     if (destLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
@@ -606,7 +773,9 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_descr
 
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_vertex_layout::create(device);
 }
 
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout* layout)
@@ -616,17 +785,23 @@ AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, ag
 
 AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type type)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_shader::create(device, type);
 }
 
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_shader_signature_builder::create(device);
 }
 
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_pipeline_builder::create(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type, agpu_command_queue *commandQueue)

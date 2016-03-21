@@ -282,9 +282,9 @@ agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout)
+agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
-    auto barrier = device->barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout);
+    auto barrier = device->barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout, srcAccessMask);
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
@@ -309,7 +309,7 @@ agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer, agpu_bo
         sourceLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout);
+        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VkAccessFlagBits(0));
 
     // Begin the render pass.
     VkRenderPassBeginInfo passBeginInfo;
@@ -336,7 +336,7 @@ agpu_error _agpu_command_list::endFrame()
         destLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout);
+        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
 
     // Unset the current framebuffer
     currentFramebuffer->release();

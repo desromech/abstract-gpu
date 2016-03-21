@@ -46,7 +46,7 @@ public:
 
 private:
     void resetState();
-    agpu_error setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout);
+    agpu_error setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
 
     agpu_framebuffer *currentFramebuffer;
     agpu_bool isSecondaryContent;

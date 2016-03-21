@@ -87,19 +87,29 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     createInfo.mipLevels = description->miplevels;
     createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    createInfo.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkImageAspectFlagBits imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
     auto flags = description->flags;
     if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
     {
         createInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        createInfo.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        imageAspect = VkImageAspectFlagBits(0);
+        if (flags & (AGPU_TEXTURE_FLAG_DEPTH))
+            imageAspect = VkImageAspectFlagBits(imageAspect | VK_IMAGE_ASPECT_DEPTH_BIT);
+        if (flags & (AGPU_TEXTURE_FLAG_STENCIL))
+            imageAspect = VkImageAspectFlagBits(imageAspect | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
+
     if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
     {
         createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        createInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
+
     if (flags & AGPU_TEXTURE_FLAG_READED_BACK)
         createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     if (flags & AGPU_TEXTURE_FLAG_UPLOADED)
@@ -141,6 +151,35 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         vkDestroyImage(device->device, image, nullptr);
         vkFreeMemory(device->device, textureMemory, nullptr);
         return nullptr;
+    }
+
+    if (initialLayout != createInfo.initialLayout)
+    {
+        bool success = false;
+        if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+        {
+            VkClearDepthStencilValue clearValue;
+            clearValue.depth = 1.0;
+            clearValue.stencil = 0;
+            success = device->clearImageWithDepthStencil(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+        }
+        else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+        {
+            VkClearColorValue clearValue;
+            memset(&clearValue, 0, sizeof(clearValue));
+            success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+        }
+        else
+        {
+            success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
+        }
+
+        if (!success)
+        {
+            vkDestroyImage(device->device, image, nullptr);
+            vkFreeMemory(device->device, textureMemory, nullptr);
+            return nullptr;
+        }
     }
 
     std::unique_ptr<agpu_texture> texture(new agpu_texture(device));

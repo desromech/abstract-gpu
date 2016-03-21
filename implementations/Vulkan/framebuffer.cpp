@@ -165,3 +165,16 @@ failure:
 
     return nullptr;
 }
+
+// The exported C interface
+AGPU_EXPORT agpu_error agpuAddFramebufferReference(agpu_framebuffer* framebuffer)
+{
+    CHECK_POINTER(framebuffer);
+    return framebuffer->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseFramebuffer(agpu_framebuffer* framebuffer)
+{
+    CHECK_POINTER(framebuffer);
+    return framebuffer->release();
+}

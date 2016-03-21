@@ -244,11 +244,13 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     if (!hasDepth && !hasStencil)
         depthStencilViewPointer = nullptr;
 
+    VkClearColorValue clearColor;
+    memset(&clearColor, 0, sizeof(clearColor));
     framebuffers.resize(imageCount);
     for (size_t i = 0; i < imageCount; ++i)
     {
         auto colorImage = swapChainImages[i];
-        if (!device->setImageLayout(colorImage, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR))
+        if (!device->clearImageWithColor(colorImage, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor))
             return false;
 
         agpu_texture *colorBuffer = nullptr;

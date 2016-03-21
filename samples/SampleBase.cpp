@@ -269,7 +269,7 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
         fullName += ".cso";
         break;
     case AGPU_SHADER_LANGUAGE_SPIR_V:
-        fullName += ".spirv";
+        fullName += ".spv";
         break;
     default:
         break;
