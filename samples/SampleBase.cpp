@@ -137,7 +137,7 @@ int SampleBase::main(int argc, const char **argv)
     swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
     swapChainCreateInfo.width = screenWidth;
     swapChainCreateInfo.height = screenHeight;
-    swapChainCreateInfo.doublebuffer = 1;
+    swapChainCreateInfo.buffer_count = 3;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debug_layer= true;

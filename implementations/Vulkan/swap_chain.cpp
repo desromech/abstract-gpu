@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "swap_chain.hpp"
 #include "texture.hpp"
 #include "texture_format.hpp"
@@ -10,6 +11,7 @@ _agpu_swap_chain::_agpu_swap_chain(agpu_device *device)
     graphicsQueue = nullptr;
     presentationQueue = nullptr;
     handle = nullptr;
+    currentBackBufferIndex = 0;
 }
 
 void _agpu_swap_chain::lostReferences()
@@ -87,17 +89,25 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     presentationQueue->retain();
 
     // Set the format.
+    agpu_texture_format actualFormat = createInfo->colorbuffer_format;
     if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
     {
         swapChain->format = mapTextureFormat(createInfo->colorbuffer_format);
         if (swapChain->format == VK_FORMAT_UNDEFINED)
+        {
             swapChain->format = VK_FORMAT_B8G8R8A8_UNORM;
+            actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+        }
     }
     else
     {
         assert(formatCount >= 1);
         swapChain->format = surfaceFormats[0].format;
+
+        // TODO: Perform reverse mapping of the format.
+        actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     }
+    swapChain->agpuFormat = actualFormat;
     swapChain->colorSpace = surfaceFormats[0].colorSpace;
 
     // Initialize the rest of the swap chain.
@@ -155,7 +165,7 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
         }
     }
 
-    uint32_t desiredNumberOfSwapchainImages = surfaceCapabilities.minImageCount + 1;
+    uint32_t desiredNumberOfSwapchainImages = std::max(surfaceCapabilities.minImageCount, createInfo->buffer_count);
     if ((surfaceCapabilities.maxImageCount > 0) &&
         (desiredNumberOfSwapchainImages > surfaceCapabilities.maxImageCount))
         desiredNumberOfSwapchainImages = surfaceCapabilities.maxImageCount;
@@ -205,7 +215,7 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     colorDesc.width = createInfo->width;
     colorDesc.height = createInfo->height;
     colorDesc.depthOrArraySize = 1;
-    colorDesc.format = createInfo->colorbuffer_format;
+    colorDesc.format = agpuFormat;
     colorDesc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
     colorDesc.miplevels = 1;
     colorDesc.sample_count = 1;
@@ -238,6 +248,9 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     for (size_t i = 0; i < imageCount; ++i)
     {
         auto colorImage = swapChainImages[i];
+        if (!device->setImageLayout(colorImage, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR))
+            return false;
+
         agpu_texture *colorBuffer = nullptr;
         agpu_texture *depthStencilBuffer = nullptr;
 
@@ -263,6 +276,7 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
         }
 
         auto framebuffer = agpu_framebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorViewDesc, depthStencilViewPointer);
+        framebuffer->swapChainFramebuffer = true;
         framebuffers[i] = framebuffer;
 
         // Release the references to the buffers.
@@ -273,17 +287,67 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
             return false;
     }
 
+    if (!getNextBackBufferIndex())
+        return false;
+
+    return true;
+}
+
+bool _agpu_swap_chain::getNextBackBufferIndex()
+{
+    auto error = device->fpAcquireNextImageKHR(device->device, handle, UINT64_MAX, VK_NULL_HANDLE, VK_NULL_HANDLE, &currentBackBufferIndex);
+    if (error == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        // TODO: Recreate the swap chain.
+        return true;
+    }
+    else if (error == VK_SUBOPTIMAL_KHR)
+    {
+    }
+    else if(error)
+    {
+        return false;
+    }
+
     return true;
 }
 
 agpu_error _agpu_swap_chain::swapBuffers()
 {
-    return AGPU_UNIMPLEMENTED;
+    // TODO: Present.
+    VkPresentInfoKHR presentInfo;
+    memset(&presentInfo, 0, sizeof(presentInfo));
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &handle;
+    presentInfo.pImageIndices = &currentBackBufferIndex;
+
+    auto error = device->fpQueuePresentKHR(presentationQueue->queue, &presentInfo);
+
+    if (error == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        // TODO: Recreate the swap chain.
+        return AGPU_OK;
+    }
+    else if (error == VK_SUBOPTIMAL_KHR)
+    {
+    }
+    else if (error)
+    {
+        CONVERT_VULKAN_ERROR(error);
+    }
+
+    if (!getNextBackBufferIndex())
+        return AGPU_ERROR;
+
+    return AGPU_OK;
 }
 
 agpu_framebuffer *_agpu_swap_chain::getCurrentBackBuffer()
 {
-    return nullptr;
+    auto result = framebuffers[currentBackBufferIndex];
+    result->retain();
+    return result;
 }
 
 // Exported C interface

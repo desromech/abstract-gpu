@@ -7,6 +7,7 @@ _agpu_framebuffer::_agpu_framebuffer(agpu_device *device)
 {
     renderPass = nullptr;
     framebuffer = nullptr;
+    swapChainFramebuffer = false;
 }
 
 void _agpu_framebuffer::lostReferences()
@@ -129,6 +130,11 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
         goto failure;
 
     auto result = new agpu_framebuffer(device);
+    result->colorCount = colorCount;
+    result->hasDepthStencil = depthStencilView != nullptr;
+
+    result->width = width;
+    result->height = height;
     result->renderPass = renderPass;
     result->framebuffer = framebuffer;
     result->attachmentViews = attachmentViews;

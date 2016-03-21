@@ -43,7 +43,7 @@
             <field name="depth_stencil_format" type="texture_format" />
             <field name="width" type="uint" />
             <field name="height" type="uint" />
-            <field name="doublebuffer" type="bool" />
+            <field name="buffer_count" type="uint" />
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
         </struct>
@@ -538,6 +538,7 @@
 
             <method name="createCommandAllocator" cname="CreateCommandAllocator" returnType="command_allocator*">
                 <arg name="type" type="command_list_type" />
+                <arg name="queue" type="command_queue*" />
             </method>
 
             <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
@@ -846,6 +847,7 @@
 
             <method name="beginFrame" cname="BeginFrame" returnType="error">
                 <arg name="framebuffer" type="framebuffer*" />
+                <arg name="bundle_content" type="bool" />
             </method>
 
             <method name="endFrame" cname="EndFrame" returnType="error">

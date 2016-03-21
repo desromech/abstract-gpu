@@ -392,7 +392,7 @@ typedef struct agpu_swap_chain_create_info {
 	agpu_texture_format depth_stencil_format;
 	agpu_uint width;
 	agpu_uint height;
-	agpu_bool doublebuffer;
+	agpu_uint buffer_count;
 	agpu_bool sample_buffers;
 	agpu_int samples;
 } agpu_swap_chain_create_info;
@@ -522,7 +522,7 @@ typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* devic
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
 typedef agpu_shader_signature_builder* (*agpuCreateShaderSignatureBuilder_FUN) ( agpu_device* device );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
-typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device, agpu_command_list_type type );
+typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
@@ -541,7 +541,7 @@ AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type );
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
@@ -661,7 +661,7 @@ typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_l
 typedef agpu_error (*agpuExecuteBundle_FUN) ( agpu_command_list* command_list, agpu_command_list* bundle );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
-typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list, agpu_framebuffer* framebuffer );
+typedef agpu_error (*agpuBeginFrame_FUN) ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
 typedef agpu_error (*agpuEndFrame_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResolveFramebuffer_FUN) ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
 
@@ -688,7 +688,7 @@ AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list
 AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer );
+AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
 AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
 

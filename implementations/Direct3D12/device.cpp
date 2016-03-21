@@ -236,11 +236,11 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device
     return agpu_pipeline_builder::create(device);
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type)
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type, agpu_command_queue *queue)
 {
     if (!device)
         return nullptr;
-    return agpu_command_allocator::create(device, type);
+    return agpu_command_allocator::create(device, type, queue);
 }
 
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)

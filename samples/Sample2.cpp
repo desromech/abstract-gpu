@@ -72,7 +72,7 @@ public:
         agpuBindVertexBuffers(vertexBinding, 1, &vertexBuffer);
 
         // Create the command list
-        commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT);
+        commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
         commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         agpuCloseCommandList(commandList);
         return true;
@@ -94,7 +94,7 @@ public:
         agpuResetCommandList(commandList, commandAllocator, pipeline);
         auto backBuffer = agpuGetCurrentBackBuffer(swapChain);
         agpuSetShaderSignature(commandList, shaderSignature);
-        agpuBeginFrame(commandList, backBuffer);
+        agpuBeginFrame(commandList, backBuffer, false);
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);

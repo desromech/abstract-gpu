@@ -137,12 +137,12 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
 	return (*dispatchTable)->agpuCreatePipelineBuilder ( device );
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type )
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue )
 {
 	if (device == nullptr)
 		return (agpu_command_allocator*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateCommandAllocator ( device, type );
+	return (*dispatchTable)->agpuCreateCommandAllocator ( device, type, queue );
 }
 
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
@@ -673,12 +673,12 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
 	return (*dispatchTable)->agpuResetCommandList ( command_list, allocator, initial_pipeline_state );
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer )
+AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuBeginFrame ( command_list, framebuffer );
+	return (*dispatchTable)->agpuBeginFrame ( command_list, framebuffer, bundle_content );
 }
 
 AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list )

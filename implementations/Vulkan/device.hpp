@@ -9,6 +9,7 @@
 
 #include "object.hpp"
 #include <memory>
+#include <mutex>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -83,5 +84,16 @@ public:
         return false;
     }
 
+    bool setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout);
+    VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout);
+
+private:
+    bool createSetupCommandBuffer();
+    bool submitSetupCommandBuffer();
+
+    std::mutex setupMutex;
+    VkCommandPool setupCommandPool;
+    VkCommandBuffer setupCommandBuffer;
+    agpu_command_queue *setupQueue;
 };
 #endif //AGPU_VULKAN_DEVICE_HPP

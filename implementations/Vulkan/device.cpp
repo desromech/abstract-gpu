@@ -4,6 +4,8 @@
 #include "framebuffer.hpp"
 #include "texture.hpp"
 #include "buffer.hpp"
+#include "command_allocator.hpp"
+#include "command_list.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -126,6 +128,8 @@ _agpu_device::_agpu_device()
     vulkanInstance = nullptr;
     physicalDevice = nullptr;
     device = nullptr;
+    setupCommandPool = nullptr;
+    setupCommandBuffer = nullptr;
 }
 
 void _agpu_device::lostReferences()
@@ -360,6 +364,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         }
     }
 
+    setupQueue = graphicsCommandQueues[0];
 
     return true;
 }
@@ -401,6 +406,148 @@ agpu_command_queue* _agpu_device::getTransferCommandQueue(agpu_uint index)
     auto result = transferCommandQueues[index];
     result->retain();
     return result;
+}
+
+bool _agpu_device::createSetupCommandBuffer()
+{
+    VkCommandPoolCreateInfo poolCreate;
+    memset(&poolCreate, 0, sizeof(poolCreate));
+    poolCreate.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolCreate.queueFamilyIndex = setupQueue->queueFamilyIndex;
+
+    auto error = vkCreateCommandPool(device, &poolCreate, nullptr, &setupCommandPool);
+    if (error)
+        return false;
+
+    VkCommandBufferAllocateInfo commandInfo;
+    memset(&commandInfo, 0, sizeof(commandInfo));
+    commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandInfo.commandPool = setupCommandPool;
+    commandInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandInfo.commandBufferCount = 1;
+
+    error = vkAllocateCommandBuffers(device, &commandInfo, &setupCommandBuffer);
+    if (error)
+    {
+        vkDestroyCommandPool(device, setupCommandPool, nullptr);
+        setupCommandPool = VK_NULL_HANDLE;
+        return false;
+    }
+
+    VkCommandBufferInheritanceInfo inheritance;
+    memset(&inheritance, 0, sizeof(inheritance));
+    inheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+
+    VkCommandBufferBeginInfo beginInfo;
+    memset(&beginInfo, 0, sizeof(beginInfo));
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.pInheritanceInfo = &inheritance;
+
+    error = vkBeginCommandBuffer(setupCommandBuffer, &beginInfo);
+    if (error)
+    {
+        vkFreeCommandBuffers(device, setupCommandPool, 1, &setupCommandBuffer);
+        vkDestroyCommandPool(device, setupCommandPool, nullptr);
+        setupCommandPool = VK_NULL_HANDLE;
+        setupCommandBuffer = VK_NULL_HANDLE;
+        return false;
+    }
+
+    return true;
+}
+
+bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout)
+{
+    std::unique_lock<std::mutex> l(setupMutex);
+    if (!setupCommandBuffer)
+    {
+        if (!createSetupCommandBuffer())
+            return false;
+    }
+
+    auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout);
+    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    vkCmdPipelineBarrier(setupCommandBuffer, srcStages, srcStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    return submitSetupCommandBuffer();
+}
+
+bool _agpu_device::submitSetupCommandBuffer()
+{
+    auto error = vkEndCommandBuffer(setupCommandBuffer);
+    if (error)
+        abort();
+
+    VkSubmitInfo submitInfo;
+    memset(&submitInfo, 0, sizeof(submitInfo));
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &setupCommandBuffer;
+
+    error = vkQueueSubmit(setupQueue->queue, 1, &submitInfo, VK_NULL_HANDLE);
+    if (error)
+        abort();
+
+    error = vkQueueWaitIdle(setupQueue->queue);
+    if (error)
+        abort();
+
+    error = vkResetCommandPool(device, setupCommandPool, 0);
+    if (error)
+        abort();
+
+    VkCommandBufferInheritanceInfo inheritance;
+    memset(&inheritance, 0, sizeof(inheritance));
+    inheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+
+    VkCommandBufferBeginInfo beginInfo;
+    memset(&beginInfo, 0, sizeof(beginInfo));
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.pInheritanceInfo = &inheritance;
+
+    error = vkBeginCommandBuffer(setupCommandBuffer, &beginInfo);
+    if (error)
+    {
+        vkFreeCommandBuffers(device, setupCommandPool, 1, &setupCommandBuffer);
+        vkDestroyCommandPool(device, setupCommandPool, nullptr);
+        setupCommandPool = VK_NULL_HANDLE;
+        setupCommandBuffer = VK_NULL_HANDLE;
+        return false;
+    }
+
+    return true;
+}
+
+VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout)
+{
+    VkImageMemoryBarrier barrier;
+    memset(&barrier, 0, sizeof(barrier));
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image = image;
+    barrier.oldLayout = sourceLayout;
+    barrier.newLayout = destLayout;
+    barrier.subresourceRange.aspectMask = aspect;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.levelCount = 1;
+
+    if (destLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    }
+
+    if (destLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    }
+
+    if (destLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    }
+
+    if (destLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    }
+
+    return barrier;
 }
 
 // Exported C API
@@ -482,14 +629,18 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device
     return nullptr;
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type)
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type, agpu_command_queue *commandQueue)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_command_allocator::create(device, type, commandQueue);
 }
 
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+    return agpu_command_list::create(device, type, allocator, initial_pipeline_state);
 }
 
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)

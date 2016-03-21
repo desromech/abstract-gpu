@@ -26,11 +26,16 @@ public:
 
     agpu_uint swapChainWidth;
     agpu_uint swapChainHeight;
+    agpu_texture_format agpuFormat;
     VkFormat format;
     VkColorSpaceKHR colorSpace;
 
     VkSwapchainKHR handle;
     std::vector<agpu_framebuffer*> framebuffers;
+
+    uint32_t currentBackBufferIndex;
+private:
+    bool getNextBackBufferIndex();
 };
 
 #endif //AGPU_SWAP_CHAIN_HPP

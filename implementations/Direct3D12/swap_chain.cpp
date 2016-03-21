@@ -29,7 +29,7 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     swapChain->windowHeight = createInfo->height;
 
     swapChain->window = (HWND)createInfo->window;
-    swapChain->frameCount = createInfo->doublebuffer ? 2 : 1;
+    swapChain->frameCount = createInfo->buffer_count;
 
     // Create the swap chain
     DXGI_SWAP_CHAIN_DESC swapChainDesc = {};

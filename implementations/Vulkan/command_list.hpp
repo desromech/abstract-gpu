@@ -1,31 +1,17 @@
-#ifndef AGPU_D3D12_COMMAND_LIST_HPP_
-#define AGPU_D3D12_COMMAND_LIST_HPP_
+#ifndef AGPU_COMMAND_LIST_HPP
+#define AGPU_COMMAND_LIST_HPP
 
 #include "device.hpp"
-
-inline D3D12_COMMAND_LIST_TYPE mapCommandListType(agpu_command_list_type type)
-{
-    switch (type)
-    {
-    case AGPU_COMMAND_LIST_TYPE_COPY: return D3D12_COMMAND_LIST_TYPE_COPY;
-    case AGPU_COMMAND_LIST_TYPE_DIRECT: return D3D12_COMMAND_LIST_TYPE_DIRECT;
-    case AGPU_COMMAND_LIST_TYPE_BUNDLE: return D3D12_COMMAND_LIST_TYPE_BUNDLE;
-    case AGPU_COMMAND_LIST_TYPE_COMPUTE: return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-    default: abort();
-    }
-}
 
 struct _agpu_command_list : public Object<_agpu_command_list>
 {
 public:
-    _agpu_command_list();
-
+    _agpu_command_list(agpu_device *device);
     void lostReferences();
 
-    static _agpu_command_list *create(agpu_device *device, agpu_command_list_type type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState);
+    static _agpu_command_list* create(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
 
-    agpu_error setShaderSignature(agpu_shader_signature *signature);
-
+    agpu_error setShaderSignature(agpu_shader_signature* signature);
     agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
     agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
     agpu_error setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a);
@@ -44,29 +30,29 @@ public:
     agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error setStencilReference(agpu_uint reference);
     agpu_error executeBundle(agpu_command_list* bundle);
+
     agpu_error close();
-    agpu_error reset(_agpu_command_allocator *allocator, agpu_pipeline_state* initial_pipeline_state);
+    agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
+
     agpu_error beginFrame(agpu_framebuffer* framebuffer, agpu_bool secondaryContent);
     agpu_error endFrame();
     agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
 
-public:
     agpu_device *device;
-    ComPtr<ID3D12GraphicsCommandList> commandList;
-
-    // Some flags
+    agpu_command_allocator* allocator;
     agpu_command_list_type type;
-
-    // Clearing state.
-    float clearColor[4];
-    float clearDepth;
-    int clearStencil;
-
-    // Framebuffer
-    agpu_framebuffer *currentFramebuffer;
+    agpu_uint queueFamilyIndex;
+    VkCommandBuffer commandBuffer;
 
 private:
-    agpu_error setCommonState();
+    void resetState();
+    agpu_error setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout);
+
+    agpu_framebuffer *currentFramebuffer;
+    agpu_bool isSecondaryContent;
+    float clearRed, clearGreen, clearBlue, clearAlpha;
+    float clearDepth;
+    agpu_int clearStencil;
 };
 
-#endif //AGPU_D3D12_COMMAND_LIST_HPP_
+#endif //AGPU_COMMAND_LIST_HPP

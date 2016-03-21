@@ -57,6 +57,9 @@
     <ClInclude Include="..\..\..\implementations\Vulkan\texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\implementations\Vulkan\command_list.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\implementations\Vulkan\device.cpp">
@@ -96,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\implementations\Vulkan\texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\implementations\Vulkan\command_list.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

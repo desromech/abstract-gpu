@@ -8,10 +8,10 @@ public:
         auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
         shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
         agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);
-        if (!shaderSignature)
-            return false;
+        //if (!shaderSignature)
+        //    return false;
 
-        commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT);
+        commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
         commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         agpuCloseCommandList(commandList);
 
@@ -24,7 +24,7 @@ public:
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, nullptr);
         auto backBuffer = agpuGetCurrentBackBuffer(swapChain);
-        agpuBeginFrame(commandList, backBuffer);
+        agpuBeginFrame(commandList, backBuffer, false);
 
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);

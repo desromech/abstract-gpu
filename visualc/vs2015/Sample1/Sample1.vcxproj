@@ -119,7 +119,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\thirdparty\glm;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SampleCommon.lib;%(AdditionalDependencies)</AdditionalDependencies>

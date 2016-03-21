@@ -1,4 +1,5 @@
 #include "command_queue.hpp"
+#include "command_list.hpp"
 
 _agpu_command_queue::_agpu_command_queue(agpu_device *device)
     : device(device)
@@ -27,6 +28,42 @@ bool _agpu_command_queue::supportsPresentingSurface(VkSurfaceKHR surface)
     return presentSupported != 0;
 }
 
+agpu_error _agpu_command_queue::addCommandList(agpu_command_list* command_list)
+{
+    CHECK_POINTER(command_list);
+    if (command_list->queueFamilyIndex != queueFamilyIndex)
+        return AGPU_INVALID_PARAMETER;
+
+    VkSubmitInfo submitInfo;
+    memset(&submitInfo, 0, sizeof(VkSubmitInfo));
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &command_list->commandBuffer;
+
+    auto error = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    CONVERT_VULKAN_ERROR(error);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_queue::finishQueueExecution()
+{
+    auto error = vkQueueWaitIdle(queue);
+    CONVERT_VULKAN_ERROR(error);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_queue::signalFence(agpu_fence* fence)
+{
+    CHECK_POINTER(fence);
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_command_queue::waitFence(agpu_fence* fence)
+{
+    CHECK_POINTER(fence);
+    return AGPU_UNIMPLEMENTED;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference(agpu_command_queue* command_queue)
 {
@@ -43,23 +80,23 @@ AGPU_EXPORT agpu_error agpuReleaseCommandQueue(agpu_command_queue* command_queue
 AGPU_EXPORT agpu_error agpuAddCommandList(agpu_command_queue* command_queue, agpu_command_list* command_list)
 {
     CHECK_POINTER(command_queue);
-    return AGPU_UNIMPLEMENTED;
+    return command_queue->addCommandList(command_list);
 }
 
 AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queue)
 {
     CHECK_POINTER(command_queue);
-    return AGPU_UNIMPLEMENTED;
+    return command_queue->finishQueueExecution();
 }
 
 AGPU_EXPORT agpu_error agpuSignalFence(agpu_command_queue* command_queue, agpu_fence* fence)
 {
     CHECK_POINTER(command_queue);
-    return AGPU_UNIMPLEMENTED;
+    return command_queue->signalFence(fence);
 }
 
 AGPU_EXPORT agpu_error agpuWaitFence(agpu_command_queue* command_queue, agpu_fence* fence)
 {
     CHECK_POINTER(command_queue);
-    return AGPU_UNIMPLEMENTED;
+    return command_queue->waitFence(fence);
 }

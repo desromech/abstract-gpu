@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\implementations\Vulkan\buffer.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\command_allocator.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\command_list.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\command_queue.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\common.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\device.hpp" />
@@ -172,6 +173,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\implementations\Vulkan\buffer.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\command_allocator.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\command_list.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\command_queue.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\device.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\fence.cpp" />

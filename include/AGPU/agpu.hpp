@@ -212,9 +212,9 @@ public:
 		return agpuCreatePipelineBuilder( this );
 	}
 
-	inline agpu_command_allocator* createCommandAllocator ( agpu_command_list_type type )
+	inline agpu_command_allocator* createCommandAllocator ( agpu_command_list_type type, agpu_command_queue* queue )
 	{
-		return agpuCreateCommandAllocator( this, type );
+		return agpuCreateCommandAllocator( this, type, queue );
 	}
 
 	inline agpu_command_list* createCommandList ( agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
@@ -613,9 +613,9 @@ public:
 		AgpuThrowIfFailed(agpuResetCommandList( this, allocator, initial_pipeline_state ));
 	}
 
-	inline void beginFrame ( agpu_framebuffer* framebuffer )
+	inline void beginFrame ( agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 	{
-		AgpuThrowIfFailed(agpuBeginFrame( this, framebuffer ));
+		AgpuThrowIfFailed(agpuBeginFrame( this, framebuffer, bundle_content ));
 	}
 
 	inline void endFrame (  )
