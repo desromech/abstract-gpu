@@ -361,7 +361,7 @@ AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeli
 	return (*dispatchTable)->agpuSetDepthStencilFormat ( pipeline_builder, format );
 }
 
-AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type )
+AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type )
 {
 	if (pipeline_builder == nullptr)
 		return AGPU_NULL_POINTER;
@@ -873,12 +873,12 @@ AGPU_EXPORT agpu_error agpuReleaseVertexLayout ( agpu_vertex_layout* vertex_layo
 	return (*dispatchTable)->agpuReleaseVertexLayout ( vertex_layout );
 }
 
-AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
+AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
 {
 	if (vertex_layout == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vertex_layout);
-	return (*dispatchTable)->agpuAddVertexAttributeBindings ( vertex_layout, vertex_buffer_count, attribute_count, attributes );
+	return (*dispatchTable)->agpuAddVertexAttributeBindings ( vertex_layout, vertex_buffer_count, vertex_strides, attribute_count, attributes );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderReference ( agpu_shader* shader )

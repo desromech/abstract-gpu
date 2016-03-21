@@ -374,7 +374,7 @@ public:
 		AgpuThrowIfFailed(agpuSetDepthStencilFormat( this, format ));
 	}
 
-	inline void setPrimitiveType ( agpu_primitive_type type )
+	inline void setPrimitiveType ( agpu_primitive_topology type )
 	{
 		AgpuThrowIfFailed(agpuSetPrimitiveType( this, type ));
 	}
@@ -782,9 +782,9 @@ public:
 		AgpuThrowIfFailed(agpuReleaseVertexLayout( this ));
 	}
 
-	inline void addVertexAttributeBindings ( agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
+	inline void addVertexAttributeBindings ( agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
 	{
-		AgpuThrowIfFailed(agpuAddVertexAttributeBindings( this, vertex_buffer_count, attribute_count, attributes ));
+		AgpuThrowIfFailed(agpuAddVertexAttributeBindings( this, vertex_buffer_count, vertex_strides, attribute_count, attributes ));
 	}
 
 };

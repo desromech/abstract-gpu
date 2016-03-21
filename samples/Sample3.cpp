@@ -60,7 +60,8 @@ public:
 
         // Create the vertex layout.
         vertexLayout = agpuCreateVertexLayout(device);
-        agpuAddVertexAttributeBindings(vertexLayout, 1, SampleVertex::DescriptionSize, SampleVertex::Description);
+        agpu_size vertexStride = sizeof(SampleVertex);
+        agpuAddVertexAttributeBindings(vertexLayout, 1, &vertexStride, SampleVertex::DescriptionSize, SampleVertex::Description);
 
         // Create the pipeline builder
         auto pipelineBuilder = agpuCreatePipelineBuilder(device);
@@ -68,7 +69,7 @@ public:
         agpuAttachShader(pipelineBuilder, vertexShader);
         agpuAttachShader(pipelineBuilder, fragmentShader);
         agpuSetVertexLayout(pipelineBuilder, vertexLayout);
-        agpuSetPrimitiveType(pipelineBuilder, AGPU_PRIMITIVE_TYPE_TRIANGLE);
+        agpuSetPrimitiveType(pipelineBuilder, AGPU_TRIANGLES);
 
         // Build the pipeline
         pipeline = buildPipeline(pipelineBuilder);

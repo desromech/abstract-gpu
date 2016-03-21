@@ -11,6 +11,9 @@ struct _agpu_shader_signature : public Object<_agpu_shader_signature>
     agpu_device *device;
 
     agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
+
+    VkPipelineLayout layout;
+    agpu_shader_signature_builder *builder;
 };
 
 #endif //AGPU_VULKAN_SHADER_SIGNATURE_HPP

@@ -24,7 +24,7 @@ struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
     agpu_error setRenderTargetCount(agpu_int count);
     agpu_error setRenderTargetFormat(agpu_uint index, agpu_texture_format format);
     agpu_error setDepthStencilFormat(agpu_texture_format format);
-    agpu_error setPrimitiveType(agpu_primitive_type type);
+    agpu_error setPrimitiveType(agpu_primitive_topology type);
     agpu_error setVertexLayout(agpu_vertex_layout* layout);
     agpu_error setPipelineShaderSignature(agpu_shader_signature* signature);
     agpu_error setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality);
@@ -32,7 +32,15 @@ struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
     agpu_device *device;
 
 private:
+    std::vector<agpu_shader*> shaders;
     std::vector<VkPipelineShaderStageCreateInfo> stages;
+    std::vector<VkDynamicState> dynamicStates;
+
+    std::vector<VkVertexInputBindingDescription> vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+    
+    std::vector<agpu_texture_format> renderTargetFormats;
+    agpu_texture_format depthStencilFormat;
 
     VkPipelineVertexInputStateCreateInfo vertexInputState;
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
@@ -45,6 +53,7 @@ private:
     VkPipelineDynamicStateCreateInfo dynamicState;
 
     VkGraphicsPipelineCreateInfo pipelineInfo;
+    agpu_shader_signature* shaderSignature;
 };
 
 #endif //AGPU_VULKAN_PIPELINE_BUILDER_HPP

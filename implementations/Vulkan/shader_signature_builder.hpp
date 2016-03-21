@@ -16,6 +16,9 @@ struct _agpu_shader_signature_builder : public Object<_agpu_shader_signature_bui
     agpu_error addBindingBank(agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings);
 
     agpu_device *device;
+
+    std::vector<VkDescriptorSetLayout> descriptorSets;
+    std::vector<VkPushConstantRange> pushConstantRanges;
 };
 
 #endif //AGPU_VULKAN_SHADER_SIGNATURE_BUILDER_HPP

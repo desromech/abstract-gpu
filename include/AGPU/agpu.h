@@ -81,13 +81,6 @@ typedef enum {
 } agpu_command_queue_type;
 
 typedef enum {
-	AGPU_PRIMITIVE_TYPE_POINT = 0,
-	AGPU_PRIMITIVE_TYPE_LINE = 1,
-	AGPU_PRIMITIVE_TYPE_TRIANGLE = 2,
-	AGPU_PRIMITIVE_TYPE_PATCH = 3,
-} agpu_primitive_type;
-
-typedef enum {
 	AGPU_POINTS = 0,
 	AGPU_LINES = 1,
 	AGPU_LINES_ADJACENCY = 2,
@@ -578,7 +571,7 @@ typedef agpu_error (*agpuSetStencilBackFace_FUN) ( agpu_pipeline_builder* pipeli
 typedef agpu_error (*agpuSetRenderTargetCount_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
 typedef agpu_error (*agpuSetRenderTargetFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format );
 typedef agpu_error (*agpuSetDepthStencilFormat_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
-typedef agpu_error (*agpuSetPrimitiveType_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
+typedef agpu_error (*agpuSetPrimitiveType_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type );
 typedef agpu_error (*agpuSetVertexLayout_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
 typedef agpu_error (*agpuSetPipelineShaderSignature_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature );
 typedef agpu_error (*agpuSetSampleDescription_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality );
@@ -599,7 +592,7 @@ AGPU_EXPORT agpu_error agpuSetStencilBackFace ( agpu_pipeline_builder* pipeline_
 AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count );
 AGPU_EXPORT agpu_error agpuSetRenderTargetFormat ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format );
 AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format );
-AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type );
+AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type );
 AGPU_EXPORT agpu_error agpuSetVertexLayout ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout );
 AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature ( agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature );
 AGPU_EXPORT agpu_error agpuSetSampleDescription ( agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality );
@@ -744,11 +737,11 @@ AGPU_EXPORT agpu_error agpuBindVertexBuffers ( agpu_vertex_binding* vertex_bindi
 /* Methods for interface agpu_vertex_layout. */
 typedef agpu_error (*agpuAddVertexLayoutReference_FUN) ( agpu_vertex_layout* vertex_layout );
 typedef agpu_error (*agpuReleaseVertexLayout_FUN) ( agpu_vertex_layout* vertex_layout );
-typedef agpu_error (*agpuAddVertexAttributeBindings_FUN) ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+typedef agpu_error (*agpuAddVertexAttributeBindings_FUN) ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
 
 AGPU_EXPORT agpu_error agpuAddVertexLayoutReference ( agpu_vertex_layout* vertex_layout );
 AGPU_EXPORT agpu_error agpuReleaseVertexLayout ( agpu_vertex_layout* vertex_layout );
-AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
+AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings ( agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
 
 /* Methods for interface agpu_shader. */
 typedef agpu_error (*agpuAddShaderReference_FUN) ( agpu_shader* shader );

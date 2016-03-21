@@ -13,7 +13,7 @@ public:
 
     static _agpu_vertex_layout *create(agpu_device *device);
 
-    agpu_error addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes);
+    agpu_error addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size *vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes);
 
 public:
     agpu_device *device;

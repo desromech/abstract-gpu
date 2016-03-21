@@ -141,10 +141,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
     const char*                 pMessage,
     void*                       pUserData)
 {
-    switch (messageCode)
+    if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
     {
-    case 50: // Use render pass clear op.
-        return VK_FALSE;
+        switch (messageCode)
+        {
+        case 3: // Unused vertex attribute.
+        case 50: // Use render pass clear op.
+            return VK_FALSE;
+        }
+
     }
 
     printError("%s\n", pMessage);

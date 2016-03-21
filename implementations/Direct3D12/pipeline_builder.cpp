@@ -38,14 +38,24 @@ inline D3D12_STENCIL_OP mapStencilOperation(agpu_stencil_operation operation)
     }
 }
 
-inline D3D12_PRIMITIVE_TOPOLOGY_TYPE mapPrimitiveType(agpu_primitive_type type)
+inline D3D12_PRIMITIVE_TOPOLOGY_TYPE mapPrimitiveType(agpu_primitive_topology type)
 {
     switch (type)
     {
-    case AGPU_PRIMITIVE_TYPE_POINT: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-    case AGPU_PRIMITIVE_TYPE_LINE: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-    case AGPU_PRIMITIVE_TYPE_TRIANGLE: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    case AGPU_PRIMITIVE_TYPE_PATCH: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+    case AGPU_POINTS:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+    case AGPU_LINES:
+    case AGPU_LINES_ADJACENCY:
+    case AGPU_LINE_STRIP:
+    case AGPU_LINE_STRIP_ADJACENCY:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    case AGPU_TRIANGLES:
+    case AGPU_TRIANGLES_ADJACENCY:
+    case AGPU_TRIANGLE_STRIP:
+    case AGPU_TRIANGLE_STRIP_ADJACENCY:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    case AGPU_PATCHES:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
     default:
         abort();
     }
@@ -324,7 +334,7 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format for
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_type type)
+agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_topology type)
 {
     description.PrimitiveTopologyType = mapPrimitiveType(type);
     return AGPU_OK;
@@ -464,7 +474,7 @@ AGPU_EXPORT agpu_error agpuSetDepthStencilFormat(agpu_pipeline_builder* pipeline
     return pipeline_builder->setDepthStencilFormat(format);
 }
 
-AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type)
+AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type)
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setPrimitiveType(type);

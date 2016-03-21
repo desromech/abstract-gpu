@@ -154,13 +154,6 @@
             <constant name="CommandQueueTypeTransfer" value="2" />
         </enum>
 
-		<enum name="primitive_type">
-            <constant name="PrimitiveTypePoint" value="0" />
-            <constant name="PrimitiveTypeLine" value="1" />
-            <constant name="PrimitiveTypeTriangle" value="2" />
-            <constant name="PrimitiveTypePatch" value="3" />
-		</enum>
-
 		<enum name="primitive_topology">
             <constant name="Points" value="0" />
 
@@ -673,7 +666,7 @@
             </method>
 
             <method name="setPrimitiveType" cname="SetPrimitiveType" returnType="error">
-                <arg name="type" type="primitive_type" />
+                <arg name="type" type="primitive_topology" />
             </method>
 
             <method name="setVertexLayout" cname="SetVertexLayout" returnType="error">
@@ -969,6 +962,7 @@
 
             <method name="addVertexAttributeBindings" cname="AddVertexAttributeBindings" returnType="error">
                 <arg name="vertex_buffer_count" type="uint" />
+                <arg name="vertex_strides" type="size*" />
                 <arg name="attribute_count" type="size" />
                 <arg name="attributes" type="vertex_attrib_description*" />
             </method>
