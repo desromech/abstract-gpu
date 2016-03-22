@@ -11,6 +11,7 @@
 #include "shader_signature_builder.hpp"
 #include "shader.hpp"
 #include "vertex_layout.hpp"
+#include "buffer.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -295,6 +296,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     physicalDevice = physicalDevices[gpuIndex];
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
     //printMessage("Vulkan physical device: %s [%08x:%08x %d]\n", deviceProperties.deviceName, deviceProperties.vendorID, deviceProperties.deviceID, deviceProperties.deviceType);
 
     uint32_t deviceLayerCount;
@@ -642,6 +644,19 @@ bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageAspectFlagBi
     return submitSetupCommandBuffer();
 }
 
+bool _agpu_device::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32_t regionCount, const VkBufferCopy *regions)
+{
+    std::unique_lock<std::mutex> l(setupMutex);
+    if (!setupCommandBuffer)
+    {
+        if (!createSetupCommandBuffer())
+            return false;
+    }
+
+    vkCmdCopyBuffer(setupCommandBuffer, sourceBuffer, destBuffer, regionCount, regions);
+    return submitSetupCommandBuffer();
+}
+
 bool _agpu_device::submitSetupCommandBuffer()
 {
     auto error = vkEndCommandBuffer(setupCommandBuffer);
@@ -773,7 +788,10 @@ AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain(agpu_device* device, agpu_comma
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_buffer::create(device, description, initial_data);
 }
 
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)

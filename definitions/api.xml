@@ -229,10 +229,11 @@
 		</enum>
 
 		<enum name="buffer_binding_type">
-			<constant name="ArrayBuffer" value="0" />
-			<constant name="ElementArrayBuffer" value="1" />
-			<constant name="UniformBuffer" value="2" />
-			<constant name="DrawIndirectBuffer" value="3" />
+            <constant name="GenericDataBuffer" value="0" />
+			<constant name="ArrayBuffer" value="1" />
+			<constant name="ElementArrayBuffer" value="2" />
+			<constant name="UniformBuffer" value="3" />
+			<constant name="DrawIndirectBuffer" value="4" />
 		</enum>
 
 		<enum name="buffer_mapping_flags">

@@ -151,10 +151,11 @@ typedef enum {
 } agpu_buffer_usage_type;
 
 typedef enum {
-	AGPU_ARRAY_BUFFER = 0,
-	AGPU_ELEMENT_ARRAY_BUFFER = 1,
-	AGPU_UNIFORM_BUFFER = 2,
-	AGPU_DRAW_INDIRECT_BUFFER = 3,
+	AGPU_GENERIC_DATA_BUFFER = 0,
+	AGPU_ARRAY_BUFFER = 1,
+	AGPU_ELEMENT_ARRAY_BUFFER = 2,
+	AGPU_UNIFORM_BUFFER = 3,
+	AGPU_DRAW_INDIRECT_BUFFER = 4,
 } agpu_buffer_binding_type;
 
 typedef enum {

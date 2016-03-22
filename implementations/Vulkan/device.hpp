@@ -92,10 +92,11 @@ public:
 
     bool clearImageWithColor(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue);
     bool clearImageWithDepthStencil(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue);
+    bool copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32_t regionCount, const VkBufferCopy *regions);
 
     bool setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
     VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
-
+    
 private:
     bool createSetupCommandBuffer();
     bool submitSetupCommandBuffer();

@@ -35,8 +35,11 @@ agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
     VkPipelineLayoutCreateInfo layoutInfo;
     memset(&layoutInfo, 0, sizeof(layoutInfo));
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutInfo.setLayoutCount = descriptorSets.size();
-    layoutInfo.pSetLayouts = &descriptorSets[0];
+    if(!descriptorSets.empty())
+    {
+        layoutInfo.setLayoutCount = descriptorSets.size();
+        layoutInfo.pSetLayouts = &descriptorSets[0];
+    }
 
     VkPipelineLayout layout;
     auto error = vkCreatePipelineLayout(device->device, &layoutInfo, nullptr, &layout);

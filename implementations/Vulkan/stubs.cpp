@@ -1,43 +1,5 @@
 #include <AGPU/agpu.h>
 
-/* Methods for interface agpu_buffer. */
-
-AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags )
-{
-    return nullptr;
-}
-
-AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buffer_description* description )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-
 /* Methods for interface agpu_vertex_binding. */
 
 AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding )

@@ -88,6 +88,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     VkImageAspectFlagBits imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
