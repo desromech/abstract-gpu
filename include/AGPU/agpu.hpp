@@ -252,6 +252,11 @@ public:
 		return agpuGetMultiSampleQualityLevels( this, sample_count );
 	}
 
+	inline agpu_bool hasTopLeftNdcOrigin (  )
+	{
+		return agpuHasTopLeftNdcOrigin( this );
+	}
+
 };
 
 typedef agpu_ref<agpu_device> agpu_device_ref;

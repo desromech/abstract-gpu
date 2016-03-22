@@ -566,6 +566,9 @@
                 <arg name="sample_count" type="uint" />
             </method>
 
+            <method name="hasTopLeftNdcOrigin" cname="HasTopLeftNdcOrigin" returnType="bool">
+            </method>
+
         </interface>
 
         <interface name="swap_chain">

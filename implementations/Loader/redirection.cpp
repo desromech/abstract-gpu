@@ -201,6 +201,14 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu
 	return (*dispatchTable)->agpuGetMultiSampleQualityLevels ( device, sample_count );
 }
 
+AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuHasTopLeftNdcOrigin ( device );
+}
+
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
 {
 	if (swap_chain == nullptr)

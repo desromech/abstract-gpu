@@ -71,6 +71,24 @@ protected:
     agpu_command_queue *commandQueue;
     agpu_shader_language preferredShaderLanguage;
     bool quit;
+
+    glm::mat4 ortho(float left, float right, float bottom, float top, float near, float far)
+    {
+        glm::mat4 matrix(1.0f);
+        matrix[0][0] = 2.0f / (right - left); matrix[3][0] = -(right + left) / (right - left);
+        matrix[1][1] = 2.0f / (top - bottom); matrix[3][0] = -(top + bottom) / (top - bottom);
+
+        matrix[2][2] = -1.0f / (far - near); matrix[3][2] = -near / (far - near);
+
+        // Flip the Y axis
+        if (agpuHasTopLeftNdcOrigin(device))
+        {
+            matrix[1][1] = -matrix[1][1];
+            matrix[3][1] = -matrix[3][1];
+        }
+
+        return matrix;
+    }
 };
 
 #define SAMPLE_MAIN(SampleClass) \

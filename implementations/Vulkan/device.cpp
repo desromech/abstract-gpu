@@ -880,3 +880,10 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_u
 {
     return AGPU_UNIMPLEMENTED;
 }
+
+AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
+{
+    if (!device)
+        return false;
+    return true;
+}

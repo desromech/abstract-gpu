@@ -524,6 +524,7 @@ typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, ag
 typedef agpu_texture* (*agpuCreateTexture_FUN) ( agpu_device* device, agpu_texture_description* description );
 typedef agpu_fence* (*agpuCreateFence_FUN) ( agpu_device* device );
 typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) ( agpu_device* device, agpu_uint sample_count );
+typedef agpu_bool (*agpuHasTopLeftNdcOrigin_FUN) ( agpu_device* device );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -543,6 +544,7 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description );
 AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device );
 AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_uint sample_count );
+AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -845,6 +847,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateTexture_FUN agpuCreateTexture;
 	agpuCreateFence_FUN agpuCreateFence;
 	agpuGetMultiSampleQualityLevels_FUN agpuGetMultiSampleQualityLevels;
+	agpuHasTopLeftNdcOrigin_FUN agpuHasTopLeftNdcOrigin;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
