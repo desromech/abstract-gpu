@@ -192,7 +192,6 @@
     <ClCompile Include="..\..\..\implementations\Vulkan\shader_resource_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\shader_signature.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\shader_signature_builder.cpp" />
-    <ClCompile Include="..\..\..\implementations\Vulkan\stubs.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\swap_chain.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\texture.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\vertex_binding.cpp" />

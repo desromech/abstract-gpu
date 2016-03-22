@@ -1,5 +1,6 @@
 #include "command_queue.hpp"
 #include "command_list.hpp"
+#include "fence.hpp"
 
 _agpu_command_queue::_agpu_command_queue(agpu_device *device)
     : device(device)
@@ -55,13 +56,16 @@ agpu_error _agpu_command_queue::finishQueueExecution()
 agpu_error _agpu_command_queue::signalFence(agpu_fence* fence)
 {
     CHECK_POINTER(fence);
-    return AGPU_UNIMPLEMENTED;
+
+    auto error = vkQueueSubmit(queue, 0, nullptr, fence->fence);
+    CONVERT_VULKAN_ERROR(error);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_queue::waitFence(agpu_fence* fence)
 {
     CHECK_POINTER(fence);
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_UNSUPPORTED;
 }
 
 // The exported C interface

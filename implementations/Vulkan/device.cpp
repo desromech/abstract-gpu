@@ -13,6 +13,7 @@
 #include "vertex_layout.hpp"
 #include "vertex_binding.hpp"
 #include "buffer.hpp"
+#include "fence.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -873,7 +874,10 @@ AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_de
 
 AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_fence::create(device);
 }
 
 AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count)

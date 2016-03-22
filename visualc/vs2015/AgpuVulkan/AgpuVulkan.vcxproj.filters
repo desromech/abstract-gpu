@@ -86,9 +86,6 @@
     <ClCompile Include="..\..\..\implementations\Vulkan\icd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\implementations\Vulkan\stubs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\implementations\Vulkan\platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
