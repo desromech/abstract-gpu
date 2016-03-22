@@ -4,7 +4,4 @@ The objective of this project is to create a new 3D graphics API that replaces O
 
 # Roadmap
 Because the responsibility of creating drivers belongs to the hardware manufacture, this project is
-going to start by creating a wrapper around OpenGL and Direct3D 10/11 and a new shading language that
-compiles into GLSL and HLSL.
-
-After having a working API, the following objective is to create a Gallium state tracker.
+going to start by creating a wrapper around Direct3D 12, Vulkan and Metal.
