@@ -70,6 +70,7 @@ std::string readWholeFile(const std::string &fileName)
 
 int SampleBase::main(int argc, const char **argv)
 {
+    char nameBuffer[256];
     SDL_Init(SDL_INIT_VIDEO);
 
     screenWidth = 640;
@@ -87,23 +88,25 @@ int SampleBase::main(int argc, const char **argv)
     flags |= SDL_WINDOW_OPENGL;
 #endif
 
-    SDL_Window * window = SDL_CreateWindow("AGPU Sample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
-    if(!window)
-    {
-        printError("Failed to open window\n");
-        return -1;
-    }
-
     // Get the platform.
     agpu_platform *platform;
     agpuGetPlatforms(1, &platform, nullptr);
-    if(!platform)
+    if (!platform)
     {
         printError("Failed to get AGPU platform\n");
         return -1;
     }
 
     printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
+    sprintf(nameBuffer, "AGPU Sample - %s Platform", agpuGetPlatformName(platform));
+    SDL_Window * window = SDL_CreateWindow(nameBuffer, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
+    if(!window)
+    {
+        printError("Failed to open window\n");
+        return -1;
+    }
+
+
 
     // Get the window info.
     SDL_SysWMinfo windowInfo;
