@@ -72,6 +72,12 @@
     <ClInclude Include="..\..\..\implementations\Vulkan\vertex_layout.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\implementations\Vulkan\shader_resource_binding.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\implementations\Vulkan\vertex_binding.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\implementations\Vulkan\device.cpp">
@@ -126,6 +132,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\implementations\Vulkan\vertex_layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\implementations\Vulkan\shader_resource_binding.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\implementations\Vulkan\vertex_binding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

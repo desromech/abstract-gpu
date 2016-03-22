@@ -11,6 +11,7 @@
 #include "shader_signature_builder.hpp"
 #include "shader.hpp"
 #include "vertex_layout.hpp"
+#include "vertex_binding.hpp"
 #include "buffer.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
@@ -803,7 +804,10 @@ AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
 
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout* layout)
 {
-    return nullptr;
+    if (!device)
+        return nullptr;
+
+    return agpu_vertex_binding::create(device, layout);
 }
 
 AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type type)

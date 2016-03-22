@@ -49,10 +49,14 @@ private:
     agpu_error setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
 
     agpu_framebuffer *currentFramebuffer;
+    agpu_bool isClosed;
     agpu_bool isSecondaryContent;
     float clearRed, clearGreen, clearBlue, clearAlpha;
     float clearDepth;
     agpu_int clearStencil;
+
+    agpu_buffer *drawIndirectBuffer;
+    agpu_shader_signature *shaderSignature;
 };
 
 #endif //AGPU_COMMAND_LIST_HPP

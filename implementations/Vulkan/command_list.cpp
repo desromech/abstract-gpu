@@ -2,11 +2,19 @@
 #include "command_allocator.hpp"
 #include "framebuffer.hpp"
 #include "texture.hpp"
+#include "buffer.hpp"
+#include "vertex_binding.hpp"
+#include "pipeline_state.hpp"
+#include "shader_signature.hpp"
+#include "shader_resource_binding.hpp"
 
 _agpu_command_list::_agpu_command_list(agpu_device *device)
     : device(device)
 {
     currentFramebuffer = nullptr;
+    drawIndirectBuffer = nullptr;
+    shaderSignature = nullptr;
+    isClosed = false;
     isSecondaryContent = false;
 }
 
@@ -54,6 +62,9 @@ _agpu_command_list* _agpu_command_list::create(agpu_device* device, agpu_command
         return nullptr;
     }
 
+    if (initial_pipeline_state)
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state->pipeline);
+
     auto result = new _agpu_command_list(device);
     result->commandBuffer = commandBuffer;
     result->allocator = allocator;
@@ -94,6 +105,9 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* newAllocator, agpu_
     error = vkBeginCommandBuffer(commandBuffer, &bufferBeginInfo);
     CONVERT_VULKAN_ERROR(error);
 
+    if (initial_pipeline_state)
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state->pipeline);
+
     resetState();
     return AGPU_OK;
 }
@@ -106,15 +120,34 @@ void _agpu_command_list::resetState()
         currentFramebuffer = nullptr;
     }
 
+    if (drawIndirectBuffer)
+    {
+        drawIndirectBuffer->release();
+        drawIndirectBuffer = nullptr;
+    }
+
+    if (shaderSignature)
+    {
+        shaderSignature->release();
+        shaderSignature = nullptr;
+    }
+
     isSecondaryContent = false;
     clearRed = clearGreen = clearBlue = clearAlpha = 0.0f;
     clearDepth = 0.0f;
     clearStencil = 0;
+
+    vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, 0);
 }
 
 agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature* signature)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(signature);
+    signature->retain();
+    if (shaderSignature)
+        shaderSignature->release();
+    shaderSignature = signature;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
@@ -224,62 +257,96 @@ agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
 
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(pipeline);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useVertexBinding(agpu_vertex_binding* vertex_binding)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(vertex_binding);
+    vkCmdBindVertexBuffers(commandBuffer, 0, vertex_binding->vulkanBuffers.size(), &vertex_binding->vulkanBuffers[0], &vertex_binding->offsets[0]);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useIndexBuffer(agpu_buffer* index_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(index_buffer);
+    if (index_buffer->description.binding != AGPU_ELEMENT_ARRAY_BUFFER)
+        return AGPU_INVALID_PARAMETER;
+
+    vkCmdBindIndexBuffer(commandBuffer, index_buffer->getDrawBuffer(), 0, index_buffer->getIndexType());
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
 {
-    return AGPU_UNIMPLEMENTED;
+    // Nothing to do here.
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(draw_buffer);
+    if (draw_buffer->description.binding != AGPU_DRAW_INDIRECT_BUFFER)
+        return AGPU_INVALID_PARAMETER;
+
+    draw_buffer->retain();
+    if (drawIndirectBuffer)
+        drawIndirectBuffer->release();
+    drawIndirectBuffer = draw_buffer;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* binding)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(binding);
+    if (!shaderSignature)
+        return AGPU_INVALID_OPERATION;
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderSignature->layout, binding->elementIndex, 1, &binding->descriptorSet, 0, nullptr);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
 {
-    return AGPU_UNIMPLEMENTED;
+    vkCmdDraw(commandBuffer, vertex_count, instance_count, first_vertex, base_instance);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 {
-    return AGPU_UNIMPLEMENTED;
+    vkCmdDrawIndexed(commandBuffer, index_count, instance_count, first_index, base_vertex, base_instance);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
 {
-    return AGPU_UNIMPLEMENTED;
+    return multiDrawElementsIndirect(offset, 1);
 }
 
 agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount)
 {
+    if (!drawIndirectBuffer)
+        return AGPU_INVALID_OPERATION;
+
+    //vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer->getDrawBuffer(), offset, drawcount, );
     return AGPU_UNIMPLEMENTED;
 }
 
 agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 {
-    return AGPU_UNIMPLEMENTED;
+    vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, reference);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(bundle);
+    if (!bundle->isClosed || !bundle->isSecondaryContent)
+        return AGPU_INVALID_PARAMETER;
+
+    vkCmdExecuteCommands(commandBuffer, 1, &bundle->commandBuffer);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)

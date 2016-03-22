@@ -16,6 +16,22 @@ struct _agpu_buffer : public Object<_agpu_buffer>
     agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
     agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
 
+    VkBuffer getDrawBuffer()
+    {
+        if (gpuBuffer)
+            return gpuBuffer;
+        return uploadBuffer;
+    }
+    VkIndexType getIndexType()
+    {
+        switch (description.stride)
+        {
+        default:
+        case 2: return VK_INDEX_TYPE_UINT16;
+        case 4: return VK_INDEX_TYPE_UINT32;
+        }
+    }
+
     agpu_device *device;
     agpu_buffer_description description;
 

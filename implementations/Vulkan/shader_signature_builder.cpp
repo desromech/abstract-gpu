@@ -16,6 +16,7 @@ inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
 _agpu_shader_signature_builder::_agpu_shader_signature_builder(agpu_device *device)
     : device(device)
 {
+    memset(maxBindingsCount, 0, sizeof(maxBindingsCount));
 }
 
 void _agpu_shader_signature_builder::lostReferences()
@@ -46,11 +47,10 @@ agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
     if (error)
         return nullptr;
 
-    std::unique_ptr<agpu_shader_signature> result(new agpu_shader_signature(device));
-    result->layout = layout;
-    result->builder = this;
-    retain();
-    return result.release();
+    auto result = agpu_shader_signature::create(device, this, layout);
+    if (!result)
+        vkDestroyPipelineLayout(device->device, layout, nullptr);
+    return result;
 }
 
 agpu_error _agpu_shader_signature_builder::addBindingConstant()
@@ -82,6 +82,10 @@ agpu_error _agpu_shader_signature_builder::addBindingBank(agpu_shader_binding_ty
     CONVERT_VULKAN_ERROR(error);
 
     descriptorSets.push_back(setLayout);
+
+    elementDescription.push_back(ShaderSignatureElementDescription(true, type, binding.descriptorType, bindingPointCount, maxBindings));
+    maxBindingsCount[type] += bindingPointCount*maxBindings;
+
     return AGPU_OK;
 }
 

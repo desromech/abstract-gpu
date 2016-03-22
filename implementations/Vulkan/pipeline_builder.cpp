@@ -237,7 +237,7 @@ agpu_size _agpu_pipeline_builder::getPipelineBuildingLogLength()
 
 agpu_error _agpu_pipeline_builder::getPipelineBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
