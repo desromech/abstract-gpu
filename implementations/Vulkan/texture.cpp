@@ -68,7 +68,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
 
     uint32_t depth = 1;
     uint32_t arrayLayers = description->depthOrArraySize;
-    if (description->type = AGPU_TEXTURE_3D)
+    if (description->type == AGPU_TEXTURE_3D)
     {
         depth = description->depthOrArraySize;
         arrayLayers = 1;

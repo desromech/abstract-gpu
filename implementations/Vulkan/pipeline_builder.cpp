@@ -67,6 +67,12 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     // Default rasterization state.
     memset(&rasterizationState, 0, sizeof(rasterizationState));
     rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizationState.cullMode = VK_CULL_MODE_NONE;
+    rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizationState.depthClampEnable = VK_FALSE;
+    rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+    rasterizationState.depthBiasEnable = VK_FALSE;
     rasterizationState.lineWidth = 1.0f;
 
     // Default multisample state.
@@ -83,6 +89,15 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     // Default color blend state.
     memset(&colorBlendState, 0, sizeof(colorBlendState));
     colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+
+    {
+        VkPipelineColorBlendAttachmentState state;
+        memset(&state, 0, sizeof(state));
+        state.colorWriteMask = 0x1f;
+        state.blendEnable = VK_FALSE;
+        colorBlendAttachmentState.resize(1, state);
+    }
+    
 
     // Set dynamic states.
     dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -178,6 +193,18 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     subpass.pDepthStencilAttachment = &depthReference;
     if (depthStencilFormat == AGPU_TEXTURE_FORMAT_UNKNOWN)
         subpass.pDepthStencilAttachment = nullptr;
+
+    // Finish the color blend state.
+    if (colorBlendAttachmentState.empty())
+    {
+        colorBlendState.attachmentCount = 0;
+        colorBlendState.pAttachments = nullptr;
+    }
+    else
+    {
+        colorBlendState.attachmentCount = colorBlendAttachmentState.size();
+        colorBlendState.pAttachments = &colorBlendAttachmentState[0];
+    }
 
     // Render pass
     VkRenderPassCreateInfo renderPassCreateInfo;
@@ -280,6 +307,15 @@ agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
     renderTargetFormats.resize(count, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
     viewportState.scissorCount = count;
     viewportState.viewportCount = count;
+
+    {
+        VkPipelineColorBlendAttachmentState state;
+        memset(&state, 0, sizeof(state));
+        state.colorWriteMask = 0x1f;
+        state.blendEnable = VK_FALSE;
+        colorBlendAttachmentState.resize(count, state);
+    }
+
     return AGPU_OK;
 }
 

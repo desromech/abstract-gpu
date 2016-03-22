@@ -38,6 +38,8 @@ private:
 
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentState;
     
     std::vector<agpu_texture_format> renderTargetFormats;
     agpu_texture_format depthStencilFormat;

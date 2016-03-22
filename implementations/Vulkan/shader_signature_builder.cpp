@@ -70,6 +70,7 @@ agpu_error _agpu_shader_signature_builder::addBindingBank(agpu_shader_binding_ty
     binding.binding = 0;
     binding.descriptorType = mapDescriptorType(type);
     binding.descriptorCount = bindingPointCount;
+    binding.stageFlags = VK_SHADER_STAGE_ALL;
 
     VkDescriptorSetLayoutCreateInfo setLayoutInfo;
     memset(&setLayoutInfo, 0, sizeof(setLayoutInfo));
