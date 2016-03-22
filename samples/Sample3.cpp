@@ -117,7 +117,7 @@ public:
         float aspect = float(screenWidth) / float(screenHeight);
         float h = 2.0;
         float w = h*aspect;
-        transformationState.projectionMatrix = glm::ortho(-w, w, -h, h, -10.0f, 10.0f);
+        transformationState.projectionMatrix = ortho(-w, w, -h, h, -10.0f, 10.0f);
 
         // Upload the transformation state.
         agpuUploadBufferData(transformationBuffer, 0, sizeof(transformationState), &transformationState);
