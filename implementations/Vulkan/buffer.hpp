@@ -40,5 +40,9 @@ struct _agpu_buffer : public Object<_agpu_buffer>
     VkBuffer gpuBuffer;
     VkDeviceMemory gpuBufferMemory;
     VkMemoryRequirements memoryRequirements;
+
+    std::mutex mapMutex;
+    void *mappedPointer;
+    int mapCount;
 };
 #endif //AGPU_VULKAN_BUFFER_HPP

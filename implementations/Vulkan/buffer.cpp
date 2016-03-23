@@ -7,6 +7,7 @@ _agpu_buffer::_agpu_buffer(agpu_device *device)
     uploadBufferMemory = VK_NULL_HANDLE;
     gpuBuffer = VK_NULL_HANDLE;
     gpuBufferMemory = VK_NULL_HANDLE;
+    mapCount = 0;
 }
 
 void _agpu_buffer::lostReferences()
@@ -192,12 +193,37 @@ failure:
 
 agpu_pointer _agpu_buffer::map(agpu_mapping_access flags)
 {
-    return nullptr;
+    // The upload buffer must be available.
+    if (!uploadBufferMemory)
+        return nullptr;
+
+    std::unique_lock<std::mutex> l(mapMutex);
+
+    if (mapCount == 0)
+    {
+        auto error = vkMapMemory(device->device, uploadBufferMemory, 0, VK_WHOLE_SIZE, 0, &mappedPointer);
+        if (error)
+            return nullptr;
+    }
+    ++mapCount;
+    return mappedPointer;
 }
 
 agpu_error _agpu_buffer::unmap()
 {
-    return AGPU_UNIMPLEMENTED;
+    // The upload buffer must be available.
+    if (!uploadBufferMemory)
+        return AGPU_INVALID_OPERATION;
+
+    std::unique_lock<std::mutex> l(mapMutex);
+    --mapCount;
+    if (mapCount == 0)
+    {
+        vkUnmapMemory(device->device, uploadBufferMemory);
+        mappedPointer = nullptr;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_buffer::getBufferDescription(agpu_buffer_description* description)

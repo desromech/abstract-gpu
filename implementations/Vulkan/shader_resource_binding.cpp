@@ -3,6 +3,69 @@
 #include "buffer.hpp"
 #include "texture.hpp"
 
+inline VkFilter mapMinFilter(agpu_filter filter)
+{
+    switch (filter)
+    {
+    default:
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR: return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST: return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:  return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST: return VK_FILTER_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:  return VK_FILTER_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:  return VK_FILTER_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:   return VK_FILTER_LINEAR;
+    case AGPU_FILTER_ANISOTROPIC:                           return VK_FILTER_LINEAR;
+    }
+}
+
+inline VkFilter mapMagFilter(agpu_filter filter)
+{
+    switch (filter)
+    {
+    default:
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST: return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:  return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:  return VK_FILTER_LINEAR;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:   return VK_FILTER_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:  return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:   return VK_FILTER_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:   return VK_FILTER_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:    return VK_FILTER_LINEAR;
+    case AGPU_FILTER_ANISOTROPIC:                            return VK_FILTER_LINEAR;
+    }
+}
+
+inline VkSamplerMipmapMode mapMipmapMode(agpu_filter filter)
+{
+    switch (filter)
+    {
+    default:
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:  return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:   return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:  return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:   return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:    return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    case AGPU_FILTER_ANISOTROPIC:                            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    }
+}
+
+inline VkSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
+{
+    switch (mode)
+    {
+    default:
+    case AGPU_TEXTURE_ADDRESS_MODE_WRAP:    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR:  return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case AGPU_TEXTURE_ADDRESS_MODE_CLAMP:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    case AGPU_TEXTURE_ADDRESS_MODE_BORDER:  return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    }
+}
 _agpu_shader_resource_binding::_agpu_shader_resource_binding(agpu_device *device)
     : device(device)
 {
@@ -76,7 +139,35 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
 
     if (location < 0 || location >= bindingPointCount)
         return AGPU_OUT_OF_BOUNDS;
-    return AGPU_UNIMPLEMENTED;
+
+    agpu_texture_view_description viewDesc;
+    auto myError = texture->getFullViewDescription(&viewDesc);
+    if (myError != AGPU_OK)
+        return myError;
+
+    viewDesc.subresource_range.base_miplevel = startMiplevel;
+    viewDesc.subresource_range.level_count = miplevels;
+    auto view = agpu_texture::createImageView(device, &viewDesc);
+    if (!view)
+        return AGPU_ERROR;
+
+    VkDescriptorImageInfo imageInfo;
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageView = view;
+    imageInfo.sampler = VK_NULL_HANDLE;
+
+    VkWriteDescriptorSet write;
+    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = vulkanDescriptorType;
+    write.dstSet = descriptorSet;
+    write.dstBinding = location;
+    write.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
@@ -96,7 +187,47 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
         return AGPU_INVALID_OPERATION;
     if (location < 0 || location >= bindingPointCount)
         return AGPU_OUT_OF_BOUNDS;
-    return AGPU_UNIMPLEMENTED;
+
+    VkSamplerCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    info.minFilter = mapMinFilter(description->filter);
+    info.magFilter = mapMagFilter(description->filter);
+    info.mipmapMode = mapMipmapMode(description->filter);
+    info.addressModeU = mapAddressMode(description->address_u);
+    info.addressModeV = mapAddressMode(description->address_v);
+    info.addressModeW = mapAddressMode(description->address_w);
+    info.minLod = description->min_lod;
+    info.maxLod = description->max_lod;
+    info.anisotropyEnable = description->filter == AGPU_FILTER_ANISOTROPIC;
+    info.maxAnisotropy = description->maxanisotropy;
+    info.mipLodBias = description->mip_lod_bias;
+
+    /*
+    agpu_compare_function comparison_function;
+    agpu_color4f border_color;
+    */
+
+    VkSampler sampler;
+    auto error = vkCreateSampler(device->device, &info, nullptr, &sampler);
+    CONVERT_VULKAN_ERROR(error);
+
+    VkDescriptorImageInfo imageInfo;
+    memset(&imageInfo, 0, sizeof(imageInfo));
+    imageInfo.imageView = VK_NULL_HANDLE;
+    imageInfo.sampler = sampler;
+
+    VkWriteDescriptorSet write;
+    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = vulkanDescriptorType;
+    write.dstSet = descriptorSet;
+    write.dstBinding = location;
+    write.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+    return AGPU_OK;
 }
 
 // The exported C interface

@@ -659,6 +659,35 @@ bool _agpu_device::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32
     return submitSetupCommandBuffer();
 }
 
+bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspectFlagBits aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
+{
+    std::unique_lock<std::mutex> l(setupMutex);
+    if (!setupCommandBuffer)
+    {
+        if (!createSetupCommandBuffer())
+            return false;
+    }
+
+    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destAccessMask);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    vkCmdCopyBufferToImage(setupCommandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regionCount, regions);
+
+    if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    return submitSetupCommandBuffer();
+}
+
 bool _agpu_device::submitSetupCommandBuffer()
 {
     auto error = vkEndCommandBuffer(setupCommandBuffer);

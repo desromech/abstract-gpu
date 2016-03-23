@@ -1,5 +1,6 @@
 #include "texture.hpp"
 #include "texture_format.hpp"
+#include "buffer.hpp"
 
 inline enum VkImageType mapImageType(agpu_texture_type type)
 {
@@ -48,6 +49,8 @@ _agpu_texture::_agpu_texture(agpu_device *device)
 {
     image = nullptr;
     owned = false;
+    uploadBuffer = nullptr;
+    readbackBuffer = nullptr;
 }
 
 void _agpu_texture::lostReferences()
@@ -59,6 +62,10 @@ void _agpu_texture::lostReferences()
         vkDestroyImage(device->device, image, nullptr);
     if(memory)
         vkFreeMemory(device->device, memory, nullptr);
+    if (uploadBuffer)
+        uploadBuffer->release();
+    if (readbackBuffer)
+        readbackBuffer->release();
 }
 
 agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_description *description)
@@ -110,11 +117,12 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
+    else
+    {
+        createInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
 
-    if (flags & AGPU_TEXTURE_FLAG_READED_BACK)
-        createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    if (flags & AGPU_TEXTURE_FLAG_UPLOADED)
-        createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     // Image memory allocation
     VkMemoryAllocateInfo allocateInfo;
@@ -172,11 +180,68 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         }
         else
         {
-            success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
+            VkClearColorValue clearValue;
+            memset(&clearValue, 0, sizeof(clearValue));
+            clearValue.float32[0] = 1.0;
+            clearValue.float32[3] = 1.0;
+            clearValue.float32[2] = 1.0;
+            success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+            //success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
         }
 
         if (!success)
         {
+            vkDestroyImage(device->device, image, nullptr);
+            vkFreeMemory(device->device, textureMemory, nullptr);
+            return nullptr;
+        }
+    }
+
+    // Create the the buffers
+    bool hasUploadBuffer = (description->flags & AGPU_TEXTURE_FLAG_UPLOADED) != 0;
+    bool hasReadbackBuffer = (description->flags & AGPU_TEXTURE_FLAG_READED_BACK) != 0;
+    agpu_size transferBufferPixelSize = 0;
+    agpu_size transferBufferPitch = 0;
+    agpu_size transferBufferSlicePitch = 0;
+    agpu_buffer *uploadBuffer = nullptr;
+    agpu_buffer *readbackBuffer = nullptr;
+    if (hasUploadBuffer || hasReadbackBuffer)
+    {
+        agpu_buffer_description bufferDesc;
+        memset(&bufferDesc, 0, sizeof(bufferDesc));
+        bufferDesc.binding = AGPU_GENERIC_DATA_BUFFER;
+        bufferDesc.usage = AGPU_STREAM;
+        bufferDesc.stride = pixelSizeOfTextureFormat(description->format);
+        transferBufferPixelSize = bufferDesc.stride;
+        transferBufferPitch = (bufferDesc.stride*description->width + 3) & (~3);
+        transferBufferSlicePitch = transferBufferPitch*description->height;
+        bufferDesc.size = transferBufferSlicePitch;
+
+        // Create the upload buffer
+        bool success = true;
+        if (hasUploadBuffer)
+        {
+            auto uploadDesc = bufferDesc;
+            uploadDesc.mapping_flags = AGPU_MAP_WRITE_BIT;
+            uploadBuffer = agpuCreateBuffer(device, &uploadDesc, nullptr);
+            success = success && (uploadBuffer != nullptr);
+        }
+
+        // Create the read back buffer
+        if (hasReadbackBuffer)
+        {
+            auto readbackDesc = bufferDesc;
+            readbackDesc.mapping_flags = AGPU_MAP_READ_BIT;
+            readbackBuffer = agpuCreateBuffer(device, &readbackDesc, nullptr);
+            success = success && (readbackBuffer != nullptr);
+        }
+
+        if (!success)
+        {
+            if (uploadBuffer)
+                uploadBuffer->release();
+            if (readbackBuffer)
+                readbackBuffer->release();
             vkDestroyImage(device->device, image, nullptr);
             vkFreeMemory(device->device, textureMemory, nullptr);
             return nullptr;
@@ -188,6 +253,11 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     texture->image = image;
     texture->memory = textureMemory;
     texture->owned = true;
+    texture->transferBufferPixelSize = transferBufferPixelSize;
+    texture->transferBufferPitch = transferBufferPitch;
+    texture->transferBufferSlicePitch = transferBufferSlicePitch;
+    texture->uploadBuffer = uploadBuffer;
+    texture->readbackBuffer = readbackBuffer;
     return texture.release();
 }
 
@@ -224,7 +294,7 @@ VkImageView _agpu_texture::createImageView(agpu_device *device, agpu_texture_vie
     subresource.baseArrayLayer = viewDescription->subresource_range.base_arraylayer;
     subresource.layerCount = viewDescription->subresource_range.layer_count;
 
-    if(viewDescription->subresource_range.usage_flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+    if((viewDescription->subresource_range.usage_flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL)) == 0)
         subresource.aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
     if (viewDescription->subresource_range.usage_flags & AGPU_TEXTURE_FLAG_DEPTH)
         subresource.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -258,6 +328,69 @@ agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *
     return AGPU_OK;
 }
 
+agpu_pointer _agpu_texture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags)
+{
+    return nullptr;
+}
+
+agpu_error _agpu_texture::unmapLevel()
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
+{
+    CHECK_POINTER(buffer);
+    if ((description.flags & AGPU_TEXTURE_FLAG_READED_BACK) == 0)
+        return AGPU_INVALID_OPERATION;
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
+{
+    CHECK_POINTER(data);
+    if ((description.flags & AGPU_TEXTURE_FLAG_UPLOADED) == 0)
+        return AGPU_INVALID_OPERATION;
+
+    auto bufferPointer = uploadBuffer->map(AGPU_WRITE_ONLY);
+    if (!bufferPointer)
+        return AGPU_ERROR;
+
+    if (pitch == transferBufferPitch  && slicePitch == transferBufferSlicePitch)
+    {
+        memcpy(bufferPointer, data, slicePitch);
+    }
+    else
+    {
+        // TODO: Copy row by row
+    }
+
+    uploadBuffer->unmap();
+
+    VkBufferImageCopy copy;
+    memset(&copy, 0, sizeof(copy));
+    copy.bufferRowLength = pitch / transferBufferPixelSize;
+    copy.bufferImageHeight = slicePitch / pitch;
+    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy.imageSubresource.mipLevel = level;
+    copy.imageSubresource.baseArrayLayer = arrayIndex;
+    copy.imageSubresource.layerCount = 1;
+    copy.imageExtent = getLevelExtent(level);
+    device->copyBufferToImage(uploadBuffer->uploadBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VkAccessFlagBits(0), 1, &copy);
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_texture::discardUploadBuffer()
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_texture::discardReadbackBuffer()
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddTextureReference(agpu_texture* texture)
 {
@@ -281,32 +414,39 @@ AGPU_EXPORT agpu_error agpuGetTextureDescription(agpu_texture* texture, agpu_tex
 
 AGPU_EXPORT agpu_pointer agpuMapTextureLevel(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags)
 {
-    return nullptr;
+    if (!texture)
+        return nullptr;
+    return texture->mapLevel(level, arrayIndex, flags);
 }
 
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel(agpu_texture* texture)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(texture);
+    return texture->unmapLevel();
 }
 
 AGPU_EXPORT agpu_error agpuReadTextureData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(texture);
+    return texture->readData(level, arrayIndex, pitch, slicePitch, buffer);
 }
 
 AGPU_EXPORT agpu_error agpuUploadTextureData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(texture);
+    return texture->uploadData(level, arrayIndex, pitch, slicePitch, data);
 }
 
 AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* texture)
 {
-    return AGPU_UNSUPPORTED;
+    CHECK_POINTER(texture);
+    return texture->discardUploadBuffer();
 }
 
 AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* texture)
 {
-    return AGPU_UNSUPPORTED;
+    CHECK_POINTER(texture);
+    return texture->discardReadbackBuffer();
 }
 
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description *description)

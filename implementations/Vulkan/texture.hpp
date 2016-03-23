@@ -13,12 +13,41 @@ struct _agpu_texture : public Object<_agpu_texture>
     static VkImageView createImageView(agpu_device *device, agpu_texture_view_description *viewDescription);
 
     agpu_error getFullViewDescription(agpu_texture_view_description *viewDescription);
+    agpu_pointer mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags);
+    agpu_error unmapLevel();
+    agpu_error readData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer);
+    agpu_error uploadData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data);
+    agpu_error discardUploadBuffer();
+    agpu_error discardReadbackBuffer();
 
     agpu_device *device;
     agpu_texture_description description;
     VkImage image;
     VkDeviceMemory memory;
     bool owned;
+    agpu_size transferBufferPixelSize;
+    agpu_size transferBufferPitch;
+    agpu_size transferBufferSlicePitch;
+    agpu_buffer *uploadBuffer;
+    agpu_buffer *readbackBuffer;
+
+
+    VkExtent3D getLevelExtent(int level)
+    {
+        VkExtent3D extent;
+        extent.width = description.width >> level;
+        if (extent.width == 0)
+            extent.width = 1;
+
+        extent.height = description.height >> level;
+        if (description.type == AGPU_TEXTURE_1D || extent.height == 0)
+            extent.height = 1;
+
+        extent.depth = description.depthOrArraySize >> level;
+        if (description.type != AGPU_TEXTURE_3D || extent.depth == 0)
+            extent.depth = 1;
+        return extent;
+    }
 
 };
 
