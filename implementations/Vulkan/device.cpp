@@ -164,10 +164,10 @@ _agpu_device::_agpu_device()
     vulkanInstance = nullptr;
     physicalDevice = nullptr;
     device = nullptr;
-    setupCommandPool = nullptr;
+    setupCommandPool = VK_NULL_HANDLE;
     setupCommandBuffer = nullptr;
     hasDebugReportExtension = false;
-    debugReportCallback = nullptr;
+    debugReportCallback = VK_NULL_HANDLE;
 }
 
 void _agpu_device::lostReferences()

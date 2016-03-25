@@ -3,7 +3,7 @@
 _agpu_pipeline_state::_agpu_pipeline_state(agpu_device *device)
     : device(device)
 {
-    pipeline = nullptr;
+    pipeline = VK_NULL_HANDLE;
 }
 
 void _agpu_pipeline_state::lostReferences()

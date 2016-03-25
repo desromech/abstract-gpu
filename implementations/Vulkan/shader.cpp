@@ -4,7 +4,7 @@ _agpu_shader::_agpu_shader(agpu_device *device)
     : device(device)
 {
     sourceSize = 0;
-    shaderModule = nullptr;
+    shaderModule = VK_NULL_HANDLE;
 }
 
 void _agpu_shader::lostReferences()

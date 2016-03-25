@@ -118,7 +118,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
 
     // Miscellaneous
     renderTargetCount = 1;
-    primitiveType = AGPU_PRIMITIVE_TYPE_POINT;
+    primitiveType = AGPU_POINTS;
 }
 
 void _agpu_pipeline_builder::lostReferences()
@@ -236,7 +236,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     pipeline->stencilBackFunc = mapCompareFunction(stencilBackFunc);
 
     // Miscellaneous
-    pipeline->primitiveType = primitiveType;
+    pipeline->primitiveTopology = primitiveType;
     pipeline->renderTargetCount = renderTargetCount;
 
     // Do not own the program.
@@ -369,7 +369,7 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format for
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_type type)
+agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_topology type)
 {
     primitiveType = type;
     return AGPU_OK;
@@ -490,7 +490,7 @@ AGPU_EXPORT agpu_error agpuSetDepthStencilFormat(agpu_pipeline_builder* pipeline
     return pipeline_builder->setDepthStencilFormat(format);
 }
 
-AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_type type)
+AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type)
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setPrimitiveType(type);

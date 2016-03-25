@@ -15,6 +15,8 @@ public:
     agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
     agpu_error unmapLevel ( );
 
+    agpu_error getFullViewDescription(agpu_texture_view_description *viewDescription);
+
     agpu_error readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
     agpu_error uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
 

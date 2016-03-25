@@ -211,10 +211,13 @@ static void loadDriver(const std::string &path)
         return;
     }
 
-    // Get the driver platform
-    agpu_platform *platform;
+    // Get the driver platform count.
     agpu_size platformCount;
-    getPlatforms(1, &platform, &platformCount);
+    getPlatforms(0, nullptr, &platformCount);
+
+    // Get the driver platforms
+    std::vector<agpu_platform*> platforms(platformCount);
+    getPlatforms(platforms.size(), &platforms[0], &platformCount);
 
     // Ensure there is at least one platform defined.
     if (!platformCount)
@@ -261,15 +264,18 @@ static void loadDriver(const std::string &path)
 
 #endif
 
-
-    // Got the platform, store it.
-    auto platformInfo = new PlatformInfo();
-    platformInfo->platform = platform;
-    platformInfo->moduleHandle = handle;
-    platformInfo->isNative = agpuIsNativePlatform(platform);
-    platformInfo->hasRealMultithreading = agpuPlatformHasRealMultithreading(platform);
-    platformInfo->isCrossPlatform = agpuIsCrossPlatform(platform);
-    loadedPlatforms.push_back(platformInfo);
+    // Got the platforms, store them.
+    for (agpu_size i = 0; i < platformCount; ++i)
+    {
+        auto platform = platforms[i];
+        auto platformInfo = new PlatformInfo();
+        platformInfo->platform = platform;
+        platformInfo->moduleHandle = handle;
+        platformInfo->isNative = agpuIsNativePlatform(platform);
+        platformInfo->hasRealMultithreading = agpuPlatformHasRealMultithreading(platform);
+        platformInfo->isCrossPlatform = agpuIsCrossPlatform(platform);
+        loadedPlatforms.push_back(platformInfo);
+    }
 }
 
 static void loadDriversInPath(const std::string &folder)
@@ -319,8 +325,8 @@ static void loadPlatforms()
     //loadDriversInPath("AgpuIcd");
     hasBeenLoaded = true;
 
-    // Sort the platforms.
-    std::sort(loadedPlatforms.begin(), loadedPlatforms.end(), [](PlatformInfo *a, PlatformInfo *b) {
+    // Sort the platforms. Keep the relative orders given by a driver.
+    std::stable_sort(loadedPlatforms.begin(), loadedPlatforms.end(), [](PlatformInfo *a, PlatformInfo *b) {
         if (a->hasRealMultithreading == b->hasRealMultithreading)
         {
             if (a->isNative == b->isNative)
@@ -334,13 +340,22 @@ static void loadPlatforms()
 
 AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms )
 {
-    if(!platforms)
-        return AGPU_NULL_POINTER;
+    if (!platforms)
+    {
+        if (numplatforms == 0)
+        {
+            *ret_numplatforms = loadedPlatforms.size();
+            return AGPU_OK;
+        }
+        else
+            return AGPU_NULL_POINTER;
+    }
+
 
     if(!hasBeenLoaded)
         loadPlatforms();
 
-    size_t retCount = std::min(numplatforms, loadedPlatforms.size());
+    size_t retCount = std::min(numplatforms, (agpu_size)loadedPlatforms.size());
 
     // Pass the platforms
     for(size_t i = 0; i < retCount; ++i)

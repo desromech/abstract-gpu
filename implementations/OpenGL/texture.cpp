@@ -348,6 +348,25 @@ agpu_error _agpu_texture::discardReadbackBuffer()
 
 }
 
+agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *viewDescription)
+{
+    CHECK_POINTER(viewDescription);
+    memset(viewDescription, 0, sizeof(*viewDescription));
+    viewDescription->type = description.type;
+    viewDescription->texture = this;
+    viewDescription->format = description.format;
+    viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
+    viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
+    viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
+    viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
+    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.base_miplevel = 0;
+    viewDescription->subresource_range.level_count = description.miplevels;
+    viewDescription->subresource_range.base_arraylayer = 0;
+    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    return AGPU_OK;
+}
+
 // Exported C interface.
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
 {
@@ -406,4 +425,10 @@ AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* texture)
 {
     CHECK_POINTER(texture);
     return texture->discardReadbackBuffer();
+}
+
+AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description *description)
+{
+    CHECK_POINTER(texture);
+    return texture->getFullViewDescription(description);
 }

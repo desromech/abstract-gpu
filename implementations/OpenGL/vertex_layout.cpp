@@ -16,7 +16,7 @@ agpu_vertex_layout *_agpu_vertex_layout::createVertexLayout(agpu_device *device)
     return layout;
 }
 
-agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
+agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size *vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
 {
     vertexBufferCount = vertex_buffer_count;
     this->attributes.reserve(attribute_count);
@@ -38,8 +38,8 @@ AGPU_EXPORT agpu_error agpuReleaseVertexLayout(agpu_vertex_layout* vertex_layout
     return vertex_layout->release();
 }
 
-AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings(agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
+AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings(agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
 {
     CHECK_POINTER(vertex_layout);
-    return vertex_layout->addVertexAttributeBindings(vertex_buffer_count, attribute_count, attributes);
+    return vertex_layout->addVertexAttributeBindings(vertex_buffer_count, vertex_strides, attribute_count, attributes);
 }

@@ -5,7 +5,7 @@
 _agpu_shader_signature::_agpu_shader_signature(agpu_device *device)
     : device(device)
 {
-    layout = nullptr;
+    layout = VK_NULL_HANDLE;
     builder = nullptr;
 }
 

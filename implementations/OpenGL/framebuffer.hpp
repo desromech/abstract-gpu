@@ -11,10 +11,10 @@ public:
 
     void lostReferences();
 
-    static agpu_framebuffer* create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil);
+    static agpu_framebuffer* create(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews);
 
-    agpu_error attachColorBuffer ( agpu_int index, agpu_texture* buffer );
-    agpu_error attachDepthStencilBuffer ( agpu_texture* buffer );
+    agpu_error attachColorBuffer ( agpu_int index, agpu_texture_view_description* colorView);
+    agpu_error attachDepthStencilBuffer (agpu_texture_view_description* depthStencilViews);
 
 public:
     static const int MaxRenderTargetCount = 9;

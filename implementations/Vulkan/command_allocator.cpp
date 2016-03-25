@@ -4,7 +4,7 @@
 _agpu_command_allocator::_agpu_command_allocator(agpu_device *device)
     : device(device)
 {
-    commandPool = nullptr;
+    commandPool = VK_NULL_HANDLE;
 }
 
 void _agpu_command_allocator::lostReferences()

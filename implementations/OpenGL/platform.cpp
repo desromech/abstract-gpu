@@ -5,8 +5,12 @@ _agpu_platform theGLPlatform = {&agpu_gl_icd_dispatch};
 
 AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms )
 {
-    if(numplatforms < 1)
-        return AGPU_INVALID_OPERATION;
+    if (numplatforms < 1)
+    {
+        CHECK_POINTER(ret_numplatforms);
+        *ret_numplatforms = 1;
+        return AGPU_OK;
+    }
 
     if(ret_numplatforms)
         *ret_numplatforms = 1;

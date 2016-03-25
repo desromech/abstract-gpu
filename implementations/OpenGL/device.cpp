@@ -435,11 +435,11 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
     return agpu_pipeline_builder::createBuilder(device);
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type )
+AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue *queue)
 {
     if(!device)
         return nullptr;
-    return agpu_command_allocator::create(device, type);
+    return agpu_command_allocator::create(device, type, queue);
 }
 
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
@@ -475,12 +475,12 @@ AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_com
     return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint renderTargetCount, agpu_bool hasDepth, agpu_bool hasStencil )
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews)
 {
     if(!device)
         return nullptr;
 
-    return agpu_framebuffer::create(device, width, height, renderTargetCount, hasDepth, hasStencil);
+    return agpu_framebuffer::create(device, width, height, colorCount, colorView, depthStencilViews);
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
@@ -504,4 +504,9 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_u
     if (!device)
         return 0;
     return device->getMultiSampleQualityLevels(sample_count);
+}
+
+AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
+{
+    return false;
 }

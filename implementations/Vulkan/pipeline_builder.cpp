@@ -225,7 +225,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     pipelineInfo.renderPass = renderPass;
 
     VkPipeline pipeline;
-    error = vkCreateGraphicsPipelines(device->device, nullptr, 1, &pipelineInfo, nullptr, &pipeline);
+    error = vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
     if (error)
     {
         vkDestroyRenderPass(device->device, renderPass, nullptr);

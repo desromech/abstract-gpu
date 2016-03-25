@@ -47,7 +47,7 @@ inline enum VkComponentSwizzle mapComponentSwizzle(agpu_component_swizzle swizzl
 _agpu_texture::_agpu_texture(agpu_device *device)
     : device(device)
 {
-    image = nullptr;
+    image = VK_NULL_HANDLE;
     owned = false;
     uploadBuffer = nullptr;
     readbackBuffer = nullptr;
@@ -272,7 +272,7 @@ agpu_texture *_agpu_texture::createFromImage(agpu_device *device, agpu_texture_d
 VkImageView _agpu_texture::createImageView(agpu_device *device, agpu_texture_view_description *viewDescription)
 {
     if (!viewDescription || !viewDescription->texture)
-        return nullptr;
+        return VK_NULL_HANDLE;
 
     auto texture = viewDescription->texture;
     VkImageViewCreateInfo createInfo;
@@ -304,7 +304,7 @@ VkImageView _agpu_texture::createImageView(agpu_device *device, agpu_texture_vie
     VkImageView view;
     auto error = vkCreateImageView(device->device, &createInfo, nullptr, &view);
     if (error)
-        return nullptr;
+        return VK_NULL_HANDLE;
 
     return view;
 }

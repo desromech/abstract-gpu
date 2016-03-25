@@ -249,7 +249,7 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pip
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::beginFrame (agpu_framebuffer* framebuffer)
+agpu_error _agpu_command_list::beginFrame (agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(framebuffer)
     return addCommand([=] {
@@ -424,10 +424,10 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer )
+AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame(framebuffer);
+    return command_list->beginFrame(framebuffer, bundle_content);
 }
 
 AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)

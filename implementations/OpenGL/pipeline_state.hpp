@@ -56,7 +56,7 @@ public:
     
     // Miscellaneous
     int renderTargetCount;
-    agpu_primitive_type primitiveType;
+    agpu_primitive_topology primitiveTopology;
 
 public:
     void activate();

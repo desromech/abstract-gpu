@@ -30,7 +30,7 @@ public:
     agpu_error setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
     agpu_error setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
     agpu_error setRenderTargetCount ( agpu_int count );
-    agpu_error setPrimitiveType(agpu_primitive_type type);
+    agpu_error setPrimitiveType(agpu_primitive_topology type);
     agpu_error setVertexLayout(agpu_vertex_layout* layout);
 
     agpu_error setRenderTargetFormat(agpu_uint index, agpu_texture_format format);
@@ -79,7 +79,7 @@ public:
 
     // Miscellaneos
     int renderTargetCount;
-    agpu_primitive_type primitiveType;
+    agpu_primitive_topology primitiveType;
 
     agpu_shader_signature *shaderSignature;
 

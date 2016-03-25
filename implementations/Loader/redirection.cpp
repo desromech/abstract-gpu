@@ -169,12 +169,12 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_
 	return (*dispatchTable)->agpuGetPreferredHighLevelShaderLanguage ( device );
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews )
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
 {
 	if (device == nullptr)
 		return (agpu_framebuffer*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateFrameBuffer ( device, width, height, colorCount, colorView, depthStencilViews );
+	return (*dispatchTable)->agpuCreateFrameBuffer ( device, width, height, colorCount, colorViews, depthStencilView );
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )

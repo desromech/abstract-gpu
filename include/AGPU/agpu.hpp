@@ -232,9 +232,9 @@ public:
 		return agpuGetPreferredHighLevelShaderLanguage( this );
 	}
 
-	inline agpu_framebuffer* createFrameBuffer ( agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews )
+	inline agpu_framebuffer* createFrameBuffer ( agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
 	{
-		return agpuCreateFrameBuffer( this, width, height, colorCount, colorView, depthStencilViews );
+		return agpuCreateFrameBuffer( this, width, height, colorCount, colorViews, depthStencilView );
 	}
 
 	inline agpu_texture* createTexture ( agpu_texture_description* description )

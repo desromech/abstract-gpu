@@ -118,6 +118,8 @@ class MakePharoBindingsVisitor:
     def processVersions(self, versions):
         for version in versions.values():
             self.processVersion(version)
+    def emitDoIt(self, string):
+        self.printLine('!' + string + '!')
 
     def emitSubclass(self, baseClass, className, instanceVariableNames, classVariableNames, poolDictionaries):
         self.printLine("$BaseClass subclass: #$ClassName", BaseClass = baseClass, ClassName = className)
@@ -191,7 +193,7 @@ class MakePharoBindingsVisitor:
             self.emitCMethodBinding(method, 'global c functions')
 
     def emitCMethodBinding(self, method, category):
-        self.beginMethod('AGPUCBindings class', category)
+        self.beginMethod('AGPUCBindings', category)
         self.printString("$MethodName", MethodName = method.name)
 
         allArguments = method.arguments
@@ -212,7 +214,7 @@ class MakePharoBindingsVisitor:
 
         self.newline()
         self.printLine("\t<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>")
-        self.printString("\t^ self nbCall: #($TypePrefix$ReturnType $FunctionPrefix$FunctionName (",
+        self.printString("\t^ self ffiCall: #($TypePrefix$ReturnType $FunctionPrefix$FunctionName (",
             ReturnType = method.returnType,
             FunctionName = method.cname)
 
@@ -240,13 +242,13 @@ class MakePharoBindingsVisitor:
         cname = self.processText("$TypePrefix$StructName" , StructName = struct.name)
         pharoName = 'AGPU' + convertToCamelCase(struct.name)
         self.typeBindings[cname] = pharoName
-        self.emitSubclass('NBExternalStructure', pharoName, '', '', 'AGPUConstants AGPUTypes')
+        self.emitSubclass('FFIExternalStructure', pharoName, '', '', 'AGPUConstants AGPUTypes')
 
         self.beginMethod(pharoName + ' class', 'definition')
         self.printLine(
 """fieldsDesc
 	"
-	self initializeAccessors
+	self rebuildFieldAccessors
 	"
 	^ #(""")
         for field in struct.fields:
@@ -260,16 +262,32 @@ class MakePharoBindingsVisitor:
             for struct in version.structs:
                 self.emitStructure(struct)
 
+    def emitInitializations(self, api):
+        self.emitDoIt("""
+        AGPUTypes initialize.
+        AGPUConstants initialize.
+        """)
+
+    def emitStructuresInitializations(self, api):
+        doItString = ''
+        for version in api.versions.values():
+            for struct in version.structs:
+                pharoName = 'AGPU' + convertToCamelCase(struct.name)
+                doItString += pharoName + " rebuildFieldAccessors.\n"
+        self.emitDoIt(doItString)
+
     def emitBaseClasses(self, api):
+        self.emitSubclass('SharedPool', 'AGPUTypes', '', '', '')
         self.emitConstants()
         self.emitInterfaceClasses(api)
         self.emitStructures(api)
         self.emitTypeBindings()
         self.emitCBindings(api)
         self.emitPharoBindings(api)
+        self.emitInitializations(api)
+        self.emitStructuresInitializations(api)
 
     def emitPharoBindings(self, api):
-        self.emitSubclass('AGPUBindingsBase', 'AGPU', '', '', '')
         for version in api.versions.values():
             for interface in version.interfaces:
                 self.emitInterfaceBindings(interface)
@@ -284,14 +302,16 @@ class MakePharoBindingsVisitor:
             self.emitMethodWrapper(method)
 
     def emitMethodWrapper(self, method):
-        ownerClass = 'AGPU class'
+        ownerClass = 'AGPU'
         clazz = method.clazz
         allArguments = method.arguments
+        category = '*AbstractGPU-Generated'
         if clazz is not None:
             ownerClass = 'AGPU' + convertToCamelCase(clazz.name)
             allArguments = [SelfArgument(method.clazz)] + allArguments
+            category = 'wrappers'
 
-        self.beginMethod(ownerClass, 'wrappers')
+        self.beginMethod(ownerClass, category)
 
         methodName = method.name
         if methodName == 'release':
@@ -314,7 +334,7 @@ class MakePharoBindingsVisitor:
         self.printLine("\t| result |")
 
         # Call the c bindings.
-        self.printString("\tresult := AGPUCBindings $MethodName", MethodName = method.name)
+        self.printString("\tresult := AGPUCBindings uniqueInstance $MethodName", MethodName = method.name)
         first = True
         for arg in allArguments:
             name = arg.name
@@ -355,7 +375,8 @@ class MakePharoBindingsVisitor:
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print "make-headers <definitions> <output dir>"
-    api = ApiDefinition.loadFromFileNamed(sys.argv[1])
-    with open(sys.argv[2], 'w') as out:
-        visitor = MakePharoBindingsVisitor(out)
-        api.accept(visitor)
+    else:
+        api = ApiDefinition.loadFromFileNamed(sys.argv[1])
+        with open(sys.argv[2], 'w') as out:
+            visitor = MakePharoBindingsVisitor(out)
+            api.accept(visitor)

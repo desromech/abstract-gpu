@@ -8,9 +8,9 @@
         <typedef name="int" ctype="signed int" />
         <typedef name="uint" ctype="unsigned int" />
         <typedef name="pointer" ctype="void*" />
-        <typedef name="size" ctype="size_t" />
+        <typedef name="size" ctype="unsigned int" />
         <typedef name="enum" ctype="int" />
-        <typedef name="bool" ctype="bool" />
+        <typedef name="bool" ctype="int" />
 
         <typedef name="float" ctype="float" />
         <typedef name="double" ctype="double" />
@@ -551,8 +551,8 @@
                 <arg name="width" type="uint" />
                 <arg name="height" type="uint" />
                 <arg name="colorCount" type="uint" />
-                <arg name="colorView" type="texture_view_description*" />
-                <arg name="depthStencilViews" type="texture_view_description*" />
+                <arg name="colorViews" type="texture_view_description*" />
+                <arg name="depthStencilView" type="texture_view_description*" />
             </method>
 
             <method name="createTexture" cname="CreateTexture" returnType="texture*">

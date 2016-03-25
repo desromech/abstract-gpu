@@ -5,8 +5,8 @@
 _agpu_framebuffer::_agpu_framebuffer(agpu_device *device)
     : device(device)
 {
-    renderPass = nullptr;
-    framebuffer = nullptr;
+    renderPass = VK_NULL_HANDLE;
+    framebuffer = VK_NULL_HANDLE;
     swapChainFramebuffer = false;
 }
 

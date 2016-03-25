@@ -7,10 +7,10 @@
 _agpu_swap_chain::_agpu_swap_chain(agpu_device *device)
     : device(device)
 {
-    surface = nullptr;
+    surface = VK_NULL_HANDLE;
     graphicsQueue = nullptr;
     presentationQueue = nullptr;
-    handle = nullptr;
+    handle = VK_NULL_HANDLE;
     currentBackBufferIndex = 0;
 }
 

@@ -6,7 +6,11 @@ _agpu_platform theD3D12Platform = { &agpu_d3d12_icd_dispatch };
 AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms)
 {
     if (numplatforms < 1)
-        return AGPU_INVALID_OPERATION;
+    {
+        CHECK_POINTER(ret_numplatforms);
+        *ret_numplatforms = 1;
+        return AGPU_OK;
+    }
 
     if (ret_numplatforms)
         *ret_numplatforms = 1;
