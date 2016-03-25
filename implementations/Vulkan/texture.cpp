@@ -98,12 +98,14 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAccessFlagBits initialLayoutAccessBits = VkAccessFlagBits(0);
     VkImageAspectFlagBits imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
     auto flags = description->flags;
     if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
     {
         createInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        initialLayoutAccessBits = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         imageAspect = VkImageAspectFlagBits(0);
         if (flags & (AGPU_TEXTURE_FLAG_DEPTH))
@@ -111,11 +113,9 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         if (flags & (AGPU_TEXTURE_FLAG_STENCIL))
             imageAspect = VkImageAspectFlagBits(imageAspect | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
-
-    if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+    else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
     {
-        createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     }
     else
     {
@@ -182,9 +182,6 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         {
             VkClearColorValue clearValue;
             memset(&clearValue, 0, sizeof(clearValue));
-            clearValue.float32[0] = 1.0;
-            clearValue.float32[3] = 1.0;
-            clearValue.float32[2] = 1.0;
             success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
             //success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
         }
@@ -200,22 +197,25 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     // Create the the buffers
     bool hasUploadBuffer = (description->flags & AGPU_TEXTURE_FLAG_UPLOADED) != 0;
     bool hasReadbackBuffer = (description->flags & AGPU_TEXTURE_FLAG_READED_BACK) != 0;
-    agpu_size transferBufferPixelSize = 0;
-    agpu_size transferBufferPitch = 0;
-    agpu_size transferBufferSlicePitch = 0;
+    VkSubresourceLayout transferLayout;
+    memset(&transferLayout, 0, sizeof(transferLayout));
+
     agpu_buffer *uploadBuffer = nullptr;
     agpu_buffer *readbackBuffer = nullptr;
     if (hasUploadBuffer || hasReadbackBuffer)
     {
+        VkImageSubresource subresource;
+        subresource.arrayLayer = 0;
+        subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresource.mipLevel = 0;
+        vkGetImageSubresourceLayout(device->device, image, &subresource, &transferLayout);
+        
         agpu_buffer_description bufferDesc;
         memset(&bufferDesc, 0, sizeof(bufferDesc));
         bufferDesc.binding = AGPU_GENERIC_DATA_BUFFER;
         bufferDesc.usage = AGPU_STREAM;
         bufferDesc.stride = pixelSizeOfTextureFormat(description->format);
-        transferBufferPixelSize = bufferDesc.stride;
-        transferBufferPitch = (bufferDesc.stride*description->width + 3) & (~3);
-        transferBufferSlicePitch = transferBufferPitch*description->height;
-        bufferDesc.size = transferBufferSlicePitch;
+        bufferDesc.size = transferLayout.size;
 
         // Create the upload buffer
         bool success = true;
@@ -253,11 +253,11 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     texture->image = image;
     texture->memory = textureMemory;
     texture->owned = true;
-    texture->transferBufferPixelSize = transferBufferPixelSize;
-    texture->transferBufferPitch = transferBufferPitch;
-    texture->transferBufferSlicePitch = transferBufferSlicePitch;
+    texture->transferLayout = transferLayout;
     texture->uploadBuffer = uploadBuffer;
     texture->readbackBuffer = readbackBuffer;
+    texture->initialLayout = initialLayout;
+    texture->initialLayoutAccessBits = initialLayoutAccessBits;
     return texture.release();
 }
 
@@ -343,7 +343,50 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
     CHECK_POINTER(buffer);
     if ((description.flags & AGPU_TEXTURE_FLAG_READED_BACK) == 0)
         return AGPU_INVALID_OPERATION;
-    return AGPU_UNIMPLEMENTED;
+
+    VkImageSubresource subresource;
+    subresource.arrayLayer = arrayIndex;
+    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresource.mipLevel = level;
+
+    VkSubresourceLayout layout;
+    vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
+
+    // Read the render target into the readback buffer.
+    VkBufferImageCopy copy;
+    memset(&copy, 0, sizeof(copy));
+    copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
+    copy.bufferImageHeight = layout.depthPitch / layout.rowPitch;
+    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy.imageSubresource.mipLevel = level;
+    copy.imageSubresource.baseArrayLayer = arrayIndex;
+    copy.imageSubresource.layerCount = 1;
+    copy.imageExtent = getLevelExtent(level);
+    device->copyImageToBuffer(image, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, readbackBuffer->uploadBuffer, 1, &copy);
+
+    auto readbackPointer = readbackBuffer->map(AGPU_READ_ONLY);
+    if (!readbackPointer)
+        return AGPU_ERROR;
+
+    if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
+    {
+        memcpy(buffer, readbackPointer, slicePitch);
+    }
+    else
+    {
+        auto srcRow = reinterpret_cast<uint8_t*> (readbackPointer);
+        auto dstRow = reinterpret_cast<uint8_t*> (buffer);
+        for (int y = 0; y < copy.imageExtent.height; ++y)
+        {
+            memcpy(dstRow, srcRow, pitch);
+            srcRow += layout.rowPitch;
+            dstRow += pitch;
+        }
+    }
+
+    readbackBuffer->unmap();
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
@@ -355,28 +398,44 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     auto bufferPointer = uploadBuffer->map(AGPU_WRITE_ONLY);
     if (!bufferPointer)
         return AGPU_ERROR;
+    
+    VkImageSubresource subresource;
+    subresource.arrayLayer = arrayIndex;
+    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresource.mipLevel = level;
 
-    if (pitch == transferBufferPitch  && slicePitch == transferBufferSlicePitch)
+    VkSubresourceLayout layout;
+    vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
+
+    auto copyHeight = layout.depthPitch / layout.rowPitch;
+    if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
     {
         memcpy(bufferPointer, data, slicePitch);
     }
     else
     {
-        // TODO: Copy row by row
+        auto srcRow = reinterpret_cast<uint8_t*> (data);
+        auto dstRow = reinterpret_cast<uint8_t*> (bufferPointer);
+        for (int y = 0; y < copyHeight; ++y)
+        {
+            memcpy(dstRow, srcRow, pitch);
+            srcRow += pitch;
+            dstRow += layout.rowPitch;
+        }
     }
 
     uploadBuffer->unmap();
 
     VkBufferImageCopy copy;
     memset(&copy, 0, sizeof(copy));
-    copy.bufferRowLength = pitch / transferBufferPixelSize;
-    copy.bufferImageHeight = slicePitch / pitch;
+    copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
+    copy.bufferImageHeight = copyHeight;
     copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
     copy.imageExtent = getLevelExtent(level);
-    device->copyBufferToImage(uploadBuffer->uploadBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VkAccessFlagBits(0), 1, &copy);
+    device->copyBufferToImage(uploadBuffer->uploadBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, 1, &copy);
 
     return AGPU_OK;
 }

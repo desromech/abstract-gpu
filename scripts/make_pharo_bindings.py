@@ -97,7 +97,7 @@ class MakePharoBindingsVisitor:
     def visitInterface(self, interface):
         cname = typedefName = self.processText("$TypePrefix$Name", Name=interface.name)
         self.interfaceTypeMap[interface.name + '*'] = 'AGPU' + convertToCamelCase(interface.name)
-        self.typeBindings[cname] = "#'void*'"
+        self.typeBindings[cname] = "#'void'"
 
     def processFragment(self, fragment):
         # Visit the constants.
@@ -227,7 +227,10 @@ class MakePharoBindingsVisitor:
 
             name = arg.name
             if name == 'self': name = 'selfObject'
-            self.printString("$TypePrefix$ArgType $ArgName", ArgType = arg.type, ArgName = name)
+            argTypeString = arg.type
+            if arg.arrayReturn and argTypeString.endswith('**'):
+                argTypeString = argTypeString[:-1]
+            self.printString("$TypePrefix$ArgType $ArgName", ArgType = argTypeString, ArgName = name)
 
         self.printLine(") )")
         self.endMethod()

@@ -463,7 +463,7 @@
     <globals>
         <function name="getPlatforms" cname="GetPlatforms" returnType="error" category="platform">
             <arg name="numplatforms" type="size" />
-            <arg name="platforms" type="platform**" />
+            <arg name="platforms" type="platform**" arrayReturn="true"/>
             <arg name="ret_numplatforms" type="size*" />
         </function>
     </globals>

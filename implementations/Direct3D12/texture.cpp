@@ -285,7 +285,7 @@ agpu_error _agpu_texture::unmapLevel()
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
+agpu_error _agpu_texture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
     auto mappedPointer = mapLevel(level, arrayIndex, AGPU_READ_ONLY);
     if (!mappedPointer)
@@ -293,20 +293,28 @@ agpu_error _agpu_texture::readTextureData(agpu_int level, agpu_int arrayIndex, a
 
     UINT subresource = subresourceIndexFor(mappedLevel, mappedArrayIndex);
 
-    UINT srcNumRows;
-    UINT64 srcRowPitch;
-    UINT64 srcTotalBytes;
-    device->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, nullptr, &srcNumRows, &srcRowPitch, &srcTotalBytes);
+    D3D12_TEXTURE_COPY_LOCATION dst;
+    dst.pResource = readbackResource.Get();
+    dst.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    device->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &dst.PlacedFootprint, nullptr, nullptr, nullptr);
 
+    UINT srcNumRows = dst.PlacedFootprint.Footprint.Height;
+    UINT64 srcRowPitch = dst.PlacedFootprint.Footprint.RowPitch;
     UINT64 srcSlicePitch = srcNumRows * srcRowPitch;
     if (srcRowPitch == pitch && srcSlicePitch == slicePitch)
     {
-        memcpy(data, mappedPointer, srcTotalBytes);
+        memcpy(buffer, mappedPointer, srcSlicePitch);
     }
     else
     {
-        // TODO: Perform a slow copy.
-        printError("Unimplemented slow texture data copy\n");
+        auto srcRow = reinterpret_cast<uint8_t*> (mappedPointer);
+        auto dstRow = reinterpret_cast<uint8_t*> (buffer);
+        for (int y = 0; y < srcNumRows; ++y)
+        {
+            memcpy(dstRow, srcRow, pitch);
+            srcRow += srcRowPitch;
+            dstRow += pitch;
+        }
     }
 
     unmapLevel();
@@ -334,8 +342,15 @@ agpu_error _agpu_texture::uploadTextureData(agpu_int level, agpu_int arrayIndex,
     }
     else
     {
-        // TODO: Perform a slow copy.
-        printError("Unimplemented slow texture data copy\n");
+        auto copyHeight = slicePitch / pitch;
+        auto srcRow = reinterpret_cast<uint8_t*> (data);
+        auto dstRow = reinterpret_cast<uint8_t*> (mappedPointer);
+        for (int y = 0; y < copyHeight; ++y)
+        {
+            memcpy(dstRow, srcRow, pitch);
+            srcRow += pitch;
+            dstRow += dstRowPitch;
+        }
     }
     
 

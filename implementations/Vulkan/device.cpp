@@ -688,6 +688,35 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspe
     return submitSetupCommandBuffer();
 }
 
+bool _agpu_device::copyImageToBuffer(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
+{
+    std::unique_lock<std::mutex> l(setupMutex);
+    if (!setupCommandBuffer)
+    {
+        if (!createSetupCommandBuffer())
+            return false;
+    }
+
+    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destAccessMask);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+    
+    vkCmdCopyImageToBuffer(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, regionCount, regions);
+
+    if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+    {
+        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_READ_BIT);
+        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    return submitSetupCommandBuffer();
+}
+
 bool _agpu_device::submitSetupCommandBuffer()
 {
     auto error = vkEndCommandBuffer(setupCommandBuffer);
@@ -751,6 +780,10 @@ VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image
 
     if (destLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    }
+
+    if (destLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     }
 
     if (destLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {

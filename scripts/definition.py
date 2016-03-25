@@ -4,12 +4,12 @@ def getOptionalAttribute(node, attr, default):
     if attr not in node.keys():
         return default
     return node.get(attr)
-    
+
 class Typedef:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
         self.ctype = xmlNode.get('ctype')
-        
+
     def accept(self, visitor):
         return visitor.visitTypedef(self)
 
@@ -20,13 +20,13 @@ class Field:
 
     def accept(self, visitor):
         return visitor.visitField(self)
-      
+
 class Struct:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
         self.fields = []
         self.loadFields(xmlNode)
-        
+
     def accept(self, visitor):
         return visitor.visitStruct(self)
 
@@ -55,7 +55,7 @@ class Constant:
         self.name = xmlNode.get('name')
         self.type = getOptionalAttribute(xmlNode, 'type', 'int')
         self.value = xmlNode.get('value')
-        
+
     def accept(self, visitor):
         return visitor.visitConstant(self)
 
@@ -63,12 +63,14 @@ class SelfArgument:
     def __init__(self, clazz):
         self.name = clazz.name
         self.type = clazz.name + '*'
-        
+        self.arrayReturn = False
+
 class Argument:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
         self.type = xmlNode.get('type')
-        
+        self.arrayReturn = getOptionalAttribute(xmlNode, 'arrayReturn', 'false') != 'false'
+
 class Function:
     def __init__(self, xmlNode, clazz = None):
         self.name = xmlNode.get('name')
@@ -85,25 +87,25 @@ class Function:
         for child in xmlNode:
             if child.tag == 'arg':
                 self.arguments.append(Argument(child))
-                
+
 class Interface:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
         self.methods = []
         self.loadMethods(xmlNode)
-        
+
     def accept(self, visitor):
         return visitor.visitInterface(self)
-        
+
     def loadMethods(self, node):
         for child in node:
             if child.tag == 'method':
                 self.methods.append(Function(child, self))
-                
+
 class ApiFragment:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
-        
+
         self.types = []
         self.constants = []
         self.globals = []
@@ -118,12 +120,12 @@ class ApiFragment:
             elif child.tag == 'structs' : self.loadStructs(child)
             elif child.tag == 'globals': self.loadGlobals(child)
             elif child.tag == 'interfaces': self.loadInterfaces(child)
-            
+
     def loadTypes(self, node):
         for child in node:
             loadedNode = None
             if child.tag == 'typedef': loadedNode = Typedef(child)
-            
+
             if loadedNode is not None:
                 self.types.append(loadedNode)
 
@@ -159,17 +161,17 @@ class ApiFragment:
 
             if loadedNode is not None:
                 self.interfaces.append(loadedNode)
-                
+
 class ApiVersion(ApiFragment):
     def __init__(self, xmlNode):
         assert xmlNode.tag == 'version'
         ApiFragment.__init__(self, xmlNode)
-    
+
 class ApiExtension:
     def __init__(self, xmlNode):
         assert xmlNode.tag == 'extension'
         ApiFragment.__init__(self, xmlNode)
-        
+
 class ApiDefinition:
     def __init__(self, xmlNode):
         assert xmlNode.tag == 'api'
@@ -181,10 +183,10 @@ class ApiDefinition:
         self.versions = {}
         self.extensions = {}
         self.loadFragments(xmlNode)
-        
+
     def accept(self, visitor):
         return visitor.visitApiDefinition(self)
-        
+
     @staticmethod
     def loadFromFileNamed(filename):
         tree = etree.parse(filename);
@@ -198,4 +200,3 @@ class ApiDefinition:
             if c.tag == 'extensions':
                 extension = ApiVersion(c)
                 self.extensions[extension.name] = extension
-                
