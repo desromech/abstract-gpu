@@ -340,9 +340,12 @@ static void loadPlatforms()
 
 AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms )
 {
-    if (!platforms)
+    if (!hasBeenLoaded)
+        loadPlatforms();
+
+    if (!platforms && numplatforms == 0)
     {
-        if (numplatforms == 0)
+        if (ret_numplatforms != nullptr)
         {
             *ret_numplatforms = loadedPlatforms.size();
             return AGPU_OK;
@@ -350,10 +353,6 @@ AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform*
         else
             return AGPU_NULL_POINTER;
     }
-
-
-    if(!hasBeenLoaded)
-        loadPlatforms();
 
     size_t retCount = std::min(numplatforms, (agpu_size)loadedPlatforms.size());
 
