@@ -8,7 +8,7 @@
 #include <windows.h>
 #undef max
 #undef min
-#elif defined(__unix__)
+#elif defined(__unix__) || defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dlfcn.h>
@@ -115,7 +115,7 @@ void dirEntriesDo(const std::string &dirPath, const FT &f)
         f(utf16ToUtf8(findData.cFileName));
 
     FindClose(handle);
-#elif defined(__unix__)
+#elif defined(__unix__) || defined(__APPLE__)
     auto dir = opendir(dirPath.c_str());
     if(!dir)
         return;
@@ -250,10 +250,13 @@ static void loadDriver(const std::string &path)
         return;
     }
 
-    // Get the driver platform
-    agpu_platform *platform;
+    // Get the driver platform count.
     agpu_size platformCount;
-    getPlatforms(1, &platform, &platformCount);
+    getPlatforms(0, nullptr, &platformCount);
+
+    // Get the driver platforms
+    std::vector<agpu_platform*> platforms(platformCount);
+    getPlatforms(platforms.size(), &platforms[0], &platformCount);
 
     // Ensure there is at least one platform defined.
     if(!platformCount)

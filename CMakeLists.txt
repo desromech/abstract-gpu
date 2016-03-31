@@ -36,6 +36,21 @@ endif()
 # Find OpenGL
 find_package(OpenGL)
 
+# Find Vulkan
+find_path(VULKAN_INCLUDE_DIRS
+  NAMES vulkan/vulkan.h
+)
+
+find_library(VULKAN_LIBRARY NAMES vulkan-1)
+if(VULKAN_INCLUDE_DIRS AND VULKAN_LIBRARY)
+	set(VULKAN_FOUND TRUE)
+	include_directories(${VULKAN_INCLUDE_DIRS})
+endif()
+
+if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
+	set(D3D12_FOUND TRUE)
+endif()
+
 # Add some include directories
 include_directories(. include thirdparty/glm thirdparty/opengl/include)
 
@@ -64,6 +79,10 @@ else()
 
     find_library(D3D12_LIBRARY NAMES d3d12)
 
+	if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
+		set(D3D12_FOUND TRUE)
+	endif()
+
     # For VisualStudio in Window
     find_path(SDL2_INCLUDE_DIRS
       NAMES SDL.h
@@ -75,7 +94,15 @@ else()
 
     find_library(SDL2_LIBRARY NAMES SDL2 PATHS ${SDL2_LIBRARY_PATH})
 	find_library(SDL2_MAIN_LIBRARY NAMES SDL2main PATHS ${SDL2_LIBRARY_PATH})
-    set(SDL2_LIBRARIES ${SDL2_LIBRARY} ${SDL2_MAIN_LIBRARY})
+
+	if(SDL2_INCLUDE_DIRS AND SDL2_LIBRARY)
+		set(SDL2_FOUND TRUE)
+		if(SDL2_MAIN_LIBRARY)
+	    	set(SDL2_LIBRARIES ${SDL2_LIBRARY} ${SDL2_MAIN_LIBRARY})
+		else()
+			set(SDL2_LIBRARIES ${SDL2_LIBRARY})
+		endif()
+	endif()
 endif()
 
 # Use the SDL2 include path.
