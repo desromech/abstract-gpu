@@ -4,6 +4,7 @@
 #include "command_queue.hpp"
 #include "command_allocator.hpp"
 #include "command_list.hpp"
+#include "framebuffer.hpp"
 
 _agpu_device::_agpu_device()
 {
@@ -126,7 +127,9 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_
 
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )

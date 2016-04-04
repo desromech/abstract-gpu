@@ -8,6 +8,8 @@ set(AGPU_Metal_SOURCES
     common.hpp
     device.hpp
     device.mm
+    framebuffer.hpp
+    framebuffer.mm
     icd.c
     object.hpp
     platform.mm
@@ -19,6 +21,8 @@ set(AGPU_Metal_SOURCES
     shader_signature.mm
     swap_chain.hpp
     swap_chain.mm
+    texture.hpp
+    texture.mm
 )
 
 add_definitions(-DAGPU_BUILD)

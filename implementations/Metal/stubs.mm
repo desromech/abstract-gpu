@@ -118,58 +118,6 @@ AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_stat
     return AGPU_UNIMPLEMENTED;
 }
 
-/* Methods for interface agpu_texture. */
-AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
-{
-    return nullptr;
-}
-
-AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription ( agpu_texture* texture, agpu_texture_view_description* result )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-
 /* Methods for interface agpu_buffer. */
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
 {
@@ -270,19 +218,6 @@ AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength ( agpu_shader* shader )
 }
 
 AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-
-/* Methods for interface agpu_framebuffer. */
-
-AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer )
 {
     return AGPU_UNIMPLEMENTED;
 }
