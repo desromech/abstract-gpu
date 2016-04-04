@@ -1,0 +1,5 @@
+-std=c++11
+-Iinclude
+-I.
+-Ithirdparty/glm
+-Ithirdparty/opengl/include

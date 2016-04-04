@@ -41,6 +41,16 @@ find_path(VULKAN_INCLUDE_DIRS
   NAMES vulkan/vulkan.h
 )
 
+# Find Metal
+if(APPLE)
+	find_library(APPKIT_LIBRARY AppKit)
+
+	find_library(METAL_LIBRARY Metal)
+	if(METAL_LIBRARY AND APPKIT_LIBRARY)
+		set(METAL_FOUND TRUE)
+	endif()
+endif()
+
 find_library(VULKAN_LIBRARY NAMES vulkan-1)
 if(VULKAN_INCLUDE_DIRS AND VULKAN_LIBRARY)
 	set(VULKAN_FOUND TRUE)

@@ -1,15 +1,27 @@
 set(AGPU_Metal_SOURCES
+    command_allocator.hpp
+    command_allocator.mm
+    command_list.hpp
+    command_list.mm
+    command_queue.hpp
+    command_queue.mm
     common.hpp
     device.hpp
-    device.cpp
+    device.mm
     icd.c
     object.hpp
-    platform.cpp
+    platform.mm
     platform.hpp
-    stubs.cpp
+    stubs.mm
+    shader_signature_builder.hpp
+    shader_signature_builder.mm
+    shader_signature.hpp
+    shader_signature.mm
+    swap_chain.hpp
+    swap_chain.mm
 )
 
 add_definitions(-DAGPU_BUILD)
 
 add_library(AgpuMetal SHARED ${AGPU_Metal_SOURCES})
-target_link_libraries(AgpuMetal)
+target_link_libraries(AgpuMetal ${METAL_LIBRARY} ${APPKIT_LIBRARY})

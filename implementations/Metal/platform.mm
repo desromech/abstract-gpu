@@ -1,4 +1,5 @@
 #include "platform.hpp"
+#include "device.hpp"
 
 _agpu_platform theMetalPlatform = { &agpu_metal_icd_dispatch };
 
@@ -19,7 +20,9 @@ AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** 
 
 AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_open_info* openInfo )
 {
-    return nullptr;
+    if(platform != &theMetalPlatform)
+        return nullptr;
+    return agpu_device::open(openInfo);
 }
 
 AGPU_EXPORT agpu_cstring agpuGetPlatformName ( agpu_platform* platform )

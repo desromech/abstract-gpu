@@ -271,7 +271,8 @@
 			<constant name="ShaderLanguageSpirV" value="3" />
             <constant name="ShaderLanguageHlsl" value="4" />
             <constant name="ShaderLanguageMetal" value="5" />
-            <constant name="ShaderLanguageBinary" value="6" />
+            <constant name="ShaderLanguageMetalAir" value="6" />
+            <constant name="ShaderLanguageBinary" value="7" />
 		</enum>
 
         <enum name="field_type">

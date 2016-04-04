@@ -10,7 +10,7 @@ if(VULKAN_FOUND)
   add_subdirectory(Vulkan)
 endif()
 
-if(APPLE)
+if(METAL_FOUND)
   add_subdirectory(Metal)
 endif()
 

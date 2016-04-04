@@ -131,6 +131,11 @@ int SampleBase::main(int argc, const char **argv)
         swapChainCreateInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
         break;
 #endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+    case SDL_SYSWM_COCOA:
+        swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.cocoa.window;
+        break;
+#endif
     default:
         printError("Unsupported window system\n");
         return -1;
