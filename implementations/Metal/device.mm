@@ -5,6 +5,7 @@
 #include "command_allocator.hpp"
 #include "command_list.hpp"
 #include "framebuffer.hpp"
+#include "fence.hpp"
 
 _agpu_device::_agpu_device()
 {
@@ -18,6 +19,9 @@ void _agpu_device::lostReferences()
         mainCommandQueue->release();
         mainCommandQueue = nullptr;
     }
+
+    if(device)
+        [device release];
 }
 
 agpu_device *_agpu_device::open(agpu_device_open_info *openInfo)
@@ -28,7 +32,10 @@ agpu_device *_agpu_device::open(agpu_device_open_info *openInfo)
 
     id<MTLCommandQueue> mainCommandQueue = [mtlDevice newCommandQueue];
     if(!mainCommandQueue)
+    {
+        [mtlDevice release];
         return nullptr;
+    }
 
     auto result = new agpu_device();
     result->device = mtlDevice;
@@ -66,7 +73,7 @@ AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_com
 {
     if(!device)
         return nullptr;
-    return agpu_swap_chain::create(device, swapChainInfo);
+    return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
 }
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
@@ -139,7 +146,9 @@ AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_
 
 AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_fence::create(device);
 }
 
 AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_uint sample_count )

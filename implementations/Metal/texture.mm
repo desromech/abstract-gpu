@@ -1,4 +1,5 @@
 #include "texture.hpp"
+#include "texture_format.hpp"
 
 _agpu_texture::_agpu_texture(agpu_device *device)
     : device(device)
@@ -8,6 +9,18 @@ _agpu_texture::_agpu_texture(agpu_device *device)
 
 void _agpu_texture::lostReferences()
 {
+    if(handle)
+        [handle release];
+}
+
+agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_description* description)
+{
+    if(!description)
+        return nullptr;
+
+    auto result = new agpu_texture(device);
+    result->description = *description;
+    return result;
 }
 
 agpu_error _agpu_texture::getDescription ( agpu_texture_description* description )
@@ -48,9 +61,23 @@ agpu_error _agpu_texture::discardReadbackBuffer (  )
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description* result )
+agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description* viewDescription )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(viewDescription);
+    memset(viewDescription, 0, sizeof(*viewDescription));
+    viewDescription->type = description.type;
+    viewDescription->texture = this;
+    viewDescription->format = description.format;
+    viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
+    viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
+    viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
+    viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
+    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.base_miplevel = 0;
+    viewDescription->subresource_range.level_count = description.miplevels;
+    viewDescription->subresource_range.base_arraylayer = 0;
+    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    return AGPU_OK;
 }
 
 // The exported C interface

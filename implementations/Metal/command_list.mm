@@ -11,6 +11,8 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
 
 void _agpu_command_list::lostReferences()
 {
+    if(buffer)
+        [buffer release];
     if(allocator)
         allocator->release();
 }
@@ -143,8 +145,9 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     this->allocator = allocator;
 
     // Create the buffer.
-    if(!buffer)
-        buffer = [allocator->queue->handle commandBuffer];
+    if(buffer)
+        [buffer release];
+    buffer = [allocator->queue->handle commandBuffer];
 
     return AGPU_OK;
 }

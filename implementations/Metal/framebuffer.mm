@@ -5,6 +5,8 @@ _agpu_framebuffer::_agpu_framebuffer(agpu_device *device)
     : device(device)
 {
     depthStencilBuffer = nullptr;
+    ownedByswapChain = false;
+    drawable = nil;
 }
 
 void _agpu_framebuffer::lostReferences()
@@ -65,6 +67,39 @@ agpu_framebuffer* _agpu_framebuffer::create ( agpu_device* device, agpu_uint wid
     }
 
     return result;
+}
+
+agpu_framebuffer* _agpu_framebuffer::createForSwapChain ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_texture_view_description* depthStencilView )
+{
+    // Create the framebuffer object.
+    auto result = new agpu_framebuffer(device);
+
+    // Create the render pass descriptor
+    result->renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
+    auto &renderPass = result->renderPass;
+
+    // Add the depth stencil references.
+    if(depthStencilView)
+    {
+        // TODO: Add the depth and the stencill attachments.
+        result->depthStencilBuffer = depthStencilView->texture;
+        result->depthStencilBuffer->retain();
+    }
+
+    result->ownedByswapChain = true;
+    return result;
+}
+
+void _agpu_framebuffer::releaseDrawable()
+{
+    if(drawable)
+        [drawable release];
+    drawable = nil;
+}
+
+void _agpu_framebuffer::setDrawable(id<MTLDrawable> drawable)
+{
+    this->drawable = drawable;
 }
 
 // The exported C interface

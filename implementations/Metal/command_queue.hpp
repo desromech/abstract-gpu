@@ -2,6 +2,7 @@
 #define AGPU_COMMAND_QUEUE_HPP
 
 #include "device.hpp"
+#include <mutex>
 
 struct _agpu_command_queue : public Object<_agpu_command_queue>
 {
@@ -15,9 +16,13 @@ public:
     agpu_error finishExecution (  );
     agpu_error signalFence ( agpu_fence* fence );
     agpu_error waitFence ( agpu_fence* fence );
-    
+
     agpu_device *device;
+    agpu_fence *finishFence;
     id<MTLCommandQueue> handle;
+
+private:
+    std::mutex finishFenceMutex;
 };
 
 #endif //AGPU_COMMAND_QUEUE_HPP

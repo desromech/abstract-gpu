@@ -9,6 +9,8 @@ public:
     _agpu_texture(agpu_device *device);
     void lostReferences();
 
+    static agpu_texture *create(agpu_device *device, agpu_texture_description* description);
+
     agpu_error getDescription ( agpu_texture_description* description );
     agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
     agpu_error unmapLevel (  );

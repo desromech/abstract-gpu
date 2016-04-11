@@ -258,21 +258,3 @@ AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_
 {
     return AGPU_UNIMPLEMENTED;
 }
-
-
-/* Methods for interface agpu_fence. */
-
-AGPU_EXPORT agpu_error agpuAddFenceReference ( agpu_fence* fence )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseFenceReference ( agpu_fence* fence )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuWaitOnClient ( agpu_fence* fence )
-{
-    return AGPU_UNIMPLEMENTED;
-}

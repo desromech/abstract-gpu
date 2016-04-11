@@ -1,5 +1,5 @@
 #include "command_queue.hpp"
-
+#include "fence.hpp"
 
 _agpu_command_queue::_agpu_command_queue(agpu_device *device)
     : device(device)
@@ -9,12 +9,22 @@ _agpu_command_queue::_agpu_command_queue(agpu_device *device)
 
 void _agpu_command_queue::lostReferences()
 {
+    if(finishFence)
+        finishFence->release();
+
+    if(handle)
+        [handle release];
 }
 
 _agpu_command_queue *_agpu_command_queue::create(agpu_device *device, id<MTLCommandQueue> handle)
 {
+    auto finishFence = agpu_fence::create(device);
+    if(!finishFence)
+        return nullptr;
+
     std::unique_ptr<agpu_command_queue> result(new agpu_command_queue(device));
     result->handle = handle;
+    result->finishFence = finishFence;
     return result.release();
 }
 
@@ -25,16 +35,20 @@ agpu_error _agpu_command_queue::addCommandList ( agpu_command_list* command_list
 
 agpu_error _agpu_command_queue::finishExecution (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    std::unique_lock<std::mutex> l(finishFenceMutex);
+    signalFence(finishFence);
+    return finishFence->waitOnClient();
 }
 
 agpu_error _agpu_command_queue::signalFence ( agpu_fence* fence )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(fence);
+    return fence->signalOnQueue(handle);
 }
 
 agpu_error _agpu_command_queue::waitFence ( agpu_fence* fence )
 {
+    CHECK_POINTER(fence);
     return AGPU_UNIMPLEMENTED;
 }
 

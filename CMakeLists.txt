@@ -44,9 +44,9 @@ find_path(VULKAN_INCLUDE_DIRS
 # Find Metal
 if(APPLE)
 	find_library(APPKIT_LIBRARY AppKit)
-
+	find_library(QUARTZCORE_LIBRARY QuartzCore)
 	find_library(METAL_LIBRARY Metal)
-	if(METAL_LIBRARY AND APPKIT_LIBRARY)
+	if(METAL_LIBRARY AND QUARTZCORE_LIBRARY AND APPKIT_LIBRARY)
 		set(METAL_FOUND TRUE)
 	endif()
 endif()
