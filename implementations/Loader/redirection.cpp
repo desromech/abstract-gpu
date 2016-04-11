@@ -177,6 +177,14 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_
 	return (*dispatchTable)->agpuCreateFrameBuffer ( device, width, height, colorCount, colorViews, depthStencilView );
 }
 
+AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass ( agpu_device* device, agpu_renderpass_description* description )
+{
+	if (device == nullptr)
+		return (agpu_renderpass*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateRenderPass ( device, description );
+}
+
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
 {
 	if (device == nullptr)
@@ -537,38 +545,6 @@ AGPU_EXPORT agpu_error agpuSetScissor ( agpu_command_list* command_list, agpu_in
 	return (*dispatchTable)->agpuSetScissor ( command_list, x, y, w, h );
 }
 
-AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuSetClearColor ( command_list, r, g, b, a );
-}
-
-AGPU_EXPORT agpu_error agpuSetClearDepth ( agpu_command_list* command_list, agpu_float depth )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuSetClearDepth ( command_list, depth );
-}
-
-AGPU_EXPORT agpu_error agpuSetClearStencil ( agpu_command_list* command_list, agpu_int value )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuSetClearStencil ( command_list, value );
-}
-
-AGPU_EXPORT agpu_error agpuClear ( agpu_command_list* command_list, agpu_bitfield buffers )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuClear ( command_list, buffers );
-}
-
 AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, agpu_pipeline_state* pipeline )
 {
 	if (command_list == nullptr)
@@ -681,20 +657,20 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
 	return (*dispatchTable)->agpuResetCommandList ( command_list, allocator, initial_pipeline_state );
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuBeginFrame ( command_list, framebuffer, bundle_content );
+	return (*dispatchTable)->agpuBeginRenderPass ( command_list, renderpass, framebuffer, bundle_content );
 }
 
-AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list )
+AGPU_EXPORT agpu_error agpuEndRenderPass ( agpu_command_list* command_list )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuEndFrame ( command_list );
+	return (*dispatchTable)->agpuEndRenderPass ( command_list );
 }
 
 AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
@@ -951,6 +927,22 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer )
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
 	return (*dispatchTable)->agpuReleaseFramebuffer ( framebuffer );
+}
+
+AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuAddRenderPassReference ( renderpass );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseRenderPass ( agpu_renderpass* renderpass )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuReleaseRenderPass ( renderpass );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )

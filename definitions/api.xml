@@ -118,6 +118,11 @@
             <field name="a" type="float" />
         </struct>
 
+        <struct name="depth_stencil_value">
+            <field name="depth" type="float" />
+            <field name="stencil" type="byte" />
+        </struct>
+
         <struct name="sampler_description">
             <field name="filter" type="filter" />
             <field name="address_u" type="texture_address_mode" />
@@ -129,6 +134,24 @@
             <field name="border_color" type="color4f" />
             <field name="min_lod" type="float" />
             <field name="max_lod" type="float" />
+        </struct>
+
+        <struct name="renderpass_color_attachment_description">
+            <field name="begin_action" type="renderpass_attachment_action" />
+            <field name="end_action" type="renderpass_attachment_action" />
+            <field name="clear_value" type="color4f" />
+        </struct>
+
+        <struct name="renderpass_depth_stencil_description">
+            <field name="begin_action" type="renderpass_attachment_action" />
+            <field name="end_action" type="renderpass_attachment_action" />
+            <field name="clear_value" type="depth_stencil_value" />
+        </struct>
+
+        <struct name="renderpass_description">
+            <field name="color_attachment_count" type="size" />
+            <field name="color_attachments" type="renderpass_color_attachment_description*"/>
+            <field name="depth_stencil_attachment" type="renderpass_depth_stencil_description*"/>
         </struct>
 	</structs>
 
@@ -169,6 +192,12 @@
 
             <constant name="Patches" value="9" />
 		</enum>
+
+        <enum name="renderpass_attachment_action">
+            <constant name="AttachmentKeep" value="0" />
+            <constant name="AttachmentClear" value="1" />
+            <constant name="AttachmentDiscard" value="2" />
+        </enum>
 
         <enum name="stencil_operation">
             <constant name="Keep" value="0" />
@@ -557,6 +586,10 @@
                 <arg name="depthStencilView" type="texture_view_description*" />
             </method>
 
+            <method name="createRenderPass" cname="CreateRenderPass" returnType="renderpass*">
+                <arg name="description" type="renderpass_description*" />
+            </method>
+
             <method name="createTexture" cname="CreateTexture" returnType="texture*">
                 <arg name="description" type="texture_description*" />
             </method>
@@ -761,25 +794,6 @@
                 <arg name="h" type="int" />
             </method>
 
-            <method name="setClearColor" cname="SetClearColor" returnType="error">
-                <arg name="r" type="float" />
-                <arg name="g" type="float" />
-                <arg name="b" type="float" />
-                <arg name="a" type="float" />
-            </method>
-
-            <method name="setClearDepth" cname="SetClearDepth" returnType="error">
-                <arg name="depth" type="float" />
-            </method>
-
-            <method name="setClearStencil" cname="SetClearStencil" returnType="error">
-                <arg name="value" type="int" />
-            </method>
-
-            <method name="clear" cname="Clear" returnType="error">
-                <arg name="buffers" type="bitfield" />
-            </method>
-
             <method name="usePipelineState" cname="UsePipelineState" returnType="error">
                 <arg name="pipeline" type="pipeline_state*" />
             </method>
@@ -844,12 +858,13 @@
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
             </method>
 
-            <method name="beginFrame" cname="BeginFrame" returnType="error">
+            <method name="beginRenderPass" cname="BeginRenderPass" returnType="error">
+                <arg name="renderpass" type="renderpass*" />
                 <arg name="framebuffer" type="framebuffer*" />
                 <arg name="bundle_content" type="bool" />
             </method>
 
-            <method name="endFrame" cname="EndFrame" returnType="error">
+            <method name="endRenderPass" cname="EndRenderPass" returnType="error">
             </method>
 
             <method name="resolveFramebuffer" cname="ResolveFramebuffer" returnType="error">
@@ -1005,6 +1020,14 @@
             </method>
 
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
+            </method>
+        </interface>
+
+        <interface name="renderpass">
+            <method name="addReference" cname="AddRenderPassReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseRenderPass" returnType="error">
             </method>
         </interface>
 

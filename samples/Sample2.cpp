@@ -23,6 +23,11 @@ class Sample2: public SampleBase
 public:
     bool initializeSample()
     {
+        // Create the render pass.
+        mainRenderPass = createMainPass();
+        if(!mainRenderPass)
+            return false;
+
         // Create the programs.
         auto vertexShader = compileShaderFromFile("data/shaders/simpleVertex", AGPU_VERTEX_SHADER);
         auto fragmentShader = compileShaderFromFile("data/shaders/simpleFragment", AGPU_FRAGMENT_SHADER);
@@ -32,7 +37,7 @@ public:
         // Create the shader signature.
         auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
         agpuAddShaderSignatureBindingBank(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_CBV, 1, 1);
-        
+
         shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
         agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);
         if (!shaderSignature)
@@ -95,13 +100,11 @@ public:
         agpuResetCommandList(commandList, commandAllocator, pipeline);
         auto backBuffer = agpuGetCurrentBackBuffer(swapChain);
         agpuSetShaderSignature(commandList, shaderSignature);
-        agpuBeginFrame(commandList, backBuffer, false);
+        agpuBeginRenderPass(commandList, mainRenderPass, backBuffer, false);
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);
-        agpuSetClearColor(commandList, 0, 0, 0, 0);
-        agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
 
         // Use the vertices and the indices.
         agpuUseVertexBinding(commandList, vertexBinding);
@@ -113,7 +116,7 @@ public:
         agpuDrawElements(commandList, 3, 1, 0, 0, 0);
 
         // Finish the command list
-        agpuEndFrame(commandList);
+        agpuEndRenderPass(commandList);
         agpuCloseCommandList(commandList);
 
         // Queue the command list
@@ -135,7 +138,7 @@ public:
         agpuReleaseShaderSignature(shaderSignature);
 
         agpuReleaseVertexLayout(vertexLayout);
-        
+
         agpuReleasePipelineState(pipeline);
         agpuReleaseCommandList(commandList);
         agpuReleaseCommandAllocator(commandAllocator);
@@ -152,6 +155,7 @@ public:
     agpu_pipeline_state *pipeline;
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
+    agpu_renderpass *mainRenderPass;
 
     TransformationState transformationState;
 };

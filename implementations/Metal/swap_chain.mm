@@ -128,7 +128,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
         if(drawable)
         {
             result->currentFramebufferIndex = 0;
-            result->framebuffers[result->currentFramebufferIndex]->setDrawable(drawable);
+            result->framebuffers[result->currentFramebufferIndex]->setDrawable(drawable, drawable.texture);
         }
         else
         {
@@ -167,7 +167,7 @@ agpu_error _agpu_swap_chain::swapBuffers (  )
     framebuffers[currentFramebufferIndex]->releaseDrawable();
 
     auto drawable = [metalLayer nextDrawable];
-    framebuffers[currentFramebufferIndex]->setDrawable(drawable);
+    framebuffers[currentFramebufferIndex]->setDrawable(drawable, drawable.texture);
     if(!drawable)
         return AGPU_ERROR;
 

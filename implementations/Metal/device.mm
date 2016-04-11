@@ -5,6 +5,7 @@
 #include "command_allocator.hpp"
 #include "command_list.hpp"
 #include "framebuffer.hpp"
+#include "renderpass.hpp"
 #include "fence.hpp"
 
 _agpu_device::_agpu_device()
@@ -137,6 +138,13 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_
     if(!device)
         return nullptr;
     return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
+}
+
+AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass ( agpu_device* device, agpu_renderpass_description* description )
+{
+    if(!device)
+        return nullptr;
+    return agpu_renderpass::create(device, description);
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )

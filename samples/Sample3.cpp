@@ -36,6 +36,11 @@ class Sample3 : public SampleBase
 public:
     bool initializeSample()
     {
+        // Create the render pass.
+        mainRenderPass = createMainPass(glm::vec4(0, 0, 0, 0));
+        if(!mainRenderPass)
+            return false;
+
         // Create the programs.
         auto vertexShader = compileShaderFromFile("data/shaders/texturedVertex", AGPU_VERTEX_SHADER);
         auto fragmentShader = compileShaderFromFile("data/shaders/texturedFragment", AGPU_FRAGMENT_SHADER);
@@ -127,13 +132,11 @@ public:
         agpuResetCommandList(commandList, commandAllocator, pipeline);
         auto backBuffer = agpuGetCurrentBackBuffer(swapChain);
         agpuSetShaderSignature(commandList, shaderSignature);
-        agpuBeginFrame(commandList, backBuffer, false);
+        agpuBeginRenderPass(commandList, mainRenderPass, backBuffer, false);
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);
-        agpuSetClearColor(commandList, 0, 0, 0, 0);
-        agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
 
         // Use the vertices and the indices.
         agpuUseVertexBinding(commandList, vertexBinding);
@@ -147,7 +150,7 @@ public:
         agpuDrawElements(commandList, sizeof(indices) / sizeof(indices[0]), 1, 0, 0, 0);
 
         // Finish the command list
-        agpuEndFrame(commandList);
+        agpuEndRenderPass(commandList);
         agpuCloseCommandList(commandList);
 
         // Queue the command list
@@ -193,6 +196,7 @@ public:
     agpu_command_list *commandList;
 
     agpu_texture *diffuseTexture;
+    agpu_renderpass *mainRenderPass;
 
     TransformationState transformationState;
 };

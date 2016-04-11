@@ -1,12 +1,15 @@
 #include "command_list.hpp"
 #include "command_allocator.hpp"
 #include "command_queue.hpp"
+#include "framebuffer.hpp"
+#include "renderpass.hpp"
 
 _agpu_command_list::_agpu_command_list(agpu_device *device)
     : device(device)
 {
     allocator = nullptr;
     buffer = nil;
+    renderEncoder = nil;
 }
 
 void _agpu_command_list::lostReferences()
@@ -45,26 +48,6 @@ agpu_error _agpu_command_list::setViewport ( agpu_int x, agpu_int y, agpu_int w,
 }
 
 agpu_error _agpu_command_list::setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setClearDepth ( agpu_float depth )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::setClearStencil ( agpu_int value )
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error _agpu_command_list::clear ( agpu_bitfield buffers )
 {
     return AGPU_UNIMPLEMENTED;
 }
@@ -152,14 +135,25 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::beginFrame ( agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(renderpass);
+    CHECK_POINTER(framebuffer);
+
+    auto descriptor = renderpass->createDescriptor(framebuffer);
+    renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
+    [descriptor release];
+    return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::endFrame (  )
+agpu_error _agpu_command_list::endRenderPass (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    if(!renderEncoder)
+        return AGPU_INVALID_OPERATION;
+        
+    [renderEncoder endEncoding];
+    renderEncoder = nil;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
@@ -196,30 +190,6 @@ AGPU_EXPORT agpu_error agpuSetScissor ( agpu_command_list* command_list, agpu_in
 {
     CHECK_POINTER(command_list);
     return command_list->setScissor(x, y, w, h);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearColor ( agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearColor(r, g, b, a);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearDepth ( agpu_command_list* command_list, agpu_float depth )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearDepth(depth);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearStencil ( agpu_command_list* command_list, agpu_int value )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearStencil(value);
-}
-
-AGPU_EXPORT agpu_error agpuClear ( agpu_command_list* command_list, agpu_bitfield buffers )
-{
-    CHECK_POINTER(command_list);
-    return command_list->clear(buffers);
 }
 
 AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, agpu_pipeline_state* pipeline )
@@ -306,16 +276,16 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame(framebuffer, bundle_content);
+    return command_list->beginRenderPass(renderpass, framebuffer, bundle_content);
 }
 
-AGPU_EXPORT agpu_error agpuEndFrame ( agpu_command_list* command_list )
+AGPU_EXPORT agpu_error agpuEndRenderPass ( agpu_command_list* command_list )
 {
     CHECK_POINTER(command_list);
-    return command_list->endFrame();
+    return command_list->endRenderPass();
 }
 
 AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )

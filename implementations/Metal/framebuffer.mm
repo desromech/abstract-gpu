@@ -5,7 +5,7 @@ _agpu_framebuffer::_agpu_framebuffer(agpu_device *device)
     : device(device)
 {
     depthStencilBuffer = nullptr;
-    ownedByswapChain = false;
+    ownedBySwapChain = false;
     drawable = nil;
 }
 
@@ -40,19 +40,11 @@ agpu_framebuffer* _agpu_framebuffer::create ( agpu_device* device, agpu_uint wid
     // Create the framebuffer object.
     auto result = new agpu_framebuffer(device);
 
-    // Create the render pass descriptor
-    result->renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
-    auto &renderPass = result->renderPass;
-
     // Add the color buffer references.
     result->colorBuffers.resize(colorCount);
     for(int i = 0; i < colorCount; ++i)
     {
         auto &view = colorViews[i];
-        renderPass.colorAttachments[i].texture = view.texture->handle;
-        renderPass.colorAttachments[i].clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 0);
-        renderPass.colorAttachments[i].storeAction = MTLStoreActionStore;
-        renderPass.colorAttachments[i].loadAction = MTLLoadActionLoad;
 
         view.texture->retain();
         result->colorBuffers.push_back(view.texture);
@@ -74,10 +66,6 @@ agpu_framebuffer* _agpu_framebuffer::createForSwapChain ( agpu_device* device, a
     // Create the framebuffer object.
     auto result = new agpu_framebuffer(device);
 
-    // Create the render pass descriptor
-    result->renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
-    auto &renderPass = result->renderPass;
-
     // Add the depth stencil references.
     if(depthStencilView)
     {
@@ -86,7 +74,7 @@ agpu_framebuffer* _agpu_framebuffer::createForSwapChain ( agpu_device* device, a
         result->depthStencilBuffer->retain();
     }
 
-    result->ownedByswapChain = true;
+    result->ownedBySwapChain = true;
     return result;
 }
 
@@ -97,9 +85,17 @@ void _agpu_framebuffer::releaseDrawable()
     drawable = nil;
 }
 
-void _agpu_framebuffer::setDrawable(id<MTLDrawable> drawable)
+void _agpu_framebuffer::setDrawable(id<MTLDrawable> drawable, id<MTLTexture> drawableTexture)
 {
     this->drawable = drawable;
+    this->drawableTexture = drawableTexture;
+}
+
+id<MTLTexture> _agpu_framebuffer::getColorTexture(agpu_uint index)
+{
+    if(ownedBySwapChain)
+        return drawableTexture;
+    return colorBuffers[index]->handle;
 }
 
 // The exported C interface

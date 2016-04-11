@@ -16,6 +16,8 @@ set(AGPU_Metal_SOURCES
     object.hpp
     platform.mm
     platform.hpp
+    renderpass.hpp
+    renderpass.mm
     stubs.mm
     shader_signature_builder.hpp
     shader_signature_builder.mm

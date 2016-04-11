@@ -5,6 +5,10 @@ class Sample1: public SampleBase
 public:
     bool initializeSample()
     {
+        mainRenderPass = createMainPass(glm::vec4(0, 0, 1, 0));
+        if(!mainRenderPass)
+            return false;
+
         auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
         shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
         agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);
@@ -24,15 +28,13 @@ public:
         agpuResetCommandAllocator(commandAllocator);
         agpuResetCommandList(commandList, commandAllocator, nullptr);
         auto backBuffer = agpuGetCurrentBackBuffer(swapChain);
-        agpuBeginFrame(commandList, backBuffer, false);
+        agpuBeginRenderPass(commandList, mainRenderPass, backBuffer, false);
 
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);
         agpuSetScissor(commandList, 0, 0, screenWidth, screenHeight);
-        agpuSetClearColor(commandList, 0, 0, 1, 0);
-        agpuClear(commandList, AGPU_COLOR_BUFFER_BIT);
 
         // Finish the command list
-        agpuEndFrame(commandList);
+        agpuEndRenderPass(commandList);
         agpuCloseCommandList(commandList);
 
         // Queue the command list
@@ -50,6 +52,7 @@ public:
         agpuReleaseShaderSignature(shaderSignature);
     }
 
+    agpu_renderpass *mainRenderPass;
     agpu_shader_signature *shaderSignature;
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;

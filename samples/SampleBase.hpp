@@ -63,6 +63,8 @@ protected:
     agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
     agpu_texture *loadTexture(const char *fileName);
 
+    agpu_renderpass *createMainPass(const glm::vec4 clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+
     int screenWidth, screenHeight;
     SDL_Window *window;
 

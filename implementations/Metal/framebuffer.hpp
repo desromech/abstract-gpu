@@ -14,16 +14,17 @@ public:
     static agpu_framebuffer* createForSwapChain ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_texture_view_description* depthStencilView );
 
     void releaseDrawable();
-    void setDrawable(id<MTLDrawable> drawable);
+    void setDrawable(id<MTLDrawable> drawable, id<MTLTexture> drawableTexture);
+    id<MTLTexture> getColorTexture(agpu_uint index);
 
     agpu_device *device;
     agpu_uint width;
     agpu_uint height;
     std::vector<agpu_texture* > colorBuffers;
     agpu_texture *depthStencilBuffer;
-    MTLRenderPassDescriptor *renderPass;
-    agpu_bool ownedByswapChain;
+    agpu_bool ownedBySwapChain;
     id<MTLDrawable> drawable;
+    id<MTLTexture> drawableTexture;
 };
 
 #endif //AGPU_METAL_FRAMEBUFFER_HPP

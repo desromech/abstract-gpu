@@ -1,4 +1,5 @@
 #include "command_queue.hpp"
+#include "command_list.hpp"
 #include "fence.hpp"
 
 _agpu_command_queue::_agpu_command_queue(agpu_device *device)
@@ -30,7 +31,12 @@ _agpu_command_queue *_agpu_command_queue::create(agpu_device *device, id<MTLComm
 
 agpu_error _agpu_command_queue::addCommandList ( agpu_command_list* command_list )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(command_list);
+    if(!command_list->buffer)
+        return AGPU_INVALID_PARAMETER;
+
+    [command_list->buffer commit];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_queue::finishExecution (  )

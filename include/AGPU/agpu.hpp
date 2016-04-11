@@ -237,6 +237,11 @@ public:
 		return agpuCreateFrameBuffer( this, width, height, colorCount, colorViews, depthStencilView );
 	}
 
+	inline agpu_renderpass* createRenderPass ( agpu_renderpass_description* description )
+	{
+		return agpuCreateRenderPass( this, description );
+	}
+
 	inline agpu_texture* createTexture ( agpu_texture_description* description )
 	{
 		return agpuCreateTexture( this, description );
@@ -528,26 +533,6 @@ public:
 		AgpuThrowIfFailed(agpuSetScissor( this, x, y, w, h ));
 	}
 
-	inline void setClearColor ( agpu_float r, agpu_float g, agpu_float b, agpu_float a )
-	{
-		AgpuThrowIfFailed(agpuSetClearColor( this, r, g, b, a ));
-	}
-
-	inline void setClearDepth ( agpu_float depth )
-	{
-		AgpuThrowIfFailed(agpuSetClearDepth( this, depth ));
-	}
-
-	inline void setClearStencil ( agpu_int value )
-	{
-		AgpuThrowIfFailed(agpuSetClearStencil( this, value ));
-	}
-
-	inline void clear ( agpu_bitfield buffers )
-	{
-		AgpuThrowIfFailed(agpuClear( this, buffers ));
-	}
-
 	inline void usePipelineState ( agpu_pipeline_state* pipeline )
 	{
 		AgpuThrowIfFailed(agpuUsePipelineState( this, pipeline ));
@@ -618,14 +603,14 @@ public:
 		AgpuThrowIfFailed(agpuResetCommandList( this, allocator, initial_pipeline_state ));
 	}
 
-	inline void beginFrame ( agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+	inline void beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 	{
-		AgpuThrowIfFailed(agpuBeginFrame( this, framebuffer, bundle_content ));
+		AgpuThrowIfFailed(agpuBeginRenderPass( this, renderpass, framebuffer, bundle_content ));
 	}
 
-	inline void endFrame (  )
+	inline void endRenderPass (  )
 	{
-		AgpuThrowIfFailed(agpuEndFrame( this ));
+		AgpuThrowIfFailed(agpuEndRenderPass( this ));
 	}
 
 	inline void resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
@@ -857,6 +842,27 @@ public:
 };
 
 typedef agpu_ref<agpu_framebuffer> agpu_framebuffer_ref;
+
+// Interface wrapper for agpu_renderpass.
+struct _agpu_renderpass
+{
+private:
+	_agpu_renderpass() {}
+
+public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddRenderPassReference( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseRenderPass( this ));
+	}
+
+};
+
+typedef agpu_ref<agpu_renderpass> agpu_renderpass_ref;
 
 // Interface wrapper for agpu_shader_signature_builder.
 struct _agpu_shader_signature_builder
