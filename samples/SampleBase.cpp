@@ -142,7 +142,7 @@ int SampleBase::main(int argc, const char **argv)
     }
 
     swapChainCreateInfo.colorbuffer_format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
     swapChainCreateInfo.width = screenWidth;
     swapChainCreateInfo.height = screenHeight;
     swapChainCreateInfo.buffer_count = 3;
@@ -278,6 +278,9 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
         break;
     case AGPU_SHADER_LANGUAGE_SPIR_V:
         fullName += ".spv";
+        break;
+    case AGPU_SHADER_LANGUAGE_METAL:
+        fullName += ".metal";
         break;
     default:
         break;

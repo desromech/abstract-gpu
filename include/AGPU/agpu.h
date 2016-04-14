@@ -244,7 +244,7 @@ typedef enum {
 	AGPU_TEXTURE_FORMAT_R10G10B10A2_TYPELESS = 23,
 	AGPU_TEXTURE_FORMAT_R10G10B10A2_UNORM = 24,
 	AGPU_TEXTURE_FORMAT_R10G10B10A2_UINT = 25,
-	AGPU_TEXTURE_FORMAT_R11G11B10A2_FLOAT = 26,
+	AGPU_TEXTURE_FORMAT_R11G11B10_FLOAT = 26,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_TYPELESS = 27,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM = 28,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM_SRGB = 29,
@@ -641,11 +641,9 @@ AGPU_EXPORT agpu_error agpuSetSampleDescription ( agpu_pipeline_builder* pipelin
 /* Methods for interface agpu_pipeline_state. */
 typedef agpu_error (*agpuAddPipelineStateReference_FUN) ( agpu_pipeline_state* pipeline_state );
 typedef agpu_error (*agpuReleasePipelineState_FUN) ( agpu_pipeline_state* pipeline_state );
-typedef agpu_int (*agpuGetUniformLocation_FUN) ( agpu_pipeline_state* pipeline_state, agpu_cstring name );
 
 AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state );
 AGPU_EXPORT agpu_error agpuReleasePipelineState ( agpu_pipeline_state* pipeline_state );
-AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_state, agpu_cstring name );
 
 /* Methods for interface agpu_command_queue. */
 typedef agpu_error (*agpuAddCommandQueueReference_FUN) ( agpu_command_queue* command_queue );
@@ -912,7 +910,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetSampleDescription_FUN agpuSetSampleDescription;
 	agpuAddPipelineStateReference_FUN agpuAddPipelineStateReference;
 	agpuReleasePipelineState_FUN agpuReleasePipelineState;
-	agpuGetUniformLocation_FUN agpuGetUniformLocation;
 	agpuAddCommandQueueReference_FUN agpuAddCommandQueueReference;
 	agpuReleaseCommandQueue_FUN agpuReleaseCommandQueue;
 	agpuAddCommandList_FUN agpuAddCommandList;

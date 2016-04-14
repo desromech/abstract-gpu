@@ -425,14 +425,6 @@ AGPU_EXPORT agpu_error agpuReleasePipelineState ( agpu_pipeline_state* pipeline_
 	return (*dispatchTable)->agpuReleasePipelineState ( pipeline_state );
 }
 
-AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_state, agpu_cstring name )
-{
-	if (pipeline_state == nullptr)
-		return (agpu_int)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_state);
-	return (*dispatchTable)->agpuGetUniformLocation ( pipeline_state, name );
-}
-
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* command_queue )
 {
 	if (command_queue == nullptr)

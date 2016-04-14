@@ -7,6 +7,7 @@
 #include "framebuffer.hpp"
 #include "renderpass.hpp"
 #include "fence.hpp"
+#include "shader.hpp"
 
 _agpu_device::_agpu_device()
 {
@@ -94,7 +95,9 @@ AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, 
 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_shader::create(device, type);
 }
 
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device )

@@ -349,7 +349,7 @@
             <constant name="TextureFormatR10G10B10A2_Typeless" value="23" />
             <constant name="TextureFormatR10G10B10A2_UNorm" value="24" />
             <constant name="TextureFormatR10G10B10A2_UInt" value="25" />
-            <constant name="TextureFormatR11G11B10A2_Float" value="26" />
+            <constant name="TextureFormatR11G11B10_Float" value="26" />
 
             <constant name="TextureFormatR8G8B8A8_Typeless" value="27" />
             <constant name="TextureFormatR8G8B8A8_UNorm" value="28" />
@@ -727,10 +727,6 @@
             </method>
 
             <method name="release" cname="ReleasePipelineState" returnType="error">
-            </method>
-
-            <method name="getUniformLocation" cname="GetUniformLocation" returnType="int">
-                <arg name="name" type="cstring" />
             </method>
         </interface>
 

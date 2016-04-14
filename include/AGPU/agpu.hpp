@@ -425,11 +425,6 @@ public:
 		AgpuThrowIfFailed(agpuReleasePipelineState( this ));
 	}
 
-	inline agpu_int getUniformLocation ( agpu_cstring name )
-	{
-		return agpuGetUniformLocation( this, name );
-	}
-
 };
 
 typedef agpu_ref<agpu_pipeline_state> agpu_pipeline_state_ref;

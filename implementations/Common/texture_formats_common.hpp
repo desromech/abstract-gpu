@@ -1,6 +1,8 @@
 #ifndef AGPU_TEXTURE_FORMATS_COMMON_HPP
 #define AGPU_TEXTURE_FORMATS_COMMON_HPP
 
+#include "AGPU/agpu.h"
+
 inline size_t pixelSizeOfTextureFormat(agpu_texture_format format)
 {
     switch(format)
@@ -45,7 +47,7 @@ inline size_t pixelSizeOfTextureFormat(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R10G10B10A2_TYPELESS:
 	case AGPU_TEXTURE_FORMAT_R10G10B10A2_UNORM:
 	case AGPU_TEXTURE_FORMAT_R10G10B10A2_UINT:
-	case AGPU_TEXTURE_FORMAT_R11G11B10A2_FLOAT:
+	case AGPU_TEXTURE_FORMAT_R11G11B10_FLOAT:
         return 4;
 
 	case AGPU_TEXTURE_FORMAT_R8G8B8A8_TYPELESS:

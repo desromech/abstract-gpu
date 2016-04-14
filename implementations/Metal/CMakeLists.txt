@@ -14,6 +14,10 @@ set(AGPU_Metal_SOURCES
     framebuffer.mm
     icd.c
     object.hpp
+    pipeline_builder.hpp
+    pipeline_builder.mm
+    pipeline_state.hpp
+    pipeline_state.mm
     platform.mm
     platform.hpp
     renderpass.hpp
@@ -23,6 +27,8 @@ set(AGPU_Metal_SOURCES
     shader_signature_builder.mm
     shader_signature.hpp
     shader_signature.mm
+    shader.hpp
+    shader.mm
     swap_chain.hpp
     swap_chain.mm
     texture.hpp
