@@ -397,7 +397,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     return texture;
 }
 
-agpu_renderpass *SampleBase::createMainPass(const glm::vec4 clearColor)
+agpu_renderpass *SampleBase::createMainPass(const glm::vec4 &clearColor)
 {
     // Color attachment
     agpu_renderpass_color_attachment_description colorAttachment;

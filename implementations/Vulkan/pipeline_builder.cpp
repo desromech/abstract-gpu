@@ -44,7 +44,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
 
     // Render targets
     renderTargetFormats.resize(1, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
-    depthStencilFormat = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    depthStencilFormat = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
 
     // Default vertex input state.
     memset(&vertexInputState, 0, sizeof(vertexInputState));
