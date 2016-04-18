@@ -32,6 +32,7 @@
     <ClCompile Include="..\..\..\implementations\OpenGL\pipeline_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\pipeline_state.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\platform.cpp" />
+    <ClCompile Include="..\..\..\implementations\OpenGL\renderpass.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\shader.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\shader_resource_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\OpenGL\shader_signature.cpp" />
@@ -56,6 +57,7 @@
     <ClInclude Include="..\..\..\implementations\OpenGL\pipeline_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\pipeline_state.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\platform.hpp" />
+    <ClInclude Include="..\..\..\implementations\OpenGL\renderpass.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\shader.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\shader_resource_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\OpenGL\shader_signature.hpp" />

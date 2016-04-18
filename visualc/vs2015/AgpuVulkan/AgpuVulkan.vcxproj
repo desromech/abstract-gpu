@@ -166,6 +166,7 @@
     <ClInclude Include="..\..\..\implementations\Vulkan\pipeline_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\pipeline_state.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\platform.hpp" />
+    <ClInclude Include="..\..\..\implementations\Vulkan\renderpass.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\shader.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\shader_resource_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\shader_signature.hpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="..\..\..\implementations\Vulkan\texture_format.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\vertex_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\Vulkan\vertex_layout.hpp" />
+    <ClInclude Include="..\..\..\include\AGPU\agpu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\implementations\Vulkan\buffer.cpp" />
@@ -188,6 +190,7 @@
     <ClCompile Include="..\..\..\implementations\Vulkan\pipeline_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\pipeline_state.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\platform.cpp" />
+    <ClCompile Include="..\..\..\implementations\Vulkan\renderpass.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\shader.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\shader_resource_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\Vulkan\shader_signature.cpp" />

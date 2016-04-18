@@ -14,10 +14,6 @@ public:
     agpu_error setShaderSignature(agpu_shader_signature* signature);
     agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
     agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
-    agpu_error setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a);
-    agpu_error setClearDepth(agpu_float depth);
-    agpu_error setClearStencil(agpu_int value);
-    agpu_error clear(agpu_bitfield buffers);
     agpu_error usePipelineState(agpu_pipeline_state* pipeline);
     agpu_error useVertexBinding(agpu_vertex_binding* vertex_binding);
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
@@ -34,8 +30,8 @@ public:
     agpu_error close();
     agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
 
-    agpu_error beginFrame(agpu_framebuffer* framebuffer, agpu_bool secondaryContent);
-    agpu_error endFrame();
+    agpu_error beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent);
+    agpu_error endRenderPass();
     agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
 
     agpu_device *device;
@@ -51,9 +47,6 @@ private:
     agpu_framebuffer *currentFramebuffer;
     agpu_bool isClosed;
     agpu_bool isSecondaryContent;
-    float clearRed, clearGreen, clearBlue, clearAlpha;
-    float clearDepth;
-    agpu_int clearStencil;
 
     agpu_buffer *drawIndirectBuffer;
     agpu_shader_signature *shaderSignature;

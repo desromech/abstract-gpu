@@ -142,7 +142,7 @@ int SampleBase::main(int argc, const char **argv)
     }
 
     swapChainCreateInfo.colorbuffer_format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
     swapChainCreateInfo.width = screenWidth;
     swapChainCreateInfo.height = screenHeight;
     swapChainCreateInfo.buffer_count = 3;
@@ -402,6 +402,7 @@ agpu_renderpass *SampleBase::createMainPass(const glm::vec4 clearColor)
     // Color attachment
     agpu_renderpass_color_attachment_description colorAttachment;
     memset(&colorAttachment, 0, sizeof(colorAttachment));
+    colorAttachment.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
     colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
     colorAttachment.clear_value.r = clearColor.r;
@@ -412,6 +413,7 @@ agpu_renderpass *SampleBase::createMainPass(const glm::vec4 clearColor)
     // Depth stencil
     agpu_renderpass_depth_stencil_description depthStencil;
     memset(&depthStencil, 0, sizeof(depthStencil));
+    depthStencil.format = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
     depthStencil.begin_action = AGPU_ATTACHMENT_CLEAR;
     depthStencil.end_action = AGPU_ATTACHMENT_KEEP;
     depthStencil.clear_value.depth = 1.0;

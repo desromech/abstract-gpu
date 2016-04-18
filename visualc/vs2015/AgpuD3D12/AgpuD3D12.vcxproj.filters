@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\..\implementations\Direct3D12\fence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\implementations\Direct3D12\renderpass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\implementations\Direct3D12\device.hpp">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\implementations\Direct3D12\fence.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\implementations\Direct3D12\renderpass.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

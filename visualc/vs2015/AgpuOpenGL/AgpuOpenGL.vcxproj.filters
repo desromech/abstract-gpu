@@ -81,6 +81,9 @@
     <ClCompile Include="..\..\..\implementations\OpenGL\fence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\implementations\OpenGL\renderpass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\implementations\OpenGL\buffer.hpp">
@@ -153,6 +156,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\implementations\OpenGL\fence.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\implementations\OpenGL\renderpass.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

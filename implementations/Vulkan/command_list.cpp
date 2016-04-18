@@ -1,6 +1,7 @@
 #include "command_list.hpp"
 #include "command_allocator.hpp"
 #include "framebuffer.hpp"
+#include "renderpass.hpp"
 #include "texture.hpp"
 #include "buffer.hpp"
 #include "vertex_binding.hpp"
@@ -133,9 +134,6 @@ void _agpu_command_list::resetState()
     }
 
     isSecondaryContent = false;
-    clearRed = clearGreen = clearBlue = clearAlpha = 0.0f;
-    clearDepth = 0.0f;
-    clearStencil = 0;
 
     vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, 0);
 }
@@ -172,86 +170,6 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
     rect.offset.x = x;
     rect.offset.y = y;
     vkCmdSetScissor(commandBuffer, 0, 1, &rect);
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
-{
-    clearRed = r;
-    clearGreen = g;
-    clearBlue = b;
-    clearAlpha = a;
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setClearDepth(agpu_float depth)
-{
-    clearDepth = depth;
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setClearStencil(agpu_int value)
-{
-    clearStencil = value;
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
-{
-    if (!currentFramebuffer)
-        return AGPU_INVALID_OPERATION;
-
-    if (buffers == 0)
-        return AGPU_OK;
-
-    // Attachment clear values.
-    std::vector<VkClearAttachment> clearAttachments;
-    clearAttachments.reserve(currentFramebuffer->colorCount + (currentFramebuffer->hasDepthStencil ? 1 : 0));
-
-    if (buffers & AGPU_COLOR_BUFFER_BIT)
-    {
-        VkClearAttachment clear;
-        memset(&clear, 0, sizeof(clear));
-        clear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        clear.clearValue.color.float32[0] = clearRed;
-        clear.clearValue.color.float32[1] = clearGreen;
-        clear.clearValue.color.float32[2] = clearBlue;
-        clear.clearValue.color.float32[3] = clearAlpha;
-
-        for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
-        {
-            clear.colorAttachment = i;
-            clearAttachments.push_back(clear);
-        }
-    }
-
-    if (currentFramebuffer->hasDepthStencil && (buffers & (AGPU_DEPTH_BUFFER_BIT | AGPU_STENCIL_BUFFER_BIT)))
-    {
-        VkClearAttachment clear;
-        memset(&clear, 0, sizeof(clear));
-        if (buffers & AGPU_DEPTH_BUFFER_BIT)
-        {
-            clear.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-            clear.clearValue.depthStencil.depth = clearDepth;
-        }
-
-        if (buffers & AGPU_STENCIL_BUFFER_BIT)
-        {
-            clear.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-            clear.clearValue.depthStencil.stencil = clearStencil;
-        }
-
-        clearAttachments.push_back(clear);
-    }
-    
-    // The clear rect
-    VkClearRect rect;
-    memset(&rect, 0, sizeof(rect));
-    rect.baseArrayLayer = 0;
-    rect.layerCount = 1;
-    rect.rect.extent.width = currentFramebuffer->width;
-    rect.rect.extent.height = currentFramebuffer->height;
-    vkCmdClearAttachments(commandBuffer, clearAttachments.size(), &clearAttachments[0], 1, &rect);
     return AGPU_OK;
 }
 
@@ -359,8 +277,9 @@ agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageAspectFlagBi
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
+agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
 {
+    CHECK_POINTER(renderpass);
     CHECK_POINTER(framebuffer);
 
     // Store the framebuffer
@@ -382,15 +301,23 @@ agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer, agpu_bo
     VkRenderPassBeginInfo passBeginInfo;
     memset(&passBeginInfo, 0, sizeof(passBeginInfo));
     passBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    passBeginInfo.renderPass = framebuffer->renderPass;
+    passBeginInfo.renderPass = renderpass->handle;
     passBeginInfo.framebuffer = framebuffer->framebuffer;
     passBeginInfo.renderArea.extent.width = framebuffer->width;
     passBeginInfo.renderArea.extent.height = framebuffer->height;
+
+    // Set the clear values.
+    if (!renderpass->clearValues.empty())
+    {
+        passBeginInfo.clearValueCount = renderpass->clearValues.size();
+        passBeginInfo.pClearValues = &renderpass->clearValues[0];
+    }
+
     vkCmdBeginRenderPass(commandBuffer, &passBeginInfo, secondaryContent ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::endFrame()
+agpu_error _agpu_command_list::endRenderPass()
 {
     if (!currentFramebuffer)
         return AGPU_INVALID_OPERATION;
@@ -445,30 +372,6 @@ AGPU_EXPORT agpu_error agpuSetScissor(agpu_command_list* command_list, agpu_int 
 {
     CHECK_POINTER(command_list);
     return command_list->setScissor(x, y, w, h);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearColor(agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearColor(r, g, b, a);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearDepth(agpu_command_list* command_list, agpu_float depth)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearDepth(depth);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearStencil(agpu_command_list* command_list, agpu_int value)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearStencil(value);
-}
-
-AGPU_EXPORT agpu_error agpuClear(agpu_command_list* command_list, agpu_bitfield buffers)
-{
-    CHECK_POINTER(command_list);
-    return command_list->clear(buffers);
 }
 
 AGPU_EXPORT agpu_error agpuUsePipelineState(agpu_command_list* command_list, agpu_pipeline_state* pipeline)
@@ -555,16 +458,16 @@ AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, agp
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
+AGPU_EXPORT agpu_error agpuBeginRenderPass(agpu_command_list* command_list, agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame(framebuffer, secondaryContent);
+    return command_list->beginRenderPass(renderpass, framebuffer, secondaryContent);
 }
 
-AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
+AGPU_EXPORT agpu_error agpuEndRenderPass(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
-    return command_list->endFrame();
+    return command_list->endRenderPass();
 }
 
 AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)

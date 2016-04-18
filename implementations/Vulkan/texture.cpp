@@ -351,6 +351,9 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
 
     VkSubresourceLayout layout;
     vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
+    auto extent = getLevelExtent(level);
+    if (layout.rowPitch == 0)
+        layout.rowPitch = extent.width*pixelSizeOfTextureFormat(description.format);
 
     // Read the render target into the readback buffer.
     VkBufferImageCopy copy;
@@ -361,7 +364,7 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
-    copy.imageExtent = getLevelExtent(level);
+    copy.imageExtent = extent;
     device->copyImageToBuffer(image, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, readbackBuffer->uploadBuffer, 1, &copy);
 
     auto readbackPointer = readbackBuffer->map(AGPU_READ_ONLY);
@@ -404,10 +407,13 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource.mipLevel = level;
 
+    auto extent = getLevelExtent(level);
+
     VkSubresourceLayout layout;
     vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
-
-    auto copyHeight = layout.depthPitch / layout.rowPitch;
+    if (layout.rowPitch == 0)
+        layout.rowPitch = extent.width*pixelSizeOfTextureFormat(description.format);
+    
     if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
     {
         memcpy(bufferPointer, data, slicePitch);
@@ -416,7 +422,7 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     {
         auto srcRow = reinterpret_cast<uint8_t*> (data);
         auto dstRow = reinterpret_cast<uint8_t*> (bufferPointer);
-        for (int y = 0; y < copyHeight; ++y)
+        for (int y = 0; y < extent.height; ++y)
         {
             memcpy(dstRow, srcRow, pitch);
             srcRow += pitch;
@@ -429,12 +435,12 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     VkBufferImageCopy copy;
     memset(&copy, 0, sizeof(copy));
     copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
-    copy.bufferImageHeight = copyHeight;
+    copy.bufferImageHeight = extent.height;
     copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
-    copy.imageExtent = getLevelExtent(level);
+    copy.imageExtent = extent;
     device->copyBufferToImage(uploadBuffer->uploadBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, 1, &copy);
 
     return AGPU_OK;
