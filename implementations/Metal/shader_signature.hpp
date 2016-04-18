@@ -13,6 +13,7 @@ public:
     static agpu_shader_signature *create(agpu_device *device, agpu_shader_signature_builder *builder);
 
     agpu_device *device;
+    std::vector<ShaderSignatureElement> elements;
 };
 
 #endif // AGPU_METAL_SHADER_SIGNATURE_HPP

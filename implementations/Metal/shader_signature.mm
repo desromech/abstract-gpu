@@ -14,7 +14,9 @@ void _agpu_shader_signature::lostReferences()
 
 agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_shader_signature_builder *builder)
 {
-    return new agpu_shader_signature(device);
+    auto result = new agpu_shader_signature(device);
+    result->elements = builder->elements;
+    return result;
 }
 
 // The exported C interface
