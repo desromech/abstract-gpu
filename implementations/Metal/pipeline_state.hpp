@@ -9,7 +9,10 @@ public:
     _agpu_pipeline_state(agpu_device *device);
     void lostReferences();
 
+    static agpu_pipeline_state *create(agpu_device *device, id<MTLRenderPipelineState> handle);
+    
     agpu_device *device;
+    id<MTLRenderPipelineState> handle;
 };
 
 #endif //AGPU_METAL_PIPELINE_STATE_HPP

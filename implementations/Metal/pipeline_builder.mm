@@ -1,39 +1,73 @@
 #include "pipeline_builder.hpp"
 #include "pipeline_state.hpp"
+#include "shader.hpp"
 
 _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     : device(device)
 {
+    descriptor = nil;
 }
 
 void _agpu_pipeline_builder::lostReferences()
 {
+    if(descriptor)
+        [descriptor release];
 }
 
 _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
 {
+    auto descriptor = [MTLRenderPipelineDescriptor new];
+    descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+
     auto result = new agpu_pipeline_builder(device);
+    result->descriptor = descriptor;
     return result;
 }
 
 agpu_pipeline_state* _agpu_pipeline_builder::build ( )
 {
-    return nullptr;
+    NSError *error;
+    auto pipelineState = [device->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
+    if(!pipelineState)
+    {
+        auto description = [error localizedDescription];
+        buildingLog = [description UTF8String];
+        return nullptr;
+    }
+
+    return agpu_pipeline_state::create(device, pipelineState);
 }
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(shader);
+    CHECK_POINTER(shader->function);
+
+    switch(shader->type)
+    {
+    case AGPU_VERTEX_SHADER:
+        descriptor.vertexFunction = shader->function;
+        break;
+    case AGPU_FRAGMENT_SHADER:
+        descriptor.fragmentFunction = shader->function;
+        break;
+    default:
+        return AGPU_UNSUPPORTED;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    return buildingLog.size();
 }
 
 agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    memcpy(buffer, buildingLog.data(), std::min((size_t)buffer_size, buildingLog.size()));
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setBlendState ( agpu_int renderTargetMask, agpu_bool enabled )

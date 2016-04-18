@@ -9,6 +9,13 @@ void _agpu_pipeline_state::lostReferences()
 {
 }
 
+agpu_pipeline_state *_agpu_pipeline_state::create(agpu_device *device, id<MTLRenderPipelineState> handle)
+{
+    auto result = new agpu_pipeline_state(device);
+    result->handle = handle;
+    return result;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state )
 {

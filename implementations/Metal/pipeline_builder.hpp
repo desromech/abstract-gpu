@@ -2,6 +2,7 @@
 #define AGPU_METAL_PIPELINE_BUILDER_HPP
 
 #include "device.hpp"
+#include <string>
 
 struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
 {
@@ -31,6 +32,8 @@ public:
     agpu_error setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality );
 
     agpu_device *device;
+    MTLRenderPipelineDescriptor *descriptor;
+    std::string buildingLog;
 };
 
 #endif //AGPU_METAL_PIPELINE_BUILDER_HPP
