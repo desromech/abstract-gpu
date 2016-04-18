@@ -165,6 +165,7 @@
     <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_builder.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\pipeline_state.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\platform.cpp" />
+    <ClCompile Include="..\..\..\implementations\Direct3D12\renderpass.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\shader.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\shader_resource_binding.cpp" />
     <ClCompile Include="..\..\..\implementations\Direct3D12\shader_signature.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_builder.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\pipeline_state.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\platform.hpp" />
+    <ClInclude Include="..\..\..\implementations\Direct3D12\renderpass.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\shader.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\shader_resource_binding.hpp" />
     <ClInclude Include="..\..\..\implementations\Direct3D12\shader_signature.hpp" />

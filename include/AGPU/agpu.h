@@ -500,6 +500,7 @@ typedef struct agpu_sampler_description {
 
 /* Structure agpu_renderpass_color_attachment_description. */
 typedef struct agpu_renderpass_color_attachment_description {
+	agpu_texture_format format;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
 	agpu_color4f clear_value;
@@ -507,6 +508,7 @@ typedef struct agpu_renderpass_color_attachment_description {
 
 /* Structure agpu_renderpass_depth_stencil_description. */
 typedef struct agpu_renderpass_depth_stencil_description {
+	agpu_texture_format format;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
 	agpu_depth_stencil_value clear_value;

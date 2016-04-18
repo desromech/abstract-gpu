@@ -139,8 +139,8 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     // Set other defaults.
     description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
     description.NumRenderTargets = 1;
-    description.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    description.DSVFormat = DXGI_FORMAT_D16_UNORM;
+    description.RTVFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
+    description.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
     description.SampleMask = UINT_MAX;
     description.SampleDesc.Count = 1;
     description.SampleDesc.Quality = 0;
