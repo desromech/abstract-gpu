@@ -12,6 +12,8 @@ public:
 
     static agpu_shader_signature *create(agpu_device *device, agpu_shader_signature_builder *builder);
 
+    agpu_shader_resource_binding* createShaderResourceBinding ( agpu_uint element );
+
     agpu_device *device;
     std::vector<ShaderSignatureElement> elements;
 };

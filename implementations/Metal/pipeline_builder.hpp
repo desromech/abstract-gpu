@@ -34,6 +34,7 @@ public:
     agpu_device *device;
     MTLRenderPipelineDescriptor *descriptor;
     std::string buildingLog;
+    MTLPrimitiveType primitiveType;
 };
 
 #endif //AGPU_METAL_PIPELINE_BUILDER_HPP

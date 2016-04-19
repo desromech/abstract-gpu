@@ -37,6 +37,8 @@ public:
     agpu_command_allocator* allocator;
     id<MTLCommandBuffer> buffer;
     id<MTLRenderCommandEncoder> renderEncoder;
+    agpu_buffer *currentIndexBuffer;
+    agpu_pipeline_state *currentPipeline;
 };
 
 #endif //AGPU_METAL_COMMAND_LIST_HPP

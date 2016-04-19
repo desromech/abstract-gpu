@@ -1,16 +1,19 @@
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
+#include "buffer.hpp"
 
 _agpu_vertex_binding::_agpu_vertex_binding(agpu_device *device)
     : device(device)
 {
-    layout = nullptr;
 }
 
 void _agpu_vertex_binding::lostReferences()
 {
-    if(layout)
-        layout->release();
+    for(auto buffer : buffers)
+    {
+        if(buffer)
+            buffer->release();
+    }
 }
 
 _agpu_vertex_binding *_agpu_vertex_binding::create(agpu_device *device, agpu_vertex_layout *layout)
@@ -18,16 +21,27 @@ _agpu_vertex_binding *_agpu_vertex_binding::create(agpu_device *device, agpu_ver
     if(!layout)
         return nullptr;
 
-    layout->retain();
     auto result = new agpu_vertex_binding(device);
-    result->layout = layout;
+    result->buffers.resize(layout->vertexStrides.size());
     return result;
 }
 
 agpu_error _agpu_vertex_binding::bindBuffers ( agpu_uint count, agpu_buffer** vertex_buffers )
 {
     CHECK_POINTER(vertex_buffers);
-    return AGPU_UNIMPLEMENTED;
+    if(count != buffers.size())
+        return AGPU_INVALID_PARAMETER;
+    for(size_t i = 0; i < count; ++i)
+    {
+        auto newBuffer = vertex_buffers[i];
+        if(newBuffer)
+            newBuffer->retain();
+        if(buffers[i])
+            buffers[i]->release();
+        buffers[i] = newBuffer;
+    }
+
+    return AGPU_OK;
 }
 
 // The exported C interface.

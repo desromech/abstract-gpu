@@ -21,7 +21,7 @@ agpu_buffer* _agpu_buffer::create ( agpu_device* device, agpu_buffer_description
         handle = [device->device newBufferWithBytes: initial_data length: description->size options: options];
     else
         handle = [device->device newBufferWithLength: description->size options: options];
-
+    
     auto result = new agpu_buffer(device);
     result->description = *description;
     result->handle = handle;

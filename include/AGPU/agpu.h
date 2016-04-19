@@ -461,13 +461,10 @@ typedef struct agpu_draw_elements_command {
 typedef struct agpu_vertex_attrib_description {
 	agpu_uint buffer;
 	agpu_uint binding;
-	agpu_field_type type;
-	agpu_uint components;
+	agpu_texture_format format;
 	agpu_uint rows;
-	agpu_bool normalized;
 	agpu_size offset;
 	agpu_uint divisor;
-	agpu_texture_format internal_format;
 } agpu_vertex_attrib_description;
 
 /* Structure agpu_color4f. */

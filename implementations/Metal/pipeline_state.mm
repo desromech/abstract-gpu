@@ -1,4 +1,5 @@
 #include "pipeline_state.hpp"
+#include "pipeline_builder.hpp"
 
 _agpu_pipeline_state::_agpu_pipeline_state(agpu_device *device)
     : device(device)
@@ -9,10 +10,11 @@ void _agpu_pipeline_state::lostReferences()
 {
 }
 
-agpu_pipeline_state *_agpu_pipeline_state::create(agpu_device *device, id<MTLRenderPipelineState> handle)
+agpu_pipeline_state *_agpu_pipeline_state::create(agpu_device *device, agpu_pipeline_builder *builder, id<MTLRenderPipelineState> handle)
 {
     auto result = new agpu_pipeline_state(device);
     result->handle = handle;
+    result->primitiveType = builder->primitiveType;
     return result;
 }
 

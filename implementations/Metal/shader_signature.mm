@@ -19,6 +19,11 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
     return result;
 }
 
+agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding ( agpu_uint element )
+{
+    return nullptr;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddShaderSignature ( agpu_shader_signature* shader_signature )
 {
@@ -34,5 +39,7 @@ AGPU_EXPORT agpu_error agpuReleaseShaderSignature ( agpu_shader_signature* shade
 
 AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_shader_signature* shader_signature, agpu_uint element )
 {
-    return nullptr;
+    if(!shader_signature)
+        return nullptr;
+    return shader_signature->createShaderResourceBinding(element);
 }

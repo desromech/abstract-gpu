@@ -2,6 +2,7 @@
 #define AGPU_METAL_VERTEX_BINDING_HPP
 
 #include "device.hpp"
+#include <vector>
 
 struct _agpu_vertex_binding : public Object<_agpu_vertex_binding>
 {
@@ -14,7 +15,7 @@ public:
     agpu_error bindBuffers ( agpu_uint count, agpu_buffer** vertex_buffers );
 
     agpu_device *device;
-    agpu_vertex_layout *layout;
+    std::vector<agpu_buffer*> buffers;
 };
 
 #endif //AGPU_METAL_VERTEX_BINDING_HPP

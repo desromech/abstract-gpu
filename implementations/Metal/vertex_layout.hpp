@@ -15,8 +15,8 @@ public:
     agpu_error addVertexAttributeBindings ( agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes );
 
     agpu_device *device;
+    MTLVertexDescriptor *vertexDescriptor;
     std::vector<agpu_size> vertexStrides;
-    std::vector<agpu_vertex_attrib_description> allAttributes;
 };
 
 #endif //AGPU_VERTEX_LAYOUT_HPP

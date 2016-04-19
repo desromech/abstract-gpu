@@ -2,12 +2,27 @@
 #include "command_allocator.hpp"
 #include "command_queue.hpp"
 #include "framebuffer.hpp"
+#include "pipeline_state.hpp"
 #include "renderpass.hpp"
+#include "vertex_binding.hpp"
+#include "buffer.hpp"
+
+inline MTLIndexType mapIndexType(agpu_size stride)
+{
+    switch(stride)
+    {
+    default:
+    case 2: return MTLIndexTypeUInt16;
+    case 4: return MTLIndexTypeUInt32;
+    }
+}
 
 _agpu_command_list::_agpu_command_list(agpu_device *device)
     : device(device)
 {
     allocator = nullptr;
+    currentIndexBuffer = nullptr;
+    currentPipeline = nullptr;
     buffer = nil;
     renderEncoder = nil;
 }
@@ -54,17 +69,43 @@ agpu_error _agpu_command_list::setScissor ( agpu_int x, agpu_int y, agpu_int w, 
 
 agpu_error _agpu_command_list::usePipelineState ( agpu_pipeline_state* pipeline )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(pipeline);
+
+    pipeline->retain();
+    if(currentPipeline)
+        currentPipeline->release();
+
+    currentPipeline = pipeline;
+    if(renderEncoder)
+        [renderEncoder setRenderPipelineState: currentPipeline->handle];
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_binding )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(vertex_binding);
+    auto &buffers = vertex_binding->buffers;
+    for(size_t i = 0; i < buffers.size(); ++i)
+    {
+        auto buffer = buffers[i];
+        if(!buffer)
+            return AGPU_ERROR;
+
+        [renderEncoder setVertexBuffer: buffer->handle offset: 0 atIndex: i];
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useIndexBuffer ( agpu_buffer* index_buffer )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(index_buffer);
+    index_buffer->retain();
+    if(currentIndexBuffer)
+        currentIndexBuffer->release();
+    currentIndexBuffer = index_buffer;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setPrimitiveTopology ( agpu_primitive_topology topology )
@@ -89,7 +130,18 @@ agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint in
 
 agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
 {
-    return AGPU_UNIMPLEMENTED;
+    if(!currentIndexBuffer || !currentPipeline)
+        return AGPU_INVALID_OPERATION;
+
+    [renderEncoder drawIndexedPrimitives: currentPipeline->primitiveType
+                   indexCount: index_count
+                    indexType: mapIndexType(currentIndexBuffer->description.stride)
+                  indexBuffer: currentIndexBuffer->handle
+            indexBufferOffset: 0
+                instanceCount: instance_count
+                   baseVertex: base_vertex
+                 baseInstance: base_instance];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::drawElementsIndirect ( agpu_size offset )
@@ -114,7 +166,7 @@ agpu_error _agpu_command_list::executeBundle ( agpu_command_list* bundle )
 
 agpu_error _agpu_command_list::close (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
@@ -132,6 +184,15 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
         [buffer release];
     buffer = [allocator->queue->handle commandBuffer];
 
+    if(currentIndexBuffer)
+        currentIndexBuffer->release();
+    currentIndexBuffer = nullptr;
+
+    if(initial_pipeline_state)
+        initial_pipeline_state->retain();
+    if(currentPipeline)
+        currentPipeline->release();
+    currentPipeline = initial_pipeline_state;
     return AGPU_OK;
 }
 
@@ -143,6 +204,8 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
     auto descriptor = renderpass->createDescriptor(framebuffer);
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
+    if(currentPipeline)
+        [renderEncoder setRenderPipelineState: currentPipeline->handle];
     return AGPU_OK;
 }
 
@@ -150,7 +213,7 @@ agpu_error _agpu_command_list::endRenderPass (  )
 {
     if(!renderEncoder)
         return AGPU_INVALID_OPERATION;
-        
+
     [renderEncoder endEncoding];
     renderEncoder = nil;
     return AGPU_OK;

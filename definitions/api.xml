@@ -102,13 +102,10 @@
         <struct name="vertex_attrib_description">
             <field name="buffer" type="uint" />
             <field name="binding" type="uint" />
-            <field name="type" type="field_type" />
-            <field name="components" type="uint" />
+            <field name="format" type="texture_format" />
             <field name="rows" type="uint" />
-            <field name="normalized" type="bool" />
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
-            <field name="internal_format" type="texture_format" />
         </struct>
 
         <struct name="color4f">

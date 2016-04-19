@@ -1,11 +1,13 @@
 #include "pipeline_builder.hpp"
 #include "pipeline_state.hpp"
 #include "shader.hpp"
+#include "vertex_layout.hpp"
 
 _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     : device(device)
 {
     descriptor = nil;
+    primitiveType = MTLPrimitiveTypePoint;
 }
 
 void _agpu_pipeline_builder::lostReferences()
@@ -35,7 +37,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
         return nullptr;
     }
 
-    return agpu_pipeline_state::create(device, pipelineState);
+    return agpu_pipeline_state::create(device, this, pipelineState);
 }
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
@@ -122,12 +124,34 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat ( agpu_texture_format f
 
 agpu_error _agpu_pipeline_builder::setPrimitiveType ( agpu_primitive_topology type )
 {
-    return AGPU_UNIMPLEMENTED;
+    switch(type)
+    {
+    case AGPU_POINTS:
+        primitiveType = MTLPrimitiveTypePoint;
+        break;
+    case AGPU_LINES:
+        primitiveType = MTLPrimitiveTypeLine;
+        break;
+    case AGPU_LINE_STRIP:
+        primitiveType = MTLPrimitiveTypeLineStrip;
+        break;
+    case AGPU_TRIANGLES:
+        primitiveType = MTLPrimitiveTypeTriangle;
+        break;
+    case AGPU_TRIANGLE_STRIP:
+        primitiveType = MTLPrimitiveTypeTriangleStrip;
+        break;
+    default: return AGPU_UNSUPPORTED;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setVertexLayout ( agpu_vertex_layout* layout )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(layout);
+    descriptor.vertexDescriptor = layout->vertexDescriptor;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setPipelineShaderSignature ( agpu_shader_signature* signature )

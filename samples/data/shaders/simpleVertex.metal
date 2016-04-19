@@ -7,12 +7,10 @@ struct TransformationState
     float4x4 modelMatrix;
 };
 
-struct Vertex
+struct VertexInput
 {
-    float4 position;
-    float4 normal;
-    float4 color;
-    float2 texcoord;
+    float4 position [[attribute(0)]];
+    float4 color [[attribute(1)]];
 };
 
 struct VertexOutput
@@ -21,11 +19,9 @@ struct VertexOutput
     float4 position [[position]];
 };
 
-vertex VertexOutput agpu_main(constant TransformationState *transformationState [[buffer(0)]],
-    constant Vertex *vertexInput [[buffer(1)]],
-    uint vertexId [[vertex_id]])
+vertex VertexOutput agpu_main(VertexInput input [[stage_in]],
+    constant TransformationState *transformationState [[buffer(1)]])
 {
-    Vertex input = vertexInput[vertexId];
     VertexOutput out;
     out.position = input.position;
     out.color = input.color;
