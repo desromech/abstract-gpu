@@ -49,6 +49,9 @@ _agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command
     if (FAILED(device->d3dDevice->CreateCommandList(0, mapCommandListType(type), allocator->allocator.Get(), state, IID_PPV_ARGS(&commandList))))
         return nullptr;
 
+    if (initialState)
+        commandList->IASetPrimitiveTopology(mapPrimitiveTopology(initialState->primitiveTopology));
+
     std::unique_ptr<agpu_command_list> list(new _agpu_command_list());
     list->type = type;
     list->device = device;
@@ -118,6 +121,8 @@ agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
     CHECK_POINTER(pipeline);
     commandList->SetPipelineState(pipeline->state.Get());
+    commandList->IASetPrimitiveTopology(mapPrimitiveTopology(pipeline->primitiveTopology));
+
     return AGPU_OK;
 }
 
@@ -134,12 +139,6 @@ agpu_error _agpu_command_list::useIndexBuffer(agpu_buffer* index_buffer)
         return AGPU_ERROR;
 
     commandList->IASetIndexBuffer(&index_buffer->view.indexBuffer);
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
-{
-    commandList->IASetPrimitiveTopology(mapPrimitiveTopology(topology));
     return AGPU_OK;
 }
 
@@ -220,6 +219,9 @@ agpu_error _agpu_command_list::reset(_agpu_command_allocator *allocator, agpu_pi
         state = initial_pipeline_state->state.Get();
 
     ERROR_IF_FAILED(commandList->Reset(allocator->allocator.Get(), state));
+
+    if (initial_pipeline_state)
+        commandList->IASetPrimitiveTopology(mapPrimitiveTopology(initial_pipeline_state->primitiveTopology));
 
     return setCommonState();
 }
@@ -401,12 +403,6 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_
 {
     CHECK_POINTER(command_list);
     return command_list->useIndexBuffer(index_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setPrimitiveTopology(topology);
 }
 
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer)

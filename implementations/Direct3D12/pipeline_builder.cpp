@@ -184,6 +184,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     auto pipeline = new agpu_pipeline_state();
     pipeline->device = device;
     pipeline->state = pipelineState;
+    pipeline->primitiveTopology = primitiveTopology;
     return pipeline;
 }
 
@@ -337,6 +338,7 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format for
 agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_topology type)
 {
     description.PrimitiveTopologyType = mapPrimitiveType(type);
+    primitiveTopology = type;
     return AGPU_OK;
 }
 

@@ -361,7 +361,7 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
     {
         VkVertexInputAttributeDescription attribute;
         attribute.binding = rawAttribute.buffer;
-        attribute.format = mapTextureFormat(rawAttribute.internal_format);
+        attribute.format = mapTextureFormat(rawAttribute.format);
         attribute.location = rawAttribute.binding;
         attribute.offset = rawAttribute.offset;
         vertexAttributes.push_back(attribute);
