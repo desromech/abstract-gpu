@@ -1,5 +1,5 @@
 #include "shader_signature.hpp"
-
+#include "shader_resource_binding.hpp"
 
 _agpu_shader_signature::_agpu_shader_signature(agpu_device *device)
     : device(device)
@@ -21,7 +21,9 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
 
 agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding ( agpu_uint element )
 {
-    return nullptr;
+    if(element >= elements.size())
+        return nullptr;
+    return agpu_shader_resource_binding::create(device, elements[element]);
 }
 
 // The exported C interface

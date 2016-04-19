@@ -801,10 +801,6 @@
                 <arg name="index_buffer" type="buffer*" />
             </method>
 
-            <method name="setPrimitiveTopology" cname="SetPrimitiveTopology" returnType="error">
-                <arg name="topology" type="primitive_topology" />
-            </method>
-
             <method name="useDrawIndirectBuffer" cname="UseDrawIndirectBuffer" returnType="error">
                 <arg name="draw_buffer" type="buffer*" />
             </method>

@@ -9,21 +9,22 @@ struct TransformationState
 
 struct VertexInput
 {
-    float4 position [[attribute(0)]];
+    float3 position [[attribute(0)]];
     float4 color [[attribute(1)]];
 };
 
 struct VertexOutput
 {
-    float4 color;
     float4 position [[position]];
+    float4 color;
 };
 
 vertex VertexOutput agpu_main(VertexInput input [[stage_in]],
     constant TransformationState *transformationState [[buffer(1)]])
 {
     VertexOutput out;
-    out.position = input.position;
+    constant auto &ts = *transformationState;
+    out.position = ts.projectionMatrix * ts.viewMatrix * ts.modelMatrix * float4(input.position, 1.0);
     out.color = input.color;
     return out;
 }

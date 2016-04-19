@@ -677,7 +677,6 @@ typedef agpu_error (*agpuSetScissor_FUN) ( agpu_command_list* command_list, agpu
 typedef agpu_error (*agpuUsePipelineState_FUN) ( agpu_command_list* command_list, agpu_pipeline_state* pipeline );
 typedef agpu_error (*agpuUseVertexBinding_FUN) ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuUseIndexBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* index_buffer );
-typedef agpu_error (*agpuSetPrimitiveTopology_FUN) ( agpu_command_list* command_list, agpu_primitive_topology topology );
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
 typedef agpu_error (*agpuUseShaderResources_FUN) ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
 typedef agpu_error (*agpuDrawArrays_FUN) ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
@@ -700,7 +699,6 @@ AGPU_EXPORT agpu_error agpuSetScissor ( agpu_command_list* command_list, agpu_in
 AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, agpu_pipeline_state* pipeline );
 AGPU_EXPORT agpu_error agpuUseVertexBinding ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agpu_buffer* index_buffer );
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_command_list* command_list, agpu_primitive_topology topology );
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
 AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
 AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
@@ -926,7 +924,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuUsePipelineState_FUN agpuUsePipelineState;
 	agpuUseVertexBinding_FUN agpuUseVertexBinding;
 	agpuUseIndexBuffer_FUN agpuUseIndexBuffer;
-	agpuSetPrimitiveTopology_FUN agpuSetPrimitiveTopology;
 	agpuUseDrawIndirectBuffer_FUN agpuUseDrawIndirectBuffer;
 	agpuUseShaderResources_FUN agpuUseShaderResources;
 	agpuDrawArrays_FUN agpuDrawArrays;

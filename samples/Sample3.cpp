@@ -141,7 +141,6 @@ public:
         // Use the vertices and the indices.
         agpuUseVertexBinding(commandList, vertexBinding);
         agpuUseIndexBuffer(commandList, indexBuffer);
-        agpuSetPrimitiveTopology(commandList, AGPU_TRIANGLES);
         agpuUseShaderResources(commandList, shaderBindings);
         agpuUseShaderResources(commandList, textureBindings);
         agpuUseShaderResources(commandList, samplerBindings);

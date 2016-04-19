@@ -543,11 +543,6 @@ public:
 		AgpuThrowIfFailed(agpuUseIndexBuffer( this, index_buffer ));
 	}
 
-	inline void setPrimitiveTopology ( agpu_primitive_topology topology )
-	{
-		AgpuThrowIfFailed(agpuSetPrimitiveTopology( this, topology ));
-	}
-
 	inline void useDrawIndirectBuffer ( agpu_buffer* draw_buffer )
 	{
 		AgpuThrowIfFailed(agpuUseDrawIndirectBuffer( this, draw_buffer ));

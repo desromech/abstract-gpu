@@ -6,6 +6,8 @@
 #include "renderpass.hpp"
 #include "vertex_binding.hpp"
 #include "buffer.hpp"
+#include "shader_signature.hpp"
+#include "shader_resource_binding.hpp"
 
 inline MTLIndexType mapIndexType(agpu_size stride)
 {
@@ -23,6 +25,8 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
     allocator = nullptr;
     currentIndexBuffer = nullptr;
     currentPipeline = nullptr;
+    currentShaderSignature = nullptr;
+    vertexBufferCount = 0;
     buffer = nil;
     renderEncoder = nil;
 }
@@ -54,7 +58,12 @@ agpu_command_list* _agpu_command_list::create ( agpu_device* device, agpu_comman
 
 agpu_error _agpu_command_list::setShaderSignature ( agpu_shader_signature* signature )
 {
-    return AGPU_UNIMPLEMENTED;
+    if(signature)
+        signature->retain();
+    if(currentShaderSignature)
+        currentShaderSignature->release();
+    currentShaderSignature = signature;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
@@ -84,9 +93,15 @@ agpu_error _agpu_command_list::usePipelineState ( agpu_pipeline_state* pipeline 
 
 agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_binding )
 {
-    CHECK_POINTER(vertex_binding);
+    if(!vertex_binding)
+    {
+        vertexBufferCount = 0;
+        return AGPU_OK;
+    }
+
     auto &buffers = vertex_binding->buffers;
-    for(size_t i = 0; i < buffers.size(); ++i)
+    vertexBufferCount = buffers.size();
+    for(size_t i = 0; i < vertexBufferCount; ++i)
     {
         auto buffer = buffers[i];
         if(!buffer)
@@ -100,17 +115,12 @@ agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_bi
 
 agpu_error _agpu_command_list::useIndexBuffer ( agpu_buffer* index_buffer )
 {
-    CHECK_POINTER(index_buffer);
-    index_buffer->retain();
+    if(index_buffer)
+        index_buffer->retain();
     if(currentIndexBuffer)
         currentIndexBuffer->release();
     currentIndexBuffer = index_buffer;
     return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setPrimitiveTopology ( agpu_primitive_topology topology )
-{
-    return AGPU_UNIMPLEMENTED;
 }
 
 agpu_error _agpu_command_list::useDrawIndirectBuffer ( agpu_buffer* draw_buffer )
@@ -120,7 +130,11 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer ( agpu_buffer* draw_buffer 
 
 agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding* binding )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(binding);
+    if(!renderEncoder)
+        return AGPU_INVALID_OPERATION;
+
+    return binding->activateOn(vertexBufferCount, renderEncoder);
 }
 
 agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
@@ -193,6 +207,13 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     if(currentPipeline)
         currentPipeline->release();
     currentPipeline = initial_pipeline_state;
+
+    if(currentShaderSignature)
+        currentShaderSignature->release();
+    currentShaderSignature = nullptr;
+
+    vertexBufferCount = 0;
+
     return AGPU_OK;
 }
 
@@ -206,6 +227,7 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
     [descriptor release];
     if(currentPipeline)
         [renderEncoder setRenderPipelineState: currentPipeline->handle];
+
     return AGPU_OK;
 }
 
@@ -271,12 +293,6 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agp
 {
     CHECK_POINTER(command_list);
     return command_list->useIndexBuffer(index_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_command_list* command_list, agpu_primitive_topology topology )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setPrimitiveTopology(topology);
 }
 
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer )

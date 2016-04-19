@@ -561,14 +561,6 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agp
 	return (*dispatchTable)->agpuUseIndexBuffer ( command_list, index_buffer );
 }
 
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_command_list* command_list, agpu_primitive_topology topology )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuSetPrimitiveTopology ( command_list, topology );
-}
-
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer )
 {
 	if (command_list == nullptr)
