@@ -66,6 +66,7 @@ inline VkSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
     case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     }
 }
+
 _agpu_shader_resource_binding::_agpu_shader_resource_binding(agpu_device *device)
     : device(device)
 {

@@ -12,6 +12,7 @@
 #include "buffer.hpp"
 #include "vertex_layout.hpp"
 #include "vertex_binding.hpp"
+#include "texture.hpp"
 
 _agpu_device::_agpu_device()
 {
@@ -164,7 +165,9 @@ AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass ( agpu_device* device, agpu_re
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_texture::create(device, description);
 }
 
 AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )

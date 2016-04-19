@@ -10,6 +10,5 @@ struct FragmentInput
 float4 main(FragmentInput input) : SV_TARGET
 {
     float4 textureColor = diffuseTexture.Sample(diffuseSampler, input.texcoord);
-    return textureColor;
-    //return input.color*float4(input.texcoord, 0.0, 1.0);//*textureColor;
+    return input.color*textureColor;
 }

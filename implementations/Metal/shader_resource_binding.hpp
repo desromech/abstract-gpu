@@ -38,9 +38,13 @@ public:
     ShaderSignatureElement description;
     std::vector<UniformBufferBinding> uniformBindings;
     std::vector<agpu_texture*> textures;
+    std::vector<id<MTLSamplerState> > samplerStates;
 
 private:
     agpu_error activateUniformBindingsOn(agpu_uint vertexBufferCount, id<MTLRenderCommandEncoder> encoder);
+    agpu_error activateSamplersOn(id<MTLRenderCommandEncoder> encoder);
+    agpu_error activateTexturesOn(id<MTLRenderCommandEncoder> encoder);
+
 };
 
 #endif // AGPU_METAL_SHADER_RESOURCE_BINDING_HPP

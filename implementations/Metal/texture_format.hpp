@@ -52,9 +52,9 @@ inline MTLPixelFormat mapTextureFormat(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R32_FLOAT: return MTLPixelFormatR32Float;
 	case AGPU_TEXTURE_FORMAT_R32_UINT: return MTLPixelFormatR32Uint;
 	case AGPU_TEXTURE_FORMAT_R32_SINT: return MTLPixelFormatR32Sint;
-	case AGPU_TEXTURE_FORMAT_R24G8_TYPELESS: return MTLPixelFormatDepth24Unorm_Stencil8;
-	case AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT: return MTLPixelFormatDepth24Unorm_Stencil8;
-	case AGPU_TEXTURE_FORMAT_R24_UNORM_X8_TYPELESS: return MTLPixelFormatDepth24Unorm_Stencil8;
+	case AGPU_TEXTURE_FORMAT_R24G8_TYPELESS: return MTLPixelFormatDepth32Float_Stencil8;
+	case AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT: return MTLPixelFormatDepth32Float_Stencil8;
+	case AGPU_TEXTURE_FORMAT_R24_UNORM_X8_TYPELESS: return MTLPixelFormatDepth32Float_Stencil8;
 	case AGPU_TEXTURE_FORMAT_X24TG8_UINT: return MTLPixelFormatDepth24Unorm_Stencil8;
 	case AGPU_TEXTURE_FORMAT_R8G8_TYPELESS: return MTLPixelFormatRG8Uint;
 	case AGPU_TEXTURE_FORMAT_R8G8_UNORM: return MTLPixelFormatRG8Unorm;

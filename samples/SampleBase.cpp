@@ -77,16 +77,6 @@ int SampleBase::main(int argc, const char **argv)
     screenHeight = 480;
 
     int flags = 0;
-#ifndef _WIN32
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    flags |= SDL_WINDOW_OPENGL;
-#endif
 
     // Get the platform.
     agpu_platform *platform;
@@ -105,8 +95,6 @@ int SampleBase::main(int argc, const char **argv)
         printError("Failed to open window\n");
         return -1;
     }
-
-
 
     // Get the window info.
     SDL_SysWMinfo windowInfo;
@@ -382,7 +370,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     agpu_texture_description desc;
     memset(&desc, 0, sizeof(desc));
     desc.type = AGPU_TEXTURE_2D;
-    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
+    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     desc.width = convertedSurface->w;
     desc.height = convertedSurface->h;
     desc.depthOrArraySize = 1;
