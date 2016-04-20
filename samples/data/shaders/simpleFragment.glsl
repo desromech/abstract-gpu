@@ -7,5 +7,5 @@ layout(location = 0) out vec4 fbColor;
 
 void main()
 {
-    gl_FragColor = fColor;
+    fbColor = fColor;
 }

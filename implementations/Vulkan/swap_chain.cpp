@@ -70,7 +70,7 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     if (error)
     {
         printError("Failed to create the swap chain surface\n");
-        return false;
+        return nullptr;
     }
 
     agpu_command_queue *presentationQueue = graphicsCommandQueue;

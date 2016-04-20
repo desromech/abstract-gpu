@@ -22,6 +22,8 @@ set(AGPU_Vulkan_SOURCES
     pipeline_state.hpp
     platform.cpp
     platform.hpp
+    renderpass.cpp
+    renderpass.hpp
     shader.cpp
     shader.hpp
     shader_resource_binding.cpp

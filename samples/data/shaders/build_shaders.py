@@ -11,9 +11,9 @@ def buildShader(shaderFileName, type):
     outputName = shaderName + ".spv"
     tmpName = shaderFileName + "." + type
     commands = """
-    copy "%(input)s" "%(tmpName)s"
+    cp "%(input)s" "%(tmpName)s"
     %(Compiler)s -V -o "%(output)s" "%(tmpName)s"
-    del "%(tmpName)s"
+    rm "%(tmpName)s"
     """ % {"input" : shaderFileName, "tmpName" : tmpName, "output" : outputName, "Compiler" : ShaderCompiler}
     lines = commands.split('\n')
     for line in lines:
@@ -24,7 +24,6 @@ def buildAssemblyShader(shaderFileName, type):
     outputName = shaderName + ".spv"
     commands = """
     %(Assembler)s -o "%(output)s" "%(input)s"
-    "
     """ % {"input" : shaderFileName, "output" : outputName, "Assembler" : ShaderAssembler}
     lines = commands.split('\n')
     for line in lines:
