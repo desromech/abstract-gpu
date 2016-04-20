@@ -24,6 +24,7 @@ void _agpu_buffer::lostReferences()
 
 agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
 {
+    agpu_buffer *result = nullptr;
     if (!description)
         return nullptr;
 
@@ -43,7 +44,7 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     VkFlags uploadMemoryTypeRequirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     if (hasCoherentMapping)
         uploadMemoryTypeRequirements |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    
+
     VkBufferCreateInfo bufferDescription;
     memset(&bufferDescription, 0, sizeof(bufferDescription));
     bufferDescription.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -168,7 +169,7 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         uploadBufferMemory = VK_NULL_HANDLE;
     }
 
-    auto result = new agpu_buffer(device);
+    result = new agpu_buffer(device);
     result->description = *description;
     result->gpuBuffer = defaultBuffer;
     result->gpuBufferMemory = defaultBufferMemory;

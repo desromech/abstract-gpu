@@ -65,8 +65,12 @@ constexpr size_t validationLayerCount = sizeof(validationLayerNames) / sizeof(va
 
 const char *requiredExtensionNames[] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
-#ifdef _WIN32
+#if defined(_WIN32)
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#elif defined(__unix__)
+    VK_KHR_XCB_SURFACE_EXTENSION_NAME
+#else
+#error unsupported platform
 #endif
 };
 
@@ -189,6 +193,8 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     std::vector<const char *> instanceExtensions;
     std::vector<const char *> deviceLayers;
     std::vector<const char *> deviceExtensions;
+
+    displayHandle = openInfo->display;
 
     VkApplicationInfo applicationInfo;
     memset(&applicationInfo, 0, sizeof(applicationInfo));
@@ -368,7 +374,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     // Open all the availables queues.
     std::vector<VkDeviceQueueCreateInfo> createQueueInfos;
-    
+
     uint32_t maxQueueCount = 0;
     for (size_t i = 0; i < queueFamilyCount; ++i)
         maxQueueCount = std::max(maxQueueCount, queueProperties[i].queueCount);
@@ -379,7 +385,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         auto &queueProps = queueProperties[i];
         VkDeviceQueueCreateInfo createQueueInfo;
         memset(&createQueueInfo, 0, sizeof(createQueueInfo));
-        
+
         createQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         createQueueInfo.queueFamilyIndex = i;
         createQueueInfo.queueCount = queueProps.queueCount;
@@ -513,6 +519,7 @@ bool _agpu_device::createSetupCommandBuffer()
     memset(&poolCreate, 0, sizeof(poolCreate));
     poolCreate.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolCreate.queueFamilyIndex = setupQueue->queueFamilyIndex;
+    poolCreate.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
     auto error = vkCreateCommandPool(device, &poolCreate, nullptr, &setupCommandPool);
     if (error)
@@ -705,7 +712,7 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageAspectFlagBits aspect
         auto barrier = barrierForImageLayoutTransition(image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destAccessMask);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
-    
+
     vkCmdCopyImageToBuffer(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, regionCount, regions);
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)

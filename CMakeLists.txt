@@ -51,7 +51,7 @@ if(APPLE)
 	endif()
 endif()
 
-find_library(VULKAN_LIBRARY NAMES vulkan-1)
+find_library(VULKAN_LIBRARY NAMES vulkan vulkan-1)
 if(VULKAN_INCLUDE_DIRS AND VULKAN_LIBRARY)
 	set(VULKAN_FOUND TRUE)
 	include_directories(${VULKAN_INCLUDE_DIRS})

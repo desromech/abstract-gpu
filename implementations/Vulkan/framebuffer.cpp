@@ -22,6 +22,8 @@ void _agpu_framebuffer::lostReferences()
 
 agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 {
+    agpu_framebuffer *result = nullptr;
+    
     // Attachments
     std::vector<VkAttachmentDescription> attachments(colorCount + (depthStencilView != nullptr ? 1 : 0));
     for (agpu_uint i = 0; i < colorCount; ++i)
@@ -129,7 +131,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     if (error)
         goto failure;
 
-    auto result = new agpu_framebuffer(device);
+    result = new agpu_framebuffer(device);
     result->colorCount = colorCount;
     result->hasDepthStencil = depthStencilView != nullptr;
 

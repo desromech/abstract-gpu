@@ -1,13 +1,18 @@
 #ifndef AGPU_VULKAN_DEVICE_HPP
 #define AGPU_VULKAN_DEVICE_HPP
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #define VK_USE_PLATFORM_WIN32_KHR
+#elif defined(__unix__)
+#define VK_USE_PLATFORM_XCB_KHR
+#else
+#error unsupported platform
 #endif
 
 #include "object.hpp"
+#include <string.h>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -45,6 +50,7 @@ public:
     VkDevice device;
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceMemoryProperties memoryProperties;
+    void *displayHandle;
 
     PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr;
 
@@ -98,7 +104,7 @@ public:
 
     bool setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
     VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
-    
+
 private:
     bool createSetupCommandBuffer();
     bool submitSetupCommandBuffer();
@@ -108,4 +114,5 @@ private:
     VkCommandBuffer setupCommandBuffer;
     agpu_command_queue *setupQueue;
 };
+
 #endif //AGPU_VULKAN_DEVICE_HPP

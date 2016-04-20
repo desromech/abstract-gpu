@@ -13,7 +13,3 @@ endif()
 if(METAL_FOUND)
   add_subdirectory(Metal)
 endif()
-
-if(OPENGL_FOUND AND NOT APPLE)
-    add_subdirectory(OpenGL)
-endif()

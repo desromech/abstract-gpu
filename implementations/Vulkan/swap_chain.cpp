@@ -4,6 +4,11 @@
 #include "texture_format.hpp"
 #include "framebuffer.hpp"
 
+#ifdef __unix__
+#include <X11/Xlib.h>
+#include <X11/Xlib-xcb.h>
+#endif
+
 _agpu_swap_chain::_agpu_swap_chain(agpu_device *device)
     : device(device)
 {
@@ -34,11 +39,11 @@ void _agpu_swap_chain::lostReferences()
 
 _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo)
 {
-    VkSurfaceKHR surface;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
     if (!graphicsCommandQueue || !createInfo)
         return nullptr;
 
-#ifdef _WIN32
+#if defined(_WIN32)
     if (!createInfo->window)
         return nullptr;
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo;
@@ -48,6 +53,19 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     surfaceCreateInfo.hwnd = (HWND)createInfo->window;
 
     auto error = vkCreateWin32SurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, &surface);
+#elif defined(__unix__)
+    if (!createInfo->window || !device->displayHandle)
+        return nullptr;
+
+    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
+    memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.connection = XGetXCBConnection((Display*)device->displayHandle);
+    surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
+
+    auto error = vkCreateXcbSurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, &surface);
+#else
+#error unsupported platform
 #endif
     if (error)
     {

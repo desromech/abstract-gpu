@@ -240,7 +240,10 @@ static void loadDriver(const std::string &path)
     // Is this a library?
     handle = dlopen(path.c_str(), flags);
     if(!handle)
+    {
+        fprintf(stderr, "Failed to load %s: %s\n", path.c_str(), dlerror());
         return;
+    }
 
     // Try to get the platform defined by the library.
     agpuGetPlatforms_FUN getPlatforms = (agpuGetPlatforms_FUN)dlsym(handle, "agpuGetPlatforms");
