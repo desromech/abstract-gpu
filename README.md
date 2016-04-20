@@ -12,6 +12,7 @@ Linux the Vulkan headers and libraries has to be installed. The following comman
 can be used for building:
 
 mkdir build
+cd build
 cmake ..
 make
 
@@ -21,6 +22,7 @@ AGPU_BUILD_SAMPLES option has to be set. Or for simplicity, you have to use
 the following commands for building:
 
 mkdir build
+cd build
 cmake -DAGPU_BUILD_SAMPLES=True ..
 make
 
