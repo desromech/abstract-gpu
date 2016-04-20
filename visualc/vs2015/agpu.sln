@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AgpuOpenGL", "AgpuOpenGL\AgpuOpenGL.vcxproj", "{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{0B7FD55D-7F13-4596-AE4B-C63E3BF90E22}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleCommon", "SampleCommon\SampleCommon.vcxproj", "{9B7B2C60-6536-4694-9FAF-F50436576C7E}"
@@ -52,27 +50,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|Any CPU.ActiveCfg = Debug|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x64.ActiveCfg = Debug|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x64.Build.0 = Debug|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x86.ActiveCfg = Debug|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x86.Build.0 = Debug|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x64.ActiveCfg = Debug|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x64.Build.0 = Debug|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x86.ActiveCfg = Debug|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x86.Build.0 = Debug|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|Any CPU.ActiveCfg = Release|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|Any CPU.Build.0 = Release|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x64.ActiveCfg = Release|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x64.Build.0 = Release|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x86.ActiveCfg = Release|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x86.Build.0 = Release|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|Any CPU.ActiveCfg = Release|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x64.ActiveCfg = Release|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x64.Build.0 = Release|x64
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x86.ActiveCfg = Release|Win32
-		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x86.Build.0 = Release|Win32
 		{9B7B2C60-6536-4694-9FAF-F50436576C7E}.Debug CI|Any CPU.ActiveCfg = Debug|Win32
 		{9B7B2C60-6536-4694-9FAF-F50436576C7E}.Debug CI|x64.ActiveCfg = Debug|x64
 		{9B7B2C60-6536-4694-9FAF-F50436576C7E}.Debug CI|x86.ActiveCfg = Debug|Win32

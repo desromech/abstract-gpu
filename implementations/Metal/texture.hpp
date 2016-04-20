@@ -24,6 +24,25 @@ public:
     agpu_texture_description description;
 
     id<MTLTexture> handle;
+
+    MTLRegion getLevelRegion(int level)
+    {
+        MTLRegion region;
+        memset(&region, 0, sizeof(region));
+
+        region.size.width = description.width >> level;
+        if (region.size.width == 0)
+            region.size.width = 1;
+
+        region.size.height = description.height >> level;
+        if (description.type == AGPU_TEXTURE_1D || region.size.height == 0)
+            region.size.height = 1;
+
+        region.size.depth = description.depthOrArraySize >> level;
+        if (description.type != AGPU_TEXTURE_3D || region.size.depth == 0)
+            region.size.depth = 1;
+        return region;
+    }
 };
 
 #endif //AGPU_METAL_TEXTURE_HPP

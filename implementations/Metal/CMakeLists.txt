@@ -1,4 +1,6 @@
 set(AGPU_Metal_SOURCES
+    buffer.hpp
+    buffer.mm
     command_allocator.hpp
     command_allocator.mm
     command_list.hpp
@@ -14,19 +16,30 @@ set(AGPU_Metal_SOURCES
     framebuffer.mm
     icd.c
     object.hpp
+    pipeline_builder.hpp
+    pipeline_builder.mm
+    pipeline_state.hpp
+    pipeline_state.mm
     platform.mm
     platform.hpp
     renderpass.hpp
     renderpass.mm
-    stubs.mm
     shader_signature_builder.hpp
     shader_signature_builder.mm
     shader_signature.hpp
     shader_signature.mm
+    shader_resource_binding.hpp
+    shader_resource_binding.mm
+    shader.hpp
+    shader.mm
     swap_chain.hpp
     swap_chain.mm
     texture.hpp
     texture.mm
+    vertex_binding.hpp
+    vertex_binding.mm
+    vertex_layout.hpp
+    vertex_layout.mm
 )
 
 add_definitions(-DAGPU_BUILD)

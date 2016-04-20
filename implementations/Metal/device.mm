@@ -7,6 +7,12 @@
 #include "framebuffer.hpp"
 #include "renderpass.hpp"
 #include "fence.hpp"
+#include "shader.hpp"
+#include "pipeline_builder.hpp"
+#include "buffer.hpp"
+#include "vertex_layout.hpp"
+#include "vertex_binding.hpp"
+#include "texture.hpp"
 
 _agpu_device::_agpu_device()
 {
@@ -79,22 +85,30 @@ AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_com
 
 AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_buffer::create(device, description, initial_data);
 }
 
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout ( agpu_device* device )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_vertex_layout::create(device);
 }
 
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, agpu_vertex_layout* layout )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_vertex_binding::create(device, layout);
 }
 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_shader::create(device, type);
 }
 
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device )
@@ -106,7 +120,9 @@ AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( ag
 
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_pipeline_builder::create(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue )
@@ -149,7 +165,9 @@ AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass ( agpu_device* device, agpu_re
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
 {
-    return nullptr;
+    if(!device)
+        return nullptr;
+    return agpu_texture::create(device, description);
 }
 
 AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )

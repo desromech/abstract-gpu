@@ -15,6 +15,7 @@ public:
 public:
     agpu_device *device;
     ComPtr<ID3D12PipelineState> state;
+    agpu_primitive_topology primitiveTopology;
 };
 
 #endif //AGPU_D3D12_PIPELINE_STATE_HPP

@@ -4,6 +4,7 @@
 _agpu_shader_signature_builder::_agpu_shader_signature_builder(agpu_device *device)
     : device(device)
 {
+    memset(bindingPointsUsed, 0, sizeof(bindingPointsUsed));
 }
 
 void _agpu_shader_signature_builder::lostReferences()
@@ -27,12 +28,16 @@ agpu_error _agpu_shader_signature_builder::addBindingConstant (  )
 
 agpu_error _agpu_shader_signature_builder::addBindingElement ( agpu_shader_binding_type type, agpu_uint maxBindings )
 {
-    return AGPU_UNIMPLEMENTED;
+    elements.push_back(ShaderSignatureElement(type, 1, bindingPointsUsed[(int)type]));
+    bindingPointsUsed[(int)type] += 1;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_shader_signature_builder::addBindingBank ( agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings )
 {
-    return AGPU_UNIMPLEMENTED;
+    elements.push_back(ShaderSignatureElement(type, bindingPointCount, bindingPointsUsed[(int)type]));
+    bindingPointsUsed[(int)type] += bindingPointCount;
+    return AGPU_OK;
 }
 
 // The exported C interface

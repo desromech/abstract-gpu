@@ -102,13 +102,10 @@
         <struct name="vertex_attrib_description">
             <field name="buffer" type="uint" />
             <field name="binding" type="uint" />
-            <field name="type" type="field_type" />
-            <field name="components" type="uint" />
+            <field name="format" type="texture_format" />
             <field name="rows" type="uint" />
-            <field name="normalized" type="bool" />
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
-            <field name="internal_format" type="texture_format" />
         </struct>
 
         <struct name="color4f">
@@ -137,12 +134,14 @@
         </struct>
 
         <struct name="renderpass_color_attachment_description">
+            <field name="format" type="texture_format" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
             <field name="clear_value" type="color4f" />
         </struct>
 
         <struct name="renderpass_depth_stencil_description">
+            <field name="format" type="texture_format" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
             <field name="clear_value" type="depth_stencil_value" />
@@ -349,7 +348,7 @@
             <constant name="TextureFormatR10G10B10A2_Typeless" value="23" />
             <constant name="TextureFormatR10G10B10A2_UNorm" value="24" />
             <constant name="TextureFormatR10G10B10A2_UInt" value="25" />
-            <constant name="TextureFormatR11G11B10A2_Float" value="26" />
+            <constant name="TextureFormatR11G11B10_Float" value="26" />
 
             <constant name="TextureFormatR8G8B8A8_Typeless" value="27" />
             <constant name="TextureFormatR8G8B8A8_UNorm" value="28" />
@@ -728,10 +727,6 @@
 
             <method name="release" cname="ReleasePipelineState" returnType="error">
             </method>
-
-            <method name="getUniformLocation" cname="GetUniformLocation" returnType="int">
-                <arg name="name" type="cstring" />
-            </method>
         </interface>
 
         <interface name="command_queue">
@@ -804,10 +799,6 @@
 
             <method name="useIndexBuffer" cname="UseIndexBuffer" returnType="error">
                 <arg name="index_buffer" type="buffer*" />
-            </method>
-
-            <method name="setPrimitiveTopology" cname="SetPrimitiveTopology" returnType="error">
-                <arg name="topology" type="primitive_topology" />
             </method>
 
             <method name="useDrawIndirectBuffer" cname="UseDrawIndirectBuffer" returnType="error">

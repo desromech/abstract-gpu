@@ -41,6 +41,7 @@ public:
 
     ComPtr<ID3D12RootSignature> rootSignature;
     std::string buildingLog;
+    agpu_primitive_topology primitiveTopology;
 };
 
 #endif //AGPU_D3D12_PIPELINE_BUILDER_HPP

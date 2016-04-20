@@ -249,7 +249,7 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pip
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::beginFrame (agpu_framebuffer* framebuffer, agpu_bool bundle_content)
+agpu_error _agpu_command_list::beginRenderPass (agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(framebuffer)
     return addCommand([=] {
@@ -257,7 +257,7 @@ agpu_error _agpu_command_list::beginFrame (agpu_framebuffer* framebuffer, agpu_b
     });
 }
 
-agpu_error _agpu_command_list::endFrame()
+agpu_error _agpu_command_list::endRenderPass()
 {
     return addCommand([=] {
         device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -424,16 +424,16 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame ( agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
+AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame(framebuffer, bundle_content);
+    return command_list->beginRenderPass(renderpass, framebuffer, bundle_content);
 }
 
-AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
+AGPU_EXPORT agpu_error agpuEndRenderPass(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
-    return command_list->endFrame();
+    return command_list->endRenderPass();
 }
 
 AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)

@@ -5,10 +5,10 @@
 #include "SDL_syswm.h"
 
 agpu_vertex_attrib_description SampleVertex::Description[] = {
-    {0, 0, AGPU_FLOAT, 3, 1, false, offsetof(SampleVertex, position)},
-    {0, 1, AGPU_FLOAT, 4, 1, false, offsetof(SampleVertex, color)},
-    {0, 2, AGPU_FLOAT, 3, 1, false, offsetof(SampleVertex, normal)},
-    {0, 3, AGPU_FLOAT, 2, 1, false, offsetof(SampleVertex, texcoord)},
+    {0, 0, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(SampleVertex, position), 0},
+    {0, 1, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(SampleVertex, color), 0},
+    {0, 2, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(SampleVertex, normal), 0},
+    {0, 3, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, 1, offsetof(SampleVertex, texcoord), 0},
 };
 
 const int SampleVertex::DescriptionSize = 4;
@@ -77,16 +77,6 @@ int SampleBase::main(int argc, const char **argv)
     screenHeight = 480;
 
     int flags = 0;
-#ifndef _WIN32
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    flags |= SDL_WINDOW_OPENGL;
-#endif
 
     // Get the platform.
     agpu_platform *platform;
@@ -105,8 +95,6 @@ int SampleBase::main(int argc, const char **argv)
         printError("Failed to open window\n");
         return -1;
     }
-
-
 
     // Get the window info.
     SDL_SysWMinfo windowInfo;
@@ -142,7 +130,7 @@ int SampleBase::main(int argc, const char **argv)
     }
 
     swapChainCreateInfo.colorbuffer_format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D16_UNORM;
+    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
     swapChainCreateInfo.width = screenWidth;
     swapChainCreateInfo.height = screenHeight;
     swapChainCreateInfo.buffer_count = 3;
@@ -279,6 +267,9 @@ agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader
     case AGPU_SHADER_LANGUAGE_SPIR_V:
         fullName += ".spv";
         break;
+    case AGPU_SHADER_LANGUAGE_METAL:
+        fullName += ".metal";
+        break;
     default:
         break;
     }
@@ -379,7 +370,7 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     agpu_texture_description desc;
     memset(&desc, 0, sizeof(desc));
     desc.type = AGPU_TEXTURE_2D;
-    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
+    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     desc.width = convertedSurface->w;
     desc.height = convertedSurface->h;
     desc.depthOrArraySize = 1;
@@ -397,11 +388,12 @@ agpu_texture *SampleBase::loadTexture(const char *fileName)
     return texture;
 }
 
-agpu_renderpass *SampleBase::createMainPass(const glm::vec4 clearColor)
+agpu_renderpass *SampleBase::createMainPass(const glm::vec4 &clearColor)
 {
     // Color attachment
     agpu_renderpass_color_attachment_description colorAttachment;
     memset(&colorAttachment, 0, sizeof(colorAttachment));
+    colorAttachment.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
     colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
     colorAttachment.clear_value.r = clearColor.r;
@@ -412,6 +404,7 @@ agpu_renderpass *SampleBase::createMainPass(const glm::vec4 clearColor)
     // Depth stencil
     agpu_renderpass_depth_stencil_description depthStencil;
     memset(&depthStencil, 0, sizeof(depthStencil));
+    depthStencil.format = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
     depthStencil.begin_action = AGPU_ATTACHMENT_CLEAR;
     depthStencil.end_action = AGPU_ATTACHMENT_KEEP;
     depthStencil.clear_value.depth = 1.0;

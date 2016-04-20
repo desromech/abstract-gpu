@@ -244,7 +244,7 @@ typedef enum {
 	AGPU_TEXTURE_FORMAT_R10G10B10A2_TYPELESS = 23,
 	AGPU_TEXTURE_FORMAT_R10G10B10A2_UNORM = 24,
 	AGPU_TEXTURE_FORMAT_R10G10B10A2_UINT = 25,
-	AGPU_TEXTURE_FORMAT_R11G11B10A2_FLOAT = 26,
+	AGPU_TEXTURE_FORMAT_R11G11B10_FLOAT = 26,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_TYPELESS = 27,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM = 28,
 	AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM_SRGB = 29,
@@ -461,13 +461,10 @@ typedef struct agpu_draw_elements_command {
 typedef struct agpu_vertex_attrib_description {
 	agpu_uint buffer;
 	agpu_uint binding;
-	agpu_field_type type;
-	agpu_uint components;
+	agpu_texture_format format;
 	agpu_uint rows;
-	agpu_bool normalized;
 	agpu_size offset;
 	agpu_uint divisor;
-	agpu_texture_format internal_format;
 } agpu_vertex_attrib_description;
 
 /* Structure agpu_color4f. */
@@ -500,6 +497,7 @@ typedef struct agpu_sampler_description {
 
 /* Structure agpu_renderpass_color_attachment_description. */
 typedef struct agpu_renderpass_color_attachment_description {
+	agpu_texture_format format;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
 	agpu_color4f clear_value;
@@ -507,6 +505,7 @@ typedef struct agpu_renderpass_color_attachment_description {
 
 /* Structure agpu_renderpass_depth_stencil_description. */
 typedef struct agpu_renderpass_depth_stencil_description {
+	agpu_texture_format format;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
 	agpu_depth_stencil_value clear_value;
@@ -641,11 +640,9 @@ AGPU_EXPORT agpu_error agpuSetSampleDescription ( agpu_pipeline_builder* pipelin
 /* Methods for interface agpu_pipeline_state. */
 typedef agpu_error (*agpuAddPipelineStateReference_FUN) ( agpu_pipeline_state* pipeline_state );
 typedef agpu_error (*agpuReleasePipelineState_FUN) ( agpu_pipeline_state* pipeline_state );
-typedef agpu_int (*agpuGetUniformLocation_FUN) ( agpu_pipeline_state* pipeline_state, agpu_cstring name );
 
 AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state );
 AGPU_EXPORT agpu_error agpuReleasePipelineState ( agpu_pipeline_state* pipeline_state );
-AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_state, agpu_cstring name );
 
 /* Methods for interface agpu_command_queue. */
 typedef agpu_error (*agpuAddCommandQueueReference_FUN) ( agpu_command_queue* command_queue );
@@ -680,7 +677,6 @@ typedef agpu_error (*agpuSetScissor_FUN) ( agpu_command_list* command_list, agpu
 typedef agpu_error (*agpuUsePipelineState_FUN) ( agpu_command_list* command_list, agpu_pipeline_state* pipeline );
 typedef agpu_error (*agpuUseVertexBinding_FUN) ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuUseIndexBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* index_buffer );
-typedef agpu_error (*agpuSetPrimitiveTopology_FUN) ( agpu_command_list* command_list, agpu_primitive_topology topology );
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
 typedef agpu_error (*agpuUseShaderResources_FUN) ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
 typedef agpu_error (*agpuDrawArrays_FUN) ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
@@ -703,7 +699,6 @@ AGPU_EXPORT agpu_error agpuSetScissor ( agpu_command_list* command_list, agpu_in
 AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, agpu_pipeline_state* pipeline );
 AGPU_EXPORT agpu_error agpuUseVertexBinding ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agpu_buffer* index_buffer );
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_command_list* command_list, agpu_primitive_topology topology );
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
 AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
 AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
@@ -912,7 +907,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetSampleDescription_FUN agpuSetSampleDescription;
 	agpuAddPipelineStateReference_FUN agpuAddPipelineStateReference;
 	agpuReleasePipelineState_FUN agpuReleasePipelineState;
-	agpuGetUniformLocation_FUN agpuGetUniformLocation;
 	agpuAddCommandQueueReference_FUN agpuAddCommandQueueReference;
 	agpuReleaseCommandQueue_FUN agpuReleaseCommandQueue;
 	agpuAddCommandList_FUN agpuAddCommandList;
@@ -930,7 +924,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuUsePipelineState_FUN agpuUsePipelineState;
 	agpuUseVertexBinding_FUN agpuUseVertexBinding;
 	agpuUseIndexBuffer_FUN agpuUseIndexBuffer;
-	agpuSetPrimitiveTopology_FUN agpuSetPrimitiveTopology;
 	agpuUseDrawIndirectBuffer_FUN agpuUseDrawIndirectBuffer;
 	agpuUseShaderResources_FUN agpuUseShaderResources;
 	agpuDrawArrays_FUN agpuDrawArrays;

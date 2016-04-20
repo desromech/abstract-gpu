@@ -7,6 +7,7 @@
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 #include "framebuffer.hpp"
+#include "renderpass.hpp"
 #include "texture.hpp"
 
 inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topology)
@@ -48,6 +49,9 @@ _agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command
     if (FAILED(device->d3dDevice->CreateCommandList(0, mapCommandListType(type), allocator->allocator.Get(), state, IID_PPV_ARGS(&commandList))))
         return nullptr;
 
+    if (initialState)
+        commandList->IASetPrimitiveTopology(mapPrimitiveTopology(initialState->primitiveTopology));
+
     std::unique_ptr<agpu_command_list> list(new _agpu_command_list());
     list->type = type;
     list->device = device;
@@ -80,11 +84,6 @@ agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature *signatu
 
 agpu_error _agpu_command_list::setCommonState()
 {
-    // Reset some state
-    memset(clearColor, 0, sizeof(clearColor));
-    clearDepth = 1;
-    clearStencil = 0;
-
     if (currentFramebuffer)
     {
         currentFramebuffer->release();
@@ -118,63 +117,12 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
-{
-    clearColor[0] = r;
-    clearColor[1] = g;
-    clearColor[2] = b;
-    clearColor[3] = a;
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setClearDepth(agpu_float depth)
-{
-    clearDepth = depth;
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setClearStencil(agpu_int value)
-{
-    clearStencil = value;
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
-{
-    if (!currentFramebuffer)
-        return AGPU_OK;
-
-    // Clear the color buffers
-    if (buffers & AGPU_COLOR_BUFFER_BIT)
-    {
-        for (size_t i = 0; i < currentFramebuffer->getColorBufferCount(); ++i)
-        {
-            if (!currentFramebuffer->colorBuffers[i])
-                return AGPU_ERROR;
-
-            auto handle = currentFramebuffer->getColorBufferCpuHandle(i);
-            commandList->ClearRenderTargetView(handle, clearColor, 0, nullptr);
-        }
-    }
-
-    // Clear the depth stencil attachment.
-    if (currentFramebuffer->depthStencil && ((buffers & AGPU_DEPTH_BUFFER_BIT) || buffers & AGPU_STENCIL_BUFFER_BIT))
-    {
-        D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS(0);
-        if (buffers & AGPU_DEPTH_BUFFER_BIT)
-            flags |= D3D12_CLEAR_FLAG_DEPTH;
-        if (buffers & AGPU_STENCIL_BUFFER_BIT)
-            flags |= D3D12_CLEAR_FLAG_STENCIL;
-        commandList->ClearDepthStencilView(currentFramebuffer->getDepthStencilCpuHandle(), flags, clearDepth, clearStencil, 0, nullptr);
-    }
-
-    return AGPU_OK;
-}
-
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
     CHECK_POINTER(pipeline);
     commandList->SetPipelineState(pipeline->state.Get());
+    commandList->IASetPrimitiveTopology(mapPrimitiveTopology(pipeline->primitiveTopology));
+
     return AGPU_OK;
 }
 
@@ -191,12 +139,6 @@ agpu_error _agpu_command_list::useIndexBuffer(agpu_buffer* index_buffer)
         return AGPU_ERROR;
 
     commandList->IASetIndexBuffer(&index_buffer->view.indexBuffer);
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
-{
-    commandList->IASetPrimitiveTopology(mapPrimitiveTopology(topology));
     return AGPU_OK;
 }
 
@@ -278,11 +220,16 @@ agpu_error _agpu_command_list::reset(_agpu_command_allocator *allocator, agpu_pi
 
     ERROR_IF_FAILED(commandList->Reset(allocator->allocator.Get(), state));
 
+    if (initial_pipeline_state)
+        commandList->IASetPrimitiveTopology(mapPrimitiveTopology(initial_pipeline_state->primitiveTopology));
+
     return setCommonState();
 }
 
-agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
+agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
 {
+    CHECK_POINTER(renderpass);
+    CHECK_POINTER(framebuffer);
     if(framebuffer)
         framebuffer->retain();
     if (currentFramebuffer)
@@ -315,10 +262,35 @@ agpu_error _agpu_command_list::beginFrame(agpu_framebuffer* framebuffer, agpu_bo
         commandList->OMSetRenderTargets((UINT)framebuffer->colorBufferDescriptors.size(), &framebuffer->colorBufferDescriptors[0], FALSE, nullptr);
     }
 
+    // Clear the color buffers
+    for (size_t i = 0; i < currentFramebuffer->getColorBufferCount(); ++i)
+    {
+        if (!currentFramebuffer->colorBuffers[i])
+            return AGPU_ERROR;
+
+        auto handle = currentFramebuffer->getColorBufferCpuHandle(i);
+        auto &attachment = renderpass->colorAttachments[i];
+        if(attachment.begin_action == AGPU_ATTACHMENT_CLEAR)
+            commandList->ClearRenderTargetView(handle, reinterpret_cast<FLOAT*> (&attachment.clear_value), 0, nullptr);
+    }
+
+    if ((renderpass->hasDepth || renderpass->hasStencil) && renderpass->depthStencilAttachment.begin_action == AGPU_ATTACHMENT_CLEAR)
+    {
+        D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS(0);
+        if (renderpass->hasDepth)
+            flags |= D3D12_CLEAR_FLAG_DEPTH;
+        if (renderpass->hasStencil)
+            flags |= D3D12_CLEAR_FLAG_STENCIL;
+
+        auto clearDepth = renderpass->depthStencilAttachment.clear_value.depth;
+        auto clearStencil = renderpass->depthStencilAttachment.clear_value.stencil;
+        commandList->ClearDepthStencilView(currentFramebuffer->getDepthStencilCpuHandle(), flags, clearDepth, clearStencil, 0, nullptr);
+    }
+
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::endFrame()
+agpu_error _agpu_command_list::endRenderPass()
 {
     if (!currentFramebuffer)
         return AGPU_OK;
@@ -415,30 +387,6 @@ AGPU_EXPORT agpu_error agpuSetScissor(agpu_command_list* command_list, agpu_int 
     return command_list->setScissor(x, y, w, h);
 }
 
-AGPU_EXPORT agpu_error agpuSetClearColor(agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearColor(r, g, b, a);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearDepth(agpu_command_list* command_list, agpu_float depth)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearDepth(depth);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearStencil(agpu_command_list* command_list, agpu_int value)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearStencil(value);
-}
-
-AGPU_EXPORT agpu_error agpuClear(agpu_command_list* command_list, agpu_bitfield buffers)
-{
-    CHECK_POINTER(command_list);
-    return command_list->clear(buffers);
-}
-
 AGPU_EXPORT agpu_error agpuUsePipelineState(agpu_command_list* command_list, agpu_pipeline_state* pipeline)
 {
     CHECK_POINTER(command_list);
@@ -455,12 +403,6 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_
 {
     CHECK_POINTER(command_list);
     return command_list->useIndexBuffer(index_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setPrimitiveTopology(topology);
 }
 
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer)
@@ -523,16 +465,16 @@ AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, _ag
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
-AGPU_EXPORT agpu_error agpuBeginFrame(agpu_command_list* command_list, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
+AGPU_EXPORT agpu_error agpuBeginRenderPass(agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(command_list);
-    return command_list->beginFrame(framebuffer, secondaryContent);
+    return command_list->beginRenderPass(renderpass, framebuffer, bundle_content);
 }
 
-AGPU_EXPORT agpu_error agpuEndFrame(agpu_command_list* command_list)
+AGPU_EXPORT agpu_error agpuEndRenderPass(agpu_command_list* command_list)
 {
     CHECK_POINTER(command_list);
-    return command_list->endFrame();
+    return command_list->endRenderPass();
 }
 
 AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)

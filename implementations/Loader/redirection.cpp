@@ -425,14 +425,6 @@ AGPU_EXPORT agpu_error agpuReleasePipelineState ( agpu_pipeline_state* pipeline_
 	return (*dispatchTable)->agpuReleasePipelineState ( pipeline_state );
 }
 
-AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_state, agpu_cstring name )
-{
-	if (pipeline_state == nullptr)
-		return (agpu_int)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_state);
-	return (*dispatchTable)->agpuGetUniformLocation ( pipeline_state, name );
-}
-
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* command_queue )
 {
 	if (command_queue == nullptr)
@@ -567,14 +559,6 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agp
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuUseIndexBuffer ( command_list, index_buffer );
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology ( agpu_command_list* command_list, agpu_primitive_topology topology )
-{
-	if (command_list == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuSetPrimitiveTopology ( command_list, topology );
 }
 
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer )

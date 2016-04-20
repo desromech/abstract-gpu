@@ -425,11 +425,6 @@ public:
 		AgpuThrowIfFailed(agpuReleasePipelineState( this ));
 	}
 
-	inline agpu_int getUniformLocation ( agpu_cstring name )
-	{
-		return agpuGetUniformLocation( this, name );
-	}
-
 };
 
 typedef agpu_ref<agpu_pipeline_state> agpu_pipeline_state_ref;
@@ -546,11 +541,6 @@ public:
 	inline void useIndexBuffer ( agpu_buffer* index_buffer )
 	{
 		AgpuThrowIfFailed(agpuUseIndexBuffer( this, index_buffer ));
-	}
-
-	inline void setPrimitiveTopology ( agpu_primitive_topology topology )
-	{
-		AgpuThrowIfFailed(agpuSetPrimitiveTopology( this, topology ));
 	}
 
 	inline void useDrawIndirectBuffer ( agpu_buffer* draw_buffer )

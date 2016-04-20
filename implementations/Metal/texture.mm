@@ -18,8 +18,59 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     if(!description)
         return nullptr;
 
+    auto descriptor = [MTLTextureDescriptor new];
+    bool isArray = description->depthOrArraySize > 1;
+
+    descriptor.arrayLength = description->depthOrArraySize;
+    switch(description->type)
+    {
+    case AGPU_TEXTURE_1D:
+        descriptor.textureType = isArray ? MTLTextureType1DArray : MTLTextureType1D;
+        break;
+    case AGPU_TEXTURE_2D:
+        descriptor.textureType = isArray ? MTLTextureType2DArray : MTLTextureType2D;
+        break;
+    case AGPU_TEXTURE_CUBE:
+        descriptor.textureType = MTLTextureTypeCube;
+        descriptor.arrayLength = 1;
+        break;
+    case AGPU_TEXTURE_3D:
+        descriptor.textureType = MTLTextureType3D;
+        descriptor.arrayLength = 1;
+        descriptor.depth = description->depthOrArraySize;
+        break;
+    default:
+        return nullptr;
+    }
+
+    descriptor.pixelFormat = mapTextureFormat(description->format);
+    descriptor.width = description->width;
+    descriptor.height = description->height;
+    descriptor.mipmapLevelCount = description->miplevels;
+    descriptor.storageMode = MTLStorageModePrivate;
+
+    auto flags = description->flags;
+    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+    {
+        descriptor.usage = MTLTextureUsageRenderTarget;
+    }
+    else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+    {
+        descriptor.usage = MTLTextureUsageRenderTarget;
+    }
+    else
+    {
+        descriptor.usage = MTLTextureUsageShaderRead;
+    }
+
+    auto handle = [device->device newTextureWithDescriptor: descriptor];
+    [descriptor release];
+    if(!handle)
+        return nullptr;
+
     auto result = new agpu_texture(device);
     result->description = *description;
+    result->handle = handle;
     return result;
 }
 
@@ -38,7 +89,7 @@ agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu
 
 agpu_error _agpu_texture::unmapLevel (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_UNSUPPORTED;
 }
 
 agpu_error _agpu_texture::readData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
@@ -48,17 +99,27 @@ agpu_error _agpu_texture::readData ( agpu_int level, agpu_int arrayIndex, agpu_i
 
 agpu_error _agpu_texture::uploadData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(data);
+
+    MTLRegion region = getLevelRegion(level);
+
+    [handle replaceRegion:(MTLRegion)region
+          mipmapLevel: level
+                slice: arrayIndex
+            withBytes: data
+          bytesPerRow: pitch
+        bytesPerImage: slicePitch];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_texture::discardUploadBuffer (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_texture::discardReadbackBuffer (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description* viewDescription )

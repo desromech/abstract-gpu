@@ -11,6 +11,7 @@
 #include "vertex_layout.hpp"
 #include "buffer.hpp"
 #include "framebuffer.hpp"
+#include "renderpass.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
 #include "fence.hpp"
@@ -266,6 +267,13 @@ AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_ui
     if (!device)
         return nullptr;
     return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
+}
+
+AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_renderpass_description* description)
+{
+    if (!device)
+        return nullptr;
+    return agpu_renderpass::create(device, description);
 }
 
 AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description)

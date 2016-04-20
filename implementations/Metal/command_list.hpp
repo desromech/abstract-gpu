@@ -17,7 +17,6 @@ public:
     agpu_error usePipelineState ( agpu_pipeline_state* pipeline );
     agpu_error useVertexBinding ( agpu_vertex_binding* vertex_binding );
     agpu_error useIndexBuffer ( agpu_buffer* index_buffer );
-    agpu_error setPrimitiveTopology ( agpu_primitive_topology topology );
     agpu_error useDrawIndirectBuffer ( agpu_buffer* draw_buffer );
     agpu_error useShaderResources ( agpu_shader_resource_binding* binding );
     agpu_error drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
@@ -37,6 +36,10 @@ public:
     agpu_command_allocator* allocator;
     id<MTLCommandBuffer> buffer;
     id<MTLRenderCommandEncoder> renderEncoder;
+    agpu_buffer *currentIndexBuffer;
+    agpu_pipeline_state *currentPipeline;
+    agpu_shader_signature *currentShaderSignature;
+    agpu_uint vertexBufferCount;
 };
 
 #endif //AGPU_METAL_COMMAND_LIST_HPP
