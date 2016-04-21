@@ -13,10 +13,14 @@
     if(![self initWithFrame: NSMakeRect(0, 0, swapChainInfo.width, swapChainInfo.height)])
         return nil;
 
+    CGSize drawableSize;
+    drawableSize.width = swapChainInfo.width;
+    drawableSize.height = swapChainInfo.height;
+
     auto metalLayer = [CAMetalLayer new];
     metalLayer.device = theSwapChain->device->device;
     metalLayer.framebufferOnly = YES;
-    metalLayer.drawableSize = NSMakeSize(swapChainInfo.width, swapChainInfo.height);
+    metalLayer.drawableSize = drawableSize;
     metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     [self setLayer: metalLayer];
     [self setWantsLayer: YES];

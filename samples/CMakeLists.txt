@@ -25,7 +25,10 @@ foreach(data_file ${DATA_FILES})
     )
     list(APPEND data_file_dest "${DATA_OUTPUT_PREFIX}/${data_file}")
 endforeach()
-add_custom_target(CopyDataFiles ALL DEPENDS ${data_file_dest})
+
+if(NOT APPLE)
+    add_custom_target(CopyDataFiles ALL DEPENDS ${data_file_dest})
+endif()
 
 set(SampleCommon_SRC
     SampleBase.cpp

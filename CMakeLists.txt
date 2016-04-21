@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 2.8)
 project(AGPU)
 
+if(APPLE)
+	set(CMAKE_OSX_ARCHITECTURES "x86_64;i386")
+endif()
+
 option(AGPU_BUILD_SAMPLES "Build AGPU Samples" OFF)
 
 # Check the build type
