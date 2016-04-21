@@ -33,9 +33,6 @@ if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fvisibility=hidden")
 endif()
 
-# Find OpenGL
-find_package(OpenGL)
-
 # Find Vulkan
 find_path(VULKAN_INCLUDE_DIRS
   NAMES vulkan/vulkan.h
@@ -49,6 +46,13 @@ if(APPLE)
 	if(METAL_LIBRARY AND QUARTZCORE_LIBRARY AND APPKIT_LIBRARY)
 		set(METAL_FOUND TRUE)
 	endif()
+endif()
+
+find_library(X11_LIBRARY NAMES X11)
+find_library(X11_XCB_LIBRARY NAMES X11-xcb)
+set(VULKAN_WSYS_LIBRARIES)
+if(X11_LIBRARY AND X11_XCB_LIBRARY)
+    set(VULKAN_WSYS_LIBRARIES ${X11_LIBRARY} ${X11_XCB_LIBRARY})
 endif()
 
 find_library(VULKAN_LIBRARY NAMES vulkan vulkan-1)
@@ -68,55 +72,48 @@ include_directories(. include thirdparty/glm thirdparty/opengl/include)
 set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
 set(LIBRARY_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
 
-# Try to use pkg-config.
-find_package(PkgConfig)
-if(PKG_CONFIG_FOUND)
+# Find unittest++
+#pkg_check_modules(UNITTESTMM unittest++)
+#if(UNITTESTMM_FOUND)
+#    include_directories(${UNITTESTMM_INCLUDE_DIRS})
+#endif()
 
-    # Find SDL2
-    pkg_check_modules(SDL2 sdl2)
+# Find Direct3D 12
+find_path(D3D12_INCLUDE_DIRS
+  NAMES d3d12.h
+)
 
-    # Find unittest++
-    pkg_check_modules(UNITTESTMM unittest++)
-    if(UNITTESTMM_FOUND)
-        include_directories(${UNITTESTMM_INCLUDE_DIRS})
-    endif()
+find_library(D3D12_LIBRARY NAMES d3d12)
 
-else()
-    # Find Direct3D 12
-    find_path(D3D12_INCLUDE_DIRS
-      NAMES d3d12.h
-    )
+if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
+	set(D3D12_FOUND TRUE)
+endif()
 
-    find_library(D3D12_LIBRARY NAMES d3d12)
+# For VisualStudio in Window
+find_path(SDL2_INCLUDE_DIRS
+  NAMES SDL.h
+  PATH_SUFFIXES SDL2
+)
 
-	if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
-		set(D3D12_FOUND TRUE)
-	endif()
+find_path(SDL2_LIBRARY_PATH
+  NAMES SDL2.lib SDL2.a SDL2-2.0.lib SDL2-2.0.a libSDL2-2.0.a
+)
 
-    # For VisualStudio in Window
-    find_path(SDL2_INCLUDE_DIRS
-      NAMES SDL.h
-    )
+find_library(SDL2_LIBRARY NAMES SDL2 SDL2-2.0 PATHS ${SDL2_LIBRARY_PATH})
+find_library(SDL2_MAIN_LIBRARY NAMES SDL2main PATHS ${SDL2_LIBRARY_PATH})
 
-    find_path(SDL2_LIBRARY_PATH
-      NAMES SDL2.lib SDL2.a
-    )
+if(SDL2_INCLUDE_DIRS AND SDL2_LIBRARY AND SDL2_INCLUDE_DIRS)
+    # Use the SDL2 include path.
+    include_directories(${SDL2_INCLUDE_DIRS})
 
-    find_library(SDL2_LIBRARY NAMES SDL2 PATHS ${SDL2_LIBRARY_PATH})
-	find_library(SDL2_MAIN_LIBRARY NAMES SDL2main PATHS ${SDL2_LIBRARY_PATH})
-
-	if(SDL2_INCLUDE_DIRS AND SDL2_LIBRARY)
-		set(SDL2_FOUND TRUE)
-		if(SDL2_MAIN_LIBRARY)
-	    	set(SDL2_LIBRARIES ${SDL2_LIBRARY} ${SDL2_MAIN_LIBRARY})
-		else()
-			set(SDL2_LIBRARIES ${SDL2_LIBRARY})
-		endif()
+	set(SDL2_FOUND TRUE)
+	if(SDL2_MAIN_LIBRARY)
+    	set(SDL2_LIBRARIES ${SDL2_LIBRARY} ${SDL2_MAIN_LIBRARY})
+	else()
+		set(SDL2_LIBRARIES ${SDL2_LIBRARY})
 	endif()
 endif()
 
-# Use the SDL2 include path.
-include_directories(${SDL2_INCLUDE_DIRS})
 
 # Samples libraries
 set(AGPU_MAIN_LIB Agpu)
