@@ -186,9 +186,9 @@ typedef enum {
 } agpu_render_buffer_bit;
 
 typedef enum {
-	AGPU_SHADER_BINDING_TYPE_SRV = 0,
-	AGPU_SHADER_BINDING_TYPE_UAV = 1,
-	AGPU_SHADER_BINDING_TYPE_CBV = 2,
+	AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE = 0,
+	AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE = 1,
+	AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER = 2,
 	AGPU_SHADER_BINDING_TYPE_SAMPLER = 3,
 	AGPU_SHADER_BINDING_TYPE_COUNT = 4,
 } agpu_shader_binding_type;
@@ -508,6 +508,8 @@ typedef struct agpu_renderpass_depth_stencil_description {
 	agpu_texture_format format;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
+	agpu_renderpass_attachment_action stencil_begin_action;
+	agpu_renderpass_attachment_action stencil_end_action;
 	agpu_depth_stencil_value clear_value;
 } agpu_renderpass_depth_stencil_description;
 
@@ -796,9 +798,13 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer );
 /* Methods for interface agpu_renderpass. */
 typedef agpu_error (*agpuAddRenderPassReference_FUN) ( agpu_renderpass* renderpass );
 typedef agpu_error (*agpuReleaseRenderPass_FUN) ( agpu_renderpass* renderpass );
+typedef agpu_error (*agpuSetDepthStencilClearValue_FUN) ( agpu_renderpass* renderpass, agpu_depth_stencil_value value );
+typedef agpu_error (*agpuSetColorClearValue_FUN) ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value );
 
 AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass );
 AGPU_EXPORT agpu_error agpuReleaseRenderPass ( agpu_renderpass* renderpass );
+AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue ( agpu_renderpass* renderpass, agpu_depth_stencil_value value );
+AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value );
 
 /* Methods for interface agpu_shader_signature_builder. */
 typedef agpu_error (*agpuAddShaderSignatureBuilderReference_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
@@ -970,6 +976,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
 	agpuAddRenderPassReference_FUN agpuAddRenderPassReference;
 	agpuReleaseRenderPass_FUN agpuReleaseRenderPass;
+	agpuSetDepthStencilClearValue_FUN agpuSetDepthStencilClearValue;
+	agpuSetColorClearValue_FUN agpuSetColorClearValue;
 	agpuAddShaderSignatureBuilderReference_FUN agpuAddShaderSignatureBuilderReference;
 	agpuReleaseShaderSignatureBuilder_FUN agpuReleaseShaderSignatureBuilder;
 	agpuBuildShaderSignature_FUN agpuBuildShaderSignature;

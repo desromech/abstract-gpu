@@ -29,9 +29,10 @@ public:
     bool hasDepth;
     bool hasStencil;
     int renderTargetCount;
-    int dirtyCount;
     agpu_texture *colorBuffers[MaxRenderTargetCount];
     agpu_texture *depthStencil;
+    bool changed;
+    GLuint handle;
 };
 
 #endif //AGPU_GL_FRAMEBUFFER_HPP

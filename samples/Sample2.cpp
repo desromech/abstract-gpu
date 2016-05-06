@@ -36,7 +36,7 @@ public:
 
         // Create the shader signature.
         auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
-        agpuAddShaderSignatureBindingBank(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_CBV, 1, 1);
+        agpuAddShaderSignatureBindingBank(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1, 1);
 
         shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
         agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);

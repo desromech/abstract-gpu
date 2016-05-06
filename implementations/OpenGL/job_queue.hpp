@@ -15,17 +15,22 @@ typedef std::function<void ()> JobCommand;
 class AsyncJob
 {
 public:
-    AsyncJob(const JobCommand &command)
-        : finished(false), command(command) {}
+    AsyncJob(const JobCommand &command, bool autoreleased = false)
+        : finished(false), autoreleased(autoreleased), command(command) {}
     ~AsyncJob() { }
 
     void execute()
     {
         command();
+        if(!autoreleased)
         {
             std::unique_lock<std::mutex> l(mutex);
             finished = true;
             finishedCondition.notify_all();
+        }
+        else
+        {
+            delete this;
         }
     }
 
@@ -37,6 +42,7 @@ public:
     }
 private:
     bool finished;
+    bool autoreleased;
     std::mutex mutex;
     std::condition_variable finishedCondition;
     JobCommand command;

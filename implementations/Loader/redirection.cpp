@@ -929,6 +929,22 @@ AGPU_EXPORT agpu_error agpuReleaseRenderPass ( agpu_renderpass* renderpass )
 	return (*dispatchTable)->agpuReleaseRenderPass ( renderpass );
 }
 
+AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue ( agpu_renderpass* renderpass, agpu_depth_stencil_value value )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuSetDepthStencilClearValue ( renderpass, value );
+}
+
+AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuSetColorClearValue ( renderpass, attachment_index, value );
+}
+
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )
 {
 	if (shader_signature_builder == nullptr)

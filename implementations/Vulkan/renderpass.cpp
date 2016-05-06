@@ -77,12 +77,12 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         attachment.loadOp = mapLoadOp(desc->begin_action);
         attachment.storeOp = mapStoreOp(desc->end_action);
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         if (hasStencil)
         {
-            attachment.stencilLoadOp = mapLoadOp(desc->begin_action);
-            attachment.stencilStoreOp = mapStoreOp(desc->end_action);
+            attachment.stencilLoadOp = mapLoadOp(desc->stencil_begin_action);
+            attachment.stencilStoreOp = mapStoreOp(desc->stencil_end_action);
         }
 
         attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -135,7 +135,36 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
     auto result = new agpu_renderpass(device);
     result->handle = renderPass;
     result->clearValues = clearValues;
+    result->hasDepthStencil = description->depth_stencil_attachment != nullptr;
     return result;
+}
+
+agpu_error _agpu_renderpass::setDepthStencilClearValue(agpu_depth_stencil_value value)
+{
+    if (hasDepthStencil)
+    {
+        auto &dest = clearValues.back();
+        dest.depthStencil.depth = value.depth;
+        dest.depthStencil.stencil = value.stencil;
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
+{
+    auto colorCount = clearValues.size();
+    if (hasDepthStencil)
+        --colorCount;
+    if (attachment_index >= colorCount)
+        return AGPU_OUT_OF_BOUNDS;
+
+    auto &dest = clearValues[attachment_index];
+    dest.color.float32[0] = value.r;
+    dest.color.float32[1] = value.g;
+    dest.color.float32[2] = value.b;
+    dest.color.float32[3] = value.a;
+    return AGPU_OK;
 }
 
 // The exported C Interface
@@ -149,4 +178,16 @@ AGPU_EXPORT agpu_error agpuReleaseRenderPass(agpu_renderpass* renderpass)
 {
     CHECK_POINTER(renderpass);
     return renderpass->release();
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue(agpu_renderpass* renderpass, agpu_depth_stencil_value value)
+{
+    CHECK_POINTER(renderpass);
+    return renderpass->setDepthStencilClearValue(value);
+}
+
+AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value)
+{
+    CHECK_POINTER(renderpass);
+    return renderpass->setColorClearValue(attachment_index, value);
 }

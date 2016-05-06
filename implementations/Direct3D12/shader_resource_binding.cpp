@@ -60,7 +60,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, a
 agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
 {
     std::unique_lock<std::mutex> (bindMutex);
-    if (type != AGPU_SHADER_BINDING_TYPE_CBV)
+    if (type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
         return AGPU_INVALID_OPERATION;
 
     if (uniform_buffer->description.binding != AGPU_UNIFORM_BUFFER)
@@ -100,7 +100,7 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int locatio
     CHECK_POINTER(texture);
 
     std::unique_lock<std::mutex> (bindMutex);
-    if (type != AGPU_SHADER_BINDING_TYPE_SRV)
+    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return AGPU_INVALID_OPERATION;
 
     if (location < 0)

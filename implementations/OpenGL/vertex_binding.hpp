@@ -22,13 +22,12 @@ public:
 public:
 	agpu_device *device;
     agpu_vertex_layout *vertexLayout;
-    int dirtyCount;
     std::vector<agpu_buffer*> vertexBuffers;
 
     void bind();
     agpu_error updateBindings();
-
-    std::list<OpenGLContext*> instancesAtContexts;
+    GLuint handle;
+    bool changed;
 };
 
 #endif //_AGPU_GL_VERTEX_BINDING_HPP_

@@ -3,6 +3,7 @@
 #include "vertex_binding.hpp"
 #include "buffer.hpp"
 #include "framebuffer.hpp"
+#include "renderpass.hpp"
 #include "shader_resource_binding.hpp"
 
 inline GLenum mapPrimitiveTopology(agpu_primitive_topology topology)
@@ -75,47 +76,12 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
     });
 }
 
-agpu_error _agpu_command_list::setClearColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
-{
-    return addCommand([=] {
-        glClearColor(r, g, b, a);
-    });
-}
-
-agpu_error _agpu_command_list::setClearDepth(agpu_float depth)
-{
-    return addCommand([=] {
-        glClearDepth(depth);
-    });
-}
-
-agpu_error _agpu_command_list::setClearStencil(agpu_int value)
-{
-    return addCommand([=] {
-        glClearStencil(value);
-    });
-}
-
-agpu_error _agpu_command_list::clear(agpu_bitfield buffers)
-{
-    GLbitfield bits = 0;
-    if (buffers & AGPU_COLOR_BUFFER_BIT)
-        bits |= GL_COLOR_BUFFER_BIT;
-    if (buffers & AGPU_DEPTH_BUFFER_BIT)
-        bits |= GL_DEPTH_BUFFER_BIT;
-    if (buffers & AGPU_STENCIL_BUFFER_BIT)
-        bits |= GL_STENCIL_BUFFER_BIT;
-
-    return addCommand([=] {
-        glClear(bits);
-    });
-}
-
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
     return addCommand([=] {
         this->currentPipeline = pipeline;
         this->currentPipeline->activate();
+        this->primitiveMode = mapPrimitiveTopology(pipeline->primitiveTopology);
         if (stencilReference != 0)
             this->currentPipeline->updateStencilReference(stencilReference);
     });
@@ -139,14 +105,6 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 {
     return addCommand([=] {
         this->currentDrawBuffer = draw_buffer;
-    });
-}
-
-agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
-{
-    GLenum newPrimitiveMode = mapPrimitiveTopology(topology);
-    return addCommand([=] {
-        primitiveMode = newPrimitiveMode;
     });
 }
 
@@ -254,6 +212,7 @@ agpu_error _agpu_command_list::beginRenderPass (agpu_renderpass *renderpass, agp
     CHECK_POINTER(framebuffer)
     return addCommand([=] {
         framebuffer->bind();
+        renderpass->started();
     });
 }
 
@@ -316,30 +275,6 @@ AGPU_EXPORT agpu_error agpuSetScissor(agpu_command_list* command_list, agpu_int 
     return command_list->setScissor(x, y, w, h);
 }
 
-AGPU_EXPORT agpu_error agpuSetClearColor(agpu_command_list* command_list, agpu_float r, agpu_float g, agpu_float b, agpu_float a)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearColor(r, g, b, a);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearDepth(agpu_command_list* command_list, agpu_float depth)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearDepth(depth);
-}
-
-AGPU_EXPORT agpu_error agpuSetClearStencil(agpu_command_list* command_list, agpu_int value)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setClearStencil(value);
-}
-
-AGPU_EXPORT agpu_error agpuClear(agpu_command_list* command_list, agpu_bitfield buffers)
-{
-    CHECK_POINTER(command_list);
-    return command_list->clear(buffers);
-}
-
 AGPU_EXPORT agpu_error agpuUsePipelineState(agpu_command_list* command_list, agpu_pipeline_state* pipeline)
 {
     CHECK_POINTER(command_list);
@@ -362,12 +297,6 @@ AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list
 {
     CHECK_POINTER(command_list);
     return command_list->useDrawIndirectBuffer(draw_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setPrimitiveTopology(topology);
 }
 
 AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )

@@ -34,6 +34,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sample3", "Sample3\Sample3.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AgpuVulkan", "AgpuVulkan\AgpuVulkan.vcxproj", "{7370B9B2-CCD3-490E-BE63-77675356D71F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AgpuOpenGL", "AgpuOpenGL\AgpuOpenGL.vcxproj", "{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug CI|Any CPU = Debug CI|Any CPU
@@ -182,6 +184,28 @@ Global
 		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x64.Build.0 = Release|x64
 		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x86.ActiveCfg = Release|Win32
 		{7370B9B2-CCD3-490E-BE63-77675356D71F}.Release|x86.Build.0 = Release|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|Any CPU.ActiveCfg = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|Any CPU.Build.0 = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x64.ActiveCfg = Debug|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x64.Build.0 = Debug|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x86.ActiveCfg = Debug|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug CI|x86.Build.0 = Debug|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x64.ActiveCfg = Debug|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x64.Build.0 = Debug|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x86.ActiveCfg = Debug|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Debug|x86.Build.0 = Debug|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|Any CPU.ActiveCfg = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|Any CPU.Build.0 = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x64.ActiveCfg = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x64.Build.0 = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x86.ActiveCfg = Release|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release CI|x86.Build.0 = Release|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|Any CPU.ActiveCfg = Release|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x64.ActiveCfg = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x64.Build.0 = Release|x64
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x86.ActiveCfg = Release|Win32
+		{8B59C0F0-C1F9-4846-ACFB-FECC84E76401}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

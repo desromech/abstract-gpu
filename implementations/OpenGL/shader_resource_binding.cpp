@@ -94,10 +94,10 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
 
     switch (binding->type)
     {
-    case AGPU_SHADER_BINDING_TYPE_SRV:
+    case AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE:
         binding->textures.resize(element.bindingPointCount);
         break;
-    case AGPU_SHADER_BINDING_TYPE_CBV:
+    case AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER:
         binding->uniformBuffers.resize(element.bindingPointCount);
         break;
     case AGPU_SHADER_BINDING_TYPE_SAMPLER:
@@ -106,7 +106,7 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
             binding->device->glGenSamplers(binding->samplers.size(), &binding->samplers[0]);
         });
         break;
-    case AGPU_SHADER_BINDING_TYPE_UAV:
+    case AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE:
     default:
         abort();
         break;
@@ -203,7 +203,7 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
 void _agpu_shader_resource_binding::activate()
 {
     std::unique_lock<std::mutex> l(bindMutex);
-    if (type == AGPU_SHADER_BINDING_TYPE_SRV)
+    if (type == AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
     {
         for (size_t i = 0; i < textures.size(); ++i)
         {
@@ -218,7 +218,7 @@ void _agpu_shader_resource_binding::activate()
             glBindTexture(target, binding.texture->handle);
         }
     }
-    else if (type == AGPU_SHADER_BINDING_TYPE_CBV)
+    else if (type == AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
     {
         for (size_t i = 0; i < uniformBuffers.size(); ++i)
         {

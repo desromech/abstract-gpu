@@ -6,13 +6,13 @@ _agpu_framebuffer::_agpu_framebuffer()
 	for(int i = 0; i < MaxRenderTargetCount; ++i)
 		colorBuffers[i] = nullptr;
 	depthStencil = nullptr;
-    dirtyCount = 0;
+    changed = true;
 }
 
 void _agpu_framebuffer::lostReferences()
 {
-    device->allContextDo([&](OpenGLContext *context) {
-        context->framebufferDeleted(this);
+    device->onMainContextBlocking([&] {
+        device->glDeleteFramebuffers(1, &handle);
     });
 
 	for(int i = 0; i < MaxRenderTargetCount; ++i)
@@ -34,7 +34,13 @@ agpu_framebuffer* _agpu_framebuffer::create(agpu_device* device, agpu_uint width
         return nullptr;
 
 	// Create the framebuffer object.
+    GLuint handle;
+    device->onMainContextBlocking([&] {
+        device->glGenFramebuffers(1, &handle);
+    });
+
 	auto framebuffer = new agpu_framebuffer();
+    framebuffer->handle = handle;
 	framebuffer->device = device;
 	framebuffer->width = width;
 	framebuffer->height = height;
@@ -59,7 +65,7 @@ agpu_error _agpu_framebuffer::attachColorBuffer( agpu_int index, agpu_texture_vi
     if(colorBuffers[index])
         colorBuffers[index]->release();
     colorBuffers[index] = buffer;
-    ++dirtyCount;
+    changed = true;
     return AGPU_OK;
 }
 
@@ -73,18 +79,12 @@ agpu_error _agpu_framebuffer::attachDepthStencilBuffer(agpu_texture_view_descrip
         depthStencil->release();
     buffer->retain();
     depthStencil = buffer;
-    ++dirtyCount;
+    changed = true;
     return AGPU_OK;
 }
 
 void _agpu_framebuffer::bind(GLenum target)
 {
-    // Get the FBO present in the current context.
-    auto context = OpenGLContext::getCurrent();
-    auto handleChangedPair = context->getFrameBufferObject(this, dirtyCount);
-    auto handle = handleChangedPair.first;
-    auto changed = handleChangedPair.second;
-
     device->glBindFramebuffer(target, handle);
     if(changed)
         updateAttachments(target);

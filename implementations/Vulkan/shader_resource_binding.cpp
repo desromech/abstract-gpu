@@ -92,7 +92,7 @@ _agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_device
 
 agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
 {
-    if (type != AGPU_SHADER_BINDING_TYPE_CBV)
+    if (type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
         return AGPU_INVALID_OPERATION;
 
     CHECK_POINTER(uniform_buffer);
@@ -105,7 +105,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, a
 agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
 {
     CHECK_POINTER(uniform_buffer);
-    if (type != AGPU_SHADER_BINDING_TYPE_CBV)
+    if (type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
         return AGPU_INVALID_OPERATION;
     if (uniform_buffer->description.binding != AGPU_UNIFORM_BUFFER)
         return AGPU_INVALID_PARAMETER;
@@ -135,7 +135,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
 {
     CHECK_POINTER(texture);
-    if (type != AGPU_SHADER_BINDING_TYPE_SRV)
+    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return AGPU_INVALID_OPERATION;
 
     if (location < 0 || location >= bindingPointCount)
@@ -174,7 +174,7 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
 agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
 {
     CHECK_POINTER(texture);
-    if (type != AGPU_SHADER_BINDING_TYPE_SRV)
+    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return AGPU_INVALID_OPERATION;
     if (location < 0 || location >= bindingPointCount)
         return AGPU_OUT_OF_BOUNDS;

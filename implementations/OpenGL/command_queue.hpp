@@ -27,21 +27,9 @@ public:
 
 
 public:
-    void start();
-    void shutdown();
-    void queueThreadEntry();
     void addCommand(GpuCommand *command);
 
-    bool isRunning_;
-    bool isShuttingDown_;
     agpu_device *device;
-
-    OpenGLContext *context;
-
-    std::mutex controlMutex;
-    std::condition_variable wakeCondition;
-    std::thread queueThread;
-    std::vector<GpuCommand*> queuedCommands;
 };
 
 

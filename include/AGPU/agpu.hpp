@@ -850,6 +850,16 @@ public:
 		AgpuThrowIfFailed(agpuReleaseRenderPass( this ));
 	}
 
+	inline void setDepthStencilClearValue ( agpu_depth_stencil_value value )
+	{
+		AgpuThrowIfFailed(agpuSetDepthStencilClearValue( this, value ));
+	}
+
+	inline void setColorClearValue ( agpu_uint attachment_index, agpu_color4f value )
+	{
+		AgpuThrowIfFailed(agpuSetColorClearValue( this, attachment_index, value ));
+	}
+
 };
 
 typedef agpu_ref<agpu_renderpass> agpu_renderpass_ref;

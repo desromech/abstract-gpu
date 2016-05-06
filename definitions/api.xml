@@ -144,6 +144,8 @@
             <field name="format" type="texture_format" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
+            <field name="stencil_begin_action" type="renderpass_attachment_action" />
+            <field name="stencil_end_action" type="renderpass_attachment_action" />
             <field name="clear_value" type="depth_stencil_value" />
         </struct>
 
@@ -285,9 +287,9 @@
 		</enum>
 
         <enum name="shader_binding_type" >
-            <constant name="ShaderBindingTypeSRV" value="0" />
-            <constant name="ShaderBindingTypeUAV" value="1" />
-            <constant name="ShaderBindingTypeCBV" value="2" />
+            <constant name="ShaderBindingTypeSampledImage" value="0" />
+            <constant name="ShaderBindingTypeStorageImage" value="1" />
+            <constant name="ShaderBindingTypeUniformBuffer" value="2" />
             <constant name="ShaderBindingTypeSampler" value="3" />
             <constant name="ShaderBindingTypeCount" value="4" />
         </enum>
@@ -1019,6 +1021,15 @@
             </method>
 
             <method name="release" cname="ReleaseRenderPass" returnType="error">
+            </method>
+
+            <method name="setDepthStencilClearValue" cname="SetDepthStencilClearValue" returnType="error">
+                <arg name="value" type="depth_stencil_value" />
+            </method>
+
+            <method name="setColorClearValue" cname="SetColorClearValue" returnType="error">
+                <arg name="attachment_index" type="uint" />
+                <arg name="value" type="color4f" />
             </method>
         </interface>
 

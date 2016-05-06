@@ -10,7 +10,7 @@
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
 OpenGLContext::OpenGLContext()
-    : device(nullptr), ownsWindow(false), window(0), hDC(0), context(0), resourceCleanCount(0), ownerWaitCondition(nullptr)
+    : device(nullptr), ownsWindow(false), window(0), hDC(0), context(0)
 {
 }
 
@@ -96,48 +96,6 @@ void OpenGLContext::destroy()
     wglMakeCurrent(wglGetCurrentDC(), 0);
     wglDeleteContext(context);
     context = 0;
-}
-
-OpenGLContext *agpu_device::createSecondaryContext(bool useMainWindow)
-{
-    std::unique_ptr<OpenGLContext> result(new OpenGLContext());
-    result->device = this;
-    result->window = mainContext->window;
-    result->hDC = mainContext->hDC;
-
-    auto version = (int)mainContext->version;
-    // Now create the actual context.
-    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-    int contextAttributes[] =
-    {
-        WGL_CONTEXT_MAJOR_VERSION_ARB, version / 10,
-        WGL_CONTEXT_MINOR_VERSION_ARB, version % 10,
-        //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-        0
-    };
-
-    // Create the new context
-    result->context = mainContext->wglCreateContextAttribsARB(result->hDC, mainContext->context, contextAttributes);
-    if (!result->context)
-    {
-        printError("Failed to create a secondary OpenGL context\n");
-        return nullptr;
-    }
-
-    // Set the current context.
-    if (useMainWindow && !result->makeCurrent())
-    {
-        printError("Failed to make current a secondary OpenGL context\n");
-        result->destroy();
-        return nullptr;
-    }
-
-    {
-        std::unique_lock<std::mutex> l(allContextMutex);
-        allContexts.push_back(result.get());
-    }
-
-    return result.release();
 }
 
 /*static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, std::vector<int> &visualInfo)
@@ -426,7 +384,6 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         contextWrapper->makeCurrent();
         device->mainContext = contextWrapper.release();
         device->mainContext->device = device.get();
-        device->allContexts.push_back(device->mainContext);
         device->initializeObjects();
     });
 
