@@ -10,6 +10,10 @@ if(VULKAN_FOUND)
   add_subdirectory(Vulkan)
 endif()
 
+if(OPENGL_FOUND)
+    add_subdirectory(OpenGL)
+endif()
+
 if(METAL_FOUND)
   add_subdirectory(Metal)
 endif()

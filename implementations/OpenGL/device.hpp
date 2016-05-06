@@ -106,9 +106,9 @@ public:
 
     void lostReferences();
 
-    static agpu_device *_agpu_device::open(agpu_device_open_info* openInfo);
+    static agpu_device *open(agpu_device_open_info* openInfo);
     static bool isExtensionSupported(const char *extList, const char *extension);
-    
+
     void setWindowPixelFormat(agpu_pointer window);
 
     void readVersionInformation();
@@ -116,7 +116,7 @@ public:
     void *getProcAddress(const char *symbolName);
     void initializeObjects();
     void createDefaultCommandQueue();
-    
+
     agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
 
     template<typename FT>

@@ -17,6 +17,19 @@
 #error unsupported platform
 #endif
 
+#ifdef HAS_XLIB
+#include <X11/Xlib.h>
+
+struct CallXInitThreads
+{
+    CallXInitThreads()
+    {
+        XInitThreads();
+    }
+} callXInitThreads;
+
+#endif
+
 /**
  * ICD loaded platform info.
  */

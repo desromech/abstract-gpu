@@ -1,3 +1,4 @@
+#define XLIB_ILLEGAL_ACCESS
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,8 +23,27 @@ static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
 
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
+class WithX11Display
+{
+public:
+    WithX11Display(Display *display)
+        : display(display)
+    {
+        XLockDisplay(display);
+    }
+
+    ~WithX11Display()
+    {
+        XUnlockDisplay(display);
+    }
+
+private:
+    Display *display;
+};
+
+
 OpenGLContext::OpenGLContext()
-    : device(nullptr), ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0), resourceCleanCount(0), ownerWaitCondition(nullptr)
+    : device(nullptr), ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0)
 {
 }
 
@@ -38,6 +58,7 @@ OpenGLContext *OpenGLContext::getCurrent()
 
 bool OpenGLContext::makeCurrentWithWindow(agpu_pointer window)
 {
+    WithX11Display wd(display);
     auto res = glXMakeCurrent(display, (Window)window, context) == True;
     if(res)
         currentGLContext = this;
@@ -46,6 +67,7 @@ bool OpenGLContext::makeCurrentWithWindow(agpu_pointer window)
 
 bool OpenGLContext::makeCurrent()
 {
+    WithX11Display wd(display);
     auto res = glXMakeCurrent(display, window, context) == True;
     if(res)
         currentGLContext = this;
@@ -54,12 +76,14 @@ bool OpenGLContext::makeCurrent()
 
 void OpenGLContext::swapBuffers()
 {
+    WithX11Display wd(display);
     glFlush();
     glXSwapBuffers(display, window);
 }
 
 void OpenGLContext::swapBuffersOfWindow(agpu_pointer window)
 {
+    WithX11Display wd(display);
     glFlush();
     glXSwapBuffers(display, (Window)window);
 }
@@ -81,60 +105,6 @@ void OpenGLContext::destroy()
 
     if(ownsDisplay)
         XCloseDisplay(display);
-}
-
-OpenGLContext *agpu_device::createSecondaryContext(bool useMainWindow)
-{
-    std::unique_lock<std::mutex> l(contextErrorMutex);
-    std::unique_ptr<OpenGLContext> result(new OpenGLContext());
-    result->device = this;
-    result->framebufferConfig = mainContext->framebufferConfig;
-    result->display = mainContext->display;
-    result->window = mainContext->window;
-
-    auto version = (int)mainContext->version;
-    int contextAttributes[] =
-    {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, version / 10,
-        GLX_CONTEXT_MINOR_VERSION_ARB, version % 10,
-        //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-        None
-    };
-
-    // Install an X error handler so the application won't exit if GL 3.0
-    // context allocation fails.
-    ctxErrorOccurred = false;
-    auto oldHandler = XSetErrorHandler(&ctxErrorHandler);
-
-    // Create the new context
-    result->context = mainContext->glXCreateContextAttribsARB( result->display, result->framebufferConfig, mainContext->context, True, contextAttributes );
-
-    // Sync to ensure any errors generated are processed.
-    XSync( result->display, False );
-
-    // Restore the original error handler
-    XSetErrorHandler( oldHandler );
-
-    if ( ctxErrorOccurred || !result->context )
-    {
-        fprintf( stderr, "Failed to create a secondary OpenGL context\n" );
-        return nullptr;
-    }
-
-    // Set the current context.
-    if(useMainWindow && !result->makeCurrent())
-    {
-        fprintf( stderr, "Failed to make current a secondary OpenGL context\n" );
-        result->destroy();
-        return nullptr;
-    }
-
-    {
-        std::unique_lock<std::mutex> l(allContextMutex);
-        allContexts.push_back(result.get());
-    }
-
-    return result.release();
 }
 
 /*static void deviceOpenInfoToVisualAttributes(agpu_device_open_info* openInfo, std::vector<int> &visualInfo)
@@ -261,17 +231,15 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     device->mainContextJobQueue.start();
     AsyncJob contextCreationJob([&] {
         std::unique_ptr<OpenGLContext> contextWrapper(new OpenGLContext());
-        contextWrapper->display = (Display*)openInfo->display;
+        const char *displayName = nullptr;
+        if(openInfo->display)
+            displayName = ((Display*)openInfo->display)->display_name;
+
+        contextWrapper->display = XOpenDisplay(displayName);
         if(!contextWrapper->display)
         {
-            contextWrapper->display = XOpenDisplay(NULL);
-            if(!contextWrapper->display)
-            {
-                failure = true;
-                return;
-            }
-
-            contextWrapper->ownsDisplay = true;
+            failure = true;
+            return;
         }
 
         // Create a simple context.
@@ -436,7 +404,6 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         // Initialize the device objects.
         device->mainContext = contextWrapper.release();
         device->mainContext->device = device.get();
-        device->allContexts.push_back(device->mainContext);
         device->initializeObjects();
 
     });

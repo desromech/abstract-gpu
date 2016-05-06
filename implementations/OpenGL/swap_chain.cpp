@@ -144,7 +144,6 @@ agpu_error _agpu_swap_chain::swapBuffers()
 {
     auto presentBuffer = getCurrentBackBuffer();
     device->onMainContextBlocking([this, presentBuffer](){
-        // Use the window.
         auto currentContext = OpenGLContext::getCurrent();
         auto res = currentContext->makeCurrentWithWindow(window);
         if(!res)
@@ -159,9 +158,6 @@ agpu_error _agpu_swap_chain::swapBuffers()
 
         // Swap the window buffers.
         currentContext->swapBuffersOfWindow(window);
-
-        // Restore the context window.
-        currentContext->makeCurrent();
     });
 
     if(doublebuffer)

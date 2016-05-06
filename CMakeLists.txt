@@ -55,6 +55,11 @@ endif()
 find_library(X11_LIBRARY NAMES X11)
 find_library(X11_XCB_LIBRARY NAMES X11-xcb)
 set(VULKAN_WSYS_LIBRARIES)
+set(LOADER_OS_LIBRARIES)
+if(X11_LIBRARY)
+    set(LOADER_OS_LIBRARIES ${X11_LIBRARY})
+endif()
+
 if(X11_LIBRARY AND X11_XCB_LIBRARY)
     set(VULKAN_WSYS_LIBRARIES ${X11_LIBRARY} ${X11_XCB_LIBRARY})
 endif()
@@ -81,6 +86,9 @@ set(LIBRARY_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
 #if(UNITTESTMM_FOUND)
 #    include_directories(${UNITTESTMM_INCLUDE_DIRS})
 #endif()
+
+# Find OpenGL
+find_package(OpenGL)
 
 # Find Direct3D 12
 find_path(D3D12_INCLUDE_DIRS
