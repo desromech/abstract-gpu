@@ -37,6 +37,76 @@ inline enum VkPrimitiveTopology mapTopology(agpu_primitive_topology topology)
     }
 }
 
+inline enum VkStencilOp mapStencilOperation(agpu_stencil_operation operation)
+{
+    switch(operation)
+    {
+    default:
+    case AGPU_KEEP: return VK_STENCIL_OP_KEEP;
+    case AGPU_ZERO: return VK_STENCIL_OP_ZERO;
+    case AGPU_REPLACE: return VK_STENCIL_OP_REPLACE;
+    case AGPU_INVERT: return VK_STENCIL_OP_INVERT;
+    case AGPU_INCREASE: return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+    case AGPU_INCREASE_WRAP: return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+    case AGPU_DECREASE: return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+    case AGPU_DECREASE_WRAP: return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+    }
+}
+
+inline enum VkCompareOp mapCompareFunction(agpu_compare_function function)
+{
+    switch (function)
+    {
+    default:
+    case AGPU_ALWAYS: return VK_COMPARE_OP_ALWAYS;
+	case AGPU_NEVER: return VK_COMPARE_OP_NEVER;
+	case AGPU_LESS: return VK_COMPARE_OP_LESS;
+	case AGPU_LESS_EQUAL: return VK_COMPARE_OP_LESS_OR_EQUAL;
+	case AGPU_EQUAL: return VK_COMPARE_OP_EQUAL;
+	case AGPU_NOT_EQUAL: return VK_COMPARE_OP_NOT_EQUAL;
+	case AGPU_GREATER: return VK_COMPARE_OP_GREATER;
+	case AGPU_GREATER_EQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+    }
+}
+
+inline enum VkBlendFactor mapBlendingFactor(agpu_blending_factor factor, bool color)
+{
+    switch(factor)
+    {
+    default:
+    case AGPU_BLENDING_ZERO: return VK_BLEND_FACTOR_ZERO;
+    case AGPU_BLENDING_ONE: return VK_BLEND_FACTOR_ONE;
+    case AGPU_BLENDING_SRC_COLOR: return VK_BLEND_FACTOR_SRC_COLOR;
+    case AGPU_BLENDING_INVERTED_SRC_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    case AGPU_BLENDING_SRC_ALPHA: return VK_BLEND_FACTOR_SRC_ALPHA;
+    case AGPU_BLENDING_INVERTED_SRC_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    case AGPU_BLENDING_DEST_ALPHA: return VK_BLEND_FACTOR_DST_ALPHA;
+    case AGPU_BLENDING_INVERTED_DEST_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+    case AGPU_BLENDING_DEST_COLOR: return VK_BLEND_FACTOR_DST_COLOR;
+    case AGPU_BLENDING_INVERTED_DEST_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+    case AGPU_BLENDING_SRC_ALPHA_SAT: return VK_BLEND_FACTOR_SRC_ALPHA;
+    case AGPU_BLENDING_CONSTANT_FACTOR: return color ? VK_BLEND_FACTOR_CONSTANT_COLOR : VK_BLEND_FACTOR_CONSTANT_ALPHA;
+    case AGPU_BLENDING_INVERTED_CONSTANT_FACTOR: return color ? VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR : VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    case AGPU_BLENDING_SRC_1COLOR: return VK_BLEND_FACTOR_SRC1_COLOR;
+    case AGPU_BLENDING_INVERTED_SRC_1COLOR: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+    case AGPU_BLENDING_SRC_1ALPHA: return VK_BLEND_FACTOR_SRC1_ALPHA;
+    case AGPU_BLENDING_INVERTED_SRC_1ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+    }
+}
+
+inline enum VkBlendOp mapBlendingOperation(agpu_blending_operation operation)
+{
+    switch(operation)
+    {
+    default:
+    case AGPU_BLENDING_OPERATION_ADD: return VK_BLEND_OP_ADD;
+    case AGPU_BLENDING_OPERATION_SUBTRACT: return VK_BLEND_OP_SUBTRACT;
+    case AGPU_BLENDING_OPERATION_REVERSE_SUBTRACT: return VK_BLEND_OP_REVERSE_SUBTRACT;
+    case AGPU_BLENDING_OPERATION_MIN: return VK_BLEND_OP_MIN;
+    case AGPU_BLENDING_OPERATION_MAX: return VK_BLEND_OP_MAX;
+    }
+}
+
 _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     : device(device)
 {
@@ -97,7 +167,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
         state.blendEnable = VK_FALSE;
         colorBlendAttachmentState.resize(1, state);
     }
-    
+
 
     // Set dynamic states.
     dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -269,37 +339,101 @@ agpu_error _agpu_pipeline_builder::getPipelineBuildingLog(agpu_size buffer_size,
 
 agpu_error _agpu_pipeline_builder::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
 {
-    return AGPU_UNIMPLEMENTED;
+    for(size_t i = 0; i < colorBlendAttachmentState.size(); ++i)
+    {
+        if((renderTargetMask & (1 << i)) == 0)
+            continue;
+
+        auto &state = colorBlendAttachmentState[i];
+        state.blendEnable = enabled ? VK_TRUE : VK_FALSE;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
 {
-    return AGPU_UNIMPLEMENTED;
+    auto vkSourceFactor = mapBlendingFactor(sourceFactor, true);
+    auto vkDestFactor = mapBlendingFactor(destFactor, true);
+    auto vkColorOperation = mapBlendingOperation(colorOperation);
+    auto vkSourceAlphaFactor = mapBlendingFactor(sourceAlphaFactor, false);
+    auto vkDestAlphaFactor = mapBlendingFactor(destAlphaFactor, false);
+    auto vkAlphaOperation = mapBlendingOperation(alphaOperation);
+    for(size_t i = 0; i < colorBlendAttachmentState.size(); ++i)
+    {
+        if((renderTargetMask & (1 << i)) == 0)
+            continue;
+
+        auto &state = colorBlendAttachmentState[i];
+        state.srcColorBlendFactor = vkSourceFactor;
+        state.dstColorBlendFactor = vkDestFactor;
+        state.colorBlendOp = vkColorOperation;
+        state.srcAlphaBlendFactor = vkSourceAlphaFactor;
+        state.dstAlphaBlendFactor = vkDestAlphaFactor;
+        state.alphaBlendOp = vkAlphaOperation;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
 {
-    return AGPU_UNIMPLEMENTED;
+    int colorMask = 0;
+    if(redEnabled)
+        colorMask |= VK_COLOR_COMPONENT_R_BIT;
+    if(greenEnabled)
+        colorMask |= VK_COLOR_COMPONENT_G_BIT;
+    if(blueEnabled)
+        colorMask |= VK_COLOR_COMPONENT_B_BIT;
+    if(alphaEnabled)
+        colorMask |= VK_COLOR_COMPONENT_A_BIT;
+
+    for(size_t i = 0; i < colorBlendAttachmentState.size(); ++i)
+    {
+        if((renderTargetMask & (1 << i)) == 0)
+            continue;
+
+        auto &state = colorBlendAttachmentState[i];
+        state.colorWriteMask = colorMask;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
-    return AGPU_UNIMPLEMENTED;
+    depthStencilState.depthTestEnable = enabled ? VK_TRUE : VK_FALSE;
+    depthStencilState.depthWriteEnable = writeMask ? VK_TRUE : VK_FALSE;
+    depthStencilState.depthCompareOp = mapCompareFunction(function);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
 {
-    return AGPU_UNIMPLEMENTED;
+    depthStencilState.stencilTestEnable = enabled ? VK_TRUE : VK_FALSE;
+    depthStencilState.front.writeMask = writeMask;
+    depthStencilState.front.compareMask = readMask;
+    depthStencilState.back.writeMask = writeMask;
+    depthStencilState.back.compareMask = readMask;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 {
-    return AGPU_UNIMPLEMENTED;
+    depthStencilState.front.failOp = mapStencilOperation(stencilFailOperation);
+    depthStencilState.front.depthFailOp = mapStencilOperation(depthFailOperation);
+    depthStencilState.front.passOp = mapStencilOperation(stencilDepthPassOperation);
+    depthStencilState.front.compareOp = mapCompareFunction(stencilFunction);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 {
-    return AGPU_UNIMPLEMENTED;
+    depthStencilState.back.failOp = mapStencilOperation(stencilFailOperation);
+    depthStencilState.back.depthFailOp = mapStencilOperation(depthFailOperation);
+    depthStencilState.back.passOp = mapStencilOperation(stencilDepthPassOperation);
+    depthStencilState.back.compareOp = mapCompareFunction(stencilFunction);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
@@ -405,7 +539,8 @@ agpu_error _agpu_pipeline_builder::setPipelineShaderSignature(agpu_shader_signat
 
 agpu_error _agpu_pipeline_builder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
 {
-    return AGPU_UNIMPLEMENTED;
+    multisampleState.rasterizationSamples = VkSampleCountFlagBits(1<<(sample_count-1));
+    return AGPU_OK;
 }
 
 // The exported C interface
