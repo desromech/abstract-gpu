@@ -54,7 +54,10 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
 
     auto error = vkCreateWin32SurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, &surface);
 #elif defined(__unix__)
-    if (!createInfo->window || !device->displayHandle)
+    if(!device->displayHandle)
+        device->displayHandle = XOpenDisplay(nullptr);
+
+    if (!createInfo->window)
         return nullptr;
 
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;

@@ -24,6 +24,7 @@ inline enum VkAttachmentStoreOp mapStoreOp(agpu_renderpass_attachment_action act
 }
 
 _agpu_renderpass::_agpu_renderpass(agpu_device *device)
+    : device(device)
 {
     handle = VK_NULL_HANDLE;
 }
@@ -41,7 +42,7 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
 
     // Attachments
     auto colorCount = description->color_attachment_count;
-    
+
     bool hasDepthStencil = description->depth_stencil_attachment != nullptr;
     std::vector<VkAttachmentDescription> attachments(colorCount + (hasDepthStencil ? 1 : 0));
     std::vector<VkClearValue> clearValues;
@@ -50,7 +51,7 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
     {
         auto desc = description->color_attachments[i];
         auto &attachment = attachments[i];
-        
+
         attachment.format = mapTextureFormat(desc.format);
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         attachment.loadOp = mapLoadOp(desc.begin_action);
