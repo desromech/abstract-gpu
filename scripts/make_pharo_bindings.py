@@ -228,7 +228,7 @@ class MakePharoBindingsVisitor:
             name = arg.name
             if name == 'self': name = 'selfObject'
             argTypeString = arg.type
-            if arg.arrayReturn and argTypeString.endswith('**'):
+            if (arg.arrayReturn or arg.pointerList) and argTypeString.endswith('**'):
                 argTypeString = argTypeString[:-1]
             self.printString("$TypePrefix$ArgType $ArgName", ArgType = argTypeString, ArgName = name)
 

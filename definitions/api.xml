@@ -963,7 +963,7 @@
 
             <method name="bindVertexBuffers" cname="BindVertexBuffers" returnType="error">
                 <arg name="count" type="uint" />
-                <arg name="vertex_buffers" type="buffer**" />
+                <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
             </method>
         </interface>
 

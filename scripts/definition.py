@@ -64,12 +64,14 @@ class SelfArgument:
         self.name = clazz.name
         self.type = clazz.name + '*'
         self.arrayReturn = False
+        self.pointerList = False
 
 class Argument:
     def __init__(self, xmlNode):
         self.name = xmlNode.get('name')
         self.type = xmlNode.get('type')
         self.arrayReturn = getOptionalAttribute(xmlNode, 'arrayReturn', 'false') != 'false'
+        self.pointerList = getOptionalAttribute(xmlNode, 'pointerList', 'false') != 'false'
 
 class Function:
     def __init__(self, xmlNode, clazz = None):
