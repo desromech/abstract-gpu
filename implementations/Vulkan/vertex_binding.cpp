@@ -26,17 +26,25 @@ agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer*
             return AGPU_INVALID_PARAMETER;
     }
 
-    this->vertexBuffers.reserve(count);
-    this->vulkanBuffers.reserve(count);
-    this->offsets.reserve(count);
+    for (size_t i = 0; i < count; ++i)
+        vertex_buffers[i]->retain();
+    for(auto buffer : vertexBuffers)
+    {
+        if(buffer)
+            buffer->release();
+    }
+
+    this->vertexBuffers.resize(count);
+    this->vulkanBuffers.resize(count);
+    this->offsets.resize(count);
 
     for (size_t i = 0; i < count; ++i)
     {
         auto buffer = vertex_buffers[i];
         buffer->retain();
-        vertexBuffers.push_back(buffer);
-        vulkanBuffers.push_back(buffer->getDrawBuffer());
-        offsets.push_back(0);
+        vertexBuffers[i] = buffer;
+        vulkanBuffers[i] = buffer->getDrawBuffer();
+        offsets[i] = 0;
     }
 
     return AGPU_OK;

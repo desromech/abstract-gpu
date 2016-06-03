@@ -304,6 +304,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     }
 
     physicalDevice = physicalDevices[gpuIndex];
+    vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
     //printMessage("Vulkan physical device: %s [%08x:%08x %d]\n", deviceProperties.deviceName, deviceProperties.vendorID, deviceProperties.deviceID, deviceProperties.deviceType);

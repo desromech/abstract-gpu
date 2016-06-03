@@ -127,6 +127,8 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
 
         // TODO: Perform reverse mapping of the format.
         actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+        if(createInfo->colorbuffer_format == AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB)
+            actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
     }
     swapChain->agpuFormat = actualFormat;
     swapChain->colorSpace = surfaceFormats[0].colorSpace;

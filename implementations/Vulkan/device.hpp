@@ -48,6 +48,7 @@ public:
     VkInstance vulkanInstance;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
+    VkPhysicalDeviceFeatures deviceFeatures;
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceMemoryProperties memoryProperties;
     void *displayHandle;
