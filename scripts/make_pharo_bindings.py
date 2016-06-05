@@ -334,10 +334,10 @@ class MakePharoBindingsVisitor:
         self.newline()
 
         # Temporal variable for the return value
-        self.printLine("\t| result |")
+        self.printLine("\t| resultValue_ |")
 
         # Call the c bindings.
-        self.printString("\tresult := AGPUCBindings uniqueInstance $MethodName", MethodName = method.name)
+        self.printString("\tresultValue_ := AGPUCBindings uniqueInstance $MethodName", MethodName = method.name)
         first = True
         for arg in allArguments:
             name = arg.name
@@ -358,11 +358,11 @@ class MakePharoBindingsVisitor:
         self.printLine('.')
 
         if method.returnType in self.interfaceTypeMap:
-            self.printLine('\t^ $InterfaceWrapper forHandle: result', InterfaceWrapper=self.interfaceTypeMap[method.returnType])
+            self.printLine('\t^ $InterfaceWrapper forHandle: resultValue_', InterfaceWrapper=self.interfaceTypeMap[method.returnType])
         elif method.returnType == 'error':
-            self.printLine('\tself checkErrorCode: result')
+            self.printLine('\tself checkErrorCode: resultValue_')
         else:
-            self.printLine('\t^ result')
+            self.printLine('\t^ resultValue_')
 
         self.endMethod()
 
