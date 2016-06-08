@@ -352,6 +352,7 @@ agpu_error _agpu_swap_chain::swapBuffers()
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
         // TODO: Recreate the swap chain.
+        printf("TODO: Out of date swap chain\n");
         return AGPU_OK;
     }
     else if (error == VK_SUBOPTIMAL_KHR)

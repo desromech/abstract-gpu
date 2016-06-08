@@ -16,7 +16,6 @@ inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
 _agpu_shader_signature_builder::_agpu_shader_signature_builder(agpu_device *device)
     : device(device)
 {
-    memset(maxBindingsCount, 0, sizeof(maxBindingsCount));
 }
 
 void _agpu_shader_signature_builder::lostReferences()
@@ -65,18 +64,25 @@ agpu_error _agpu_shader_signature_builder::addBindingElement(agpu_shader_binding
 
 agpu_error _agpu_shader_signature_builder::addBindingBank(agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings)
 {
-    VkDescriptorSetLayoutBinding binding;
-    memset(&binding, 0, sizeof(binding));
-    binding.binding = 0;
-    binding.descriptorType = mapDescriptorType(type);
-    binding.descriptorCount = bindingPointCount;
-    binding.stageFlags = VK_SHADER_STAGE_ALL;
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    auto descriptorType = mapDescriptorType(type);
+    for(uint i = 0; i < bindingPointCount; ++i)
+    {
+        VkDescriptorSetLayoutBinding binding;
+        memset(&binding, 0, sizeof(binding));
+        binding.binding = i;
+        binding.descriptorType = descriptorType;
+        binding.descriptorCount = 1;
+        binding.stageFlags = VK_SHADER_STAGE_ALL;
+        bindings.push_back(binding);
+    }
 
     VkDescriptorSetLayoutCreateInfo setLayoutInfo;
     memset(&setLayoutInfo, 0, sizeof(setLayoutInfo));
     setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    setLayoutInfo.bindingCount = 1;
-    setLayoutInfo.pBindings = &binding;
+    setLayoutInfo.bindingCount = bindings.size();
+    printf("Descriptor set layout: %d\n", (int)bindings.size());
+    setLayoutInfo.pBindings = &bindings[0];
 
     VkDescriptorSetLayout setLayout;
     auto error = vkCreateDescriptorSetLayout(device->device, &setLayoutInfo, nullptr, &setLayout);
@@ -84,8 +90,7 @@ agpu_error _agpu_shader_signature_builder::addBindingBank(agpu_shader_binding_ty
 
     descriptorSets.push_back(setLayout);
 
-    elementDescription.push_back(ShaderSignatureElementDescription(true, type, binding.descriptorType, bindingPointCount, maxBindings));
-    maxBindingsCount[type] += bindingPointCount*maxBindings;
+    elementDescription.push_back(ShaderSignatureElementDescription(true, type, descriptorType, bindingPointCount, maxBindings));
 
     return AGPU_OK;
 }

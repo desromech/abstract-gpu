@@ -153,8 +153,6 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     // Default depth stencil state.
     memset(&depthStencilState, 0, sizeof(depthStencilState));
     depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilState.minDepthBounds = 0.0f;
-    depthStencilState.maxDepthBounds = 1.0f;
 
     // Default color blend state.
     memset(&colorBlendState, 0, sizeof(colorBlendState));
