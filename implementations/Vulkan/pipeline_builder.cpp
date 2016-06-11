@@ -107,6 +107,27 @@ inline enum VkBlendOp mapBlendingOperation(agpu_blending_operation operation)
     }
 }
 
+inline enum VkFrontFace mapFaceWinding(agpu_face_winding winding)
+{
+    switch(winding)
+    {
+    default:
+    case AGPU_COUNTER_CLOCKWISE: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    case AGPU_CLOCKWISE: return VK_FRONT_FACE_CLOCKWISE;
+    }
+}
+
+inline enum VkCullModeFlagBits mapCullMode(agpu_cull_mode mode)
+{
+    switch(mode)
+    {
+    default:
+    case AGPU_CULL_MODE_NONE: return VK_CULL_MODE_NONE;
+    case AGPU_CULL_MODE_FRONT: return VK_CULL_MODE_FRONT_BIT;
+    case AGPU_CULL_MODE_BACK: return VK_CULL_MODE_BACK_BIT;
+    case AGPU_CULL_MODE_FRONT_AND_BACK: return VK_CULL_MODE_FRONT_AND_BACK;
+    }
+}
 _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     : device(device)
 {
@@ -398,6 +419,18 @@ agpu_error _agpu_pipeline_builder::setColorMask(agpu_int renderTargetMask, agpu_
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
+{
+    rasterizationState.frontFace = mapFaceWinding(winding);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
+{
+    rasterizationState.cullMode = mapCullMode(mode);
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     depthStencilState.depthTestEnable = enabled ? VK_TRUE : VK_FALSE;
@@ -662,4 +695,16 @@ AGPU_EXPORT agpu_error agpuSetSampleDescription(agpu_pipeline_builder* pipeline_
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setSampleDescription(sample_count, sample_quality);
+}
+
+AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setFrontFace(winding);
+}
+
+AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setCullMode(mode);
 }

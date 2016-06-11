@@ -31,6 +31,7 @@ public:
     VkColorSpaceKHR colorSpace;
 
     VkSwapchainKHR handle;
+    std::vector<VkSemaphore> semaphores;
     std::vector<agpu_framebuffer*> framebuffers;
 
     uint32_t currentBackBufferIndex;

@@ -375,6 +375,18 @@ typedef enum {
 	AGPU_COMPONENT_SWIZZLE_A = 6,
 } agpu_component_swizzle;
 
+typedef enum {
+	AGPU_COUNTER_CLOCKWISE = 0,
+	AGPU_CLOCKWISE = 1,
+} agpu_face_winding;
+
+typedef enum {
+	AGPU_CULL_MODE_NONE = 0,
+	AGPU_CULL_MODE_FRONT = 1,
+	AGPU_CULL_MODE_BACK = 2,
+	AGPU_CULL_MODE_FRONT_AND_BACK = 3,
+} agpu_cull_mode;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -606,6 +618,8 @@ typedef agpu_error (*agpuGetPipelineBuildingLog_FUN) ( agpu_pipeline_builder* pi
 typedef agpu_error (*agpuSetBlendState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
 typedef agpu_error (*agpuSetBlendFunction_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation );
 typedef agpu_error (*agpuSetColorMask_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
+typedef agpu_error (*agpuSetFrontFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding );
+typedef agpu_error (*agpuSetCullMode_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode );
 typedef agpu_error (*agpuSetDepthState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 typedef agpu_error (*agpuSetStencilState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
 typedef agpu_error (*agpuSetStencilFrontFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
@@ -627,6 +641,8 @@ AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipel
 AGPU_EXPORT agpu_error agpuSetBlendState ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
 AGPU_EXPORT agpu_error agpuSetBlendFunction ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation );
 AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
+AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding );
+AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode );
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
 AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
 AGPU_EXPORT agpu_error agpuSetStencilFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
@@ -900,6 +916,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetBlendState_FUN agpuSetBlendState;
 	agpuSetBlendFunction_FUN agpuSetBlendFunction;
 	agpuSetColorMask_FUN agpuSetColorMask;
+	agpuSetFrontFace_FUN agpuSetFrontFace;
+	agpuSetCullMode_FUN agpuSetCullMode;
 	agpuSetDepthState_FUN agpuSetDepthState;
 	agpuSetStencilState_FUN agpuSetStencilState;
 	agpuSetStencilFrontFace_FUN agpuSetStencilFrontFace;

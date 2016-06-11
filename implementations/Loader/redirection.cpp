@@ -321,6 +321,22 @@ AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builde
 	return (*dispatchTable)->agpuSetColorMask ( pipeline_builder, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled );
 }
 
+AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetFrontFace ( pipeline_builder, winding );
+}
+
+AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetCullMode ( pipeline_builder, mode );
+}
+
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
 	if (pipeline_builder == nullptr)

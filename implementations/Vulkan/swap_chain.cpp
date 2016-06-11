@@ -31,6 +31,13 @@ void _agpu_swap_chain::lostReferences()
         if(fb)
             fb->release();
     }
+
+    for(auto semaphore : semaphores)
+    {
+        if(semaphore)
+            vkDestroySemaphore(device->device, semaphore, nullptr);
+    }
+
     if (handle)
         vkDestroySwapchainKHR(device->device, handle, nullptr);
     if(surface)
@@ -267,6 +274,18 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     if (!hasDepth && !hasStencil)
         depthStencilViewPointer = nullptr;
 
+    // Create the semaphores
+    VkSemaphoreCreateInfo semaphoreInfo;
+    memset(&semaphoreInfo, 0, sizeof(semaphoreInfo));
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphores.resize(imageCount, VK_NULL_HANDLE);
+    for (size_t i = 0; i < imageCount; ++i)
+    {
+        error = vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphores[i]);
+        if(error)
+            return false;
+    }
+
     VkClearColorValue clearColor;
     memset(&clearColor, 0, sizeof(clearColor));
     framebuffers.resize(imageCount);
@@ -339,14 +358,25 @@ bool _agpu_swap_chain::getNextBackBufferIndex()
 
 agpu_error _agpu_swap_chain::swapBuffers()
 {
-    // TODO: Present.
+    // Signal the presentation semaphore.
+    {
+        VkSubmitInfo submitInfo;
+        memset(&submitInfo, 0, sizeof(submitInfo));
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &semaphores[currentBackBufferIndex];
+        vkQueueSubmit(graphicsQueue->queue, 1, &submitInfo, VK_NULL_HANDLE);
+    }
+
+    // Present.
     VkPresentInfoKHR presentInfo;
     memset(&presentInfo, 0, sizeof(presentInfo));
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &handle;
     presentInfo.pImageIndices = &currentBackBufferIndex;
-
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &semaphores[currentBackBufferIndex];
     auto error = device->fpQueuePresentKHR(presentationQueue->queue, &presentInfo);
 
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
@@ -357,6 +387,7 @@ agpu_error _agpu_swap_chain::swapBuffers()
     }
     else if (error == VK_SUBOPTIMAL_KHR)
     {
+        printf("khronos suboptimal\n");
     }
     else if (error)
     {

@@ -349,6 +349,16 @@ public:
 		AgpuThrowIfFailed(agpuSetColorMask( this, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled ));
 	}
 
+	inline void setFrontFace ( agpu_face_winding winding )
+	{
+		AgpuThrowIfFailed(agpuSetFrontFace( this, winding ));
+	}
+
+	inline void setCullMode ( agpu_cull_mode mode )
+	{
+		AgpuThrowIfFailed(agpuSetCullMode( this, mode ));
+	}
+
 	inline void setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 	{
 		AgpuThrowIfFailed(agpuSetDepthState( this, enabled, writeMask, function ));

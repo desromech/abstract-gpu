@@ -490,6 +490,18 @@
             <constant name="ComponentSwizzleB" value="5" />
             <constant name="ComponentSwizzleA" value="6" />
         </enum>
+
+        <enum name="face_winding">
+            <constant name="CounterClockwise" value="0" />
+            <constant name="Clockwise" value="1" />
+        </enum>
+
+        <enum name="cull_mode">
+            <constant name="CullModeNone" value="0" />
+            <constant name="CullModeFront" value="1" />
+            <constant name="CullModeBack" value="2" />
+            <constant name="CullModeFrontAndBack" value="3" />
+        </enum>
     </constants>
 
     <globals>
@@ -664,6 +676,14 @@
                 <arg name="greenEnabled" type="bool" />
                 <arg name="blueEnabled" type="bool" />
                 <arg name="alphaEnabled" type="bool" />
+            </method>
+
+            <method name="setFrontFace" cname="SetFrontFace" returnType="error">
+                <arg name="winding" type="face_winding" />
+            </method>
+
+            <method name="setCullMode" cname="SetCullMode" returnType="error">
+                <arg name="mode" type="cull_mode" />
             </method>
 
             <method name="setDepthState" cname="SetDepthState" returnType="error">
