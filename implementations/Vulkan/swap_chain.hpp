@@ -34,7 +34,9 @@ public:
     std::vector<VkSemaphore> semaphores;
     std::vector<agpu_framebuffer*> framebuffers;
 
+    uint32_t imageCount;
     uint32_t currentBackBufferIndex;
+    uint32_t currentSemaphoreIndex;
 private:
     bool getNextBackBufferIndex();
 };

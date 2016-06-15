@@ -424,6 +424,47 @@
             <constant name="TextureFormatB8G8R8A8_UNormSRGB" value="91" />
             <constant name="TextureFormatB8G8R8X8_Typeless" value="92" />
             <constant name="TextureFormatB8G8R8X8_UNormSRGB" value="93" />
+
+            <!-- Extra formats that are not being exposed by D3D12 -->
+            <constant name="TextureFormatETC2_R8G8B8_UNorm" value="200" />
+            <constant name="TextureFormatETC2_R8G8B8_UNormSRGB" value="201" />
+            <constant name="TextureFormatETC2_R8G8B8A1_UNorm" value="202" />
+            <constant name="TextureFormatETC2_R8G8B8A1_UNormSRGB" value="203" />
+            <constant name="TextureFormatETC2_R8G8B8A8_UNorm" value="204" />
+            <constant name="TextureFormatETC2_R8G8B8A8_UNormSRGB" value="205" />
+            <constant name="TextureFormatEAC_R11_UNorm" value="206" />
+            <constant name="TextureFormatEAC_R11_SNorm" value="207" />
+            <constant name="TextureFormatEAC_R11G11_UNorm" value="208" />
+            <constant name="TextureFormatEAC_R11G11_SNorm" value="209" />
+
+            <constant name="TextureFormatASTC4X4_UNorm" value="230" />
+            <constant name="TextureFormatASTC4X4_UNormSRGB" value="231" />
+            <constant name="TextureFormatASTC5X4_UNorm" value="232" />
+            <constant name="TextureFormatASTC5X4_UNormSRGB" value="233" />
+            <constant name="TextureFormatASTC5X5_UNorm" value="234" />
+            <constant name="TextureFormatASTC5X5_UNormSRGB" value="235" />
+            <constant name="TextureFormatASTC6X5_UNorm" value="236" />
+            <constant name="TextureFormatASTC6X5_UNormSRGB" value="237" />
+            <constant name="TextureFormatASTC6X6_UNorm" value="238" />
+            <constant name="TextureFormatASTC6X6_UNormSRGB" value="239" />
+            <constant name="TextureFormatASTC8X5_UNorm" value="240" />
+            <constant name="TextureFormatASTC8X5_UNormSRGB" value="241" />
+            <constant name="TextureFormatASTC8X6_UNorm" value="242" />
+            <constant name="TextureFormatASTC8X6_UNormSRGB" value="243" />
+            <constant name="TextureFormatASTC8X8_UNorm" value="244" />
+            <constant name="TextureFormatASTC8X8_UNormSRGB" value="245" />
+            <constant name="TextureFormatASTC10X5_UNorm" value="246" />
+            <constant name="TextureFormatASTC10X5_UNormSRGB" value="247" />
+            <constant name="TextureFormatASTC10X6_UNorm" value="248" />
+            <constant name="TextureFormatASTC10X6_UNormSRGB" value="249" />
+            <constant name="TextureFormatASTC10X8_UNorm" value="250" />
+            <constant name="TextureFormatASTC10X8_UNormSRGB" value="251" />
+            <constant name="TextureFormatASTC10X10_UNorm" value="252" />
+            <constant name="TextureFormatASTC10X10_UNormSRGB" value="253" />
+            <constant name="TextureFormatASTC12X10_UNorm" value="254" />
+            <constant name="TextureFormatASTC12X10_UNormSRGB" value="255" />
+            <constant name="TextureFormatASTC12X12_UNorm" value="256" />
+            <constant name="TextureFormatASTC12X12_UNormSRGB" value="257" />
         </enum>
 
         <enum name="filter">

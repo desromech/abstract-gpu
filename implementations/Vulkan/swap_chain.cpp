@@ -185,13 +185,9 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
 
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     for (size_t i = 0; i < presentModeCount; i++) {
-        if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        if (presentModes[i] == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
+            swapchainPresentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
             break;
-        }
-        if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) &&
-            (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)) {
-            swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
         }
     }
 
@@ -199,7 +195,6 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     if ((surfaceCapabilities.maxImageCount > 0) &&
         (desiredNumberOfSwapchainImages > surfaceCapabilities.maxImageCount))
         desiredNumberOfSwapchainImages = surfaceCapabilities.maxImageCount;
-
     VkSurfaceTransformFlagsKHR preTransform;
     if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
         preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -228,7 +223,6 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     if (error)
         return false;
 
-    uint32_t imageCount;
     error = device->fpGetSwapchainImagesKHR(device->device, handle, &imageCount, nullptr);
     if (error)
         return false;
@@ -279,6 +273,7 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     memset(&semaphoreInfo, 0, sizeof(semaphoreInfo));
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphores.resize(imageCount, VK_NULL_HANDLE);
+    currentSemaphoreIndex = 0;
     for (size_t i = 0; i < imageCount; ++i)
     {
         error = vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphores[i]);
@@ -339,10 +334,13 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
 
 bool _agpu_swap_chain::getNextBackBufferIndex()
 {
-    auto error = device->fpAcquireNextImageKHR(device->device, handle, UINT64_MAX, VK_NULL_HANDLE, VK_NULL_HANDLE, &currentBackBufferIndex);
+    auto semaphore = semaphores[currentSemaphoreIndex];
+    currentSemaphoreIndex = (currentSemaphoreIndex + 1) % semaphores.size();
+    auto error = device->fpAcquireNextImageKHR(device->device, handle, UINT64_MAX, semaphore, VK_NULL_HANDLE, &currentBackBufferIndex);
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
         // TODO: Recreate the swap chain.
+        printf("Swap chain is out of date\n");
         return true;
     }
     else if (error == VK_SUBOPTIMAL_KHR)
@@ -353,21 +351,24 @@ bool _agpu_swap_chain::getNextBackBufferIndex()
         return false;
     }
 
+    {
+        VkSubmitInfo submit;
+        memset(&submit, 0, sizeof(submit));
+        submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit.waitSemaphoreCount = 1;
+        submit.pWaitSemaphores = &semaphore;
+
+        VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        submit.pWaitDstStageMask = &waitDstStageMask;
+
+        vkQueueSubmit(graphicsQueue->queue, 1, &submit, VK_NULL_HANDLE);
+    }
+
     return true;
 }
 
 agpu_error _agpu_swap_chain::swapBuffers()
 {
-    // Signal the presentation semaphore.
-    {
-        VkSubmitInfo submitInfo;
-        memset(&submitInfo, 0, sizeof(submitInfo));
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &semaphores[currentBackBufferIndex];
-        vkQueueSubmit(graphicsQueue->queue, 1, &submitInfo, VK_NULL_HANDLE);
-    }
-
     // Present.
     VkPresentInfoKHR presentInfo;
     memset(&presentInfo, 0, sizeof(presentInfo));
@@ -375,8 +376,6 @@ agpu_error _agpu_swap_chain::swapBuffers()
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &handle;
     presentInfo.pImageIndices = &currentBackBufferIndex;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &semaphores[currentBackBufferIndex];
     auto error = device->fpQueuePresentKHR(presentationQueue->queue, &presentInfo);
 
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
@@ -396,7 +395,6 @@ agpu_error _agpu_swap_chain::swapBuffers()
 
     if (!getNextBackBufferIndex())
         return AGPU_ERROR;
-
     return AGPU_OK;
 }
 
