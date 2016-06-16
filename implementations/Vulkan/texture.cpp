@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "texture.hpp"
 #include "texture_format.hpp"
 #include "buffer.hpp"
@@ -182,8 +183,10 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         {
             VkClearColorValue clearValue;
             memset(&clearValue, 0, sizeof(clearValue));
-            success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
-            //success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
+            if(!isCompressedTextureFormat(description->format))
+                success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+            else
+                success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
         }
 
         if (!success)
@@ -209,12 +212,12 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         subresource.mipLevel = 0;
         vkGetImageSubresourceLayout(device->device, image, &subresource, &transferLayout);
-        
+
         agpu_buffer_description bufferDesc;
         memset(&bufferDesc, 0, sizeof(bufferDesc));
         bufferDesc.binding = AGPU_GENERIC_DATA_BUFFER;
         bufferDesc.usage = AGPU_STREAM;
-        bufferDesc.stride = pixelSizeOfTextureFormat(description->format);
+        bufferDesc.stride = 1;
         bufferDesc.size = transferLayout.size;
 
         // Create the upload buffer
@@ -401,7 +404,7 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     auto bufferPointer = uploadBuffer->map(AGPU_WRITE_ONLY);
     if (!bufferPointer)
         return AGPU_ERROR;
-    
+
     VkImageSubresource subresource;
     subresource.arrayLayer = arrayIndex;
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -412,8 +415,18 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     VkSubresourceLayout layout;
     vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
     if (layout.rowPitch == 0)
-        layout.rowPitch = extent.width*pixelSizeOfTextureFormat(description.format);
-    
+    {
+        if(isCompressedTextureFormat(description.format))
+        {
+            printf("TODO: Compute properly the compressed texture row pitch and slice pitch\n");
+            layout.rowPitch = std::max(size_t(1), size_t((extent.width + 3) / 4)) * blockSizeOfCompressedTextureFormat(description.format);
+        }
+        else
+        {
+            layout.rowPitch = extent.width*pixelSizeOfTextureFormat(description.format);
+        }
+    }
+
     if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
     {
         memcpy(bufferPointer, data, slicePitch);
@@ -434,8 +447,11 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
 
     VkBufferImageCopy copy;
     memset(&copy, 0, sizeof(copy));
-    copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
-    copy.bufferImageHeight = extent.height;
+    if(!isCompressedTextureFormat(description.format))
+    {
+        copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
+        copy.bufferImageHeight = extent.height;
+    }
     copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
