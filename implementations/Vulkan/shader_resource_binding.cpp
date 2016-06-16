@@ -147,7 +147,9 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
         return myError;
 
     viewDesc.subresource_range.base_miplevel = startMiplevel;
-    viewDesc.subresource_range.level_count = miplevels;
+    if(miplevels >= 0)
+        viewDesc.subresource_range.level_count = miplevels;
+
     auto view = agpu_texture::createImageView(device, &viewDesc);
     if (!view)
         return AGPU_ERROR;

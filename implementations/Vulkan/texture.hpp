@@ -31,7 +31,6 @@ struct _agpu_texture : public Object<_agpu_texture>
     agpu_buffer *uploadBuffer;
     agpu_buffer *readbackBuffer;
 
-
     VkExtent3D getLevelExtent(int level)
     {
         VkExtent3D extent;
@@ -49,6 +48,7 @@ struct _agpu_texture : public Object<_agpu_texture>
         return extent;
     }
 
+    void computeBufferImageTransferLayout(int level, VkSubresourceLayout *layout, VkBufferImageCopy *copy);
 };
 
 #endif //AGPU_TEXTURE_HPP

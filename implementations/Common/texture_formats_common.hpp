@@ -246,4 +246,43 @@ inline size_t blockSizeOfCompressedTextureFormat(agpu_texture_format format)
         abort(); // Not yet supported.
     }
 }
+
+inline size_t blockWidthOfCompressedTextureFormat(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_BC1_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC1_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC1_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC2_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC2_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC2_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC3_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC3_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB:
+        return 4;
+    default:
+        abort(); // Not yet supported.
+    }
+}
+
+inline size_t blockHeightOfCompressedTextureFormat(agpu_texture_format format)
+{
+    switch(format)
+    {
+    case AGPU_TEXTURE_FORMAT_BC1_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC1_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC1_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC2_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC2_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC2_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC3_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC3_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB:
+        return 4;
+    default:
+        abort(); // Not yet supported.
+    }
+}
+
 #endif //AGPU_TEXTURE_FORMATS_COMMON_HPP

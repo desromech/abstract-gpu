@@ -341,6 +341,32 @@ agpu_error _agpu_texture::unmapLevel()
     return AGPU_UNIMPLEMENTED;
 }
 
+void _agpu_texture::computeBufferImageTransferLayout(int level, VkSubresourceLayout *layout, VkBufferImageCopy *copy)
+{
+    auto extent = getLevelExtent(level);
+    memset(copy, 0, sizeof(*copy));
+
+    // vkGetImageSubResource layout is not appropiate for this.
+    if(isCompressedTextureFormat(description.format))
+    {
+        auto compressedBlockSize = blockSizeOfCompressedTextureFormat(description.format);
+        auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
+        auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
+        copy->bufferRowLength = std::max(size_t(1), size_t((extent.width + compressedBlockWidth - 1) / compressedBlockWidth));
+        copy->bufferImageHeight = std::max(size_t(1), size_t((extent.height + compressedBlockHeight - 1)  / compressedBlockHeight));
+        layout->rowPitch =  copy->bufferRowLength * compressedBlockSize;
+        layout->depthPitch =  layout->rowPitch * copy->bufferImageHeight;
+    }
+    else
+    {
+        auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
+        layout->rowPitch = (extent.width*uncompressedPixelSize + 3) & -4;
+        layout->depthPitch = layout->rowPitch * extent.height;
+        copy->bufferRowLength = layout->rowPitch / uncompressedPixelSize;
+        copy->bufferImageHeight = extent.height;
+    }
+}
+
 agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
     CHECK_POINTER(buffer);
@@ -353,16 +379,11 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
     subresource.mipLevel = level;
 
     VkSubresourceLayout layout;
-    vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
-    auto extent = getLevelExtent(level);
-    if (layout.rowPitch == 0)
-        layout.rowPitch = extent.width*pixelSizeOfTextureFormat(description.format);
+    VkBufferImageCopy copy;
+    computeBufferImageTransferLayout(level, &layout, &copy);
 
     // Read the render target into the readback buffer.
-    VkBufferImageCopy copy;
-    memset(&copy, 0, sizeof(copy));
-    copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
-    copy.bufferImageHeight = layout.depthPitch / layout.rowPitch;
+    auto extent = getLevelExtent(level);
     copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
@@ -410,23 +431,11 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource.mipLevel = level;
 
-    auto extent = getLevelExtent(level);
-
     VkSubresourceLayout layout;
-    vkGetImageSubresourceLayout(device->device, image, &subresource, &layout);
-    if (layout.rowPitch == 0)
-    {
-        if(isCompressedTextureFormat(description.format))
-        {
-            printf("TODO: Compute properly the compressed texture row pitch and slice pitch\n");
-            layout.rowPitch = std::max(size_t(1), size_t((extent.width + 3) / 4)) * blockSizeOfCompressedTextureFormat(description.format);
-        }
-        else
-        {
-            layout.rowPitch = extent.width*pixelSizeOfTextureFormat(description.format);
-        }
-    }
+    VkBufferImageCopy copy;
+    computeBufferImageTransferLayout(level, &layout, &copy);
 
+    auto extent = getLevelExtent(level);
     if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
     {
         memcpy(bufferPointer, data, slicePitch);
@@ -445,13 +454,6 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
 
     uploadBuffer->unmap();
 
-    VkBufferImageCopy copy;
-    memset(&copy, 0, sizeof(copy));
-    if(!isCompressedTextureFormat(description.format))
-    {
-        copy.bufferRowLength = layout.rowPitch / pixelSizeOfTextureFormat(description.format);
-        copy.bufferImageHeight = extent.height;
-    }
     copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
