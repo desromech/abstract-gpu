@@ -14,7 +14,6 @@ struct _agpu_shader_signature : public Object<_agpu_shader_signature>
     agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
 
     agpu_device *device;
-    agpu_shader_signature_builder *builder;
     VkPipelineLayout layout;
 
     std::vector<ShaderSignatureElementDescription> elementDescription;

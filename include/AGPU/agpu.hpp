@@ -906,9 +906,14 @@ public:
 		AgpuThrowIfFailed(agpuAddShaderSignatureBindingElement( this, type, maxBindings ));
 	}
 
-	inline void addBindingBank ( agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings )
+	inline void beginBindingBank ( agpu_uint maxBindings )
 	{
-		AgpuThrowIfFailed(agpuAddShaderSignatureBindingBank( this, type, bindingPointCount, maxBindings ));
+		AgpuThrowIfFailed(agpuBeginShaderSignatureBindingBank( this, maxBindings ));
+	}
+
+	inline void addBindingBankElement ( agpu_shader_binding_type type, agpu_uint bindingPointCount )
+	{
+		AgpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement( this, type, bindingPointCount ));
 	}
 
 };
@@ -966,6 +971,16 @@ public:
 	inline void bindUniformBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size )
 	{
 		AgpuThrowIfFailed(agpuBindUniformBufferRange( this, location, uniform_buffer, offset, size ));
+	}
+
+	inline void bindStorageBuffer ( agpu_int location, agpu_buffer* storage_buffer )
+	{
+		AgpuThrowIfFailed(agpuBindStorageBuffer( this, location, storage_buffer ));
+	}
+
+	inline void bindStorageBufferRange ( agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size )
+	{
+		AgpuThrowIfFailed(agpuBindStorageBufferRange( this, location, storage_buffer, offset, size ));
 	}
 
 	inline void bindTexture ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )

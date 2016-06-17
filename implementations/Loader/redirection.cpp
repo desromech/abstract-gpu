@@ -1001,12 +1001,20 @@ AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement ( agpu_shader_signat
 	return (*dispatchTable)->agpuAddShaderSignatureBindingElement ( shader_signature_builder, type, maxBindings );
 }
 
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings )
+AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings )
 {
 	if (shader_signature_builder == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
-	return (*dispatchTable)->agpuAddShaderSignatureBindingBank ( shader_signature_builder, type, bindingPointCount, maxBindings );
+	return (*dispatchTable)->agpuBeginShaderSignatureBindingBank ( shader_signature_builder, maxBindings );
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuAddShaderSignatureBindingBankElement ( shader_signature_builder, type, bindingPointCount );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderSignature ( agpu_shader_signature* shader_signature )
@@ -1063,6 +1071,22 @@ AGPU_EXPORT agpu_error agpuBindUniformBufferRange ( agpu_shader_resource_binding
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
 	return (*dispatchTable)->agpuBindUniformBufferRange ( shader_resource_binding, location, uniform_buffer, offset, size );
+}
+
+AGPU_EXPORT agpu_error agpuBindStorageBuffer ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindStorageBuffer ( shader_resource_binding, location, storage_buffer );
+}
+
+AGPU_EXPORT agpu_error agpuBindStorageBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindStorageBufferRange ( shader_resource_binding, location, storage_buffer, offset, size );
 }
 
 AGPU_EXPORT agpu_error agpuBindTexture ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )

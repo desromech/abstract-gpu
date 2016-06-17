@@ -84,20 +84,18 @@ _agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_device
     result->signature = signature;
     signature->retain();
     result->descriptorSet = descriptorSet;
-    result->type = elementDescription.type;
-    result->bindingPointCount = elementDescription.bindingPointCount;
-    result->vulkanDescriptorType = elementDescription.vulkanDescriptionType;
+    result->bindingDescription = &elementDescription;
     return result;
 }
 
 agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
 {
-    if (type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
-        return AGPU_INVALID_OPERATION;
-
     CHECK_POINTER(uniform_buffer);
-    if (location < 0 || location >= bindingPointCount)
+    if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
+
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
+        return AGPU_INVALID_OPERATION;
 
     return bindUniformBufferRange(location, uniform_buffer, 0, uniform_buffer->description.size);
 }
@@ -105,12 +103,13 @@ agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, a
 agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
 {
     CHECK_POINTER(uniform_buffer);
-    if (type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
-        return AGPU_INVALID_OPERATION;
+
     if (uniform_buffer->description.binding != AGPU_UNIFORM_BUFFER)
         return AGPU_INVALID_PARAMETER;
-    if (location < 0 || location >= bindingPointCount)
+    if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
+        return AGPU_INVALID_OPERATION;
 
     // Align the size to 256 Kb
     VkDescriptorBufferInfo bufferInfo;
@@ -122,7 +121,50 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
     memset(&write, 0, sizeof(VkWriteDescriptorSet));
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
-    write.descriptorType = vulkanDescriptorType;
+    write.descriptorType = bindingDescription->bindings[location].descriptorType;
+    write.dstSet = descriptorSet;
+    write.dstBinding = location;
+    write.pBufferInfo = &bufferInfo;
+
+    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_shader_resource_binding::bindStorageBuffer(agpu_int location, agpu_buffer* storage_buffer)
+{
+    CHECK_POINTER(storage_buffer);
+    if (location < 0 || location >= (int)bindingDescription->types.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
+        return AGPU_INVALID_OPERATION;
+
+    return bindUniformBufferRange(location, storage_buffer, 0, storage_buffer->description.size);
+}
+
+agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
+{
+    CHECK_POINTER(storage_buffer);
+
+    if (storage_buffer->description.binding != AGPU_STORAGE_BUFFER)
+        return AGPU_INVALID_PARAMETER;
+    if (location < 0 || location >= (int)bindingDescription->types.size())
+        return AGPU_OUT_OF_BOUNDS;
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
+        return AGPU_INVALID_OPERATION;
+
+    // Align the size to 256 Kb
+    VkDescriptorBufferInfo bufferInfo;
+    bufferInfo.buffer = storage_buffer->getDrawBuffer();
+    bufferInfo.offset = offset;
+    bufferInfo.range = (size + 255) & (~255);
+
+    VkWriteDescriptorSet write;
+    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = bindingDescription->bindings[location].descriptorType;
     write.dstSet = descriptorSet;
     write.dstBinding = location;
     write.pBufferInfo = &bufferInfo;
@@ -135,11 +177,11 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
 {
     CHECK_POINTER(texture);
-    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
-        return AGPU_INVALID_OPERATION;
-
-    if (location < 0 || location >= bindingPointCount)
+    if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
+
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
+        return AGPU_INVALID_OPERATION;
 
     agpu_texture_view_description viewDesc;
     auto myError = texture->getFullViewDescription(&viewDesc);
@@ -163,7 +205,7 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
     memset(&write, 0, sizeof(VkWriteDescriptorSet));
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
-    write.descriptorType = vulkanDescriptorType;
+    write.descriptorType = bindingDescription->bindings[location].descriptorType;
     write.dstSet = descriptorSet;
     write.dstBinding = location;
     write.pImageInfo = &imageInfo;
@@ -176,20 +218,21 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
 agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
 {
     CHECK_POINTER(texture);
-    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
-        return AGPU_INVALID_OPERATION;
-    if (location < 0 || location >= bindingPointCount)
+    if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
+        return AGPU_INVALID_OPERATION;
+
     return AGPU_UNIMPLEMENTED;
 }
 
 agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
 {
     CHECK_POINTER(description);
-    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
-        return AGPU_INVALID_OPERATION;
-    if (location < 0 || location >= bindingPointCount)
+    if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLER)
+        return AGPU_INVALID_OPERATION;
 
     VkSamplerCreateInfo info;
     memset(&info, 0, sizeof(info));
@@ -224,7 +267,7 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
     memset(&write, 0, sizeof(VkWriteDescriptorSet));
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
-    write.descriptorType = vulkanDescriptorType;
+    write.descriptorType = bindingDescription->bindings[location].descriptorType;
     write.dstSet = descriptorSet;
     write.dstBinding = location;
     write.pImageInfo = &imageInfo;
@@ -256,6 +299,18 @@ AGPU_EXPORT agpu_error agpuBindUniformBufferRange(agpu_shader_resource_binding* 
 {
     CHECK_POINTER(shader_resource_binding);
     return shader_resource_binding->bindUniformBufferRange(location, uniform_buffer, offset, size);
+}
+
+AGPU_EXPORT agpu_error agpuBindStorageBuffer(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer)
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindStorageBuffer(location, storage_buffer);
+}
+
+AGPU_EXPORT agpu_error agpuBindStorageBufferRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindStorageBufferRange(location, storage_buffer, offset, size);
 }
 
 AGPU_EXPORT agpu_error agpuBindTexture(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)

@@ -264,6 +264,9 @@
 			<constant name="ElementArrayBuffer" value="2" />
 			<constant name="UniformBuffer" value="3" />
 			<constant name="DrawIndirectBuffer" value="4" />
+			<constant name="StorageBuffer" value="5" />
+            <constant name="UniformTexelBuffer" value="6" />
+            <constant name="StorageTexelBuffer" value="7" />
 		</enum>
 
 		<enum name="buffer_mapping_flags">
@@ -289,9 +292,12 @@
         <enum name="shader_binding_type" >
             <constant name="ShaderBindingTypeSampledImage" value="0" />
             <constant name="ShaderBindingTypeStorageImage" value="1" />
-            <constant name="ShaderBindingTypeUniformBuffer" value="2" />
-            <constant name="ShaderBindingTypeSampler" value="3" />
-            <constant name="ShaderBindingTypeCount" value="4" />
+            <constant name="ShaderBindingTypeUniformTexelBuffer" value="2" />
+            <constant name="ShaderBindingTypeStorageTexelBuffer" value="3" />
+            <constant name="ShaderBindingTypeUniformBuffer" value="4" />
+            <constant name="ShaderBindingTypeStorageBuffer" value="5" />
+            <constant name="ShaderBindingTypeSampler" value="6" />
+            <constant name="ShaderBindingTypeCount" value="7" />
         </enum>
 
 		<enum name="shader_language">
@@ -1112,10 +1118,12 @@
                 <arg name="maxBindings" type="uint" />
             </method>
 
-            <method name="addBindingBank" cname="AddShaderSignatureBindingBank" returnType="error">
+            <method name="beginBindingBank" cname="BeginShaderSignatureBindingBank" returnType="error">
+                <arg name="maxBindings" type="uint" />
+            </method>
+            <method name="addBindingBankElement" cname="AddShaderSignatureBindingBankElement" returnType="error">
                 <arg name="type" type="shader_binding_type" />
                 <arg name="bindingPointCount" type="uint" />
-                <arg name="maxBindings" type="uint" />
             </method>
         </interface>
 
@@ -1147,6 +1155,18 @@
             <method name="bindUniformBufferRange" cname="BindUniformBufferRange" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="uniform_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="bindStorageBuffer" cname="BindStorageBuffer" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="storage_buffer" type="buffer*" />
+            </method>
+
+            <method name="bindStorageBufferRange" cname="BindStorageBufferRange" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="storage_buffer" type="buffer*" />
                 <arg name="offset" type="size" />
                 <arg name="size" type="size" />
             </method>

@@ -6,7 +6,6 @@ _agpu_shader_signature::_agpu_shader_signature(agpu_device *device)
     : device(device)
 {
     layout = VK_NULL_HANDLE;
-    builder = nullptr;
 }
 
 void _agpu_shader_signature::lostReferences()
@@ -15,8 +14,12 @@ void _agpu_shader_signature::lostReferences()
         vkDestroyPipelineLayout(device->device, layout, nullptr);
     for (auto pool : elementPools)
         vkDestroyDescriptorPool(device->device, pool, nullptr);
+    for(auto &element : elementDescription)
+    {
+        if(element.descriptorSetLayout != VK_NULL_HANDLE)
+            vkDestroyDescriptorSetLayout(device->device, element.descriptorSetLayout, nullptr);
+    }
 
-    builder->release();
 }
 
 agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding(agpu_uint element)
@@ -29,12 +32,15 @@ agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBindin
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocateInfo.descriptorPool = elementPools[element];
     allocateInfo.descriptorSetCount = 1;
-    allocateInfo.pSetLayouts = &builder->descriptorSets[element];
+    allocateInfo.pSetLayouts = &elementDescription[element].descriptorSetLayout;
 
     VkDescriptorSet descriptorSet;
     auto error = vkAllocateDescriptorSets(device->device, &allocateInfo, &descriptorSet);
     if (error)
+    {
+        printf("Failed to allocate descriptor set for %d\n", element);
         return nullptr;
+    }
 
     return agpu_shader_resource_binding::create(device, this, element, descriptorSet, elementDescription[element]);
 }
@@ -44,23 +50,25 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
     // Allocate the signature and copy its parameters.
     auto result = new agpu_shader_signature(device);
     result->layout = layout;
-    result->builder = builder;
-    builder->retain();
 
-    result->elementDescription = builder->elementDescription;
     result->elementPools.reserve(result->elementDescription.size());
-    for (auto &element : result->elementDescription)
+    for (auto &element : builder->elementDescription)
     {
-        VkDescriptorPoolSize poolSize;
-        poolSize.descriptorCount = element.bindingPointCount;
-        poolSize.type = element.vulkanDescriptionType;
+        std::vector<VkDescriptorPoolSize> poolSizes;
+        for(auto &bindingDesc : element.bindings)
+        {
+            VkDescriptorPoolSize poolSize;
+            poolSize.descriptorCount = bindingDesc.descriptorCount;
+            poolSize.type = bindingDesc.descriptorType;
+            poolSizes.push_back(poolSize);
+        }
 
         VkDescriptorPoolCreateInfo poolCreateInfo;
         memset(&poolCreateInfo, 0, sizeof(poolCreateInfo));
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolCreateInfo.maxSets = element.maxBindings;
-        poolCreateInfo.poolSizeCount = 1;
-        poolCreateInfo.pPoolSizes = &poolSize;
+        poolCreateInfo.poolSizeCount = poolSizes.size();
+        poolCreateInfo.pPoolSizes = &poolSizes[0];
         poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         VkDescriptorPool pool;
@@ -73,6 +81,8 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
 
         result->elementPools.push_back(pool);
     }
+
+    result->elementDescription.swap(builder->elementDescription);
 
     return result;
 }

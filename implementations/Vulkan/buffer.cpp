@@ -66,6 +66,15 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     case AGPU_UNIFORM_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         break;
+    case AGPU_STORAGE_BUFFER:
+        bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        break;
+    case AGPU_UNIFORM_TEXEL_BUFFER:
+        bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+        break;
+    case AGPU_STORAGE_TEXEL_BUFFER:
+        bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+        break;
     case AGPU_DRAW_INDIRECT_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         break;

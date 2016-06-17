@@ -8,6 +8,9 @@ inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
     case AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     case AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     case AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    case AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    case AGPU_SHADER_BINDING_TYPE_UNIFORM_TEXEL_BUFFER: return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    case AGPU_SHADER_BINDING_TYPE_STORAGE_TEXEL_BUFFER: return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
     case AGPU_SHADER_BINDING_TYPE_SAMPLER: return VK_DESCRIPTOR_TYPE_SAMPLER;
     default: abort();
     }
@@ -16,12 +19,16 @@ inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
 _agpu_shader_signature_builder::_agpu_shader_signature_builder(agpu_device *device)
     : device(device)
 {
+    currentElementSet = nullptr;
 }
 
 void _agpu_shader_signature_builder::lostReferences()
 {
-    for(auto set : descriptorSets)
-        vkDestroyDescriptorSetLayout(device->device, set, nullptr);
+    for(auto &element : elementDescription)
+    {
+        if(element.descriptorSetLayout != VK_NULL_HANDLE)
+            vkDestroyDescriptorSetLayout(device->device, element.descriptorSetLayout, nullptr);
+    }
 }
 
 _agpu_shader_signature_builder *_agpu_shader_signature_builder::create(agpu_device *device)
@@ -32,6 +39,16 @@ _agpu_shader_signature_builder *_agpu_shader_signature_builder::create(agpu_devi
 
 agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
 {
+    // Finish the last binding bank.
+    finishBindingBank();
+
+    // Put the descriptor sets in a vector.
+    std::vector<VkDescriptorSetLayout> descriptorSets;
+    descriptorSets.reserve(elementDescription.size());
+    for(auto &element : elementDescription)
+        descriptorSets.push_back(element.descriptorSetLayout);
+
+    // Create the pipeline layout.
     VkPipelineLayoutCreateInfo layoutInfo;
     memset(&layoutInfo, 0, sizeof(layoutInfo));
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -62,9 +79,40 @@ agpu_error _agpu_shader_signature_builder::addBindingElement(agpu_shader_binding
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingBank(agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings)
+agpu_error _agpu_shader_signature_builder::finishBindingBank()
 {
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    if(currentElementSet)
+    {
+        VkDescriptorSetLayoutCreateInfo setLayoutInfo;
+        memset(&setLayoutInfo, 0, sizeof(setLayoutInfo));
+        setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        setLayoutInfo.bindingCount = currentElementSet->bindings.size();
+        setLayoutInfo.pBindings = &currentElementSet->bindings[0];
+
+        auto error = vkCreateDescriptorSetLayout(device->device, &setLayoutInfo, nullptr, &currentElementSet->descriptorSetLayout);
+        CONVERT_VULKAN_ERROR(error);
+    }
+
+    currentElementSet = nullptr;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_shader_signature_builder::beginBindingBank ( agpu_uint maxBindings )
+{
+    auto error = finishBindingBank();
+    if(error != AGPU_OK)
+        return error;
+
+    elementDescription.push_back(ShaderSignatureElementDescription(true, maxBindings));
+    currentElementSet = &elementDescription.back();
+    return AGPU_OK;
+}
+
+agpu_error _agpu_shader_signature_builder::addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
+{
+    if(!currentElementSet)
+        return AGPU_INVALID_OPERATION;
+
     auto descriptorType = mapDescriptorType(type);
     for(uint i = 0; i < bindingPointCount; ++i)
     {
@@ -74,23 +122,9 @@ agpu_error _agpu_shader_signature_builder::addBindingBank(agpu_shader_binding_ty
         binding.descriptorType = descriptorType;
         binding.descriptorCount = 1;
         binding.stageFlags = VK_SHADER_STAGE_ALL;
-        bindings.push_back(binding);
+        currentElementSet->bindings.push_back(binding);
+        currentElementSet->types.push_back(type);
     }
-
-    VkDescriptorSetLayoutCreateInfo setLayoutInfo;
-    memset(&setLayoutInfo, 0, sizeof(setLayoutInfo));
-    setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    setLayoutInfo.bindingCount = bindings.size();
-    printf("Descriptor set layout: %d\n", (int)bindings.size());
-    setLayoutInfo.pBindings = &bindings[0];
-
-    VkDescriptorSetLayout setLayout;
-    auto error = vkCreateDescriptorSetLayout(device->device, &setLayoutInfo, nullptr, &setLayout);
-    CONVERT_VULKAN_ERROR(error);
-
-    descriptorSets.push_back(setLayout);
-
-    elementDescription.push_back(ShaderSignatureElementDescription(true, type, descriptorType, bindingPointCount, maxBindings));
 
     return AGPU_OK;
 }
@@ -127,8 +161,14 @@ AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement(agpu_shader_signatur
     return shader_signature_builder->addBindingElement(type, maxBindings);
 }
 
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBank(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings)
+AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings )
 {
     CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingBank(type, bindingPointCount, maxBindings);
+    return shader_signature_builder->beginBindingBank(maxBindings);
+}
+
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount )
+{
+    CHECK_POINTER(shader_signature_builder);
+    return shader_signature_builder->addBindingBankElement(type, bindingPointCount);
 }

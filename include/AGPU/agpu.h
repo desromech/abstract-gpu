@@ -163,6 +163,9 @@ typedef enum {
 	AGPU_ELEMENT_ARRAY_BUFFER = 2,
 	AGPU_UNIFORM_BUFFER = 3,
 	AGPU_DRAW_INDIRECT_BUFFER = 4,
+	AGPU_STORAGE_BUFFER = 5,
+	AGPU_UNIFORM_TEXEL_BUFFER = 6,
+	AGPU_STORAGE_TEXEL_BUFFER = 7,
 } agpu_buffer_binding_type;
 
 typedef enum {
@@ -188,9 +191,12 @@ typedef enum {
 typedef enum {
 	AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE = 0,
 	AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE = 1,
-	AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER = 2,
-	AGPU_SHADER_BINDING_TYPE_SAMPLER = 3,
-	AGPU_SHADER_BINDING_TYPE_COUNT = 4,
+	AGPU_SHADER_BINDING_TYPE_UNIFORM_TEXEL_BUFFER = 2,
+	AGPU_SHADER_BINDING_TYPE_STORAGE_TEXEL_BUFFER = 3,
+	AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER = 4,
+	AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER = 5,
+	AGPU_SHADER_BINDING_TYPE_SAMPLER = 6,
+	AGPU_SHADER_BINDING_TYPE_COUNT = 7,
 } agpu_shader_binding_type;
 
 typedef enum {
@@ -866,14 +872,16 @@ typedef agpu_error (*agpuReleaseShaderSignatureBuilder_FUN) ( agpu_shader_signat
 typedef agpu_shader_signature* (*agpuBuildShaderSignature_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
 typedef agpu_error (*agpuAddShaderSignatureBindingConstant_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
 typedef agpu_error (*agpuAddShaderSignatureBindingElement_FUN) ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings );
-typedef agpu_error (*agpuAddShaderSignatureBindingBank_FUN) ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings );
+typedef agpu_error (*agpuBeginShaderSignatureBindingBank_FUN) ( agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings );
+typedef agpu_error (*agpuAddShaderSignatureBindingBankElement_FUN) ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount );
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder );
 AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder ( agpu_shader_signature_builder* shader_signature_builder );
 AGPU_EXPORT agpu_shader_signature* agpuBuildShaderSignature ( agpu_shader_signature_builder* shader_signature_builder );
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant ( agpu_shader_signature_builder* shader_signature_builder );
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings );
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings );
+AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings );
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount );
 
 /* Methods for interface agpu_shader_signature. */
 typedef agpu_error (*agpuAddShaderSignature_FUN) ( agpu_shader_signature* shader_signature );
@@ -889,6 +897,8 @@ typedef agpu_error (*agpuAddShaderResourceBindingReference_FUN) ( agpu_shader_re
 typedef agpu_error (*agpuReleaseShaderResourceBinding_FUN) ( agpu_shader_resource_binding* shader_resource_binding );
 typedef agpu_error (*agpuBindUniformBuffer_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer );
 typedef agpu_error (*agpuBindUniformBufferRange_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
+typedef agpu_error (*agpuBindStorageBuffer_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer );
+typedef agpu_error (*agpuBindStorageBufferRange_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size );
 typedef agpu_error (*agpuBindTexture_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
 typedef agpu_error (*agpuBindTextureArrayRange_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
 typedef agpu_error (*agpuCreateSampler_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description );
@@ -897,6 +907,8 @@ AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference ( agpu_shader_resou
 AGPU_EXPORT agpu_error agpuReleaseShaderResourceBinding ( agpu_shader_resource_binding* shader_resource_binding );
 AGPU_EXPORT agpu_error agpuBindUniformBuffer ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer );
 AGPU_EXPORT agpu_error agpuBindUniformBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
+AGPU_EXPORT agpu_error agpuBindStorageBuffer ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer );
+AGPU_EXPORT agpu_error agpuBindStorageBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size );
 AGPU_EXPORT agpu_error agpuBindTexture ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
 AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description );
@@ -1039,7 +1051,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuBuildShaderSignature_FUN agpuBuildShaderSignature;
 	agpuAddShaderSignatureBindingConstant_FUN agpuAddShaderSignatureBindingConstant;
 	agpuAddShaderSignatureBindingElement_FUN agpuAddShaderSignatureBindingElement;
-	agpuAddShaderSignatureBindingBank_FUN agpuAddShaderSignatureBindingBank;
+	agpuBeginShaderSignatureBindingBank_FUN agpuBeginShaderSignatureBindingBank;
+	agpuAddShaderSignatureBindingBankElement_FUN agpuAddShaderSignatureBindingBankElement;
 	agpuAddShaderSignature_FUN agpuAddShaderSignature;
 	agpuReleaseShaderSignature_FUN agpuReleaseShaderSignature;
 	agpuCreateShaderResourceBinding_FUN agpuCreateShaderResourceBinding;
@@ -1047,6 +1060,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseShaderResourceBinding_FUN agpuReleaseShaderResourceBinding;
 	agpuBindUniformBuffer_FUN agpuBindUniformBuffer;
 	agpuBindUniformBufferRange_FUN agpuBindUniformBufferRange;
+	agpuBindStorageBuffer_FUN agpuBindStorageBuffer;
+	agpuBindStorageBufferRange_FUN agpuBindStorageBufferRange;
 	agpuBindTexture_FUN agpuBindTexture;
 	agpuBindTextureArrayRange_FUN agpuBindTextureArrayRange;
 	agpuCreateSampler_FUN agpuCreateSampler;
