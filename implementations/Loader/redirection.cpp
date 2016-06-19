@@ -681,6 +681,14 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list,
 	return (*dispatchTable)->agpuResolveFramebuffer ( command_list, destFramebuffer, sourceFramebuffer );
 }
 
+AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuPushConstants ( command_list, offset, size, values );
+}
+
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
 {
 	if (texture == nullptr)

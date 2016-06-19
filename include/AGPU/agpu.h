@@ -752,6 +752,7 @@ typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list
 typedef agpu_error (*agpuBeginRenderPass_FUN) ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
 typedef agpu_error (*agpuEndRenderPass_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResolveFramebuffer_FUN) ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
+typedef agpu_error (*agpuPushConstants_FUN) ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values );
 
 AGPU_EXPORT agpu_error agpuAddCommandListReference ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuReleaseCommandList ( agpu_command_list* command_list );
@@ -774,6 +775,7 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
 AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
 AGPU_EXPORT agpu_error agpuEndRenderPass ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
+AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values );
 
 /* Methods for interface agpu_texture. */
 typedef agpu_error (*agpuAddTextureReference_FUN) ( agpu_texture* texture );
@@ -1011,6 +1013,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuBeginRenderPass_FUN agpuBeginRenderPass;
 	agpuEndRenderPass_FUN agpuEndRenderPass;
 	agpuResolveFramebuffer_FUN agpuResolveFramebuffer;
+	agpuPushConstants_FUN agpuPushConstants;
 	agpuAddTextureReference_FUN agpuAddTextureReference;
 	agpuReleaseTexture_FUN agpuReleaseTexture;
 	agpuGetTextureDescription_FUN agpuGetTextureDescription;

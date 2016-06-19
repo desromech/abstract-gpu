@@ -20,6 +20,7 @@ public:
     agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
     agpu_error useShaderResources(agpu_shader_resource_binding* binding);
+    agpu_error pushConstants (agpu_uint offset, agpu_uint size, agpu_pointer values);
     agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
     agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
     agpu_error drawElementsIndirect(agpu_size offset);

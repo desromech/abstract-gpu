@@ -225,6 +225,13 @@ agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* 
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_list::pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
+{
+    CHECK_POINTER(values);
+    vkCmdPushConstants(commandBuffer, shaderSignature->layout, VK_SHADER_STAGE_ALL, offset, size, values);
+    return AGPU_OK;
+}
+
 agpu_error _agpu_command_list::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
 {
     vkCmdDraw(commandBuffer, vertex_count, instance_count, first_vertex, base_instance);
@@ -420,6 +427,12 @@ AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, a
 {
     CHECK_POINTER(command_list);
     return command_list->useShaderResources(binding);
+}
+
+AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
+{
+    CHECK_POINTER(command_list);
+    return command_list->pushConstants(offset, size, values);
 }
 
 AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)

@@ -618,6 +618,11 @@ public:
 		AgpuThrowIfFailed(agpuResolveFramebuffer( this, destFramebuffer, sourceFramebuffer ));
 	}
 
+	inline void pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
+	{
+		AgpuThrowIfFailed(agpuPushConstants( this, offset, size, values ));
+	}
+
 };
 
 typedef agpu_ref<agpu_command_list> agpu_command_list_ref;

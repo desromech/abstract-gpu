@@ -932,6 +932,12 @@
                 <arg name="sourceFramebuffer" type="framebuffer*" />
             </method>
 
+            <method name="pushConstants" cname="PushConstants" returnType="error">
+                <arg name="offset" type="uint" />
+                <arg name="size" type="uint" />
+                <arg name="values" type="pointer" />
+            </method>
+
         </interface>
 
         <interface name="texture">

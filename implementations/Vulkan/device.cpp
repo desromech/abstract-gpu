@@ -156,7 +156,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
 
     }
 
-    printError("%d: %s\n", messageCode, pMessage);
+    printError("%s: %d: %s\n", pLayerPrefix, messageCode, pMessage);
     if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
         return VK_TRUE;
     return VK_FALSE;
