@@ -58,6 +58,12 @@ agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
         layoutInfo.pSetLayouts = &descriptorSets[0];
     }
 
+    if(!pushConstantRanges.empty())
+    {
+        layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+        layoutInfo.pPushConstantRanges = &pushConstantRanges[0];
+    }
+
     VkPipelineLayout layout;
     auto error = vkCreatePipelineLayout(device->device, &layoutInfo, nullptr, &layout);
     if (error)
@@ -71,7 +77,17 @@ agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
 
 agpu_error _agpu_shader_signature_builder::addBindingConstant()
 {
-    return AGPU_UNIMPLEMENTED;
+    if(pushConstantRanges.empty())
+    {
+        VkPushConstantRange range;
+        range.offset = 0;
+        range.size = 0;
+        range.stageFlags = VK_SHADER_STAGE_ALL;
+        pushConstantRanges.push_back(range);
+    }
+
+    pushConstantRanges.back().size += 4;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_shader_signature_builder::addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
@@ -118,7 +134,7 @@ agpu_error _agpu_shader_signature_builder::addBindingBankElement(agpu_shader_bin
     {
         VkDescriptorSetLayoutBinding binding;
         memset(&binding, 0, sizeof(binding));
-        binding.binding = i;
+        binding.binding = currentElementSet->bindings.size();
         binding.descriptorType = descriptorType;
         binding.descriptorCount = 1;
         binding.stageFlags = VK_SHADER_STAGE_ALL;

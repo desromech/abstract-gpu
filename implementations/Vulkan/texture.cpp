@@ -100,7 +100,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
 
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     VkAccessFlagBits initialLayoutAccessBits = VkAccessFlagBits(0);
-    VkImageAspectFlagBits imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
     auto flags = description->flags;
     if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
     {
@@ -108,11 +108,11 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         initialLayoutAccessBits = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-        imageAspect = VkImageAspectFlagBits(0);
+        imageAspect = 0;
         if (flags & (AGPU_TEXTURE_FLAG_DEPTH))
-            imageAspect = VkImageAspectFlagBits(imageAspect | VK_IMAGE_ASPECT_DEPTH_BIT);
+            imageAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
         if (flags & (AGPU_TEXTURE_FLAG_STENCIL))
-            imageAspect = VkImageAspectFlagBits(imageAspect | VK_IMAGE_ASPECT_STENCIL_BIT);
+            imageAspect |= imageAspect | VK_IMAGE_ASPECT_STENCIL_BIT;
     }
     else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
     {
@@ -163,6 +163,11 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         return nullptr;
     }
 
+    VkImageSubresourceRange wholeImageSubresource;
+    memset(&wholeImageSubresource, 0, sizeof(wholeImageSubresource));
+    wholeImageSubresource.layerCount = createInfo.arrayLayers;
+    wholeImageSubresource.levelCount = description->miplevels;
+
     if (initialLayout != createInfo.initialLayout)
     {
         bool success = false;
@@ -171,22 +176,22 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
             VkClearDepthStencilValue clearValue;
             clearValue.depth = 1.0;
             clearValue.stencil = 0;
-            success = device->clearImageWithDepthStencil(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+            success = device->clearImageWithDepthStencil(image, wholeImageSubresource, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
         }
         else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
         {
             VkClearColorValue clearValue;
             memset(&clearValue, 0, sizeof(clearValue));
-            success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+            success = device->clearImageWithColor(image, wholeImageSubresource, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
         }
         else
         {
             VkClearColorValue clearValue;
             memset(&clearValue, 0, sizeof(clearValue));
             if(!isCompressedTextureFormat(description->format))
-                success = device->clearImageWithColor(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
+                success = device->clearImageWithColor(image, wholeImageSubresource, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
             else
-                success = device->setImageLayout(image, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
+                success = device->setImageLayout(image, wholeImageSubresource, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0));
         }
 
         if (!success)
@@ -378,6 +383,13 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource.mipLevel = level;
 
+    VkImageSubresourceRange range;
+    memset(&range, 0, sizeof(range));
+    range.baseMipLevel = level;
+    range.baseArrayLayer = arrayIndex;
+    range.layerCount = 1;
+    range.levelCount = 1;
+
     VkSubresourceLayout layout;
     VkBufferImageCopy copy;
     computeBufferImageTransferLayout(level, &layout, &copy);
@@ -389,7 +401,7 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
     copy.imageExtent = extent;
-    device->copyImageToBuffer(image, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, readbackBuffer->uploadBuffer, 1, &copy);
+    device->copyImageToBuffer(image, range, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, readbackBuffer->uploadBuffer, 1, &copy);
 
     auto readbackPointer = readbackBuffer->map(AGPU_READ_ONLY);
     if (!readbackPointer)
@@ -431,6 +443,13 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource.mipLevel = level;
 
+    VkImageSubresourceRange range;
+    memset(&range, 0, sizeof(range));
+    range.baseMipLevel = level;
+    range.baseArrayLayer = arrayIndex;
+    range.layerCount = 1;
+    range.levelCount = 1;
+
     VkSubresourceLayout layout;
     VkBufferImageCopy copy;
     computeBufferImageTransferLayout(level, &layout, &copy);
@@ -459,7 +478,7 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
     copy.imageExtent = extent;
-    device->copyBufferToImage(uploadBuffer->uploadBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, 1, &copy);
+    device->copyBufferToImage(uploadBuffer->uploadBuffer, image, range, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, 1, &copy);
 
     return AGPU_OK;
 }

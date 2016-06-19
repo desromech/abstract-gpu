@@ -36,10 +36,10 @@
 
 void printError(const char *format, ...)
 {
-    char buffer[1024];
+    char buffer[2048];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, 1024, format, args);
+    vsnprintf(buffer, 2048, format, args);
 #ifdef _WIN32
     if(!GetConsoleCP())
         OutputDebugStringA(buffer);
@@ -52,14 +52,7 @@ void printError(const char *format, ...)
 }
 
 const char *validationLayerNames[] = {
-    "VK_LAYER_LUNARG_draw_state",
-    "VK_LAYER_LUNARG_param_checker",
-    "VK_LAYER_LUNARG_image",
-    "VK_LAYER_LUNARG_mem_tracker",
-    "VK_LAYER_LUNARG_object_tracker",
-    //"VK_LAYER_LUNARG_threading",
-    "VK_LAYER_LUNARG_device_limits",
-    "VK_LAYER_LUNARG_swapchain",
+    "VK_LAYER_LUNARG_standard_validation",
 };
 
 constexpr size_t validationLayerCount = sizeof(validationLayerNames) / sizeof(validationLayerNames[0]);
@@ -153,14 +146,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
     {
         switch (messageCode)
         {
+        case 2: // Unused vertex output
         case 3: // Unused vertex attribute.
-        case 50: // Use render pass clear op.
             return VK_FALSE;
+        default:
+            // Ignore this case.
+            break;
         }
 
     }
 
-    printError("%s\n", pMessage);
+    printError("%d: %s\n", messageCode, pMessage);
+    if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+        return VK_TRUE;
     return VK_FALSE;
 }
 
@@ -564,7 +562,7 @@ bool _agpu_device::createSetupCommandBuffer()
     return true;
 }
 
-bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
+bool _agpu_device::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
@@ -573,7 +571,7 @@ bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, V
             return false;
     }
 
-    auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout, srcAccessMask);
+    auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask);
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
@@ -581,8 +579,10 @@ bool _agpu_device::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, V
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::clearImageWithColor(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue)
+bool _agpu_device::clearImageWithColor(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue)
 {
+    range.aspectMask = aspect;
+
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
     {
@@ -595,31 +595,26 @@ bool _agpu_device::clearImageWithColor(VkImage image, VkImageAspectFlagBits aspe
 
     // Transition to dst optimal
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
     // Clear the image
-    {
-        VkImageSubresourceRange range;
-        memset(&range, 0, sizeof(range));
-        range.aspectMask = aspect;
-        range.layerCount = 1;
-        range.levelCount = 1;
-        vkCmdClearColorImage(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, clearValue, 1, &range);
-    }
+    vkCmdClearColorImage(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, clearValue, 1, &range);
 
     // Transition to target layout
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue)
+bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue)
 {
+    range.aspectMask = aspect;
+
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
     {
@@ -632,23 +627,16 @@ bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageAspectFlagBi
 
     // Transition to dst optimal
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
     // Clear the image
-    {
-        VkImageSubresourceRange range;
-        memset(&range, 0, sizeof(range));
-        range.aspectMask = aspect;
-        range.layerCount = 1;
-        range.levelCount = 1;
-        vkCmdClearDepthStencilImage(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, clearValue, 1, &range);
-    }
+    vkCmdClearDepthStencilImage(setupCommandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, clearValue, 1, &range);
 
     // Transition to target layout
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -668,8 +656,10 @@ bool _agpu_device::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspectFlagBits aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
+bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
 {
+    range.aspectMask = aspect;
+
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
     {
@@ -682,7 +672,7 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspe
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destAccessMask);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destAccessMask);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -690,15 +680,17 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspe
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyImageToBuffer(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
+bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
 {
+    range.aspectMask = aspect;
+
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
     {
@@ -711,7 +703,7 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageAspectFlagBits aspect
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destAccessMask);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destAccessMask);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -719,7 +711,7 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageAspectFlagBits aspect
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_READ_BIT);
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_READ_BIT);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -772,7 +764,7 @@ bool _agpu_device::submitSetupCommandBuffer()
     return true;
 }
 
-VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
+VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
     VkImageMemoryBarrier barrier;
     memset(&barrier, 0, sizeof(barrier));
@@ -781,9 +773,8 @@ VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image
     barrier.srcAccessMask = srcAccessMask;
     barrier.oldLayout = sourceLayout;
     barrier.newLayout = destLayout;
+    barrier.subresourceRange = range;
     barrier.subresourceRange.aspectMask = aspect;
-    barrier.subresourceRange.layerCount = 1;
-    barrier.subresourceRange.levelCount = 1;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 

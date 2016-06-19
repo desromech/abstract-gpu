@@ -41,7 +41,7 @@ _agpu_command_list* _agpu_command_list::create(agpu_device* device, agpu_command
     info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     if(type == AGPU_COMMAND_LIST_TYPE_BUNDLE)
         info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-    
+
     VkCommandBuffer commandBuffer;
     auto error = vkAllocateCommandBuffers(device->device, &info, &commandBuffer);
     if (error)
@@ -267,13 +267,13 @@ agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
+agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
-    auto barrier = device->barrierForImageLayoutTransition(image, aspect, sourceLayout, destLayout, srcAccessMask);
+    auto barrier = device->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask);
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    vkCmdPipelineBarrier(commandBuffer, srcStages, srcStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     return AGPU_OK;
 }
 
@@ -295,7 +295,13 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
         sourceLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VkAccessFlagBits(0));
+    {
+        VkImageSubresourceRange range;
+        memset(&range, 0, sizeof(range));
+        range.layerCount = 1;
+        range.levelCount = 1;
+        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VkAccessFlagBits(0));
+    }
 
     // Begin the render pass.
     VkRenderPassBeginInfo passBeginInfo;
@@ -330,7 +336,13 @@ agpu_error _agpu_command_list::endRenderPass()
         destLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+    {
+        VkImageSubresourceRange range;
+        memset(&range, 0, sizeof(range));
+        range.layerCount = 1;
+        range.levelCount = 1;
+        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+    }
 
     // Unset the current framebuffer
     currentFramebuffer->release();

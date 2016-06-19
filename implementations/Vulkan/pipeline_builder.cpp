@@ -182,7 +182,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     {
         VkPipelineColorBlendAttachmentState state;
         memset(&state, 0, sizeof(state));
-        state.colorWriteMask = 0x1f;
+        state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         state.blendEnable = VK_FALSE;
         colorBlendAttachmentState.resize(1, state);
     }

@@ -213,7 +213,9 @@ agpu_pointer _agpu_buffer::map(agpu_mapping_access flags)
     {
         auto error = vkMapMemory(device->device, uploadBufferMemory, 0, VK_WHOLE_SIZE, 0, &mappedPointer);
         if (error)
+        {
             return nullptr;
+        }
     }
     ++mapCount;
     return mappedPointer;

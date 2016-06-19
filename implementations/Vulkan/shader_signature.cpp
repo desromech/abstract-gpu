@@ -52,14 +52,23 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
     result->layout = layout;
 
     result->elementPools.reserve(result->elementDescription.size());
+    int descriptorTypes[VK_DESCRIPTOR_TYPE_RANGE_SIZE];
+    std::vector<VkDescriptorPoolSize> poolSizes;
     for (auto &element : builder->elementDescription)
     {
-        std::vector<VkDescriptorPoolSize> poolSizes;
+        memset(descriptorTypes, 0, sizeof(descriptorTypes));
         for(auto &bindingDesc : element.bindings)
+            ++descriptorTypes[bindingDesc.descriptorType];
+
+        poolSizes.clear();
+        for(int i = 0; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; ++i)
         {
+            if(!descriptorTypes[i])
+                continue;
+
             VkDescriptorPoolSize poolSize;
-            poolSize.descriptorCount = bindingDesc.descriptorCount;
-            poolSize.type = bindingDesc.descriptorType;
+            poolSize.descriptorCount = descriptorTypes[i]*element.maxBindings;
+            poolSize.type = VkDescriptorType(VK_DESCRIPTOR_TYPE_BEGIN_RANGE + i);
             poolSizes.push_back(poolSize);
         }
 

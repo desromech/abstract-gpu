@@ -183,8 +183,12 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
         swapChainHeight = swapchainExtent.height;
     }
 
-    VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+    VkPresentModeKHR swapchainPresentMode = presentModes[0];
     for (size_t i = 0; i < presentModeCount; i++) {
+        if (presentModes[i] == VK_PRESENT_MODE_FIFO_KHR) {
+            swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+        }
+
         if (presentModes[i] == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
             swapchainPresentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
             break;
@@ -287,7 +291,11 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     for (size_t i = 0; i < imageCount; ++i)
     {
         auto colorImage = swapChainImages[i];
-        if (!device->clearImageWithColor(colorImage, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor))
+        VkImageSubresourceRange range;
+        memset(&range, 0, sizeof(range));
+        range.layerCount = 1;
+        range.levelCount = 1;
+        if (!device->clearImageWithColor(colorImage, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor))
             return false;
 
         agpu_texture *colorBuffer = nullptr;

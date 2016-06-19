@@ -140,7 +140,7 @@ agpu_error _agpu_shader_resource_binding::bindStorageBuffer(agpu_int location, a
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
         return AGPU_INVALID_OPERATION;
 
-    return bindUniformBufferRange(location, storage_buffer, 0, storage_buffer->description.size);
+    return bindStorageBufferRange(location, storage_buffer, 0, storage_buffer->description.size);
 }
 
 agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)

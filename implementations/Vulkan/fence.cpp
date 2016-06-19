@@ -48,7 +48,7 @@ agpu_error _agpu_fence::waitOnClient()
     auto error = vkResetFences(device->device, 1, &fence);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
-    
+
 }
 
 // The exported C interface
