@@ -98,6 +98,9 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
+    if(description->type == AGPU_TEXTURE_CUBE)
+        createInfo.arrayLayers *= 6;
+
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     VkAccessFlagBits initialLayoutAccessBits = VkAccessFlagBits(0);
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -301,6 +304,8 @@ VkImageView _agpu_texture::createImageView(agpu_device *device, agpu_texture_vie
     subresource.levelCount = viewDescription->subresource_range.level_count;
     subresource.baseArrayLayer = viewDescription->subresource_range.base_arraylayer;
     subresource.layerCount = viewDescription->subresource_range.layer_count;
+    if(viewDescription->type == AGPU_TEXTURE_CUBE)
+        subresource.layerCount *= 6;
 
     if((viewDescription->subresource_range.usage_flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL)) == 0)
         subresource.aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
