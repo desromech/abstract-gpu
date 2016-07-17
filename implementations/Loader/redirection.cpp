@@ -249,6 +249,22 @@ AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_c
 	return (*dispatchTable)->agpuGetCurrentBackBuffer ( swap_chain );
 }
 
+AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain )
+{
+	if (swap_chain == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
+	return (*dispatchTable)->agpuGetCurrentBackBufferIndex ( swap_chain );
+}
+
+AGPU_EXPORT agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain )
+{
+	if (swap_chain == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
+	return (*dispatchTable)->agpuGetFramebufferCount ( swap_chain );
+}
+
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder )
 {
 	if (pipeline_builder == nullptr)
@@ -655,6 +671,14 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuResetCommandList ( command_list, allocator, initial_pipeline_state );
+}
+
+AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuResetBundleCommandList ( command_list, allocator, initial_pipeline_state, inheritance_info );
 }
 
 AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )

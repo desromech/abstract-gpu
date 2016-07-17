@@ -113,6 +113,47 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* newAllocator, agpu_
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_list::resetBundle (agpu_command_allocator* newAllocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+{
+    CHECK_POINTER(newAllocator);
+    if (newAllocator != allocator)
+    {
+        // TODO: Implement this
+        return AGPU_UNIMPLEMENTED;
+    }
+
+    auto error = vkResetCommandBuffer(commandBuffer, 0);
+    CONVERT_VULKAN_ERROR(error);
+
+    VkCommandBufferInheritanceInfo commandBufferInheritance;
+    memset(&commandBufferInheritance, 0, sizeof(commandBufferInheritance));
+    commandBufferInheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+
+    VkCommandBufferBeginInfo bufferBeginInfo;
+    memset(&bufferBeginInfo, 0, sizeof(bufferBeginInfo));
+    bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bufferBeginInfo.pInheritanceInfo = &commandBufferInheritance;
+    bufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+    if(inheritance_info)
+    {
+        if(inheritance_info->renderpass)
+        {
+            commandBufferInheritance.renderPass = inheritance_info->renderpass->handle;
+            bufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        }
+    }
+
+    error = vkBeginCommandBuffer(commandBuffer, &bufferBeginInfo);
+    CONVERT_VULKAN_ERROR(error);
+
+    if (initial_pipeline_state)
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state->pipeline);
+
+    resetState();
+    return AGPU_OK;
+}
+
 void _agpu_command_list::resetState()
 {
     if (currentFramebuffer)
@@ -481,6 +522,13 @@ AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, agp
 {
     CHECK_POINTER(command_list);
     return command_list->reset(allocator, initial_pipeline_state);
+}
+
+
+AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+{
+    CHECK_POINTER(command_list);
+    return command_list->resetBundle(allocator, initial_pipeline_state, inheritance_info);
 }
 
 AGPU_EXPORT agpu_error agpuBeginRenderPass(agpu_command_list* command_list, agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)

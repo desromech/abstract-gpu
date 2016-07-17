@@ -30,6 +30,7 @@ public:
 
     agpu_error close();
     agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
+    agpu_error resetBundle (agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info );
 
     agpu_error beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent);
     agpu_error endRenderPass();

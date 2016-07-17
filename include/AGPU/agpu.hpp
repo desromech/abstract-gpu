@@ -293,6 +293,16 @@ public:
 		return agpuGetCurrentBackBuffer( this );
 	}
 
+	inline agpu_size getCurrentBackBufferIndex (  )
+	{
+		return agpuGetCurrentBackBufferIndex( this );
+	}
+
+	inline agpu_size getFramebufferCount (  )
+	{
+		return agpuGetFramebufferCount( this );
+	}
+
 };
 
 typedef agpu_ref<agpu_swap_chain> agpu_swap_chain_ref;
@@ -601,6 +611,11 @@ public:
 	inline void reset ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
 	{
 		AgpuThrowIfFailed(agpuResetCommandList( this, allocator, initial_pipeline_state ));
+	}
+
+	inline void resetBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+	{
+		AgpuThrowIfFailed(agpuResetBundleCommandList( this, allocator, initial_pipeline_state, inheritance_info ));
 	}
 
 	inline void beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )

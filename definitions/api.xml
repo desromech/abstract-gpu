@@ -154,6 +154,11 @@
             <field name="color_attachments" type="renderpass_color_attachment_description*"/>
             <field name="depth_stencil_attachment" type="renderpass_depth_stencil_description*"/>
         </struct>
+
+        <struct name="inheritance_info">
+            <field name="flat" type="int" />
+            <field name="renderpass" type="renderpass*" />
+        </struct>
 	</structs>
 
     <constants>
@@ -678,6 +683,12 @@
 
             <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
             </method>
+
+            <method name="getCurrentBackBufferIndex" cname="GetCurrentBackBufferIndex" returnType="size">
+            </method>
+
+            <method name="getFramebufferCount" cname="GetFramebufferCount" returnType="size">
+            </method>
         </interface>
 
         <interface name="pipeline_builder">
@@ -916,6 +927,12 @@
             <method name="reset" cname="ResetCommandList" returnType="error">
                 <arg name="allocator" type="command_allocator*" />
                 <arg name="initial_pipeline_state" type="pipeline_state*" />
+            </method>
+
+            <method name="resetBundle" cname="ResetBundleCommandList" returnType="error">
+                <arg name="allocator" type="command_allocator*" />
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
+                <arg name="inheritance_info" type="inheritance_info*" />
             </method>
 
             <method name="beginRenderPass" cname="BeginRenderPass" returnType="error">

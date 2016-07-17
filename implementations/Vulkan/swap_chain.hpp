@@ -18,7 +18,9 @@ public:
 
     agpu_error swapBuffers();
     agpu_framebuffer *getCurrentBackBuffer();
-
+    agpu_size getCurrentBackBufferIndex ( );
+    agpu_size getFramebufferCount ( );
+    
     agpu_device *device;
     VkSurfaceKHR surface;
     agpu_command_queue* graphicsQueue;

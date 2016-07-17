@@ -576,6 +576,12 @@ typedef struct agpu_renderpass_description {
 	agpu_renderpass_depth_stencil_description* depth_stencil_attachment;
 } agpu_renderpass_description;
 
+/* Structure agpu_inheritance_info. */
+typedef struct agpu_inheritance_info {
+	agpu_int flat;
+	agpu_renderpass* renderpass;
+} agpu_inheritance_info;
+
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms );
 
@@ -646,11 +652,15 @@ typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chai
 typedef agpu_error (*agpuReleaseSwapChain_FUN) ( agpu_swap_chain* swap_chain );
 typedef agpu_error (*agpuSwapBuffers_FUN) ( agpu_swap_chain* swap_chain );
 typedef agpu_framebuffer* (*agpuGetCurrentBackBuffer_FUN) ( agpu_swap_chain* swap_chain );
+typedef agpu_size (*agpuGetCurrentBackBufferIndex_FUN) ( agpu_swap_chain* swap_chain );
+typedef agpu_size (*agpuGetFramebufferCount_FUN) ( agpu_swap_chain* swap_chain );
 
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain );
 AGPU_EXPORT agpu_error agpuReleaseSwapChain ( agpu_swap_chain* swap_chain );
 AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_swap_chain* swap_chain );
 AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_chain );
+AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain );
+AGPU_EXPORT agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain );
 
 /* Methods for interface agpu_pipeline_builder. */
 typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builder* pipeline_builder );
@@ -749,6 +759,7 @@ typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_l
 typedef agpu_error (*agpuExecuteBundle_FUN) ( agpu_command_list* command_list, agpu_command_list* bundle );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResetCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+typedef agpu_error (*agpuResetBundleCommandList_FUN) ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info );
 typedef agpu_error (*agpuBeginRenderPass_FUN) ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
 typedef agpu_error (*agpuEndRenderPass_FUN) ( agpu_command_list* command_list );
 typedef agpu_error (*agpuResolveFramebuffer_FUN) ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
@@ -772,6 +783,7 @@ AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list
 AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info );
 AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
 AGPU_EXPORT agpu_error agpuEndRenderPass ( agpu_command_list* command_list );
 AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
@@ -959,6 +971,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
 	agpuGetCurrentBackBuffer_FUN agpuGetCurrentBackBuffer;
+	agpuGetCurrentBackBufferIndex_FUN agpuGetCurrentBackBufferIndex;
+	agpuGetFramebufferCount_FUN agpuGetFramebufferCount;
 	agpuAddPipelineBuilderReference_FUN agpuAddPipelineBuilderReference;
 	agpuReleasePipelineBuilder_FUN agpuReleasePipelineBuilder;
 	agpuBuildPipelineState_FUN agpuBuildPipelineState;
@@ -1010,6 +1024,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuExecuteBundle_FUN agpuExecuteBundle;
 	agpuCloseCommandList_FUN agpuCloseCommandList;
 	agpuResetCommandList_FUN agpuResetCommandList;
+	agpuResetBundleCommandList_FUN agpuResetBundleCommandList;
 	agpuBeginRenderPass_FUN agpuBeginRenderPass;
 	agpuEndRenderPass_FUN agpuEndRenderPass;
 	agpuResolveFramebuffer_FUN agpuResolveFramebuffer;
