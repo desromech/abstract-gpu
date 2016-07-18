@@ -16,6 +16,9 @@ struct _agpu_buffer : public Object<_agpu_buffer>
     agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
     agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
 
+    agpu_error flushWholeBuffer();
+    agpu_error invalidateWholeBuffer();
+
     VkBuffer getDrawBuffer()
     {
         if (gpuBuffer)

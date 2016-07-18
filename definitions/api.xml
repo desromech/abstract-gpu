@@ -1042,6 +1042,13 @@
                 <arg name="size" type="size" />
                 <arg name="data" type="pointer"/>
             </method>
+
+            <method name="flushWholeBuffer" cname="FlushWholeBuffer" returnType="error">
+            </method>
+
+            <method name="invalidateWholeBuffer" cname="InvalidateWholeBuffer" returnType="error">
+            </method>
+
         </interface>
 
         <interface name="vertex_binding">

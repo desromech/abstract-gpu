@@ -286,6 +286,36 @@ agpu_error _agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_p
     return AGPU_UNIMPLEMENTED;
 }
 
+agpu_error _agpu_buffer::flushWholeBuffer()
+{
+    if(!uploadBufferMemory)
+        return AGPU_OK;
+
+    VkMappedMemoryRange range;
+    memset(&range, 0, sizeof(range));
+    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range.memory = uploadBufferMemory;
+    range.size = VK_WHOLE_SIZE;
+    auto error = vkFlushMappedMemoryRanges(device->device, 1, &range);
+    CONVERT_VULKAN_ERROR(error);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_buffer::invalidateWholeBuffer()
+{
+    if(!uploadBufferMemory)
+        return AGPU_OK;
+
+    VkMappedMemoryRange range;
+    memset(&range, 0, sizeof(range));
+    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range.memory = uploadBufferMemory;
+    range.size = VK_WHOLE_SIZE;
+    auto error = vkInvalidateMappedMemoryRanges(device->device, 1, &range);
+    CONVERT_VULKAN_ERROR(error);
+    return AGPU_OK;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddBufferReference(agpu_buffer* buffer)
 {
@@ -328,4 +358,16 @@ AGPU_EXPORT agpu_error agpuReadBufferData(agpu_buffer* buffer, agpu_size offset,
 {
     CHECK_POINTER(buffer);
     return buffer->readBufferData(offset, size, data);
+}
+
+AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->flushWholeBuffer();
+}
+
+AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->invalidateWholeBuffer();
 }

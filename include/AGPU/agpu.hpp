@@ -745,6 +745,16 @@ public:
 		AgpuThrowIfFailed(agpuReadBufferData( this, offset, size, data ));
 	}
 
+	inline void flushWholeBuffer (  )
+	{
+		AgpuThrowIfFailed(agpuFlushWholeBuffer( this ));
+	}
+
+	inline void invalidateWholeBuffer (  )
+	{
+		AgpuThrowIfFailed(agpuInvalidateWholeBuffer( this ));
+	}
+
 };
 
 typedef agpu_ref<agpu_buffer> agpu_buffer_ref;

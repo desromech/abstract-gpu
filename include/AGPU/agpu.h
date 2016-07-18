@@ -820,6 +820,8 @@ typedef agpu_error (*agpuUnmapBuffer_FUN) ( agpu_buffer* buffer );
 typedef agpu_error (*agpuGetBufferDescription_FUN) ( agpu_buffer* buffer, agpu_buffer_description* description );
 typedef agpu_error (*agpuUploadBufferData_FUN) ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 typedef agpu_error (*agpuReadBufferData_FUN) ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
+typedef agpu_error (*agpuFlushWholeBuffer_FUN) ( agpu_buffer* buffer );
+typedef agpu_error (*agpuInvalidateWholeBuffer_FUN) ( agpu_buffer* buffer );
 
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer );
@@ -828,6 +830,8 @@ AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer );
 AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buffer_description* description );
 AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
 AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data );
+AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer );
+AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer );
 
 /* Methods for interface agpu_vertex_binding. */
 typedef agpu_error (*agpuAddVertexBindingReference_FUN) ( agpu_vertex_binding* vertex_binding );
@@ -1046,6 +1050,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetBufferDescription_FUN agpuGetBufferDescription;
 	agpuUploadBufferData_FUN agpuUploadBufferData;
 	agpuReadBufferData_FUN agpuReadBufferData;
+	agpuFlushWholeBuffer_FUN agpuFlushWholeBuffer;
+	agpuInvalidateWholeBuffer_FUN agpuInvalidateWholeBuffer;
 	agpuAddVertexBindingReference_FUN agpuAddVertexBindingReference;
 	agpuReleaseVertexBinding_FUN agpuReleaseVertexBinding;
 	agpuBindVertexBuffers_FUN agpuBindVertexBuffers;

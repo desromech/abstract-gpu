@@ -849,6 +849,22 @@ AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offse
 	return (*dispatchTable)->agpuReadBufferData ( buffer, offset, size, data );
 }
 
+AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
+{
+	if (buffer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (buffer);
+	return (*dispatchTable)->agpuFlushWholeBuffer ( buffer );
+}
+
+AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer )
+{
+	if (buffer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (buffer);
+	return (*dispatchTable)->agpuInvalidateWholeBuffer ( buffer );
+}
+
 AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding )
 {
 	if (vertex_binding == nullptr)
