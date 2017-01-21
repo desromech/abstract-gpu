@@ -19,6 +19,8 @@ public:
     agpu_error setBlendState ( agpu_int renderTargetMask, agpu_bool enabled );
     agpu_error setBlendFunction ( agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation );
     agpu_error setColorMask ( agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
+    agpu_error setFrontFace ( agpu_face_winding winding );
+    agpu_error setCullMode ( agpu_cull_mode mode );
     agpu_error setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
     agpu_error setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
     agpu_error setStencilFrontFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );

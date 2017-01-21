@@ -23,7 +23,8 @@ agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBindin
 {
     if(element >= elements.size())
         return nullptr;
-    return agpu_shader_resource_binding::create(device, elements[element]);
+
+    return agpu_shader_resource_binding::create(device, this, element);
 }
 
 // The exported C interface

@@ -217,6 +217,11 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_list::resetBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+{
+    return reset(allocator, initial_pipeline_state);
+}
+
 agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 {
     CHECK_POINTER(renderpass);
@@ -242,6 +247,11 @@ agpu_error _agpu_command_list::endRenderPass (  )
 }
 
 agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
 {
     return AGPU_UNIMPLEMENTED;
 }
@@ -355,6 +365,12 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
+AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+{
+    CHECK_POINTER(command_list);
+    return command_list->resetBundle(allocator, initial_pipeline_state, inheritance_info);
+}
+
 AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
 {
     CHECK_POINTER(command_list);
@@ -371,4 +387,10 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list,
 {
     CHECK_POINTER(command_list);
     return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
+}
+
+AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
+{
+    CHECK_POINTER(command_list);
+    return command_list->pushConstants(offset, size, values);
 }

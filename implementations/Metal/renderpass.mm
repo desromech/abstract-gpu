@@ -64,6 +64,21 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
     return descriptor;
 }
 
+agpu_error _agpu_renderpass::setDepthStencilClearValue ( agpu_depth_stencil_value value )
+{
+    depthStencil.clear_value = value;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_renderpass::setColorClearValue ( agpu_uint attachment_index, agpu_color4f value )
+{
+    if(attachment_index >= colorAttachments.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    colorAttachments[attachment_index].clear_value = value;
+    return AGPU_OK;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass )
 {
@@ -75,4 +90,16 @@ AGPU_EXPORT agpu_error agpuReleaseRenderPass ( agpu_renderpass* renderpass )
 {
     CHECK_POINTER(renderpass);
     return renderpass->release();
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue ( agpu_renderpass* renderpass, agpu_depth_stencil_value value )
+{
+    CHECK_POINTER(renderpass);
+    return renderpass->setDepthStencilClearValue(value);
+}
+
+AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value )
+{
+    CHECK_POINTER(renderpass);
+    return renderpass->setColorClearValue(attachment_index, value);
 }

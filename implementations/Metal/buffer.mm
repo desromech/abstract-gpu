@@ -62,6 +62,16 @@ agpu_error _agpu_buffer::readData ( agpu_size offset, agpu_size size, agpu_point
     return AGPU_UNIMPLEMENTED;
 }
 
+agpu_error _agpu_buffer::flushWhole (  )
+{
+    return AGPU_OK;
+}
+
+agpu_error _agpu_buffer::invalidateWhole (  )
+{
+    return AGPU_OK;
+}
+
 // The exported C interface.
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
 {
@@ -104,4 +114,16 @@ AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offse
 {
     CHECK_POINTER(buffer);
     return buffer->readData(offset, size, data);
+}
+
+AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->flushWhole();
+}
+
+AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->invalidateWhole();
 }

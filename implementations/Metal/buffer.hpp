@@ -16,6 +16,8 @@ public:
     agpu_error getDescription ( agpu_buffer_description* description );
     agpu_error uploadData ( agpu_size offset, agpu_size size, agpu_pointer data );
     agpu_error readData ( agpu_size offset, agpu_size size, agpu_pointer data );
+    agpu_error flushWhole (  );
+    agpu_error invalidateWhole (  );
 
     agpu_device *device;
     agpu_buffer_description description;

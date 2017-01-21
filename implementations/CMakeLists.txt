@@ -10,7 +10,7 @@ if(VULKAN_FOUND)
   add_subdirectory(Vulkan)
 endif()
 
-if(OPENGL_FOUND)
+if(OPENGL_FOUND AND NOT APPLE)
     add_subdirectory(OpenGL)
 endif()
 

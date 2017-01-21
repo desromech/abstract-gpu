@@ -87,6 +87,16 @@ agpu_error _agpu_pipeline_builder::setColorMask ( agpu_int renderTargetMask, agp
     return AGPU_UNIMPLEMENTED;
 }
 
+agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
     return AGPU_UNIMPLEMENTED;
@@ -219,6 +229,18 @@ AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builde
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
+}
+
+AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setFrontFace(winding);
+}
+
+AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setCullMode(mode);
 }
 
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )

@@ -27,9 +27,11 @@ public:
     agpu_error executeBundle ( agpu_command_list* bundle );
     agpu_error close (  );
     agpu_error reset ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
+    agpu_error resetBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info );
     agpu_error beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content );
     agpu_error endRenderPass (  );
     agpu_error resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
+    agpu_error pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values );
 
     agpu_device *device;
     agpu_command_list_type type;

@@ -13,7 +13,9 @@ public:
     static agpu_renderpass *create(agpu_device *device, agpu_renderpass_description *description);
 
     MTLRenderPassDescriptor *createDescriptor(agpu_framebuffer *framebuffer);
-    
+    agpu_error setDepthStencilClearValue ( agpu_depth_stencil_value value );
+    agpu_error setColorClearValue ( agpu_uint attachment_index, agpu_color4f value );
+
     agpu_device *device;
     bool hasDepthStencil;
     agpu_renderpass_depth_stencil_description depthStencil;
