@@ -68,12 +68,28 @@ agpu_error _agpu_command_list::setShaderSignature ( agpu_shader_signature* signa
 
 agpu_error _agpu_command_list::setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
-    return AGPU_UNIMPLEMENTED;
+    MTLViewport viewport;
+    viewport.originX = x;
+    viewport.originY = y;
+    viewport.width = w;
+    viewport.height = h;
+    viewport.znear = 0.0;
+    viewport.zfar = 1.0;
+    [renderEncoder setViewport: viewport];
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
-    return AGPU_UNIMPLEMENTED;
+    MTLScissorRect scissor;
+    scissor.x = x;
+    scissor.y = y;
+    scissor.width = w;
+    scissor.height = h;
+    [renderEncoder setScissorRect: scissor];
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::usePipelineState ( agpu_pipeline_state* pipeline )
@@ -170,7 +186,8 @@ agpu_error _agpu_command_list::multiDrawElementsIndirect ( agpu_size offset, agp
 
 agpu_error _agpu_command_list::setStencilReference ( agpu_uint reference )
 {
-    return AGPU_UNIMPLEMENTED;
+    [renderEncoder setStencilReferenceValue: reference];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::executeBundle ( agpu_command_list* bundle )

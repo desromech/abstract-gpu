@@ -42,6 +42,7 @@ public:
     agpu_pipeline_state *currentPipeline;
     agpu_shader_signature *currentShaderSignature;
     agpu_uint vertexBufferCount;
+
 };
 
 #endif //AGPU_METAL_COMMAND_LIST_HPP

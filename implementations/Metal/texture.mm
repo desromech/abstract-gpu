@@ -94,7 +94,16 @@ agpu_error _agpu_texture::unmapLevel (  )
 
 agpu_error _agpu_texture::readData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+
+    MTLRegion region = getLevelRegion(level);
+    [handle getBytes: buffer
+     bytesPerRow: pitch
+   bytesPerImage: slicePitch
+      fromRegion: region
+     mipmapLevel: level
+           slice: arrayIndex];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_texture::uploadData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
