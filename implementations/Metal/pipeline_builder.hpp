@@ -2,6 +2,7 @@
 #define AGPU_METAL_PIPELINE_BUILDER_HPP
 
 #include "device.hpp"
+#include "pipeline_command_state.hpp"
 #include <string>
 
 struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
@@ -34,9 +35,17 @@ public:
     agpu_error setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality );
 
     agpu_device *device;
+    agpu_shader_signature *shaderSignature;
     MTLRenderPipelineDescriptor *descriptor;
+    MTLDepthStencilDescriptor *depthStencilDescriptor;
+    MTLStencilDescriptor *backStencilDescriptor;
+    MTLStencilDescriptor *frontStencilDescriptor;
+
     std::string buildingLog;
-    MTLPrimitiveType primitiveType;
+    agpu_uint renderTargetCount;
+    agpu_pipeline_command_state commandState;
+    agpu_bool depthEnabled;
+    agpu_bool stencilEnabled;
 };
 
 #endif //AGPU_METAL_PIPELINE_BUILDER_HPP

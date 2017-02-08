@@ -2,18 +2,100 @@
 #include "pipeline_state.hpp"
 #include "shader.hpp"
 #include "vertex_layout.hpp"
+#include "shader_signature.hpp"
+#include "texture_format.hpp"
+
+inline MTLBlendFactor mapBlendFactor(agpu_blending_factor factor, bool alpha)
+{
+    switch(factor)
+    {
+    case AGPU_BLENDING_ZERO: return MTLBlendFactorZero;
+    case AGPU_BLENDING_ONE: return MTLBlendFactorOne;
+    case AGPU_BLENDING_SRC_COLOR: return MTLBlendFactorSourceColor;
+    case AGPU_BLENDING_INVERTED_SRC_COLOR: return MTLBlendFactorOneMinusSourceColor;
+    case AGPU_BLENDING_SRC_ALPHA: return MTLBlendFactorSourceAlpha;
+    case AGPU_BLENDING_INVERTED_SRC_ALPHA: return MTLBlendFactorOneMinusSourceAlpha;
+    case AGPU_BLENDING_DEST_ALPHA: return MTLBlendFactorDestinationAlpha;
+    case AGPU_BLENDING_INVERTED_DEST_ALPHA: return MTLBlendFactorOneMinusDestinationAlpha;
+    case AGPU_BLENDING_DEST_COLOR: return MTLBlendFactorDestinationColor;
+    case AGPU_BLENDING_INVERTED_DEST_COLOR: return MTLBlendFactorOneMinusDestinationColor;
+    case AGPU_BLENDING_SRC_ALPHA_SAT: return MTLBlendFactorSourceAlphaSaturated;
+    case AGPU_BLENDING_CONSTANT_FACTOR: return alpha ? MTLBlendFactorBlendColor : MTLBlendFactorBlendAlpha;
+    case AGPU_BLENDING_INVERTED_CONSTANT_FACTOR: return alpha ? MTLBlendFactorOneMinusBlendColor : MTLBlendFactorOneMinusBlendAlpha;
+/*    case AGPU_BLENDING_SRC_1COLOR: return MTLBlendFactorSource1Color;
+    case AGPU_BLENDING_INVERTED_SRC_1COLOR: return MTLBlendFactorOneMinusSource1Color;
+    case AGPU_BLENDING_SRC_1ALPHA: return MTLBlendFactorSource1Alpha;
+    case AGPU_BLENDING_INVERTED_SRC_1ALPHA: return MTLBlendFactorOneMinusSource1Alpha;
+    */
+    default: abort();
+    }
+}
+
+inline MTLBlendOperation mapBlendOperation(agpu_blending_operation operation)
+{
+    switch(operation)
+    {
+    case AGPU_BLENDING_OPERATION_ADD: return MTLBlendOperationAdd;
+    case AGPU_BLENDING_OPERATION_SUBTRACT: return MTLBlendOperationSubtract;
+    case AGPU_BLENDING_OPERATION_REVERSE_SUBTRACT: return MTLBlendOperationReverseSubtract;
+    case AGPU_BLENDING_OPERATION_MIN: return MTLBlendOperationMin;
+    case AGPU_BLENDING_OPERATION_MAX: return MTLBlendOperationMax;
+    default: abort();
+    }
+}
+
+inline MTLCompareFunction mapCompareFunction(agpu_compare_function function)
+{
+    switch(function)
+    {
+    case AGPU_ALWAYS: return MTLCompareFunctionAlways;
+    case AGPU_NEVER: return MTLCompareFunctionNever;
+    case AGPU_LESS: return MTLCompareFunctionLess;
+    case AGPU_LESS_EQUAL: return MTLCompareFunctionLessEqual;
+    case AGPU_EQUAL: return MTLCompareFunctionEqual;
+    case AGPU_NOT_EQUAL: return MTLCompareFunctionNotEqual;
+    case AGPU_GREATER: return MTLCompareFunctionGreater;
+    case AGPU_GREATER_EQUAL: return MTLCompareFunctionGreaterEqual;
+    default: abort();
+    }
+}
+
+inline MTLStencilOperation mapStencilOperation(agpu_stencil_operation operation)
+{
+    switch(operation)
+    {
+    case AGPU_KEEP: return MTLStencilOperationKeep;
+	case AGPU_ZERO: return MTLStencilOperationZero;
+	case AGPU_REPLACE: return MTLStencilOperationReplace;
+	case AGPU_INVERT: return MTLStencilOperationInvert;
+	case AGPU_INCREASE: return MTLStencilOperationIncrementClamp;
+	case AGPU_INCREASE_WRAP: return MTLStencilOperationIncrementWrap;
+	case AGPU_DECREASE: return MTLStencilOperationDecrementClamp;
+	case AGPU_DECREASE_WRAP: return MTLStencilOperationDecrementWrap;
+    default: abort();
+    }
+}
 
 _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     : device(device)
 {
     descriptor = nil;
-    primitiveType = MTLPrimitiveTypePoint;
+    depthStencilDescriptor = nil;
+    backStencilDescriptor = nil;
+    frontStencilDescriptor = nil;
+
+    shaderSignature = nullptr;
+    renderTargetCount = 1;
+    depthEnabled = false;
+    stencilEnabled = false;
 }
 
 void _agpu_pipeline_builder::lostReferences()
 {
     if(descriptor)
         [descriptor release];
+    if(depthStencilDescriptor)
+        [depthStencilDescriptor release];
 }
 
 _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
@@ -23,6 +105,10 @@ _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
 
     auto result = new agpu_pipeline_builder(device);
     result->descriptor = descriptor;
+    result->depthStencilDescriptor = [MTLDepthStencilDescriptor new];
+    result->backStencilDescriptor = [MTLStencilDescriptor new];
+    result->frontStencilDescriptor = [MTLStencilDescriptor new];
+
     return result;
 }
 
@@ -36,6 +122,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
         buildingLog = [description UTF8String];
         return nullptr;
     }
+
+    depthStencilDescriptor.backFaceStencil = stencilEnabled ? backStencilDescriptor : nil;
+    depthStencilDescriptor.frontFaceStencil = stencilEnabled ? frontStencilDescriptor : nil;
 
     return agpu_pipeline_state::create(device, this, pipelineState);
 }
@@ -74,62 +163,172 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
 
 agpu_error _agpu_pipeline_builder::setBlendState ( agpu_int renderTargetMask, agpu_bool enabled )
 {
-    return AGPU_UNIMPLEMENTED;
+    for(agpu_uint i = 0; i < renderTargetCount; ++i)
+    {
+        if((renderTargetMask & (1 << i)) == 0)
+            continue;
+
+        descriptor.colorAttachments[i].blendingEnabled = enabled;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setBlendFunction ( agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
 {
-    return AGPU_UNIMPLEMENTED;
+    auto sourceRGBBlendFactor = mapBlendFactor(sourceFactor, false);
+    auto destinationRGBBlendFactor = mapBlendFactor(destFactor, false);
+    auto rgbBlendOperation = mapBlendOperation(colorOperation);
+
+    auto sourceAlphaBlendFactor = mapBlendFactor(sourceAlphaFactor, true);
+    auto destinationAlphaBlendFactor = mapBlendFactor(destAlphaFactor, true);
+    auto alphaBlendOperation = mapBlendOperation(alphaOperation);
+
+    for(agpu_uint i = 0; i < renderTargetCount; ++i)
+    {
+        if((renderTargetMask & (1 << i)) == 0)
+            continue;
+
+        auto attachment = descriptor.colorAttachments[i];
+        attachment.sourceRGBBlendFactor = sourceRGBBlendFactor;
+        attachment.destinationRGBBlendFactor = destinationRGBBlendFactor;
+        attachment.rgbBlendOperation = rgbBlendOperation;
+
+        attachment.sourceAlphaBlendFactor = sourceAlphaBlendFactor;
+        attachment.destinationAlphaBlendFactor = destinationAlphaBlendFactor;
+        attachment.alphaBlendOperation = alphaBlendOperation;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setColorMask ( agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
 {
-    return AGPU_UNIMPLEMENTED;
+    auto mask = 0;
+    if(redEnabled)
+        mask |= MTLColorWriteMaskRed;
+    if(greenEnabled)
+        mask |= MTLColorWriteMaskGreen;
+    if(blueEnabled)
+        mask |= MTLColorWriteMaskBlue;
+    if(alphaEnabled)
+        mask |= MTLColorWriteMaskAlpha;
+
+    for(agpu_uint i = 0; i < renderTargetCount; ++i)
+    {
+        if((renderTargetMask & (1 << i)) == 0)
+            continue;
+
+        descriptor.colorAttachments[i].writeMask = mask;
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
 {
-    return AGPU_UNIMPLEMENTED;
+    switch(winding)
+    {
+    case AGPU_CLOCKWISE:
+        commandState.frontFace = MTLWindingClockwise;
+        return AGPU_OK;
+    case AGPU_COUNTER_CLOCKWISE:
+        commandState.frontFace = MTLWindingCounterClockwise;
+        return AGPU_OK;
+    default:
+        return AGPU_INVALID_PARAMETER;
+    }
 }
 
 agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
 {
-    return AGPU_UNIMPLEMENTED;
+    switch(mode)
+    {
+    case AGPU_CULL_MODE_NONE:
+        commandState.cullMode = MTLCullModeNone;
+        descriptor.rasterizationEnabled = YES;
+        return AGPU_OK;
+    case AGPU_CULL_MODE_FRONT:
+        commandState.cullMode = MTLCullModeFront;
+        descriptor.rasterizationEnabled = YES;
+        return AGPU_OK;
+    case AGPU_CULL_MODE_BACK:
+        commandState.cullMode = MTLCullModeBack;
+        descriptor.rasterizationEnabled = YES;
+        return AGPU_OK;
+    case AGPU_CULL_MODE_FRONT_AND_BACK:
+        commandState.cullMode = MTLCullModeFront;
+        descriptor.rasterizationEnabled = NO;
+        return AGPU_OK;
+    default:
+        return AGPU_INVALID_PARAMETER;
+    }
 }
 
 agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
-    return AGPU_UNIMPLEMENTED;
+    depthEnabled = enabled;
+    depthStencilDescriptor.depthCompareFunction = mapCompareFunction(function);
+    depthStencilDescriptor.depthWriteEnabled = writeMask;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
 {
-    return AGPU_UNIMPLEMENTED;
+    stencilEnabled = enabled;
+    backStencilDescriptor.writeMask = writeMask;
+    backStencilDescriptor.readMask = readMask;
+    frontStencilDescriptor.writeMask = writeMask;
+    frontStencilDescriptor.readMask = readMask;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setStencilFrontFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
 {
-    return AGPU_UNIMPLEMENTED;
+    frontStencilDescriptor.stencilFailureOperation = mapStencilOperation(stencilFailOperation);
+    frontStencilDescriptor.depthFailureOperation = mapStencilOperation(depthFailOperation);
+    frontStencilDescriptor.depthStencilPassOperation = mapStencilOperation(stencilDepthPassOperation);
+    frontStencilDescriptor.stencilCompareFunction = mapCompareFunction(stencilFunction);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setStencilBackFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
 {
-    return AGPU_UNIMPLEMENTED;
+    backStencilDescriptor.stencilFailureOperation = mapStencilOperation(stencilFailOperation);
+    backStencilDescriptor.depthFailureOperation = mapStencilOperation(depthFailOperation);
+    backStencilDescriptor.depthStencilPassOperation = mapStencilOperation(stencilDepthPassOperation);
+    backStencilDescriptor.stencilCompareFunction = mapCompareFunction(stencilFunction);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setRenderTargetCount ( agpu_int count )
 {
-    return AGPU_UNIMPLEMENTED;
+    renderTargetCount = count;
+    for(agpu_uint i = 0; i < count; ++i)
+        descriptor.colorAttachments[i].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setRenderTargetFormat ( agpu_uint index, agpu_texture_format format )
 {
-    return AGPU_UNIMPLEMENTED;
+    if(index >= renderTargetCount)
+        return AGPU_OUT_OF_BOUNDS;
+
+    descriptor.colorAttachments[index].pixelFormat = mapTextureFormat(format);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setDepthStencilFormat ( agpu_texture_format format )
 {
-    return AGPU_UNIMPLEMENTED;
+    if(hasDepthComponent(format))
+        descriptor.depthAttachmentPixelFormat = mapTextureFormat(format);
+    else
+        descriptor.depthAttachmentPixelFormat = MTLPixelFormatInvalid;
+    if(hasStencilComponent(format))
+        descriptor.stencilAttachmentPixelFormat = mapTextureFormat(format);
+    else
+        descriptor.stencilAttachmentPixelFormat = MTLPixelFormatInvalid;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setPrimitiveType ( agpu_primitive_topology type )
@@ -137,19 +336,19 @@ agpu_error _agpu_pipeline_builder::setPrimitiveType ( agpu_primitive_topology ty
     switch(type)
     {
     case AGPU_POINTS:
-        primitiveType = MTLPrimitiveTypePoint;
+        commandState.primitiveType = MTLPrimitiveTypePoint;
         break;
     case AGPU_LINES:
-        primitiveType = MTLPrimitiveTypeLine;
+        commandState.primitiveType = MTLPrimitiveTypeLine;
         break;
     case AGPU_LINE_STRIP:
-        primitiveType = MTLPrimitiveTypeLineStrip;
+        commandState.primitiveType = MTLPrimitiveTypeLineStrip;
         break;
     case AGPU_TRIANGLES:
-        primitiveType = MTLPrimitiveTypeTriangle;
+        commandState.primitiveType = MTLPrimitiveTypeTriangle;
         break;
     case AGPU_TRIANGLE_STRIP:
-        primitiveType = MTLPrimitiveTypeTriangleStrip;
+        commandState.primitiveType = MTLPrimitiveTypeTriangleStrip;
         break;
     default: return AGPU_UNSUPPORTED;
     }
@@ -166,12 +365,18 @@ agpu_error _agpu_pipeline_builder::setVertexLayout ( agpu_vertex_layout* layout 
 
 agpu_error _agpu_pipeline_builder::setPipelineShaderSignature ( agpu_shader_signature* signature )
 {
-    return AGPU_UNIMPLEMENTED;
+    if(signature)
+        signature->retain();
+    if(shaderSignature)
+        shaderSignature->release();
+    shaderSignature = signature;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality )
 {
-    return AGPU_UNIMPLEMENTED;
+    descriptor.sampleCount = sample_count;
+    return AGPU_OK;
 }
 
 // The exported C interface

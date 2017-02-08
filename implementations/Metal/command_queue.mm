@@ -32,10 +32,17 @@ _agpu_command_queue *_agpu_command_queue::create(agpu_device *device, id<MTLComm
 agpu_error _agpu_command_queue::addCommandList ( agpu_command_list* command_list )
 {
     CHECK_POINTER(command_list);
+    if(command_list->used)
+    {
+        printf("TODO: Recreate a command list for resubmitting\n");
+        return AGPU_OK;
+    }
+
     if(!command_list->buffer)
         return AGPU_INVALID_PARAMETER;
 
     [command_list->buffer commit];
+    command_list->used = true;
     return AGPU_OK;
 }
 

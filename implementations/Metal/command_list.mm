@@ -24,11 +24,14 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
 {
     allocator = nullptr;
     currentIndexBuffer = nullptr;
+    currentVertexBinding = nullptr;
     currentPipeline = nullptr;
     currentShaderSignature = nullptr;
     vertexBufferCount = 0;
     buffer = nil;
     renderEncoder = nil;
+    used = false;
+    memset(activeShaderResourceBindings, 0, sizeof(activeShaderResourceBindings));
 }
 
 void _agpu_command_list::lostReferences()
@@ -52,6 +55,9 @@ agpu_command_list* _agpu_command_list::create ( agpu_device* device, agpu_comman
         result->release();
         return nullptr;
     }
+
+    if(initial_pipeline_state)
+        result->usePipelineState(initial_pipeline_state);
 
     return result;
 }
@@ -102,31 +108,45 @@ agpu_error _agpu_command_list::usePipelineState ( agpu_pipeline_state* pipeline 
 
     currentPipeline = pipeline;
     if(renderEncoder)
-        [renderEncoder setRenderPipelineState: currentPipeline->handle];
+        currentPipeline->applyRenderCommands(renderEncoder);
 
     return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_binding )
 {
-    if(!vertex_binding)
+    if(vertex_binding)
+        vertex_binding->retain();
+    if(currentVertexBinding)
+        currentVertexBinding->release();
+    currentVertexBinding = vertex_binding;
+    for(auto buffer : currentVertexBinding->buffers)
     {
-        vertexBufferCount = 0;
-        return AGPU_OK;
+        if(!buffer)
+            return AGPU_INVALID_PARAMETER;
     }
 
-    auto &buffers = vertex_binding->buffers;
+    return AGPU_OK;
+}
+
+void _agpu_command_list::activateVertexBinding ( )
+{
+    if(!currentVertexBinding)
+    {
+        vertexBufferCount = 0;
+        return;
+    }
+
+    auto &buffers = currentVertexBinding->buffers;
     vertexBufferCount = buffers.size();
     for(size_t i = 0; i < vertexBufferCount; ++i)
     {
         auto buffer = buffers[i];
         if(!buffer)
-            return AGPU_ERROR;
+            return;
 
         [renderEncoder setVertexBuffer: buffer->handle offset: 0 atIndex: i];
     }
-
-    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::useIndexBuffer ( agpu_buffer* index_buffer )
@@ -150,9 +170,26 @@ agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding
     if(!renderEncoder)
         return AGPU_INVALID_OPERATION;
 
-    return binding->activateOn(vertexBufferCount, renderEncoder);
+    if(binding->elementIndex >= MaxActiveResourceBindings)
+        return AGPU_UNSUPPORTED;
+
+    binding->retain();
+    if(activeShaderResourceBindings[binding->elementIndex])
+        activeShaderResourceBindings[binding->elementIndex]->release();
+    activeShaderResourceBindings[binding->elementIndex] = binding;
+    return AGPU_OK;
 }
 
+void _agpu_command_list::activateShaderResourceBindings()
+{
+    for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
+    {
+        auto activeBinding = activeShaderResourceBindings[i];
+        if(!activeBinding)
+            continue;
+        activeBinding->activateOn(vertexBufferCount, renderEncoder);
+    }
+}
 agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
 {
     return AGPU_UNIMPLEMENTED;
@@ -163,7 +200,10 @@ agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint i
     if(!currentIndexBuffer || !currentPipeline)
         return AGPU_INVALID_OPERATION;
 
-    [renderEncoder drawIndexedPrimitives: currentPipeline->primitiveType
+    activateVertexBinding();
+    activateShaderResourceBindings();
+
+    [renderEncoder drawIndexedPrimitives: currentPipeline->commandState.primitiveType
                    indexCount: index_count
                     indexType: mapIndexType(currentIndexBuffer->description.stride)
                   indexBuffer: currentIndexBuffer->handle
@@ -214,10 +254,22 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     if(buffer)
         [buffer release];
     buffer = [allocator->queue->handle commandBuffer];
+    used = false;
 
     if(currentIndexBuffer)
         currentIndexBuffer->release();
     currentIndexBuffer = nullptr;
+
+    if(currentVertexBinding)
+        currentVertexBinding->release();
+    currentVertexBinding = nullptr;
+
+    for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
+    {
+        if(activeShaderResourceBindings[i])
+            activeShaderResourceBindings[i]->release();
+        activeShaderResourceBindings[i] = nullptr;
+    }
 
     if(initial_pipeline_state)
         initial_pipeline_state->retain();
@@ -248,7 +300,7 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
     if(currentPipeline)
-        [renderEncoder setRenderPipelineState: currentPipeline->handle];
+        currentPipeline->applyRenderCommands(renderEncoder);
 
     return AGPU_OK;
 }

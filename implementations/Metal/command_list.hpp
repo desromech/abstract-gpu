@@ -6,6 +6,8 @@
 struct _agpu_command_list : public Object<_agpu_command_list>
 {
 public:
+    static const size_t MaxActiveResourceBindings = 16;
+
     _agpu_command_list(agpu_device *device);
     void lostReferences();
 
@@ -33,16 +35,22 @@ public:
     agpu_error resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer );
     agpu_error pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values );
 
+    void activateVertexBinding ();
+    void activateShaderResourceBindings();
+
     agpu_device *device;
     agpu_command_list_type type;
     agpu_command_allocator* allocator;
     id<MTLCommandBuffer> buffer;
     id<MTLRenderCommandEncoder> renderEncoder;
     agpu_buffer *currentIndexBuffer;
+    agpu_vertex_binding* currentVertexBinding;
+
     agpu_pipeline_state *currentPipeline;
     agpu_shader_signature *currentShaderSignature;
     agpu_uint vertexBufferCount;
-
+    agpu_bool used;
+    agpu_shader_resource_binding *activeShaderResourceBindings[MaxActiveResourceBindings];
 };
 
 #endif //AGPU_METAL_COMMAND_LIST_HPP

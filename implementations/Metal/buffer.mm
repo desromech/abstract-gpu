@@ -8,6 +8,8 @@ _agpu_buffer::_agpu_buffer(agpu_device *device)
 
 void _agpu_buffer::lostReferences()
 {
+    if(handle)
+        [handle release];
 }
 
 agpu_buffer* _agpu_buffer::create ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
@@ -30,17 +32,18 @@ agpu_buffer* _agpu_buffer::create ( agpu_device* device, agpu_buffer_description
 
 agpu_pointer _agpu_buffer::map ( agpu_mapping_access flags )
 {
-    return nullptr;
+    return handle.contents;
 }
 
 agpu_error _agpu_buffer::unmap (  )
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_buffer::getDescription ( agpu_buffer_description* description )
 {
-    return AGPU_UNIMPLEMENTED;
+    *description = this->description;
+    return AGPU_OK;
 }
 
 agpu_error _agpu_buffer::uploadData ( agpu_size offset, agpu_size size, agpu_pointer data )
@@ -57,18 +60,35 @@ agpu_error _agpu_buffer::uploadData ( agpu_size offset, agpu_size size, agpu_poi
     return AGPU_OK;
 }
 
-agpu_error _agpu_buffer::readData ( agpu_size offset, agpu_size size, agpu_pointer data )
+agpu_error _agpu_buffer::readData ( agpu_size offset, agpu_size size, agpu_pointer buffer )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer)
+    if(offset + size > handle.length)
+        return AGPU_OUT_OF_BOUNDS;
+
+    auto contents = reinterpret_cast<uint8_t*> (handle.contents);
+    if(!contents)
+        return AGPU_INVALID_OPERATION;
+
+    memcpy(buffer, contents + offset, size);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_buffer::flushWhole (  )
 {
+    NSRange range;
+    range.location = 0;
+    range.length = description.size;
+    [handle didModifyRange: range];
     return AGPU_OK;
 }
 
 agpu_error _agpu_buffer::invalidateWhole (  )
 {
+    NSRange range;
+    range.location = 0;
+    range.length = description.size;
+    [handle didModifyRange: range];
     return AGPU_OK;
 }
 

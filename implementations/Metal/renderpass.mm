@@ -1,5 +1,6 @@
 #include "renderpass.hpp"
 #include "framebuffer.hpp"
+#include "texture.hpp"
 
 _agpu_renderpass::_agpu_renderpass(agpu_device *device)
     : device(device)
@@ -61,11 +62,27 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
         dest.loadAction = MTLLoadActionClear;
     }
 
+    if(hasDepthStencil)
+    {
+        auto depthAttachment = descriptor.depthAttachment;
+        depthAttachment.texture = framebuffer->depthStencilBuffer->handle;
+        depthAttachment.clearDepth = depthStencil.clear_value.depth;
+        depthAttachment.storeAction = MTLStoreActionStore;
+        depthAttachment.loadAction = MTLLoadActionClear;
+
+        auto stencilAttachment = descriptor.stencilAttachment;
+        stencilAttachment.texture = framebuffer->depthStencilBuffer->handle;
+        stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
+        stencilAttachment.storeAction = MTLStoreActionStore;
+        stencilAttachment.loadAction = MTLLoadActionClear;
+    }
+
     return descriptor;
 }
 
 agpu_error _agpu_renderpass::setDepthStencilClearValue ( agpu_depth_stencil_value value )
 {
+    printf("Set depth stencil clear: %f %d\n", value.depth, value.stencil);
     depthStencil.clear_value = value;
     return AGPU_OK;
 }

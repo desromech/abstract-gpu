@@ -4,18 +4,33 @@
 _agpu_pipeline_state::_agpu_pipeline_state(agpu_device *device)
     : device(device)
 {
+    depthStencilState = nil;
 }
 
 void _agpu_pipeline_state::lostReferences()
 {
+    if(handle)
+        [handle release];
+    if(depthStencilState)
+        [depthStencilState release];
 }
 
 agpu_pipeline_state *_agpu_pipeline_state::create(agpu_device *device, agpu_pipeline_builder *builder, id<MTLRenderPipelineState> handle)
 {
     auto result = new agpu_pipeline_state(device);
     result->handle = handle;
-    result->primitiveType = builder->primitiveType;
+    result->commandState = builder->commandState;
+    result->depthStencilState = [device->device newDepthStencilStateWithDescriptor: builder->depthStencilDescriptor];
     return result;
+}
+
+void _agpu_pipeline_state::applyRenderCommands(id<MTLRenderCommandEncoder> renderEncoder)
+{
+    [renderEncoder setRenderPipelineState: handle];
+    [renderEncoder setDepthStencilState: depthStencilState];
+    [renderEncoder setCullMode: commandState.cullMode];
+    [renderEncoder setFrontFacingWinding: commandState.frontFace];
+
 }
 
 // The exported C interface
