@@ -80,6 +80,9 @@ agpu_error _agpu_shader::compileMetalSource ( agpu_cstring options )
 
     function = [library newFunctionWithName: @"agpu_main"];
     if(!function)
+        function = [library newFunctionWithName: @"shaderMain"];
+
+    if(!function)
     {
         compilationLog = "Missing agpu_main entry point.";
         return AGPU_COMPILATION_ERROR;
