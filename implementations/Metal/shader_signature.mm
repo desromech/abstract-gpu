@@ -16,6 +16,8 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
 {
     auto result = new agpu_shader_signature(device);
     result->elements = builder->elements;
+    result->pushConstantBufferSize = builder->bindingPointsUsed[(int)MetalResourceBindingType::Bytes]*4;
+    result->pushConstantBufferIndex = builder->bindingPointsUsed[(int)MetalResourceBindingType::Buffer];
     return result;
 }
 

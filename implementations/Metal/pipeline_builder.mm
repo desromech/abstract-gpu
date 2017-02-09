@@ -120,6 +120,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
     {
         auto description = [error localizedDescription];
         buildingLog = [description UTF8String];
+        printf("Failed to build pipeline state: %s\n", buildingLog.c_str());
         return nullptr;
     }
 

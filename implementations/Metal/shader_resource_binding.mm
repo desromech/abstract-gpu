@@ -139,6 +139,8 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange ( agpu_int loca
     if(binding.buffer)
         binding.buffer->release();
     binding.buffer = uniform_buffer;
+    binding.offset = offset;
+    binding.size = size;
     return AGPU_OK;
 }
 
@@ -167,6 +169,8 @@ agpu_error _agpu_shader_resource_binding::bindStorageBufferRange ( agpu_int loca
     if(binding.buffer)
         binding.buffer->release();
     binding.buffer = storage_buffer;
+    binding.offset = offset;
+    binding.size = size;
     return AGPU_OK;
 }
 

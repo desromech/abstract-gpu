@@ -75,21 +75,21 @@ inline MTLPixelFormat mapTextureFormat(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R8_SINT: return MTLPixelFormatR8Sint;
 	case AGPU_TEXTURE_FORMAT_A8_UNORM: return MTLPixelFormatA8Unorm;
 	case AGPU_TEXTURE_FORMAT_R1_UNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC1_TYPELESS: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC1_UNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC1_UNORM_SRGB: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC2_TYPELESS: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC2_UNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC2_UNORM_SRGB: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC3_TYPELESS: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC3_UNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC4_TYPELESS: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC4_UNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC4_SNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC5_TYPELESS: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC5_UNORM: return MTLPixelFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_BC5_SNORM: return MTLPixelFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_BC1_TYPELESS: return MTLPixelFormatBC1_RGBA;
+	case AGPU_TEXTURE_FORMAT_BC1_UNORM: return MTLPixelFormatBC1_RGBA;
+	case AGPU_TEXTURE_FORMAT_BC1_UNORM_SRGB: return MTLPixelFormatBC1_RGBA_sRGB;
+	case AGPU_TEXTURE_FORMAT_BC2_TYPELESS: return MTLPixelFormatBC2_RGBA;
+	case AGPU_TEXTURE_FORMAT_BC2_UNORM: return MTLPixelFormatBC2_RGBA;
+	case AGPU_TEXTURE_FORMAT_BC2_UNORM_SRGB: return MTLPixelFormatBC2_RGBA_sRGB;
+	case AGPU_TEXTURE_FORMAT_BC3_TYPELESS: return MTLPixelFormatBC3_RGBA;
+	case AGPU_TEXTURE_FORMAT_BC3_UNORM: return MTLPixelFormatBC3_RGBA;
+	case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB: return MTLPixelFormatBC3_RGBA_sRGB;
+	case AGPU_TEXTURE_FORMAT_BC4_TYPELESS: return MTLPixelFormatBC4_RUnorm;
+	case AGPU_TEXTURE_FORMAT_BC4_UNORM: return MTLPixelFormatBC4_RUnorm;
+	case AGPU_TEXTURE_FORMAT_BC4_SNORM: return MTLPixelFormatBC4_RSnorm;
+	case AGPU_TEXTURE_FORMAT_BC5_TYPELESS: return MTLPixelFormatBC5_RGUnorm;
+	case AGPU_TEXTURE_FORMAT_BC5_UNORM: return MTLPixelFormatBC5_RGUnorm;
+	case AGPU_TEXTURE_FORMAT_BC5_SNORM: return MTLPixelFormatBC5_RGSnorm;
 	case AGPU_TEXTURE_FORMAT_B5G6R5_UNORM: return MTLPixelFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM: return MTLPixelFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM: return MTLPixelFormatBGRA8Unorm;
@@ -109,22 +109,26 @@ inline MTLVertexFormat mapVertexFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_UNKNOWN: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R32G32B32A32_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT: return MTLVertexFormatFloat4;
-	case AGPU_TEXTURE_FORMAT_R32G32B32A32_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32G32B32A32_SINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32G32B32_TYPELESS: return MTLVertexFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_R32G32B32A32_UINT: return MTLVertexFormatUInt4;
+	case AGPU_TEXTURE_FORMAT_R32G32B32A32_SINT: return MTLVertexFormatInt4;
+
+	case AGPU_TEXTURE_FORMAT_R32G32B32_TYPELESS: return MTLVertexFormatUInt3;
 	case AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT: return MTLVertexFormatFloat3;
-	case AGPU_TEXTURE_FORMAT_R32G32B32_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32G32B32_SINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16B16A16_TYPELESS: return MTLVertexFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_R32G32B32_UINT: return MTLVertexFormatUInt3;
+	case AGPU_TEXTURE_FORMAT_R32G32B32_SINT: return MTLVertexFormatInt3;
+
+	case AGPU_TEXTURE_FORMAT_R16G16B16A16_TYPELESS: return MTLVertexFormatUShort4;
 	case AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT: return MTLVertexFormatHalf4;
-	case AGPU_TEXTURE_FORMAT_R16G16B16A16_UNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16B16A16_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16B16A16_SNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16B16A16_SINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32G32_TYPELESS: return MTLVertexFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_R16G16B16A16_UNORM: return MTLVertexFormatUShort4Normalized;
+	case AGPU_TEXTURE_FORMAT_R16G16B16A16_UINT: return MTLVertexFormatUShort4;
+	case AGPU_TEXTURE_FORMAT_R16G16B16A16_SNORM: return MTLVertexFormatShort4Normalized;
+	case AGPU_TEXTURE_FORMAT_R16G16B16A16_SINT: return MTLVertexFormatShort4;
+
+    case AGPU_TEXTURE_FORMAT_R32G32_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R32G32_FLOAT: return MTLVertexFormatFloat2;
-	case AGPU_TEXTURE_FORMAT_R32G32_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32G32_SINT: return MTLVertexFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_R32G32_UINT: return MTLVertexFormatUInt2;
+	case AGPU_TEXTURE_FORMAT_R32G32_SINT: return MTLVertexFormatInt2;
+
 	case AGPU_TEXTURE_FORMAT_R32G8X24_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R32_FLOAT_S8X24_TYPELESS: return MTLVertexFormatInvalid;
@@ -133,32 +137,38 @@ inline MTLVertexFormat mapVertexFormat(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R10G10B10A2_UNORM: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R10G10B10A2_UINT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R11G11B10_FLOAT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8B8A8_TYPELESS: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM_SRGB: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8B8A8_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8B8A8_SNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8B8A8_SINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16_TYPELESS: return MTLVertexFormatInvalid;
+
+	case AGPU_TEXTURE_FORMAT_R8G8B8A8_TYPELESS: return MTLVertexFormatUChar4;
+	case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM: return MTLVertexFormatUChar4Normalized;
+	case AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM_SRGB: return MTLVertexFormatUChar4Normalized;
+	case AGPU_TEXTURE_FORMAT_R8G8B8A8_UINT: return MTLVertexFormatUChar4;
+	case AGPU_TEXTURE_FORMAT_R8G8B8A8_SNORM: return MTLVertexFormatChar4Normalized;
+	case AGPU_TEXTURE_FORMAT_R8G8B8A8_SINT: return MTLVertexFormatChar4;
+
+	case AGPU_TEXTURE_FORMAT_R16G16_TYPELESS: return MTLVertexFormatUShort2;
 	case AGPU_TEXTURE_FORMAT_R16G16_FLOAT: return MTLVertexFormatHalf2;
-	case AGPU_TEXTURE_FORMAT_R16G16_UNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16_SNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R16G16_SINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32_TYPELESS: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_D32_FLOAT: return MTLVertexFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_R16G16_UNORM: return MTLVertexFormatUShort2Normalized;
+	case AGPU_TEXTURE_FORMAT_R16G16_UINT: return MTLVertexFormatUShort2;
+	case AGPU_TEXTURE_FORMAT_R16G16_SNORM: return MTLVertexFormatShort2Normalized;
+	case AGPU_TEXTURE_FORMAT_R16G16_SINT: return MTLVertexFormatShort2;
+
+	case AGPU_TEXTURE_FORMAT_R32_TYPELESS: return MTLVertexFormatInt;
+	case AGPU_TEXTURE_FORMAT_D32_FLOAT: return MTLVertexFormatFloat;
 	case AGPU_TEXTURE_FORMAT_R32_FLOAT: return MTLVertexFormatFloat;
-	case AGPU_TEXTURE_FORMAT_R32_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R32_SINT: return MTLVertexFormatInvalid;
+	case AGPU_TEXTURE_FORMAT_R32_UINT: return MTLVertexFormatUInt;
+	case AGPU_TEXTURE_FORMAT_R32_SINT: return MTLVertexFormatInt;
+
 	case AGPU_TEXTURE_FORMAT_R24G8_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R24_UNORM_X8_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_X24TG8_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8_TYPELESS: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8_UNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8_UINT: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8_SNORM: return MTLVertexFormatInvalid;
-	case AGPU_TEXTURE_FORMAT_R8G8_SINT: return MTLVertexFormatInvalid;
+
+    case AGPU_TEXTURE_FORMAT_R8G8_TYPELESS: return MTLVertexFormatUChar2;
+	case AGPU_TEXTURE_FORMAT_R8G8_UNORM: return MTLVertexFormatUChar2Normalized;
+	case AGPU_TEXTURE_FORMAT_R8G8_UINT: return MTLVertexFormatUChar2;
+	case AGPU_TEXTURE_FORMAT_R8G8_SNORM: return MTLVertexFormatChar2Normalized;
+	case AGPU_TEXTURE_FORMAT_R8G8_SINT: return MTLVertexFormatChar2;
+
 	case AGPU_TEXTURE_FORMAT_R16_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R16_FLOAT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_D16_UNORM: return MTLVertexFormatInvalid;
@@ -166,12 +176,14 @@ inline MTLVertexFormat mapVertexFormat(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R16_UINT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R16_SNORM: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R16_SINT: return MTLVertexFormatInvalid;
+
 	case AGPU_TEXTURE_FORMAT_R8_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R8_UNORM: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R8_UINT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R8_SNORM: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_R8_SINT: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_A8_UNORM: return MTLVertexFormatInvalid;
+
 	case AGPU_TEXTURE_FORMAT_R1_UNORM: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_BC1_TYPELESS: return MTLVertexFormatInvalid;
 	case AGPU_TEXTURE_FORMAT_BC1_UNORM: return MTLVertexFormatInvalid;

@@ -2,6 +2,28 @@
 #include "framebuffer.hpp"
 #include "texture.hpp"
 
+inline MTLLoadAction mapLoadAction(agpu_renderpass_attachment_action action)
+{
+    switch(action)
+    {
+    case AGPU_ATTACHMENT_KEEP: return MTLLoadActionLoad;
+    case AGPU_ATTACHMENT_CLEAR: return MTLLoadActionClear;
+    case AGPU_ATTACHMENT_DISCARD:
+    default: return MTLLoadActionDontCare;
+    }
+}
+
+inline MTLStoreAction mapStoreAction(agpu_renderpass_attachment_action action)
+{
+    switch(action)
+    {
+    case AGPU_ATTACHMENT_KEEP: return MTLStoreActionStore;
+    case AGPU_ATTACHMENT_CLEAR:
+    case AGPU_ATTACHMENT_DISCARD:
+    default: return MTLStoreActionDontCare;
+    }
+}
+
 _agpu_renderpass::_agpu_renderpass(agpu_device *device)
     : device(device)
 {
@@ -58,8 +80,8 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
         auto &color = source.clear_value;
         dest.texture = framebuffer->getColorTexture(i);
         dest.clearColor = MTLClearColorMake(color.r, color.g, color.b, color.a);
-        dest.storeAction = MTLStoreActionStore;
-        dest.loadAction = MTLLoadActionClear;
+        dest.loadAction = mapLoadAction(source.begin_action);
+        dest.storeAction = mapStoreAction(source.end_action);
     }
 
     if(hasDepthStencil)
@@ -67,14 +89,14 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
         auto depthAttachment = descriptor.depthAttachment;
         depthAttachment.texture = framebuffer->depthStencilBuffer->handle;
         depthAttachment.clearDepth = depthStencil.clear_value.depth;
-        depthAttachment.storeAction = MTLStoreActionStore;
-        depthAttachment.loadAction = MTLLoadActionClear;
+        depthAttachment.loadAction = mapLoadAction(depthStencil.begin_action);
+        depthAttachment.storeAction = mapStoreAction(depthStencil.end_action);
 
         auto stencilAttachment = descriptor.stencilAttachment;
         stencilAttachment.texture = framebuffer->depthStencilBuffer->handle;
         stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
-        stencilAttachment.storeAction = MTLStoreActionStore;
-        stencilAttachment.loadAction = MTLLoadActionClear;
+        stencilAttachment.loadAction = mapLoadAction(depthStencil.stencil_begin_action);
+        stencilAttachment.storeAction = mapStoreAction(depthStencil.stencil_end_action);
     }
 
     return descriptor;

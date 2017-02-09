@@ -16,6 +16,9 @@ public:
 
     agpu_device *device;
     std::vector<ShaderSignatureElement> elements;
+
+    agpu_size pushConstantBufferSize;
+    agpu_uint pushConstantBufferIndex;
 };
 
 #endif // AGPU_METAL_SHADER_SIGNATURE_HPP

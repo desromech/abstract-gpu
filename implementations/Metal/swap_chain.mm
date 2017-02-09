@@ -21,7 +21,9 @@
     metalLayer.device = theSwapChain->device->device;
     metalLayer.framebufferOnly = YES;
     metalLayer.drawableSize = drawableSize;
-    metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    metalLayer.pixelFormat = mapTextureFormat(swapChainInfo.colorbuffer_format);
+    if(metalLayer.pixelFormat == MTLPixelFormatInvalid)
+        metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     [self setLayer: metalLayer];
     [self setWantsLayer: YES];
     swapChain->metalLayer = metalLayer;
