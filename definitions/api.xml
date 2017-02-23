@@ -669,6 +669,12 @@
             <method name="hasTopLeftNdcOrigin" cname="HasTopLeftNdcOrigin" returnType="bool">
             </method>
 
+            <method name="isCommandListReuseSupported" cname="IsCommandListReuseSupported" returnType="bool">
+            </method>
+
+            <method name="isCommandListReuseEmulated" cname="isCommandListReuseEmulated" returnType="bool">
+            </method>
+
         </interface>
 
         <interface name="swap_chain">

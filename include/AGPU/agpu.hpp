@@ -262,6 +262,16 @@ public:
 		return agpuHasTopLeftNdcOrigin( this );
 	}
 
+	inline agpu_bool isCommandListReuseSupported (  )
+	{
+		return agpuIsCommandListReuseSupported( this );
+	}
+
+	inline agpu_bool isCommandListReuseEmulated (  )
+	{
+		return agpuisCommandListReuseEmulated( this );
+	}
+
 };
 
 typedef agpu_ref<agpu_device> agpu_device_ref;

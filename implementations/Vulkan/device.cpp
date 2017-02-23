@@ -961,3 +961,13 @@ AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
         return false;
     return true;
 }
+
+AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device )
+{
+    return true;
+}
+
+AGPU_EXPORT agpu_bool agpuisCommandListReuseEmulated ( agpu_device* device )
+{
+    return false;
+}
