@@ -4,7 +4,7 @@ set(AGPU_SOURCES
 )
 
 add_definitions(-DAGPU_BUILD)
-if(X11_LIBRARY)
+if(X11_LIBRARY AND X11_INCLUDE_DIRS AND NOT APPLE)
     add_definitions(-DHAS_XLIB)
 endif()
 
