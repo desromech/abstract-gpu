@@ -12,4 +12,9 @@
 
 void printError(const char *format, ...);
 
+inline size_t alignedTo(size_t value, size_t alignment)
+{
+    return (value + alignment - 1) & (-alignment);
+}
+
 #endif //_AGPU_VULKAN_COMMON_HPP

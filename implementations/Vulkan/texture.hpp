@@ -27,27 +27,10 @@ struct _agpu_texture : public Object<_agpu_texture>
     VkAccessFlagBits initialLayoutAccessBits;
     VkDeviceMemory memory;
     bool owned;
-    VkSubresourceLayout transferLayout;
     agpu_buffer *uploadBuffer;
     agpu_buffer *readbackBuffer;
 
-    VkExtent3D getLevelExtent(int level)
-    {
-        VkExtent3D extent;
-        extent.width = description.width >> level;
-        if (extent.width == 0)
-            extent.width = 1;
-
-        extent.height = description.height >> level;
-        if (description.type == AGPU_TEXTURE_1D || extent.height == 0)
-            extent.height = 1;
-
-        extent.depth = description.depthOrArraySize >> level;
-        if (description.type != AGPU_TEXTURE_3D || extent.depth == 0)
-            extent.depth = 1;
-        return extent;
-    }
-
+    VkExtent3D getLevelExtent(int level);
     void computeBufferImageTransferLayout(int level, VkSubresourceLayout *layout, VkBufferImageCopy *copy);
 };
 

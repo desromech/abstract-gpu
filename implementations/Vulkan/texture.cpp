@@ -45,6 +45,60 @@ inline enum VkComponentSwizzle mapComponentSwizzle(agpu_component_swizzle swizzl
     default: return VK_COMPONENT_SWIZZLE_ZERO;
     }
 }
+
+static VkExtent3D getLevelExtent(const agpu_texture_description &description, int level)
+{
+    VkExtent3D extent;
+    extent.width = description.width >> level;
+    if (extent.width == 0)
+        extent.width = 1;
+
+    extent.height = description.height >> level;
+    if (description.type == AGPU_TEXTURE_1D || extent.height == 0)
+        extent.height = 1;
+
+    extent.depth = description.depthOrArraySize >> level;
+    if (description.type != AGPU_TEXTURE_3D || extent.depth == 0)
+        extent.depth = 1;
+    return extent;
+}
+
+static void computeBufferImageTransferLayout(const agpu_texture_description &description, int level, VkSubresourceLayout *layout, VkBufferImageCopy *copy)
+{
+    auto extent = getLevelExtent(description, level);
+    memset(copy, 0, sizeof(*copy));
+    memset(layout, 0, sizeof(*layout));
+
+    // vkGetImageSubResource layout is not appropiate for this.
+    if(isCompressedTextureFormat(description.format))
+    {
+        auto compressedBlockSize = blockSizeOfCompressedTextureFormat(description.format);
+        auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
+        auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
+
+        extent.width = std::max(compressedBlockWidth, (extent.width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
+        extent.height = std::max(compressedBlockHeight, (extent.height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
+        copy->imageExtent = extent;
+        copy->bufferRowLength = extent.width;
+        copy->bufferImageHeight = extent.height;
+
+        layout->rowPitch = copy->bufferRowLength / compressedBlockWidth * compressedBlockSize;
+        layout->depthPitch = layout->rowPitch * (copy->bufferImageHeight / compressedBlockHeight) ;
+        layout->size = layout->depthPitch * extent.depth;
+    }
+    else
+    {
+        copy->imageExtent = extent;
+
+        auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
+        layout->rowPitch = (extent.width*uncompressedPixelSize + 3) & -4;
+        layout->depthPitch = layout->rowPitch * extent.height;
+        layout->size = layout->depthPitch;
+        copy->bufferRowLength = layout->rowPitch / uncompressedPixelSize;
+        copy->bufferImageHeight = extent.height;
+    }
+}
+
 _agpu_texture::_agpu_texture(agpu_device *device)
     : device(device)
 {
@@ -215,11 +269,8 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     agpu_buffer *readbackBuffer = nullptr;
     if (hasUploadBuffer || hasReadbackBuffer)
     {
-        VkImageSubresource subresource;
-        subresource.arrayLayer = 0;
-        subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        subresource.mipLevel = 0;
-        vkGetImageSubresourceLayout(device->device, image, &subresource, &transferLayout);
+        VkBufferImageCopy copy;
+        ::computeBufferImageTransferLayout(*description, 0, &transferLayout, &copy);
 
         agpu_buffer_description bufferDesc;
         memset(&bufferDesc, 0, sizeof(bufferDesc));
@@ -264,7 +315,6 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     texture->image = image;
     texture->memory = textureMemory;
     texture->owned = true;
-    texture->transferLayout = transferLayout;
     texture->uploadBuffer = uploadBuffer;
     texture->readbackBuffer = readbackBuffer;
     texture->initialLayout = initialLayout;
@@ -351,30 +401,14 @@ agpu_error _agpu_texture::unmapLevel()
     return AGPU_UNIMPLEMENTED;
 }
 
+VkExtent3D _agpu_texture::getLevelExtent(int level)
+{
+    return ::getLevelExtent(description, level);
+}
+
 void _agpu_texture::computeBufferImageTransferLayout(int level, VkSubresourceLayout *layout, VkBufferImageCopy *copy)
 {
-    auto extent = getLevelExtent(level);
-    memset(copy, 0, sizeof(*copy));
-
-    // vkGetImageSubResource layout is not appropiate for this.
-    if(isCompressedTextureFormat(description.format))
-    {
-        auto compressedBlockSize = blockSizeOfCompressedTextureFormat(description.format);
-        auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
-        auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
-        copy->bufferRowLength = std::max(size_t(1), size_t((extent.width + compressedBlockWidth - 1) / compressedBlockWidth));
-        copy->bufferImageHeight = std::max(size_t(1), size_t((extent.height + compressedBlockHeight - 1)  / compressedBlockHeight));
-        layout->rowPitch =  copy->bufferRowLength * compressedBlockSize;
-        layout->depthPitch =  layout->rowPitch * copy->bufferImageHeight;
-    }
-    else
-    {
-        auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
-        layout->rowPitch = (extent.width*uncompressedPixelSize + 3) & -4;
-        layout->depthPitch = layout->rowPitch * extent.height;
-        copy->bufferRowLength = layout->rowPitch / uncompressedPixelSize;
-        copy->bufferImageHeight = extent.height;
-    }
+    return ::computeBufferImageTransferLayout(description, level, layout, copy);
 }
 
 agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
@@ -459,7 +493,7 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     VkBufferImageCopy copy;
     computeBufferImageTransferLayout(level, &layout, &copy);
 
-    auto extent = getLevelExtent(level);
+    auto &extent = copy.imageExtent;
     if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
     {
         memcpy(bufferPointer, data, slicePitch);
@@ -482,7 +516,6 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
-    copy.imageExtent = extent;
     device->copyBufferToImage(uploadBuffer->uploadBuffer, image, range, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, 1, &copy);
 
     return AGPU_OK;

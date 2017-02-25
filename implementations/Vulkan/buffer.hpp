@@ -42,7 +42,6 @@ struct _agpu_buffer : public Object<_agpu_buffer>
     VkDeviceMemory uploadBufferMemory;
     VkBuffer gpuBuffer;
     VkDeviceMemory gpuBufferMemory;
-    VkMemoryRequirements memoryRequirements;
 
     std::mutex mapMutex;
     void *mappedPointer;

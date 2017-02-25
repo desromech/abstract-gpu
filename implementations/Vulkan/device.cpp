@@ -798,6 +798,10 @@ VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
     }
 
+    if (destLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    }
+
     return barrier;
 }
 

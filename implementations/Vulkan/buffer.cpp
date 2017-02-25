@@ -65,9 +65,11 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         break;
     case AGPU_UNIFORM_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferDescription.size = alignedTo(bufferDescription.size, 256);
         break;
     case AGPU_STORAGE_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        bufferDescription.size = alignedTo(bufferDescription.size, 256);
         break;
     case AGPU_UNIFORM_TEXEL_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
@@ -85,9 +87,6 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     if (error)
         return nullptr;
 
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(device->device, mainBuffer, &memoryRequirements);
-
     VkBuffer uploadBuffer = VK_NULL_HANDLE;
     VkDeviceMemory uploadBufferMemory = VK_NULL_HANDLE;
     VkBuffer defaultBuffer = VK_NULL_HANDLE;
@@ -97,6 +96,9 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     {
         uploadBuffer = mainBuffer;
         mainBuffer = VK_NULL_HANDLE;
+
+        VkMemoryRequirements memoryRequirements;
+        vkGetBufferMemoryRequirements(device->device, uploadBuffer, &memoryRequirements);
 
         VkMemoryAllocateInfo allocateInfo;
         memset(&allocateInfo, 0, sizeof(allocateInfo));
@@ -130,7 +132,8 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         // Allocate the default buffer if needed.
         if (mainBuffer)
         {
-            uploadBuffer = mainBuffer;
+            printf("Needs default buffer, had main\n");
+            defaultBuffer = mainBuffer;
             mainBuffer = VK_NULL_HANDLE;
         }
         else
@@ -139,6 +142,10 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
             if (error)
                 goto failure;
         }
+
+        // Default buffer requirements
+        VkMemoryRequirements memoryRequirements;
+        vkGetBufferMemoryRequirements(device->device, defaultBuffer, &memoryRequirements);
 
         // Allocate the memory for the default buffer.
         VkMemoryAllocateInfo allocateInfo;
@@ -184,7 +191,6 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     result->gpuBufferMemory = defaultBufferMemory;
     result->uploadBuffer = uploadBuffer;
     result->uploadBufferMemory = uploadBufferMemory;
-    result->memoryRequirements = memoryRequirements;
     return result;
 
 failure:

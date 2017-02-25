@@ -126,19 +126,35 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
             swapChain->format = VK_FORMAT_B8G8R8A8_UNORM;
             actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
         }
+        swapChain->colorSpace = surfaceFormats[0].colorSpace;
     }
     else
     {
         assert(formatCount >= 1);
-        swapChain->format = surfaceFormats[0].format;
 
-        // TODO: Perform reverse mapping of the format.
+        // Start selecting the first format.
+        swapChain->format = surfaceFormats[0].format;
+        swapChain->colorSpace = surfaceFormats[0].colorSpace;
         actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-        if(createInfo->colorbuffer_format == AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB)
+        if(swapChain->format == VK_FORMAT_B8G8R8A8_SRGB)
             actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
+
+        // Try to select the expected format.
+        auto wantedFormat = mapTextureFormat(createInfo->colorbuffer_format);
+        for(size_t i = 0; i < formatCount; ++i)
+        {
+            auto &format = surfaceFormats[i];
+            if(format.format == wantedFormat)
+            {
+                swapChain->format = format.format;
+                swapChain->colorSpace = format.colorSpace;
+                actualFormat = createInfo->colorbuffer_format;
+                break;
+            }
+        }
+
     }
     swapChain->agpuFormat = actualFormat;
-    swapChain->colorSpace = surfaceFormats[0].colorSpace;
 
     // Initialize the rest of the swap chain.
     if (!swapChain->initialize(createInfo))
@@ -215,7 +231,7 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     swapchainInfo.imageFormat = format;
     swapchainInfo.imageColorSpace = colorSpace;
     swapchainInfo.imageExtent = swapchainExtent;
-    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     swapchainInfo.preTransform = (VkSurfaceTransformFlagBitsKHR)preTransform;
     swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchainInfo.imageArrayLayers = 1;

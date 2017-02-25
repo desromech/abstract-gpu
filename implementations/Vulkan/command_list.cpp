@@ -339,8 +339,13 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
 
     // Transition the color attachments.
     auto sourceLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAccessFlagBits srcAccessMask = VkAccessFlagBits(0);
     if (currentFramebuffer->swapChainFramebuffer)
+    {
         sourceLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    }
+    
     auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
     {
@@ -348,7 +353,7 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
         memset(&range, 0, sizeof(range));
         range.layerCount = 1;
         range.levelCount = 1;
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VkAccessFlagBits(0));
+        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, srcAccessMask);
     }
 
     // Begin the render pass.

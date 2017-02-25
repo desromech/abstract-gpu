@@ -210,6 +210,9 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     pipelineInfo.pDepthStencilState = &depthStencilState;
     pipelineInfo.pColorBlendState = &colorBlendState;
     pipelineInfo.pDynamicState = &dynamicState;
+
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1;
 }
 
 void _agpu_pipeline_builder::lostReferences()
