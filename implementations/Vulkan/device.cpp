@@ -398,6 +398,8 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.queueCreateInfoCount = createQueueInfos.size();
     deviceCreateInfo.pQueueCreateInfos = &createQueueInfos[0];
+    deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
     if (openInfo->debug_layer && hasValidationLayers(deviceLayerProperties))
     {
         for (size_t i = 0; i < validationLayerCount; ++i)
