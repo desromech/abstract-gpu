@@ -573,9 +573,9 @@ bool _agpu_device::setImageLayout(VkImage image, VkImageSubresourceRange range, 
             return false;
     }
 
-    auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask);
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
 
     vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     return submitSetupCommandBuffer();
@@ -592,12 +592,12 @@ bool _agpu_device::clearImageWithColor(VkImage image, VkImageSubresourceRange ra
             return false;
     }
 
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
     // Transition to dst optimal
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -606,7 +606,9 @@ bool _agpu_device::clearImageWithColor(VkImage image, VkImageSubresourceRange ra
 
     // Transition to target layout
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -624,12 +626,11 @@ bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageSubresourceR
             return false;
     }
 
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
     // Transition to dst optimal
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, srcAccessMask, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -638,7 +639,9 @@ bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageSubresourceR
 
     // Transition to target layout
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -669,12 +672,11 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubr
             return false;
     }
 
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destAccessMask);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destAccessMask, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -682,7 +684,9 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubr
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -700,12 +704,11 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange rang
             return false;
     }
 
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destAccessMask);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destAccessMask, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -713,7 +716,9 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange rang
 
     if (destLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
     {
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_READ_BIT);
+        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto barrier = barrierForImageLayoutTransition(image, range, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destLayout, VK_ACCESS_TRANSFER_READ_BIT, srcStages, destStages);
         vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -766,13 +771,46 @@ bool _agpu_device::submitSetupCommandBuffer()
     return true;
 }
 
-VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
+inline void addImageLayoutBarrierMasks(VkImageLayout layout, VkAccessFlags &accessMask, VkPipelineStageFlags &stages)
+{
+    switch(layout)
+    {
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        stages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        break;
+    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+        accessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        stages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        break;
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+        accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        stages |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        break;
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        break;
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        stages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        break;
+    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+        accessMask = VK_ACCESS_MEMORY_READ_BIT;
+        break;
+    default:
+        break;
+    }
+}
+
+VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages)
 {
     VkImageMemoryBarrier barrier;
     memset(&barrier, 0, sizeof(barrier));
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.image = image;
     barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = 0;
     barrier.oldLayout = sourceLayout;
     barrier.newLayout = destLayout;
     barrier.subresourceRange = range;
@@ -780,30 +818,8 @@ VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-    if (destLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    }
-
-    if (destLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    }
-
-    if (destLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    }
-
-    if (destLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    }
-
-    if (destLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-    }
-
-    if (destLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-        barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    }
-
+    addImageLayoutBarrierMasks(barrier.oldLayout, barrier.srcAccessMask, srcStages);
+    addImageLayoutBarrierMasks(barrier.newLayout, barrier.dstAccessMask, dstStages);
     return barrier;
 }
 

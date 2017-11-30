@@ -317,9 +317,9 @@ agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
 
 agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
-    auto barrier = device->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask);
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    auto barrier = device->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
 
     vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     return AGPU_OK;
@@ -345,7 +345,7 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
         sourceLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
     }
-    
+
     auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
     {

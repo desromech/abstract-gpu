@@ -153,7 +153,10 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if(description->type == AGPU_TEXTURE_CUBE)
+    {
         createInfo.arrayLayers *= 6;
+        createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    }
 
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     VkAccessFlagBits initialLayoutAccessBits = VkAccessFlagBits(0);

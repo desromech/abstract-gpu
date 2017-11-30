@@ -104,7 +104,7 @@ public:
     bool copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions);
 
     bool setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
-    VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
+    VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages);
 
 private:
     bool createSetupCommandBuffer();
