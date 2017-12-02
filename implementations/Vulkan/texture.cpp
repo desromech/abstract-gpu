@@ -147,7 +147,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     createInfo.extent.depth = depth;
     createInfo.arrayLayers = arrayLayers;
     createInfo.mipLevels = description->miplevels;
-    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    createInfo.samples = mapSampleCount(description->sample_count);
     createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -382,6 +382,7 @@ agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *
     viewDescription->type = description.type;
     viewDescription->texture = this;
     viewDescription->format = description.format;
+    viewDescription->sample_count = description.sample_count;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;

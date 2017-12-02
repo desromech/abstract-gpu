@@ -405,7 +405,53 @@ agpu_error _agpu_command_list::endRenderPass()
 
 agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(destFramebuffer);
+    CHECK_POINTER(sourceFramebuffer);
+    if(sourceFramebuffer->colorCount < 1 || destFramebuffer->colorCount < 1)
+        return AGPU_INVALID_PARAMETER;
+    if(sourceFramebuffer->width != destFramebuffer->width ||
+        sourceFramebuffer->height != destFramebuffer->height)
+        return AGPU_INVALID_PARAMETER;
+
+    // Transition the dest color attachments.
+    auto destInitialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    auto destResolveLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAccessFlagBits destInitialAccessMask = VkAccessFlagBits(0);
+    if (destFramebuffer->swapChainFramebuffer)
+    {
+        destInitialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        destInitialAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        destResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    }
+
+    VkImageSubresourceRange range;
+    memset(&range, 0, sizeof(range));
+    range.layerCount = 1;
+    range.levelCount = 1;
+    if(destInitialLayout != VK_IMAGE_LAYOUT_GENERAL)
+        setImageLayout(destFramebuffer->attachmentTextures[0]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, destInitialLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destInitialAccessMask);
+
+    VkImageResolve region;
+    memset(&region, 0, sizeof(region));
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = 1;
+    region.dstSubresource.mipLevel = 0;
+    region.srcSubresource = region.dstSubresource;
+    region.extent.width = sourceFramebuffer->width;
+    region.extent.height = sourceFramebuffer->height;
+    region.extent.depth = 1;
+
+    vkCmdResolveImage(commandBuffer,
+        sourceFramebuffer->attachmentTextures[0]->image, VK_IMAGE_LAYOUT_GENERAL,
+        destFramebuffer->attachmentTextures[0]->image, destResolveLayout,
+        1, &region);
+
+    // Transition the destination back to its original layout
+    if(destInitialLayout != VK_IMAGE_LAYOUT_GENERAL)
+        setImageLayout(destFramebuffer->attachmentTextures[0]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destInitialLayout, VkAccessFlagBits(0));
+
+    return AGPU_OK;
 }
 
 // The exported C interface

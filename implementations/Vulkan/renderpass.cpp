@@ -53,7 +53,7 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
         auto &attachment = attachments[i];
 
         attachment.format = mapTextureFormat(desc.format);
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.samples = mapSampleCount(desc.sample_count);
         attachment.loadOp = mapLoadOp(desc.begin_action);
         attachment.storeOp = mapStoreOp(desc.end_action);
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -75,7 +75,7 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
         auto &attachment = attachments.back();
         auto hasStencil = hasStencilComponent(desc->format);
         attachment.format = mapTextureFormat(desc->format);
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.samples = mapSampleCount(desc->sample_count);
         attachment.loadOp = mapLoadOp(desc->begin_action);
         attachment.storeOp = mapStoreOp(desc->end_action);
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

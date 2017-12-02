@@ -98,3 +98,7 @@ inline VkFormat mapTextureFormat(agpu_texture_format format)
     default: return VK_FORMAT_UNDEFINED;
     }
 }
+inline VkSampleCountFlagBits mapSampleCount(agpu_uint sampleCount)
+{
+    return VkSampleCountFlagBits(1 << (std::max(1u, sampleCount) - 1));
+}

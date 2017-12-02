@@ -23,7 +23,7 @@ void _agpu_framebuffer::lostReferences()
 agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 {
     agpu_framebuffer *result = nullptr;
-    
+
     // Attachments
     std::vector<VkAttachmentDescription> attachments(colorCount + (depthStencilView != nullptr ? 1 : 0));
     for (agpu_uint i = 0; i < colorCount; ++i)
@@ -34,7 +34,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
             return nullptr;
 
         attachment.format = mapTextureFormat(view->format);
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.samples = mapSampleCount(view->sample_count);
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -50,7 +50,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
 
         auto &attachment = attachments.back();
         attachment.format = mapTextureFormat(depthStencilView->format);
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.samples = mapSampleCount(depthStencilView->sample_count);
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;

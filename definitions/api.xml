@@ -87,6 +87,7 @@
             <field name="type" type="texture_type" />
             <field name="texture" type="texture*" />
             <field name="format" type="texture_format" />
+            <field name="sample_count" type="uint" />
             <field name="components" type="components_swizzle" />
             <field name="subresource_range" type="subresource_range" />
         </struct>
@@ -135,6 +136,7 @@
 
         <struct name="renderpass_color_attachment_description">
             <field name="format" type="texture_format" />
+            <field name="sample_count" type="uint" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
             <field name="clear_value" type="color4f" />
@@ -142,6 +144,7 @@
 
         <struct name="renderpass_depth_stencil_description">
             <field name="format" type="texture_format" />
+            <field name="sample_count" type="uint" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
             <field name="stencil_begin_action" type="renderpass_attachment_action" />
