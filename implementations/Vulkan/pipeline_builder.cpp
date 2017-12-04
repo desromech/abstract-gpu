@@ -240,7 +240,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     {
         auto &attachment = attachments[i];
         attachment.format = mapTextureFormat(renderTargetFormats[i]);
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.samples = multisampleState.rasterizationSamples;
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -253,7 +253,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     {
         auto &attachment = attachments.back();
         attachment.format = mapTextureFormat(depthStencilFormat);
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.samples = multisampleState.rasterizationSamples;
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -573,7 +573,7 @@ agpu_error _agpu_pipeline_builder::setPipelineShaderSignature(agpu_shader_signat
 
 agpu_error _agpu_pipeline_builder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
 {
-    multisampleState.rasterizationSamples = VkSampleCountFlagBits(1<<(sample_count-1));
+    multisampleState.rasterizationSamples = mapSampleCount(sample_count);
     return AGPU_OK;
 }
 

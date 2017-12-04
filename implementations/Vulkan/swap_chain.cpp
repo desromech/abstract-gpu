@@ -326,6 +326,7 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
             colorBuffer->getFullViewDescription(&colorViewDesc);
         }
 
+        if(hasDepth || hasStencil)
         {
             depthStencilBuffer = agpu_texture::create(device, &depthStencilDesc);
             if (!depthStencilBuffer)
@@ -344,7 +345,8 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
 
         // Release the references to the buffers.
         colorBuffer->release();
-        depthStencilBuffer->release();
+        if(depthStencilBuffer)
+            depthStencilBuffer->release();
 
         if (!framebuffer)
             return false;
