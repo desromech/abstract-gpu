@@ -792,6 +792,7 @@ inline void addImageLayoutBarrierMasks(VkImageLayout layout, VkAccessFlags &acce
         stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         break;
     case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+    case VK_IMAGE_LAYOUT_GENERAL:
         accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         stages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         break;
