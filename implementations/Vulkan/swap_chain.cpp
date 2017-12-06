@@ -195,8 +195,8 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     else
     {
         swapchainExtent = surfaceCapabilities.currentExtent;
-        swapChainWidth = swapchainExtent.width;
-        swapChainHeight = swapchainExtent.height;
+        createInfo->width = swapChainWidth = swapchainExtent.width;
+        createInfo->height = swapChainHeight = swapchainExtent.height;
     }
 
     VkPresentModeKHR swapchainPresentMode = presentModes[0];
