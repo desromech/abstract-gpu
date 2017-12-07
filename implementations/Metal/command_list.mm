@@ -155,9 +155,6 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer ( agpu_buffer* draw_buffer 
 agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding* binding )
 {
     CHECK_POINTER(binding);
-    if(!renderEncoder)
-        return AGPU_INVALID_OPERATION;
-
     if(binding->elementIndex >= MaxActiveResourceBindings)
         return AGPU_UNSUPPORTED;
 
