@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ronsaldo/abstract-gpu.svg?branch=master)](https://travis-ci.org/ronsaldo/abstract-gpu)
+
 # AbstractGPU
 The Abstract GPU is a cross platform low-level 3D graphics API.
 The objective of this project is to create a new 3D graphics API that replaces OpenGL.
