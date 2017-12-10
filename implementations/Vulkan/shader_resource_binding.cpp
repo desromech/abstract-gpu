@@ -2,70 +2,7 @@
 #include "shader_signature.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
-
-inline VkFilter mapMinFilter(agpu_filter filter)
-{
-    switch (filter)
-    {
-    default:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR: return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST: return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:  return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST: return VK_FILTER_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:  return VK_FILTER_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:  return VK_FILTER_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:   return VK_FILTER_LINEAR;
-    case AGPU_FILTER_ANISOTROPIC:                           return VK_FILTER_LINEAR;
-    }
-}
-
-inline VkFilter mapMagFilter(agpu_filter filter)
-{
-    switch (filter)
-    {
-    default:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST: return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:  return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:  return VK_FILTER_LINEAR;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:   return VK_FILTER_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:  return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:   return VK_FILTER_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:   return VK_FILTER_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:    return VK_FILTER_LINEAR;
-    case AGPU_FILTER_ANISOTROPIC:                            return VK_FILTER_LINEAR;
-    }
-}
-
-inline VkSamplerMipmapMode mapMipmapMode(agpu_filter filter)
-{
-    switch (filter)
-    {
-    default:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:  return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:   return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:  return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:   return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:    return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    case AGPU_FILTER_ANISOTROPIC:                            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    }
-}
-
-inline VkSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
-{
-    switch (mode)
-    {
-    default:
-    case AGPU_TEXTURE_ADDRESS_MODE_WRAP:    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR:  return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    case AGPU_TEXTURE_ADDRESS_MODE_CLAMP:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    case AGPU_TEXTURE_ADDRESS_MODE_BORDER:  return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    }
-}
+#include "constants.hpp"
 
 _agpu_shader_resource_binding::_agpu_shader_resource_binding(agpu_device *device)
     : device(device)
@@ -197,7 +134,7 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
         return AGPU_ERROR;
 
     VkDescriptorImageInfo imageInfo;
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageLayout = texture->initialLayout;
     imageInfo.imageView = view;
     imageInfo.sampler = VK_NULL_HANDLE;
 
@@ -249,8 +186,10 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
     info.maxAnisotropy = description->maxanisotropy;
     info.mipLodBias = description->mip_lod_bias;
 
+    info.compareEnable = description->comparison_enabled ? VK_TRUE : VK_FALSE;
+    info.compareOp = mapCompareFunction(description->comparison_function);
     /*
-    agpu_compare_function comparison_function;
+    TODO:
     agpu_color4f border_color;
     */
 

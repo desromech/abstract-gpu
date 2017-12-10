@@ -128,6 +128,7 @@
             <field name="address_w" type="texture_address_mode" />
             <field name="mip_lod_bias" type="float" />
             <field name="maxanisotropy" type="uint" />
+            <field name="comparison_enabled" type="bool" />
             <field name="comparison_function" type="compare_function" />
             <field name="border_color" type="color4f" />
             <field name="min_lod" type="float" />

@@ -99,6 +99,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
 
     // Create the framebuffer
     std::vector<VkImageView> attachmentViews(attachments.size());
+    std::vector<agpu_texture_view_description> attachmentDescriptions(attachments.size());
     for (agpu_uint i = 0; i < colorCount; ++i)
     {
         auto view = agpu_texture::createImageView(device, &colorViews[i]);
@@ -106,6 +107,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
             goto failure;
 
         attachmentViews[i] = view;
+        attachmentDescriptions[i] = colorViews[i];
     }
 
     if (depthStencilView)
@@ -114,6 +116,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
         if (!view)
             goto failure;
         attachmentViews.back() = view;
+        attachmentDescriptions.back() = *depthStencilView;
     }
 
     VkFramebufferCreateInfo createInfo;
@@ -141,6 +144,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     result->framebuffer = framebuffer;
     result->attachmentViews = attachmentViews;
     result->attachmentTextures.resize(attachmentViews.size());
+    result->attachmentDescriptions = attachmentDescriptions;
     for (agpu_uint i = 0; i < colorCount; ++i)
     {
         auto texture = colorViews[i].texture;

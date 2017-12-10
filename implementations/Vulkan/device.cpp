@@ -661,7 +661,7 @@ bool _agpu_device::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
+bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
 {
     range.aspectMask = aspect;
 
@@ -693,7 +693,7 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubr
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlagBits destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
+bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
 {
     range.aspectMask = aspect;
 
@@ -791,6 +791,10 @@ inline void addImageLayoutBarrierMasks(VkImageLayout layout, VkAccessFlags &acce
         accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         break;
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+        accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        break;
     case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
     case VK_IMAGE_LAYOUT_GENERAL:
         accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
@@ -804,7 +808,7 @@ inline void addImageLayoutBarrierMasks(VkImageLayout layout, VkAccessFlags &acce
     }
 }
 
-VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages)
+VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages)
 {
     VkImageMemoryBarrier barrier;
     memset(&barrier, 0, sizeof(barrier));

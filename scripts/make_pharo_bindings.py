@@ -213,7 +213,6 @@ class MakePharoBindingsVisitor:
             self.printString("$ArgName: $ArgName", ArgName = name)
 
         self.newline()
-        self.printLine("\t<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>")
         self.printString("\t^ self ffiCall: #($TypePrefix$ReturnType $FunctionPrefix$FunctionName (",
             ReturnType = method.returnType,
             FunctionName = method.cname)

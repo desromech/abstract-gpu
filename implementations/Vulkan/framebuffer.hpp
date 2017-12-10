@@ -21,6 +21,7 @@ struct _agpu_framebuffer : public Object<_agpu_framebuffer>
     VkFramebuffer framebuffer;
     std::vector<agpu_texture*> attachmentTextures;
     std::vector<VkImageView> attachmentViews;
+    std::vector<agpu_texture_view_description> attachmentDescriptions;
 
 };
 #endif //AGPU_VULKAN_FRAMEBUFFER_HPP

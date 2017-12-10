@@ -315,7 +315,7 @@ agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
+agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
 {
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -339,7 +339,7 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
 
     // Transition the color attachments.
     auto sourceLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAccessFlagBits srcAccessMask = VkAccessFlagBits(0);
+    VkAccessFlags srcAccessMask = 0;
     if (currentFramebuffer->swapChainFramebuffer)
     {
         sourceLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -351,9 +351,34 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
     {
         VkImageSubresourceRange range;
         memset(&range, 0, sizeof(range));
+
+        auto &desc = currentFramebuffer->attachmentDescriptions[i];
+        range.baseArrayLayer = desc.subresource_range.base_arraylayer;
+        range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
         setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, srcAccessMask);
+    }
+
+    // Transition the depth stencil attachment, if needed.
+    if(currentFramebuffer->hasDepthStencil)
+    {
+        auto depthStencilAttachment = currentFramebuffer->attachmentTextures.back();
+        if(depthStencilAttachment->initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+        {
+            auto &desc = currentFramebuffer->attachmentDescriptions.back();
+            VkImageSubresourceRange range;
+            memset(&range, 0, sizeof(range));
+            range.baseArrayLayer = desc.subresource_range.base_arraylayer;
+            range.baseMipLevel = desc.subresource_range.base_miplevel;
+            range.layerCount = 1;
+            range.levelCount = 1;
+
+            // TODO: Check for the stencil bit here.
+            setImageLayout(depthStencilAttachment->image, range, VK_IMAGE_ASPECT_DEPTH_BIT,
+                depthStencilAttachment->initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                depthStencilAttachment->initialLayoutAccessBits);
+        }
     }
 
     // Begin the render pass.
@@ -390,11 +415,35 @@ agpu_error _agpu_command_list::endRenderPass()
     auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
     {
+        auto &desc = currentFramebuffer->attachmentDescriptions.back();
         VkImageSubresourceRange range;
         memset(&range, 0, sizeof(range));
+        range.baseArrayLayer = desc.subresource_range.base_arraylayer;
+        range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
         setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+    }
+
+    // Transition the depth stencil attachment if needed
+    if(currentFramebuffer->hasDepthStencil)
+    {
+        auto depthStencilAttachment = currentFramebuffer->attachmentTextures.back();
+        if(depthStencilAttachment->initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+        {
+            auto &desc = currentFramebuffer->attachmentDescriptions.back();
+            VkImageSubresourceRange range;
+            memset(&range, 0, sizeof(range));
+            range.baseArrayLayer = desc.subresource_range.base_arraylayer;
+            range.baseMipLevel = desc.subresource_range.base_miplevel;
+            range.layerCount = 1;
+            range.levelCount = 1;
+
+            // TODO: Check for the stencil bit here.
+            setImageLayout(depthStencilAttachment->image, range, VK_IMAGE_ASPECT_DEPTH_BIT,
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, depthStencilAttachment->initialLayout,
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+        }
     }
 
     // Unset the current framebuffer

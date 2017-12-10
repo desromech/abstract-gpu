@@ -24,7 +24,7 @@ struct _agpu_texture : public Object<_agpu_texture>
     agpu_texture_description description;
     VkImage image;
     VkImageLayout initialLayout;
-    VkAccessFlagBits initialLayoutAccessBits;
+    VkAccessFlags initialLayoutAccessBits;
     VkDeviceMemory memory;
     bool owned;
     agpu_buffer *uploadBuffer;

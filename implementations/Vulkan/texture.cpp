@@ -17,15 +17,15 @@ inline enum VkImageType mapImageType(agpu_texture_type type)
     }
 }
 
-inline enum VkImageViewType mapImageViewType(agpu_texture_type type)
+inline enum VkImageViewType mapImageViewType(agpu_texture_type type, agpu_uint layerCount)
 {
     switch (type)
     {
     case AGPU_TEXTURE_UNKNOWN:
     case AGPU_TEXTURE_BUFFER:
-    case AGPU_TEXTURE_1D: return VK_IMAGE_VIEW_TYPE_1D;
-    case AGPU_TEXTURE_2D: return VK_IMAGE_VIEW_TYPE_2D;
-    case AGPU_TEXTURE_CUBE: return VK_IMAGE_VIEW_TYPE_CUBE;
+    case AGPU_TEXTURE_1D: return layerCount ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+    case AGPU_TEXTURE_2D: return layerCount ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+    case AGPU_TEXTURE_CUBE: return layerCount ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
     case AGPU_TEXTURE_3D: return VK_IMAGE_VIEW_TYPE_3D;
     default: return VK_IMAGE_VIEW_TYPE_1D;
     }
@@ -159,7 +159,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     }
 
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAccessFlagBits initialLayoutAccessBits = VkAccessFlagBits(0);
+    VkAccessFlags initialLayoutAccessBits = VkAccessFlagBits(0);
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
     auto flags = description->flags;
     if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
@@ -173,6 +173,13 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
             imageAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
         if (flags & (AGPU_TEXTURE_FLAG_STENCIL))
             imageAspect |= imageAspect | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+        {
+            createInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            initialLayoutAccessBits = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        }
     }
     else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
     {
@@ -343,7 +350,7 @@ VkImageView _agpu_texture::createImageView(agpu_device *device, agpu_texture_vie
     memset(&createInfo, 0, sizeof(createInfo));
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = texture->image;
-    createInfo.viewType = mapImageViewType(viewDescription->type);
+    createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count);
     createInfo.format = mapTextureFormat(viewDescription->format);
 
     auto &components = createInfo.components;
@@ -357,6 +364,8 @@ VkImageView _agpu_texture::createImageView(agpu_device *device, agpu_texture_vie
     subresource.levelCount = viewDescription->subresource_range.level_count;
     subresource.baseArrayLayer = viewDescription->subresource_range.base_arraylayer;
     subresource.layerCount = viewDescription->subresource_range.layer_count;
+    if(subresource.layerCount == 0)
+        subresource.layerCount = 1;
     if(viewDescription->type == AGPU_TEXTURE_CUBE)
         subresource.layerCount *= 6;
 
@@ -392,6 +401,8 @@ agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
     viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    if(viewDescription->subresource_range.layer_count == 1)
+        viewDescription->subresource_range.layer_count = 0;
     return AGPU_OK;
 }
 
