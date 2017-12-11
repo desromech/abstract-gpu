@@ -910,6 +910,11 @@ public:
 		AgpuThrowIfFailed(agpuSetColorClearValue( this, attachment_index, value ));
 	}
 
+	inline void setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value )
+	{
+		AgpuThrowIfFailed(agpuSetColorClearValueFrom( this, attachment_index, value ));
+	}
+
 };
 
 typedef agpu_ref<agpu_renderpass> agpu_renderpass_ref;

@@ -1138,6 +1138,11 @@
                 <arg name="attachment_index" type="uint" />
                 <arg name="value" type="color4f" />
             </method>
+            <method name="setColorClearValueFrom" cname="SetColorClearValueFrom" returnType="error">
+                <arg name="attachment_index" type="uint" />
+                <arg name="value" type="color4f*" />
+            </method>
+
         </interface>
 
         <interface name="shader_signature_builder">

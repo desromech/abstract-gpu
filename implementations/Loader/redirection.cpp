@@ -1025,6 +1025,14 @@ AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agp
 	return (*dispatchTable)->agpuSetColorClearValue ( renderpass, attachment_index, value );
 }
 
+AGPU_EXPORT agpu_error agpuSetColorClearValueFrom ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuSetColorClearValueFrom ( renderpass, attachment_index, value );
+}
+
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )
 {
 	if (shader_signature_builder == nullptr)

@@ -886,11 +886,13 @@ typedef agpu_error (*agpuAddRenderPassReference_FUN) ( agpu_renderpass* renderpa
 typedef agpu_error (*agpuReleaseRenderPass_FUN) ( agpu_renderpass* renderpass );
 typedef agpu_error (*agpuSetDepthStencilClearValue_FUN) ( agpu_renderpass* renderpass, agpu_depth_stencil_value value );
 typedef agpu_error (*agpuSetColorClearValue_FUN) ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value );
+typedef agpu_error (*agpuSetColorClearValueFrom_FUN) ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value );
 
 AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass );
 AGPU_EXPORT agpu_error agpuReleaseRenderPass ( agpu_renderpass* renderpass );
 AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue ( agpu_renderpass* renderpass, agpu_depth_stencil_value value );
 AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value );
+AGPU_EXPORT agpu_error agpuSetColorClearValueFrom ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value );
 
 /* Methods for interface agpu_shader_signature_builder. */
 typedef agpu_error (*agpuAddShaderSignatureBuilderReference_FUN) ( agpu_shader_signature_builder* shader_signature_builder );
@@ -1080,6 +1082,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseRenderPass_FUN agpuReleaseRenderPass;
 	agpuSetDepthStencilClearValue_FUN agpuSetDepthStencilClearValue;
 	agpuSetColorClearValue_FUN agpuSetColorClearValue;
+	agpuSetColorClearValueFrom_FUN agpuSetColorClearValueFrom;
 	agpuAddShaderSignatureBuilderReference_FUN agpuAddShaderSignatureBuilderReference;
 	agpuReleaseShaderSignatureBuilder_FUN agpuReleaseShaderSignatureBuilder;
 	agpuBuildShaderSignature_FUN agpuBuildShaderSignature;

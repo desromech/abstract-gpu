@@ -77,7 +77,7 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
     {
         auto dest = descriptor.colorAttachments[i];
         auto &view = framebuffer->colorBufferDescriptions[i];
-        
+
         auto &source = colorAttachments[i];
         auto &color = source.clear_value;
         dest.texture = framebuffer->getColorTexture(i);
@@ -91,7 +91,7 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
     if(hasDepthStencil)
     {
         auto &view = framebuffer->depthStencilBufferDescription;
-        
+
         auto depthAttachment = descriptor.depthAttachment;
         depthAttachment.texture = framebuffer->depthStencilBuffer->handle;
         depthAttachment.level = view.subresource_range.base_miplevel;
@@ -127,6 +127,12 @@ agpu_error _agpu_renderpass::setColorClearValue ( agpu_uint attachment_index, ag
     return AGPU_OK;
 }
 
+agpu_error _agpu_renderpass::setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value)
+{
+    CHECK_POINTER(value);
+    return setColorClearValue(attachment_index, *value);
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass )
 {
@@ -150,4 +156,10 @@ AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agp
 {
     CHECK_POINTER(renderpass);
     return renderpass->setColorClearValue(attachment_index, value);
+}
+
+AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f *value)
+{
+    CHECK_POINTER(renderpass);
+    return renderpass->setColorClearValueFrom(attachment_index, value);
 }
