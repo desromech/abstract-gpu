@@ -21,7 +21,10 @@ public:
     agpu_uint width;
     agpu_uint height;
     std::vector<agpu_texture* > colorBuffers;
+    std::vector<agpu_texture_view_description> colorBufferDescriptions;
+    
     agpu_texture *depthStencilBuffer;
+    agpu_texture_view_description depthStencilBufferDescription;
     agpu_bool ownedBySwapChain;
     id<MTLDrawable> drawable;
     id<MTLTexture> drawableTexture;

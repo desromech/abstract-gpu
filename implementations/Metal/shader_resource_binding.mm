@@ -2,6 +2,7 @@
 #include "shader_signature.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
+#include "constants.hpp"
 
 inline MTLSamplerMinMagFilter mapMinFilter(agpu_filter filter)
 {
@@ -228,6 +229,7 @@ agpu_error _agpu_shader_resource_binding::createSampler ( agpu_int location, agp
     descriptor.lodMaxClamp = description->max_lod;
     descriptor.maxAnisotropy = description->maxanisotropy;
     descriptor.normalizedCoordinates = YES;
+    descriptor.compareFunction = mapCompareFunction(description->comparison_function);
 
     auto sampler = [device->device newSamplerStateWithDescriptor: descriptor];
     [descriptor release];

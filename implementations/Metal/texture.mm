@@ -147,6 +147,9 @@ agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
     viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    if(viewDescription->subresource_range.layer_count == 1)
+        viewDescription->subresource_range.layer_count = 0;
+        
     return AGPU_OK;
 }
 

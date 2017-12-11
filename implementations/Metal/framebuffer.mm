@@ -42,12 +42,14 @@ agpu_framebuffer* _agpu_framebuffer::create ( agpu_device* device, agpu_uint wid
 
     // Add the color buffer references.
     result->colorBuffers.resize(colorCount);
+    result->colorBufferDescriptions.resize(colorCount);
     for(int i = 0; i < colorCount; ++i)
     {
         auto &view = colorViews[i];
 
         view.texture->retain();
         result->colorBuffers[i] = view.texture;
+        result->colorBufferDescriptions[i] = view;
     }
 
     // Add the depth stencil references.
@@ -56,6 +58,7 @@ agpu_framebuffer* _agpu_framebuffer::create ( agpu_device* device, agpu_uint wid
         // TODO: Add the depth and the stencill attachments.
         result->depthStencilBuffer = depthStencilView->texture;
         result->depthStencilBuffer->retain();
+        result->depthStencilBufferDescription = *depthStencilView;
     }
 
     return result;
