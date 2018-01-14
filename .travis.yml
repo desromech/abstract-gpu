@@ -1,29 +1,10 @@
-sudo: false
 language: cpp
 
-compiler:
-    - gcc
-    - clang
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
 
-os:
-    - linux
-
-install:
-    - if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
-
-addons:
-    apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - gcc-6
-        - gcc-6-multilib
-        - g++-6
-        - g++-6-multilib
-        - libvulkan-dev
-        - libvulkan1
-script:
-    - mkdir build
-    - cd build
-    - cmake ..
-    - make
+install: ./.travis_install.sh
+script: ./.travis_build.sh
