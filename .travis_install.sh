@@ -13,10 +13,10 @@ if test "$TRAVIS_OS_NAME" = "linux"; then
     sudo apt-get -qqy install libx11-xcb-dev || exit 1
 
     echo "Downloading the Vulkan SDK"
-    wget "https://sdk.lunarg.com/sdk/download/1.0.65.0/linux/vulkansdk-linux-x86_64-1.0.65.0.run?u=" || exit 1
+    wget -Ovulkansdk-linux.run "https://sdk.lunarg.com/sdk/download/1.0.65.0/linux/vulkansdk-linux-x86_64-1.0.65.0.run" || exit 1
 
     echo "Extracting the Vulkan SDK"
-    chmod +x ./vulkansdk-linux-x86_64-1.0.65.0.run || exit 1
-    ./vulkansdk-linux-x86_64-1.0.65.0.run || exit 1
+    chmod +x ./vulkansdk-linux.run || exit 1
+    ./vulkansdk-linux.run || exit 1
     mv VulkanSDK/1.0.65.0 thirdparty/vulkan-sdk || exit
 fi
