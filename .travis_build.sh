@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "G++ version"
-g+ --version
+g++ --version
 
 echo "G++ 6 version"
 g++-6 --version

@@ -1,6 +1,11 @@
 #!/bin/sh
 
+echo "TRAVIS_OS_NAME $TRAVIS_OS_NAME"
 if "$TRAVIS_OS_NAME" == "linux"; then
-    sudo apt-get -qq update || exit
+    echo "Updating APT"
+
+    sudo apt-get -qq update || exit 1
+    
+    echo "Installing dependencies"
     sudo apt-get -qqy install gcc-6-mulitlib g++-6-mulitlib libvulkan1 libvulkan-dev libvulkan1:i386 libvulkan-dev:i386 || exit 1
 fi
