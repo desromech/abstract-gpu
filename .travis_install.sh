@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "Travis install script"
 echo "TRAVIS_OS_NAME $TRAVIS_OS_NAME"
