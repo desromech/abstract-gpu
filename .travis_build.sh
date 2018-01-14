@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Use the vulkan SDK
+source ./thirdparty/vulkan-sdk/setup-env.sh
+
 echo "G++ version"
 g++ --version
 
