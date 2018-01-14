@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Use the vulkan SDK
-source ./thirdparty/vulkan-sdk/setup-env.sh
+. ./thirdparty/vulkan-sdk/setup-env.sh
 
 echo "Vulkan deps"
 echo "ldd ${VULKAN_SDK}/lib/libvulkan.so"
