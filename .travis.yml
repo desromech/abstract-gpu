@@ -5,7 +5,24 @@ matrix:
     - os: linux
       dist: trusty
       sudo: required
+      env: BUILD_MODE=Debug
+    - os: linux
+      dist: trusty
+      sudo: required
+      env: BUILD_MODE=RelWithDebInfo
+    - os: linux
+      dist: trusty
+      sudo: required
+      env: BUILD_MODE=Release
     - os: osx
+      env: BUILD_MODE=Debug
+    - os: osx
+      env: BUILD_MODE=RelWithDebInfo
+    - os: osx
+      env: BUILD_MODE=Release
 
 install: ./.travis_install.sh
-script: ./.travis_build.sh
+script:
+    - ./.travis_build.sh
+    - ./.travis_deploy.sh
+

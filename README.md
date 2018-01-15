@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ronsaldo/abstract-gpu.svg?branch=master)](https://travis-ci.org/ronsaldo/abstract-gpu)
+[ ![Download](https://api.bintray.com/packages/ronsaldo/abstract-gpu/lib/images/download.svg) ](https://bintray.com/ronsaldo/abstract-gpu/lib/_latestVersion)
 
 # AbstractGPU
 The Abstract GPU is a cross platform low-level 3D graphics API.
