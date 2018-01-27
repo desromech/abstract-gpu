@@ -3,6 +3,7 @@
 #include "shader_resource_binding.hpp"
 
 _agpu_shader_signature::_agpu_shader_signature()
+    : device(nullptr)
 {
 }
 
@@ -10,21 +11,18 @@ void _agpu_shader_signature::lostReferences()
 {
 }
 
-_agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, ShaderSignatureElementDescription elements[16])
+_agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_shader_signature_builder *builder)
 {
-    std::unique_ptr<agpu_shader_signature> signature(new agpu_shader_signature());
-    signature->device = device;
-    memcpy(signature->elements, elements, sizeof(ShaderSignatureElementDescription) * 16);
-    return signature.release();
+    std::unique_ptr<agpu_shader_signature> result(new agpu_shader_signature());
+    result->device = device;
+    result->elements = builder->elements;
+    result->uniformVariableCount = builder->bindingPointsUsed[(int)OpenGLResourceBindingType::UniformVariable];
+    return result.release();
 }
 
 agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding(agpu_uint element)
 {
-    if (element >= 16)
-        return nullptr;
-
-    auto &el = elements[element];
-    if (!el.valid)
+    if (element >= elements.size())
         return nullptr;
 
     return agpu_shader_resource_binding::create(this, element);

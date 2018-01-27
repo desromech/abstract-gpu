@@ -3,9 +3,10 @@
 
 #include "device.hpp"
 
-struct UniformBinding
+struct BufferBinding
 {
-    UniformBinding() : buffer(nullptr), range(false), offset(0), size(-1) {}
+    BufferBinding()
+        : buffer(nullptr), range(false), offset(0), size(-1) {}
 
     agpu_buffer *buffer;
     bool range;
@@ -33,13 +34,14 @@ public:
 
     static agpu_shader_resource_binding *create(agpu_shader_signature *signature, int elementIndex);
 
-    agpu_error bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer);
-    agpu_error bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size);
+    agpu_error bindUniformBuffer ( agpu_int location, agpu_buffer* uniform_buffer );
+    agpu_error bindUniformBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
+    agpu_error bindStorageBuffer ( agpu_int location, agpu_buffer* uniform_buffer );
+    agpu_error bindStorageBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
+    agpu_error bindTexture ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
+    agpu_error bindTextureArrayRange ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
 
-    agpu_error bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp);
-    agpu_error bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp);
-
-    agpu_error createSampler(agpu_int location, agpu_sampler_description* description);
+    agpu_error createSampler ( agpu_int location, agpu_sampler_description* description );
 
 public:
     void activate();
@@ -50,12 +52,18 @@ public:
 
 private:
 
+    void activateUniformBuffers();
+    void activateStorageBuffers();
+    void activateBuffers(GLenum target, size_t baseIndex, std::vector<BufferBinding> &buffers);
+
+    void activateSampledImages();
+    void activateSamplers();
+
     std::mutex bindMutex;
-    std::vector<UniformBinding> uniformBuffers;
-    std::vector<TextureBinding> textures;
+    std::vector<BufferBinding> uniformBuffers;
+    std::vector<BufferBinding> storageBuffers;
+    std::vector<TextureBinding> sampledImages;
     std::vector<GLuint> samplers;
-    agpu_shader_binding_type type;
-    int startIndex;
 };
 
 #endif //AGPU_GL_SHADER_RESOURCE_BINDING_HPP

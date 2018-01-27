@@ -11,14 +11,13 @@ public:
 
     void lostReferences();
 
-    static _agpu_shader_signature *create(agpu_device *device, ShaderSignatureElementDescription elements[16]);
+    static _agpu_shader_signature *create(agpu_device *device, agpu_shader_signature_builder *builder);
 
     agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
 
-public:
-
     agpu_device *device;
-    ShaderSignatureElementDescription elements[16];
+    std::vector<ShaderSignatureElement> elements;
+    agpu_uint uniformVariableCount;
 };
 
 #endif //AGPU_GL_SHADER_SIGNATURE_HPP

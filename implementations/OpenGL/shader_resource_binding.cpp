@@ -55,6 +55,7 @@ inline GLenum mapAddressMode(agpu_texture_address_mode mode)
 }
 
 _agpu_shader_resource_binding::_agpu_shader_resource_binding()
+    : device(nullptr), signature(nullptr)
 {
 }
 
@@ -66,7 +67,13 @@ void _agpu_shader_resource_binding::lostReferences()
             binding.buffer->release();
     }
 
-    for(auto &binding : textures)
+    for(auto &binding : storageBuffers)
+    {
+        if (binding.buffer)
+            binding.buffer->release();
+    }
+
+    for(auto &binding : sampledImages)
     {
         if(binding.texture)
             binding.texture->release();
@@ -78,6 +85,8 @@ void _agpu_shader_resource_binding::lostReferences()
             device->glDeleteSamplers(samplers.size(), &samplers[0]);
         });
     }
+
+    signature->release();
 }
 
 agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_signature *signature, int elementIndex)
@@ -88,83 +97,111 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
     signature->retain();
 	binding->elementIndex = elementIndex;
 
-    auto &element = signature->elements[elementIndex];
-    binding->type = element.type;
-    binding->startIndex = element.startIndex;
-
-    switch (binding->type)
+    const auto &bank = signature->elements[elementIndex];
+    switch(bank.type)
     {
-    case AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE:
-        binding->textures.resize(element.bindingPointCount);
+    case ShaderSignatureElementType::Element:
+    case ShaderSignatureElementType::Bank:
+        {
+            binding->uniformBuffers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::UniformBuffer]);
+            binding->storageBuffers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::StorageBuffer]);
+            binding->sampledImages.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::SampledImage]);
+            binding->samplers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::Sampler]);
+        }
         break;
-    case AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER:
-        binding->uniformBuffers.resize(element.bindingPointCount);
-        break;
-    case AGPU_SHADER_BINDING_TYPE_SAMPLER:
-        binding->samplers.resize(element.bindingPointCount);
-        binding->device->onMainContextBlocking([&]{
-            binding->device->glGenSamplers(binding->samplers.size(), &binding->samplers[0]);
-        });
-        break;
-    case AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE:
     default:
         abort();
         break;
     }
-	return binding.release();
+
+    return binding.release();
 }
 
 agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
 {
-	if(location < 0)
-		return AGPU_OK;
-	if(location >= 4)
-		return AGPU_ERROR;
-
-    std::unique_lock<std::mutex> l(bindMutex);
-	if(uniform_buffer)
-		uniform_buffer->retain();
-	if(uniformBuffers[location].buffer)
-		uniformBuffers[location].buffer->release();
- 	uniformBuffers[location].buffer = uniform_buffer;
-
-	uniformBuffers[location].range = false;
-	return AGPU_OK;
+    CHECK_POINTER(uniform_buffer);
+    return bindUniformBufferRange(location, uniform_buffer, 0, uniform_buffer->description.size);
 }
 
 agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
 {
 	if(location < 0)
 		return AGPU_OK;
-	if(location >= (int)uniformBuffers.size())
-		return AGPU_ERROR;
+
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
+        return AGPU_INVALID_OPERATION;
+
+    auto &binding = uniformBuffers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::UniformBuffer]];
 
     std::unique_lock<std::mutex> l(bindMutex);
 	if(uniform_buffer)
 		uniform_buffer->retain();
-	if(uniformBuffers[location].buffer)
-		uniformBuffers[location].buffer->release();
- 	uniformBuffers[location].buffer = uniform_buffer;
+	if(binding.buffer)
+		binding.buffer->release();
+ 	binding.buffer = uniform_buffer;
+	binding.range = offset != 0 || size != uniform_buffer->description.size;
+	binding.offset = offset;
+	binding.size = size;
+	return AGPU_OK;
+}
 
-	uniformBuffers[location].range = true;
-	uniformBuffers[location].offset = offset;
-	uniformBuffers[location].size = size;
+agpu_error _agpu_shader_resource_binding::bindStorageBuffer(agpu_int location, agpu_buffer* storage_buffer)
+{
+    CHECK_POINTER(storage_buffer);
+    return bindStorageBufferRange(location, storage_buffer, 0, storage_buffer->description.size);
+}
+
+agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
+{
+	if(location < 0)
+		return AGPU_OK;
+
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
+        return AGPU_INVALID_OPERATION;
+
+    auto &binding = storageBuffers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::UniformBuffer]];
+
+    std::unique_lock<std::mutex> l(bindMutex);
+	if(storage_buffer)
+		storage_buffer->retain();
+	if(binding.buffer)
+		binding.buffer->release();
+ 	binding.buffer = storage_buffer;
+	binding.range = offset != 0 || size != storage_buffer->description.size;
+	binding.offset = offset;
+	binding.size = size;
 	return AGPU_OK;
 }
 
 agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp)
 {
+    CHECK_POINTER(texture);
     if(location < 0)
-		return AGPU_OK;
-	if(location >= (int)textures.size())
-		return AGPU_ERROR;
+        return AGPU_OK;
 
-    std::unique_lock<std::mutex> l(bindMutex);
-    auto &binding = textures[location];
-    if(texture)
-        texture->retain();
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE &&
+       element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+        return AGPU_INVALID_OPERATION;
+
+    texture->retain();
+    auto &binding = sampledImages[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::SampledImage]];
     if(binding.texture)
-		binding.texture->release();
+        binding.texture->release();
     binding.texture = texture;
 
     // Store some of the texture parameters.
@@ -182,12 +219,18 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int locatio
 
 agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
 {
+    CHECK_POINTER(description);
     if(location < 0)
         return AGPU_OK;
-    if(location >= (int)samplers.size())
-        return AGPU_ERROR;
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return AGPU_OUT_OF_BOUNDS;
 
-    auto sampler = samplers[location];
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
+        return AGPU_INVALID_OPERATION;
+
+    auto sampler = samplers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::Sampler]];
     device->onMainContextBlocking([&]{
         std::unique_lock<std::mutex> l(bindMutex);
         device->glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, mapMagFilter(description->filter));
@@ -203,86 +246,126 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
 void _agpu_shader_resource_binding::activate()
 {
     std::unique_lock<std::mutex> l(bindMutex);
-    if (type == AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
-    {
-        for (size_t i = 0; i < textures.size(); ++i)
-        {
-            auto &binding = textures[i];
-            if(!binding.texture)
-                continue;
+    if(!uniformBuffers.empty())
+        activateUniformBuffers();
+    if(!storageBuffers.empty())
+        activateStorageBuffers();
+    if(!sampledImages.empty())
+        activateSampledImages();
+    if(!samplers.empty())
+        activateSamplers();
+}
 
-            auto id = startIndex + i;
+void _agpu_shader_resource_binding::activateUniformBuffers()
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)OpenGLResourceBindingType::UniformBuffer];
+    activateBuffers(GL_UNIFORM_BUFFER, baseIndex, uniformBuffers);
+}
 
-            auto target = binding.texture->target;
-            device->glActiveTexture(GL_TEXTURE0 + id);
-            glBindTexture(target, binding.texture->handle);
-        }
-    }
-    else if (type == AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
-    {
-        for (size_t i = 0; i < uniformBuffers.size(); ++i)
-        {
-            auto &binding = uniformBuffers[i];
-            if (!binding.buffer)
-                continue;
+void _agpu_shader_resource_binding::activateStorageBuffers()
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)OpenGLResourceBindingType::StorageBuffer];
+    activateBuffers(GL_SHADER_STORAGE_BUFFER, baseIndex, storageBuffers);
+}
 
-            if (binding.range)
-                device->glBindBufferRange(GL_UNIFORM_BUFFER, GLuint(startIndex + i), binding.buffer->handle, binding.offset, binding.size);
-            else
-                device->glBindBufferBase(GL_UNIFORM_BUFFER, GLuint(startIndex + i), binding.buffer->handle);
-        }
-    }
-    else if(type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
+void _agpu_shader_resource_binding::activateBuffers(GLenum target, size_t baseIndex, std::vector<BufferBinding> &buffers)
+{
+    for (size_t i = 0; i < buffers.size(); ++i)
     {
-        for (size_t i = 0; i < samplers.size(); ++i)
-        {
-            auto sampler = samplers[i];
-            if(sampler)
-                device->glBindSampler(i, sampler);
-        }
+        auto &binding = buffers[i];
+        if (!binding.buffer)
+            continue;
+
+        if (binding.range)
+            device->glBindBufferRange(target, GLuint(baseIndex + i), binding.buffer->handle, binding.offset, binding.size);
+        else
+            device->glBindBufferBase(target, GLuint(baseIndex + i), binding.buffer->handle);
     }
 }
 
+void _agpu_shader_resource_binding::activateSampledImages()
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)OpenGLResourceBindingType::SampledImage];
 
-// Exported C interace
+    for (size_t i = 0; i < sampledImages.size(); ++i)
+    {
+        auto &binding = sampledImages[i];
+        if(!binding.texture)
+            continue;
 
+        auto id = baseIndex + i;
+
+        auto target = binding.texture->target;
+        device->glActiveTexture(GL_TEXTURE0 + id);
+        glBindTexture(target, binding.texture->handle);
+    }
+}
+
+void _agpu_shader_resource_binding::activateSamplers()
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)OpenGLResourceBindingType::Sampler];
+    for (size_t i = 0; i < samplers.size(); ++i)
+    {
+        auto sampler = samplers[i];
+        if(sampler)
+            device->glBindSampler(baseIndex + i, sampler);
+    }
+}
+
+// The exported C interface
 AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference ( agpu_shader_resource_binding* shader_resource_binding )
 {
-	CHECK_POINTER(shader_resource_binding);
-	return shader_resource_binding->retain();
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->retain();
 }
 
 AGPU_EXPORT agpu_error agpuReleaseShaderResourceBinding ( agpu_shader_resource_binding* shader_resource_binding )
 {
-	CHECK_POINTER(shader_resource_binding);
-	return shader_resource_binding->release();
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->release();
 }
 
 AGPU_EXPORT agpu_error agpuBindUniformBuffer ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer )
 {
-	CHECK_POINTER(shader_resource_binding);
-	return shader_resource_binding->bindUniformBuffer(location, uniform_buffer);
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindUniformBuffer(location, uniform_buffer);
 }
 
 AGPU_EXPORT agpu_error agpuBindUniformBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size )
 {
-	CHECK_POINTER(shader_resource_binding);
-	return shader_resource_binding->bindUniformBufferRange(location, uniform_buffer, offset, size);
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindUniformBufferRange(location, uniform_buffer, offset, size);
 }
 
-AGPU_EXPORT agpu_error agpuBindTexture(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+AGPU_EXPORT agpu_error agpuBindStorageBuffer ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer )
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindStorageBuffer(location, storage_buffer);
+}
+
+AGPU_EXPORT agpu_error agpuBindStorageBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size )
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindStorageBufferRange(location, storage_buffer, offset, size);
+}
+
+AGPU_EXPORT agpu_error agpuBindTexture ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )
 {
     CHECK_POINTER(shader_resource_binding);
     return shader_resource_binding->bindTexture(location, texture, startMiplevel, miplevels, lodclamp);
 }
 
-AGPU_EXPORT agpu_error agpuBindTextureArrayRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp )
 {
     CHECK_POINTER(shader_resource_binding);
     return shader_resource_binding->bindTextureArrayRange(location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
 }
 
-AGPU_EXPORT agpu_error agpuCreateSampler(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description)
+AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description )
 {
     CHECK_POINTER(shader_resource_binding);
     return shader_resource_binding->createSampler(location, description);

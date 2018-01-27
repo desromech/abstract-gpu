@@ -2,19 +2,83 @@
 #define AGPU_GL_SHADER_SIGNATURE_BUILDER_HPP
 
 #include "device.hpp"
+#include <string.h>
 
-struct ShaderSignatureElementDescription
+enum class OpenGLResourceBindingType
 {
-    ShaderSignatureElementDescription() {}
-    ShaderSignatureElementDescription(bool bank, agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings, agpu_uint startIndex)
-        : valid(true), bank(bank), type(type), bindingPointCount(bindingPointCount), maxBindings(maxBindings), startIndex(startIndex) {}
+    SampledImage,
+    StorageImage,
+    UniformTexelBuffer,
+    UniformStorageTexelBuffer,
 
-    bool valid;
-    bool bank;
+    UniformBuffer,
+    StorageBuffer,
+
+    Sampler,
+    UniformVariable,
+    Count,
+};
+
+inline OpenGLResourceBindingType mapBindingType(agpu_shader_binding_type type)
+{
+    switch(type)
+    {
+    case AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE:
+        return OpenGLResourceBindingType::SampledImage;
+    case AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE:
+        return OpenGLResourceBindingType::StorageImage;
+    case AGPU_SHADER_BINDING_TYPE_UNIFORM_TEXEL_BUFFER:
+        return OpenGLResourceBindingType::UniformTexelBuffer;
+    case AGPU_SHADER_BINDING_TYPE_STORAGE_TEXEL_BUFFER:
+        return OpenGLResourceBindingType::UniformStorageTexelBuffer;
+
+    case AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER:
+        return OpenGLResourceBindingType::UniformBuffer;
+    case AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER:
+        return OpenGLResourceBindingType::StorageBuffer;
+
+    case AGPU_SHADER_BINDING_TYPE_SAMPLER:
+        return OpenGLResourceBindingType::Sampler;
+    default:
+        abort();
+        break;
+    }
+}
+
+struct ShaderSignatureBankElement
+{
+    ShaderSignatureBankElement() {}
+    ShaderSignatureBankElement(agpu_shader_binding_type type, agpu_uint bindingCount, agpu_uint startIndex)
+        : type(type), bindingCount(bindingCount), startIndex(startIndex)
+    {
+    }
+
     agpu_shader_binding_type type;
-    agpu_uint bindingPointCount;
-    agpu_uint maxBindings;
+    agpu_uint bindingCount;
     agpu_uint startIndex;
+};
+
+enum class ShaderSignatureElementType
+{
+    Constant,
+    Element,
+    Bank,
+};
+
+struct ShaderSignatureElement
+{
+    ShaderSignatureElement(ShaderSignatureElementType type, agpu_uint maxBindings, agpu_uint *newStartIndices)
+        : type(type), maxBindings(maxBindings)
+    {
+        memset(elementTypeCounts, 0, sizeof(elementTypeCounts));
+        memcpy(startIndices, newStartIndices, sizeof(startIndices));
+    }
+
+    ShaderSignatureElementType type;
+    agpu_uint maxBindings;
+    agpu_uint startIndices[(int)OpenGLResourceBindingType::Count];
+    agpu_uint elementTypeCounts[(int)OpenGLResourceBindingType::Count];
+    std::vector<ShaderSignatureBankElement> elements;
 };
 
 struct _agpu_shader_signature_builder: public Object<_agpu_shader_signature_builder>
@@ -27,17 +91,15 @@ public:
     static _agpu_shader_signature_builder *create(agpu_device *device);
 
     agpu_shader_signature* build();
-    agpu_error addBindingConstant();
-    agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings);
-    agpu_error addBindingBank(agpu_shader_binding_type type, agpu_uint bindingPointCount, agpu_uint maxBindings);
+    agpu_error addBindingConstant (  );
+    agpu_error addBindingElement ( agpu_shader_binding_type type, agpu_uint maxBindings );
 
-public:
+    agpu_error beginBindingBank ( agpu_uint maxBindings );
+    agpu_error addBindingBankElement ( agpu_shader_binding_type type, agpu_uint bindingPointCount );
+
     agpu_device *device;
-
-private:
-    int elementCount;
-    ShaderSignatureElementDescription elements[16];
-    agpu_uint bindingCount[AGPU_SHADER_BINDING_TYPE_COUNT];
+    agpu_uint bindingPointsUsed[(int)OpenGLResourceBindingType::Count];
+    std::vector<ShaderSignatureElement> elements;
 };
 
 #endif //AGPU_GL_SHADER_SIGNATURE_BUILDER_HPP
