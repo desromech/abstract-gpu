@@ -3,7 +3,7 @@
 
 _agpu_pipeline_state::_agpu_pipeline_state()
 {
-    shaderSignature = nullptr; 
+    shaderSignature = nullptr;
 }
 
 void _agpu_pipeline_state::lostReferences()
@@ -24,15 +24,27 @@ void _agpu_pipeline_state::activate()
 {
 	// Use the program.
 	device->glUseProgram(programHandle);
-	
+
 	// The scissor test is always enabled.
 	glEnable(GL_SCISSOR_TEST);
-	
+
+    // Face culling
+    glFrontFace(frontFaceWinding);
+    if(cullingMode == GL_NONE)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+    else
+    {
+        glEnable(GL_CULL_FACE);
+        glCullFace(cullingMode);
+    }
+
 	// Depth
 	enableState(depthEnabled, GL_DEPTH_TEST);
 	glDepthMask(depthWriteMask);
 	glDepthFunc(depthFunction);
-	
+
 	// Set the depth range mapping to [0.0, 1.0]. This is the same depth range used by Direct3D.
 	if(device->glDepthRangedNV)
 		device->glDepthRangedNV(-1, 1);
@@ -47,7 +59,7 @@ void _agpu_pipeline_state::activate()
         device->glBlendEquationSeparate(blendOperation, blendOperationAlpha);
         device->glBlendFuncSeparate(sourceBlendFactor, destBlendFactor, sourceBlendFactorAlpha, destBlendFactorAlpha);
     }
-		
+
 	// Stencil
 	enableState(stencilEnabled, GL_STENCIL_TEST);
 

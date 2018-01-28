@@ -11,7 +11,7 @@ struct _agpu_command_list: public Object<_agpu_command_list>
 {
 public:
     _agpu_command_list();
-    
+
     static agpu_command_list *create(agpu_device *device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
 
     void lostReferences();
@@ -24,6 +24,7 @@ public:
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
     agpu_error useShaderResources ( agpu_shader_resource_binding* binding );
+    agpu_error pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values );
     agpu_error drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
     agpu_error drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
     agpu_error drawElementsIndirect(agpu_size offset);
@@ -32,13 +33,14 @@ public:
     agpu_error executeBundle ( agpu_command_list* bundle );
     agpu_error close();
     agpu_error reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state);
+    agpu_error resetBundleCommandList ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info );
     agpu_error beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content);
     agpu_error endRenderPass();
     agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
-        
+
 public:
     agpu_device *device;
-    
+
     agpu_pipeline_state *currentPipeline;
 
     agpu_vertex_binding *currentVertexBinding;

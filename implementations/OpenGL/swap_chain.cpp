@@ -172,6 +172,16 @@ agpu_framebuffer* _agpu_swap_chain::getCurrentBackBuffer ()
     return fb;
 }
 
+agpu_size _agpu_swap_chain::getCurrentBackBufferIndex ()
+{
+    return backBufferIndex;
+}
+
+agpu_size _agpu_swap_chain::getFramebufferCount ()
+{
+    return 2;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
 {
@@ -196,4 +206,19 @@ AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_swap_chain* swap_chain )
 {
     CHECK_POINTER(swap_chain);
     return swap_chain->swapBuffers();
+}
+
+
+agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain )
+{
+    if(!swap_chain)
+        return 0;
+    return swap_chain->getCurrentBackBufferIndex();
+}
+
+agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain )
+{
+    if(!swap_chain)
+        return 0;
+    return swap_chain->getFramebufferCount();
 }

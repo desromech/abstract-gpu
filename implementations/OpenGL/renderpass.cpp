@@ -70,6 +70,12 @@ agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu
     return AGPU_OK;
 }
 
+agpu_error _agpu_renderpass::setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value )
+{
+    CHECK_POINTER(value);
+    return setColorClearValue(attachment_index, *value);
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddRenderPassReference(agpu_renderpass* renderpass)
 {
@@ -93,4 +99,10 @@ AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_
 {
     CHECK_POINTER(renderpass);
     return renderpass->setColorClearValue(attachment_index, value);
+}
+
+AGPU_EXPORT agpu_error agpuSetColorClearValueFrom ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value )
+{
+    CHECK_POINTER(renderpass);
+    return renderpass->setColorClearValueFrom(attachment_index, value);
 }

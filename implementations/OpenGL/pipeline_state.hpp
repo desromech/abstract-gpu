@@ -9,18 +9,22 @@ public:
     _agpu_pipeline_state();
 
     void lostReferences();
-    
+
     agpu_int getUniformLocation ( agpu_cstring name );
-    
+
 public:
     agpu_device *device;
     agpu_shader_signature *shaderSignature;
     GLuint programHandle;
-    
+
     // States
     agpu_bool depthEnabled;
     agpu_bool depthWriteMask;
     GLenum depthFunction;
+
+    // Face culling
+    GLenum frontFaceWinding;
+    GLenum cullingMode;
 
     // Color buffer
     agpu_bool blendingEnabled;
@@ -49,11 +53,11 @@ public:
     GLenum stencilBackDepthFailOp;
     GLenum stencilBackDepthPassOp;
     GLenum stencilBackFunc;
-    
+
     // Alpha testing
     bool alphaTestEnabled;
 	GLenum alphaTestFunction;
-    
+
     // Miscellaneous
     int renderTargetCount;
     agpu_primitive_topology primitiveTopology;

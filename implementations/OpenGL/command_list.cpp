@@ -116,6 +116,12 @@ agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding
     });
 }
 
+agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
+{
+    CHECK_POINTER(values);
+    return AGPU_UNIMPLEMENTED;
+}
+
 agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
 {
     return addCommand([=] {
@@ -198,6 +204,17 @@ agpu_error _agpu_command_list::close()
 }
 
 agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+{
+    closed = false;
+    stencilReference = 0;
+    commands.clear();
+    if (initial_pipeline_state)
+        usePipelineState(initial_pipeline_state);
+    return AGPU_OK;
+}
+
+
+agpu_error _agpu_command_list::resetBundleCommandList ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
 {
     closed = false;
     stencilReference = 0;
@@ -353,6 +370,12 @@ AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, a
     return command_list->reset(allocator, initial_pipeline_state);
 }
 
+AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+{
+    CHECK_POINTER(command_list);
+    return command_list->resetBundleCommandList(allocator, initial_pipeline_state, inheritance_info);
+}
+
 AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(command_list);
@@ -369,4 +392,10 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, a
 {
     CHECK_POINTER(command_list);
     return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
+}
+
+AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
+{
+    CHECK_POINTER(command_list);
+    return command_list->pushConstants(offset, size, values);
 }

@@ -14,6 +14,7 @@ public:
 
     agpu_error setDepthStencilClearValue(agpu_depth_stencil_value value);
     agpu_error setColorClearValue(agpu_uint attachment_index, agpu_color4f value);
+    agpu_error setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value );
 
     void started();
 

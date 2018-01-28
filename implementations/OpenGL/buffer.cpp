@@ -97,6 +97,16 @@ agpu_error agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_po
     return AGPU_OK;
 }
 
+agpu_error agpu_buffer::flushWholeBuffer ()
+{
+    return AGPU_OK;
+}
+
+agpu_error agpu_buffer::invalidateWholeBuffer ()
+{
+    return AGPU_OK;
+}
+
 void agpu_buffer::bind()
 {
     device->glBindBuffer(target, handle);
@@ -147,4 +157,17 @@ AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offse
 {
     CHECK_POINTER(buffer);
     return buffer->readBufferData(offset, size, data);
+}
+
+
+AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->flushWholeBuffer();
+}
+
+AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer )
+{
+    CHECK_POINTER(buffer);
+    return buffer->invalidateWholeBuffer();
 }

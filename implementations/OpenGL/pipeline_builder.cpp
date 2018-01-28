@@ -77,6 +77,30 @@ inline GLenum mapBlendOperation(agpu_blending_operation operation)
     }
 }
 
+inline GLenum mapFaceWinding(agpu_face_winding winding)
+{
+    switch(winding)
+    {
+    case AGPU_CLOCKWISE: return GL_CW;
+    case AGPU_COUNTER_CLOCKWISE: return GL_CCW;
+    default:
+        abort();
+    }
+}
+
+inline GLenum mapCullingMode(agpu_cull_mode cullingMode)
+{
+    switch(cullingMode)
+    {
+    case AGPU_CULL_MODE_NONE: return GL_NONE;
+    case AGPU_CULL_MODE_FRONT: return GL_FRONT;
+    case AGPU_CULL_MODE_BACK: return GL_BACK;
+    case AGPU_CULL_MODE_FRONT_AND_BACK: return GL_FRONT_AND_BACK;
+    default:
+        abort();
+    }
+}
+
 _agpu_pipeline_builder::_agpu_pipeline_builder()
 {
     programHandle = 0;
@@ -87,6 +111,10 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     depthEnabled = false;
     depthWriteMask = true;
     depthFunction = AGPU_LESS;
+
+    // Face culling
+    frontFaceWinding = AGPU_COUNTER_CLOCKWISE;
+    cullingMode = AGPU_CULL_MODE_NONE;
 
     // Color buffer
     blendingEnabled = false;
@@ -206,6 +234,10 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     pipeline->depthWriteMask = depthWriteMask;
     pipeline->depthFunction = mapCompareFunction(depthFunction);
 
+    // Face culling
+    pipeline->frontFaceWinding = mapFaceWinding(frontFaceWinding);
+    pipeline->cullingMode = mapCullingMode(cullingMode);
+
     // Color buffer
     pipeline->blendingEnabled = blendingEnabled;
     pipeline->redMask = redMask;
@@ -316,6 +348,18 @@ agpu_error _agpu_pipeline_builder::setColorMask(agpu_int renderTargetMask, agpu_
     this->greenMask = greenEnabled;
     this->blueMask = blueEnabled;
     this->alphaMask = alphaEnabled;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
+{
+    this->frontFaceWinding = winding;
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
+{
+    this->cullingMode = mode;
     return AGPU_OK;
 }
 
@@ -445,6 +489,18 @@ AGPU_EXPORT agpu_error agpuSetColorMask(agpu_pipeline_builder* pipeline_builder,
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
+}
+
+AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setFrontFace(winding);
+}
+
+AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setCullMode(mode);
 }
 
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
