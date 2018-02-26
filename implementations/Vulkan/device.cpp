@@ -940,6 +940,11 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* dev
     return AGPU_SHADER_LANGUAGE_SPIR_V;
 }
 
+AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
 {
     return AGPU_SHADER_LANGUAGE_NONE;

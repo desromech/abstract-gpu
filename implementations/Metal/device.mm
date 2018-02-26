@@ -144,6 +144,11 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* d
     return AGPU_SHADER_LANGUAGE_METAL_AIR;
 }
 
+AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device )
 {
     return AGPU_SHADER_LANGUAGE_METAL;

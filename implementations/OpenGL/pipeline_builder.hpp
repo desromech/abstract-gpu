@@ -43,8 +43,6 @@ public:
 
 public:
     agpu_device *device;
-    GLuint programHandle;
-    bool linked;
 
     // States
     agpu_bool depthEnabled;
@@ -87,10 +85,11 @@ public:
     int renderTargetCount;
     agpu_primitive_topology primitiveType;
 
-    agpu_shader_signature *shaderSignature;
+    // Error messages
+    std::string errorMessages;
 
-    std::vector<LocationBinding> uniformBindings;
-    std::vector<LocationBinding> samplerBindings;
+    agpu_shader_signature *shaderSignature;
+    std::vector<agpu_shader*> shaders;
 };
 
 

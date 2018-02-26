@@ -203,11 +203,12 @@ typedef enum {
 	AGPU_SHADER_LANGUAGE_NONE = 0,
 	AGPU_SHADER_LANGUAGE_GLSL = 1,
 	AGPU_SHADER_LANGUAGE_EGLSL = 2,
-	AGPU_SHADER_LANGUAGE_SPIR_V = 3,
-	AGPU_SHADER_LANGUAGE_HLSL = 4,
-	AGPU_SHADER_LANGUAGE_METAL = 5,
-	AGPU_SHADER_LANGUAGE_METAL_AIR = 6,
-	AGPU_SHADER_LANGUAGE_BINARY = 7,
+	AGPU_SHADER_LANGUAGE_VGLSL = 3,
+	AGPU_SHADER_LANGUAGE_SPIR_V = 4,
+	AGPU_SHADER_LANGUAGE_HLSL = 5,
+	AGPU_SHADER_LANGUAGE_METAL = 6,
+	AGPU_SHADER_LANGUAGE_METAL_AIR = 7,
+	AGPU_SHADER_LANGUAGE_BINARY = 8,
 } agpu_shader_language;
 
 typedef enum {
@@ -622,6 +623,7 @@ typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* d
 typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
+typedef agpu_shader_language (*agpuGetPreferredIntermediateShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) ( agpu_device* device );
 typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView );
 typedef agpu_renderpass* (*agpuCreateRenderPass_FUN) ( agpu_device* device, agpu_renderpass_description* description );
@@ -645,6 +647,7 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
+AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device );
 AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView );
 AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass ( agpu_device* device, agpu_renderpass_description* description );
@@ -974,6 +977,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateCommandAllocator_FUN agpuCreateCommandAllocator;
 	agpuCreateCommandList_FUN agpuCreateCommandList;
 	agpuGetPreferredShaderLanguage_FUN agpuGetPreferredShaderLanguage;
+	agpuGetPreferredIntermediateShaderLanguage_FUN agpuGetPreferredIntermediateShaderLanguage;
 	agpuGetPreferredHighLevelShaderLanguage_FUN agpuGetPreferredHighLevelShaderLanguage;
 	agpuCreateFrameBuffer_FUN agpuCreateFrameBuffer;
 	agpuCreateRenderPass_FUN agpuCreateRenderPass;

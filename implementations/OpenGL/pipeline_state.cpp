@@ -1,5 +1,6 @@
 #include "pipeline_state.hpp"
 #include "shader_signature.hpp"
+#include "shader.hpp"
 
 _agpu_pipeline_state::_agpu_pipeline_state()
 {
@@ -13,6 +14,9 @@ void _agpu_pipeline_state::lostReferences()
     device->onMainContextBlocking([&] {
         device->glDeleteProgram(programHandle);
     });
+
+    for(auto shaderInstance : shaderInstances)
+        shaderInstance->release();
 }
 
 agpu_int _agpu_pipeline_state::getUniformLocation ( agpu_cstring name )

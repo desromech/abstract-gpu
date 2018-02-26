@@ -227,6 +227,11 @@ public:
 		return agpuGetPreferredShaderLanguage( this );
 	}
 
+	inline agpu_shader_language getPreferredIntermediateShaderLanguage (  )
+	{
+		return agpuGetPreferredIntermediateShaderLanguage( this );
+	}
+
 	inline agpu_shader_language getPreferredHighLevelShaderLanguage (  )
 	{
 		return agpuGetPreferredHighLevelShaderLanguage( this );

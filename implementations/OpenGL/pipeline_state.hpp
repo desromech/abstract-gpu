@@ -3,6 +3,7 @@
 
 #include "device.hpp"
 
+struct agpu_shader_forSignature;
 struct _agpu_pipeline_state: public Object<_agpu_pipeline_state>
 {
 public:
@@ -15,6 +16,7 @@ public:
 public:
     agpu_device *device;
     agpu_shader_signature *shaderSignature;
+    std::vector<agpu_shader_forSignature*> shaderInstances;
     GLuint programHandle;
 
     // States

@@ -313,11 +313,12 @@
             <constant name="ShaderLanguageNone" value="0" />
 			<constant name="ShaderLanguageGlsl" value="1" />
             <constant name="ShaderLanguageEglsl" value="2" />
-			<constant name="ShaderLanguageSpirV" value="3" />
-            <constant name="ShaderLanguageHlsl" value="4" />
-            <constant name="ShaderLanguageMetal" value="5" />
-            <constant name="ShaderLanguageMetalAir" value="6" />
-            <constant name="ShaderLanguageBinary" value="7" />
+            <constant name="ShaderLanguageVglsl" value="3" />
+			<constant name="ShaderLanguageSpirV" value="4" />
+            <constant name="ShaderLanguageHlsl" value="5" />
+            <constant name="ShaderLanguageMetal" value="6" />
+            <constant name="ShaderLanguageMetalAir" value="7" />
+            <constant name="ShaderLanguageBinary" value="8" />
 		</enum>
 
         <enum name="field_type">
@@ -642,6 +643,9 @@
             </method>
 
             <method name="getPreferredShaderLanguage" cname="GetPreferredShaderLanguage" returnType="shader_language">
+            </method>
+
+            <method name="getPreferredIntermediateShaderLanguage" cname="GetPreferredIntermediateShaderLanguage" returnType="shader_language">
             </method>
 
             <method name="getPreferredHighLevelShaderLanguage" cname="GetPreferredHighLevelShaderLanguage" returnType="shader_language">

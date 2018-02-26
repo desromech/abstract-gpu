@@ -15,6 +15,8 @@ public:
 
     agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
 
+    int mapDescriptorSetAndBinding(agpu_shader_binding_type type, unsigned int set, unsigned int binding);
+
     agpu_device *device;
     std::vector<ShaderSignatureElement> elements;
     agpu_uint uniformVariableCount;

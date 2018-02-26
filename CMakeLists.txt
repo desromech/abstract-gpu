@@ -94,7 +94,13 @@ if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
 endif()
 
 # Add some include directories
-include_directories(. include thirdparty/glm thirdparty/opengl/include)
+include_directories(
+.
+include
+thirdparty/glm
+thirdparty/opengl/include
+thirdparty/spirv-cross/
+)
 
 # Set output dir.
 set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
@@ -149,6 +155,9 @@ endif()
 # Samples libraries
 set(AGPU_MAIN_LIB Agpu)
 set(AGPU_SAMPLES_LIBS ${AGPU_SAMPLES_LIBS} ${SDL2_LIBRARIES} ${AGPU_MAIN_LIB})
+
+# Build the thirdparty dependencies
+add_subdirectory(thirdparty)
 
 # Build the implementations
 add_subdirectory(implementations)

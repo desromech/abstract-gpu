@@ -28,6 +28,22 @@ agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBindin
     return agpu_shader_resource_binding::create(this, element);
 }
 
+int _agpu_shader_signature::mapDescriptorSetAndBinding(agpu_shader_binding_type type, unsigned int set, unsigned int binding)
+{
+    if(set >= elements.size())
+        return -1;
+
+    auto &bank = elements[set];
+    if(binding >= bank.elements.size())
+        return -1;
+
+    auto &element = bank.elements[binding];
+    if(element.type != type)
+        return -1;
+
+    return element.startIndex;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddShaderSignature(agpu_shader_signature* shader_signature)
 {

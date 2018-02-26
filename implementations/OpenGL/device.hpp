@@ -134,6 +134,7 @@ public:
     }
 
     OpenGLVersion versionNumber;
+    int glslVersionNumber;
     std::string rendererString, shaderString;
 
     agpu_command_queue *defaultCommandQueue;

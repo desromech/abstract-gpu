@@ -51,4 +51,4 @@ include_directories(${OPENGL_INCLUDE_DIR})
 add_definitions(-DAGPU_BUILD)
 
 add_library(AgpuOpenGL SHARED ${AGPU_OpenGL_SOURCES})
-target_link_libraries(AgpuOpenGL ${OPENGL_gl_LIBRARY})
+target_link_libraries(AgpuOpenGL ${OPENGL_gl_LIBRARY} $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl>)

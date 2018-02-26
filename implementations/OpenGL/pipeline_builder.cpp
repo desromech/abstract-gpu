@@ -103,8 +103,6 @@ inline GLenum mapCullingMode(agpu_cull_mode cullingMode)
 
 _agpu_pipeline_builder::_agpu_pipeline_builder()
 {
-    programHandle = 0;
-    linked = false;
     shaderSignature = nullptr;
 
     // Depth buffer
@@ -153,13 +151,8 @@ void _agpu_pipeline_builder::lostReferences()
 {
     if (shaderSignature)
         shaderSignature->release();
-
-	if(programHandle && !linked)
-    {
-        device->onMainContextBlocking([&]{
-            device->glDeleteProgram(programHandle);
-        });
-    }
+    for(auto &shader : shaders)
+        shader->release();
 }
 
 agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device)
@@ -172,60 +165,123 @@ agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device
 
 agpu_error _agpu_pipeline_builder::reset()
 {
-    device->onMainContextBlocking([&]{
-    	if(programHandle && !linked)
-    		device->glDeleteProgram(programHandle);
-
-    	programHandle = device->glCreateProgram();
-    });
-	linked = false;
+    for(auto &shader : shaders)
+        shader->release();
+    shaders.clear();
+    errorMessages.clear();
 	return AGPU_OK;
 }
 
 agpu_pipeline_state* _agpu_pipeline_builder::build ()
 {
-    device->onMainContextBlocking([&]{
-    	// Link the program.
-    	device->glLinkProgram(programHandle);
 
-    	// Check the link status
-    	GLint status;
-    	device->glGetProgramiv(programHandle, GL_LINK_STATUS, &status);
-    	linked = status == GL_TRUE;
-        if(linked)
+    GLuint program = 0;
+    bool succeded = true;
+    std::vector<agpu_shader_forSignature*> shaderInstances;
+    if(!shaders.empty())
+    {
+        // Instantiate the shaders
+        for(auto shader : shaders)
         {
-            // Set the uniform block bindings
-            for(auto &binding : uniformBindings)
+            if(!shaderSignature)
             {
-                auto blockIndex = device->glGetUniformBlockIndex(programHandle, binding.name.c_str());
-                device->glUniformBlockBinding(programHandle, blockIndex, binding.location);
+                errorMessages += "Missing shader signature.";
+                succeded = false;
+                break;
+            }
+            agpu_shader_forSignature *shaderForSignature;
+            std::string errorMessage;
+
+            // Create the shader instance.
+            auto error = shader->instanceForSignature(shaderSignature, &shaderForSignature, &errorMessage);
+            errorMessages += errorMessage;
+            if(error != AGPU_OK)
+            {
+                printf("Instance error: %d\n", error);
+                succeded = false;
+                break;
             }
 
-            if(!samplerBindings.empty())
+            shaderInstances.push_back(shaderForSignature);
+        }
+
+        if(!succeded)
+        {
+            for(auto instance : shaderInstances)
+                instance->release();
+            return nullptr;
+        }
+
+        succeded = false;
+        device->onMainContextBlocking([&]{
+            // Create the progrma
+            program = device->glCreateProgram();
+
+            // Attach the shaders.
+            for(auto shaderInstance : shaderInstances)
             {
-                device->glUseProgram(programHandle);
+                // Attach the shader instance to the program.
+                std::string errorMessage;
+                auto error = shaderInstance->attachToProgram(program, &errorMessage);
 
-                // Set the sampler bindings.
-                for(auto &binding : samplerBindings)
+                errorMessages += errorMessage;
+                if(error != AGPU_OK)
+                    return;
+            }
+
+        	// Link the program.
+        	device->glLinkProgram(program);
+
+        	// Check the link status
+        	GLint status;
+        	device->glGetProgramiv(program, GL_LINK_STATUS, &status);
+            if(status != GL_TRUE)
+            {
+                // Get the info log
+                return;
+            }
+
+            succeded = true;
+            {
+                /*// Set the uniform block bindings
+                for(auto &binding : uniformBindings)
                 {
-                    auto location = device->glGetUniformLocation(programHandle, binding.name.c_str());
-                    device->glUniform1i(location, binding.location);
-
+                    auto blockIndex = device->glGetUniformBlockIndex(programHandle, binding.name.c_str());
+                    device->glUniformBlockBinding(programHandle, blockIndex, binding.location);
                 }
 
-                device->glUseProgram(0);
-            }
-        }
-    });
+                if(!samplerBindings.empty())
+                {
+                    device->glUseProgram(programHandle);
 
-	if(!linked)
+                    // Set the sampler bindings.
+                    for(auto &binding : samplerBindings)
+                    {
+                        auto location = device->glGetUniformLocation(programHandle, binding.name.c_str());
+                        device->glUniform1i(location, binding.location);
+
+                    }
+
+                    device->glUseProgram(0);
+                }*/
+            }
+        });
+
+    }
+
+	if(!succeded)
+    {
+        for(auto instance : shaderInstances)
+            instance->release();
 		return nullptr;
+    }
 
 	// Create the pipeline state object
 	auto pipeline = new agpu_pipeline_state();
 	pipeline->device = device;
-	pipeline->programHandle = programHandle;
+	pipeline->programHandle = program;
     pipeline->shaderSignature = shaderSignature;
+    pipeline->shaderInstances = shaderInstances;
     if (shaderSignature)
         shaderSignature->retain();
 
@@ -271,46 +327,32 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     pipeline->primitiveTopology = primitiveType;
     pipeline->renderTargetCount = renderTargetCount;
 
-    // Do not own the program.
-    this->programHandle = 0;
-    this->linked = false;
-
 	return pipeline;
 }
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
 	CHECK_POINTER(shader);
-    device->onMainContextBlocking([&]{
-    	device->glAttachShader(programHandle, shader->handle);
-    	for(auto &locationBinding : shader->attributeBindings )
-    		device->glBindAttribLocation(programHandle, locationBinding.location, locationBinding.name.c_str());
 
-        for(auto &binding : shader->samplerBindings )
-            samplerBindings.push_back(binding);
-
-        for(auto &binding : shader->uniformBindings )
-            uniformBindings.push_back(binding);
-
-    });
-
+    shader->retain();
+    shaders.push_back(shader);
 	return AGPU_OK;
 }
 
 agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
 {
-	GLint size;
-    device->onMainContextBlocking([&]{
-    	device->glGetProgramiv(programHandle, GL_INFO_LOG_LENGTH, &size);
-    });
-	return size;
+	return errorMessages.size();
 }
 
 agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
 {
-    device->onMainContextBlocking([&]{
-        device->glGetProgramInfoLog(programHandle, (GLsizei)(buffer_size - 1), nullptr, buffer);
-    });
+    if(buffer_size == 0)
+        return AGPU_OK;
+
+    size_t toCopy = std::min(size_t(buffer_size - 1), errorMessages.size());
+    if(toCopy > 0)
+        memcpy(buffer, errorMessages.data(), toCopy);
+    buffer[buffer_size-1] = 0;
 	return AGPU_OK;
 }
 

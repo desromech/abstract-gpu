@@ -3,3 +3,4 @@
 -I.
 -Ithirdparty/glm
 -Ithirdparty/opengl/include
+-Ithirdparty/spirv-cross

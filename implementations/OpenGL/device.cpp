@@ -135,6 +135,14 @@ void _agpu_device::readVersionInformation()
     versionNumber = OpenGLVersion(majorVersion*10 + minorVersion);
     printMessage("OpenGL version %s\n", glGetString(GL_VERSION));
     printMessage("OpenGL vendor %s\n", glGetString(GL_VENDOR));
+    printMessage("GLSL version %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    {
+        int glslMajor;
+        int glslMinor;
+        sscanf((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION), "%d.%d", &glslMajor, &glslMinor);
+        glslVersionNumber = glslMajor*100 + glslMinor;
+    }
 }
 
 agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
@@ -346,9 +354,14 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* dev
     return AGPU_SHADER_LANGUAGE_GLSL;
 }
 
+AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
 {
-    return AGPU_SHADER_LANGUAGE_GLSL;
+    return AGPU_SHADER_LANGUAGE_NONE;
 }
 
 AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )

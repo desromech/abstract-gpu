@@ -161,6 +161,14 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* d
 	return (*dispatchTable)->agpuGetPreferredShaderLanguage ( device );
 }
 
+AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_shader_language)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuGetPreferredIntermediateShaderLanguage ( device );
+}
+
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device )
 {
 	if (device == nullptr)

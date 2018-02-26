@@ -56,7 +56,7 @@ agpu_error _agpu_shader_signature_builder::addBindingBankElement ( agpu_shader_b
     int bindingPointTypeIndex = (int)mapBindingType(type);
     for(agpu_uint i = 0; i < bindingPointCount; ++i)
     {
-        bank.elements.push_back(ShaderSignatureBankElement(type, bindingPointCount, bindingPointsUsed[bindingPointTypeIndex]));
+        bank.elements.push_back(ShaderSignatureBankElement(type, 1, bindingPointsUsed[bindingPointTypeIndex]));
         bank.elementTypeCounts[bindingPointTypeIndex] += 1;
         bindingPointsUsed[bindingPointTypeIndex] += 1;
     }
