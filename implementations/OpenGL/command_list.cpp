@@ -80,10 +80,17 @@ agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
     return addCommand([=] {
         this->currentPipeline = pipeline;
-        this->currentPipeline->activate();
-        this->primitiveMode = mapPrimitiveTopology(pipeline->primitiveTopology);
-        if (stencilReference != 0)
-            this->currentPipeline->updateStencilReference(stencilReference);
+        if(this->currentPipeline)
+        {
+            this->currentPipeline->activate();
+            this->primitiveMode = mapPrimitiveTopology(pipeline->primitiveTopology);
+            if (stencilReference != 0)
+                this->currentPipeline->updateStencilReference(stencilReference);
+        }
+        else
+        {
+            device->glUseProgram(0);
+        }
     });
 }
 

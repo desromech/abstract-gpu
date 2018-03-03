@@ -61,7 +61,10 @@ agpu_error agpu_shader_forSignature::compile(std::string *errorMessage)
 			auto buffer = new char[infoLogLength];
 			GLsizei bufferSize;
 			device->glGetShaderInfoLog(handle, infoLogLength, &bufferSize, buffer);
-			*errorMessage = std::string(buffer, buffer + bufferSize);
+			*errorMessage = "Errors when compiling GLSL shader generated from SpirV:\n";
+			*errorMessage += sourceText;
+			*errorMessage += "\n";
+			*errorMessage += std::string(buffer, buffer + bufferSize);
 			delete [] buffer;
 			return;
 		}

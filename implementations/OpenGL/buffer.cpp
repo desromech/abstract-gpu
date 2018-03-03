@@ -7,6 +7,7 @@ inline GLenum mapBinding(agpu_buffer_binding_type binding)
     case AGPU_ARRAY_BUFFER: return GL_ARRAY_BUFFER;
 	case AGPU_ELEMENT_ARRAY_BUFFER: return GL_ELEMENT_ARRAY_BUFFER;
 	case AGPU_UNIFORM_BUFFER:  return GL_UNIFORM_BUFFER;
+	case AGPU_STORAGE_BUFFER:  return GL_SHADER_STORAGE_BUFFER;
 	case AGPU_DRAW_INDIRECT_BUFFER: return GL_DRAW_INDIRECT_BUFFER;
 	default: abort();
 	}

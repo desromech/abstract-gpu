@@ -225,6 +225,7 @@ public:
     PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
     PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
     PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
+    PFNGLFRAMEBUFFERTEXTURELAYERPROC glFramebufferTextureLayer;
     PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
 
     // Texture storage.

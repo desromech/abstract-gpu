@@ -56,6 +56,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
             colorBuffer = agpu_texture::create(device, &desc);
             if (!colorBuffer)
             {
+                printError("Failed to create swap chain color buffer.\n");
                 failure = true;
                 break;
             }
@@ -80,6 +81,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
             depthStencilBuffer = agpu_texture::create(device, &desc);
             if (!depthStencilBuffer)
             {
+                printError("Failed to create swap chain depth stencil buffer buffer.\n");
                 if (colorBuffer)
                     colorBuffer->release();
                 failure = true;
@@ -91,6 +93,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
         auto fb = agpu_framebuffer::create(device, create_info->width, create_info->height, 1, &colorViewDesc, depthStencilViewDescPointer);
         if(!fb)
         {
+            printError("Failed to create swap chain framebuffer.\n");
             if (colorBuffer)
                 colorBuffer->release();
             if (depthStencilBuffer)

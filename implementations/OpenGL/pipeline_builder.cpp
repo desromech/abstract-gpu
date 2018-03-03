@@ -197,7 +197,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
             errorMessages += errorMessage;
             if(error != AGPU_OK)
             {
-                printf("Instance error: %d\n", error);
+                printError("Instance error: %d:%s\n", error, errorMessage.c_str());
                 succeded = false;
                 break;
             }

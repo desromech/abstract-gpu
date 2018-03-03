@@ -20,7 +20,7 @@ public:
     static const int MaxRenderTargetCount = 9;
     void bind(GLenum target = GL_FRAMEBUFFER);
     void updateAttachments(GLenum target);
-    void attachTo(GLenum target, agpu_texture *attachment, GLenum attachmentPoint);
+    void attachTo(GLenum target, agpu_texture_view_description *view, GLenum attachmentPoint);
 
     agpu_device *device;
 
@@ -29,8 +29,8 @@ public:
     bool hasDepth;
     bool hasStencil;
     int renderTargetCount;
-    agpu_texture *colorBuffers[MaxRenderTargetCount];
-    agpu_texture *depthStencil;
+    agpu_texture_view_description colorBuffers[MaxRenderTargetCount];
+    agpu_texture_view_description depthStencil;
     bool changed;
     GLuint handle;
 };

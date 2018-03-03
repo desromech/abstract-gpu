@@ -250,6 +250,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGenFramebuffers);
     LOAD_FUNCTION(glCheckFramebufferStatus);
     LOAD_FUNCTION(glFramebufferTexture2D);
+    LOAD_FUNCTION(glFramebufferTextureLayer);
     LOAD_FUNCTION(glBlitFramebuffer);
 
     // Texture storage

@@ -166,7 +166,7 @@ agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int locati
         return AGPU_OUT_OF_BOUNDS;
 
     const auto &element = bank.elements[location];
-    if(element.type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
+    if(element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
         return AGPU_INVALID_OPERATION;
 
     auto &binding = storageBuffers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::UniformBuffer]];
