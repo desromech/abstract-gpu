@@ -172,8 +172,7 @@ static agpu_error mapShaderResources(spirv_cross::CompilerGLSL &compiler,
 			return AGPU_INVALID_PARAMETER;
 		}
 
-		printf("Resource %s set %d binding %d -> %d\n", resource.name.c_str(), set, binding, mappedBinding);
-
+		//printf("Resource %s set %d binding %d -> %d\n", resource.name.c_str(), set, binding, mappedBinding);
 		compiler.unset_decoration(resource.id, spv::DecorationDescriptorSet);
 		compiler.set_decoration(resource.id, spv::DecorationBinding, mappedBinding);
 	}

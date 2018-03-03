@@ -127,12 +127,36 @@ void _agpu_device::lostReferences()
     mainContextJobQueue.shutdown();
 }
 
+bool _agpu_device::hasOpenGLExtension(const char *extension)
+{
+    return isExtensionSupported(extensions.c_str(), extension);
+}
+
 void _agpu_device::readVersionInformation()
 {
     int majorVersion, minorVersion;
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
     glGetIntegerv(GL_MINOR_VERSION, &minorVersion);
     versionNumber = OpenGLVersion(majorVersion*10 + minorVersion);
+
+    if(majorVersion >= 3)
+    {
+        int numberOfExtensions;
+        LOAD_FUNCTION(glGetStringi);
+
+        glGetIntegerv(GL_NUM_EXTENSIONS, &numberOfExtensions);
+        for(int i = 0; i < numberOfExtensions; ++i)
+        {
+            if(i > 0)
+                extensions += " ";
+            extensions += (const char*)glGetStringi(GL_EXTENSIONS, i);
+        }
+    }
+    else
+    {
+        extensions = (const char*)glGetString(GL_EXTENSIONS);
+    }
+
     printMessage("OpenGL version %s\n", glGetString(GL_VERSION));
     printMessage("OpenGL vendor %s\n", glGetString(GL_VENDOR));
     printMessage("GLSL version %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
@@ -152,6 +176,9 @@ agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
 
 void _agpu_device::loadExtensions()
 {
+    isPersistentMemoryMappingSupported_ = false;
+    isCoherentMemoryMappingSupported_ = false;
+
     // Vertex buffer object.
     LOAD_FUNCTION(glGenBuffers);
     LOAD_FUNCTION(glDeleteBuffers);
@@ -258,6 +285,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glBlendFuncSeparate);
     LOAD_FUNCTION(glBlendEquationSeparate);
 
+    isPersistentMemoryMappingSupported_ = isCoherentMemoryMappingSupported_ = glBufferStorage != nullptr && hasOpenGLExtension("GL_ARB_buffer_storage");
 }
 
 void _agpu_device::initializeObjects()
@@ -270,6 +298,19 @@ void _agpu_device::initializeObjects()
 void _agpu_device::createDefaultCommandQueue()
 {
     defaultCommandQueue = agpu_command_queue::create(this);
+}
+
+agpu_bool _agpu_device::isFeatureSupported (agpu_feature feature)
+{
+    switch(feature)
+    {
+    case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING: return isPersistentMemoryMappingSupported_;
+    case AGPU_FEATURE_COHERENT_MEMORY_MAPPING: return isCoherentMemoryMappingSupported_;
+    case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING: return isPersistentMemoryMappingSupported_ && isCoherentMemoryMappingSupported_;
+    case AGPU_FEATURE_COMMAND_LIST_REUSE: return true;
+    case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: return false;
+    default: return false;
+    }
 }
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
@@ -415,12 +456,9 @@ AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
     return false;
 }
 
-AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device )
+AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )
 {
-    return true;
-}
-
-AGPU_EXPORT agpu_bool agpuisCommandListReuseEmulated ( agpu_device* device )
-{
-    return true;
+    if(!device)
+        return false;
+    return device->isFeatureSupported(feature);
 }

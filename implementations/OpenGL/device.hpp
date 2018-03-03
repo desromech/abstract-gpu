@@ -108,6 +108,7 @@ public:
 
     static agpu_device *open(agpu_device_open_info* openInfo);
     static bool isExtensionSupported(const char *extList, const char *extension);
+    bool hasOpenGLExtension(const char *extension);
 
     void setWindowPixelFormat(agpu_pointer window);
 
@@ -118,6 +119,8 @@ public:
     void createDefaultCommandQueue();
 
     agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
+
+    agpu_bool isFeatureSupported (agpu_feature feature);
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)
@@ -136,12 +139,20 @@ public:
     OpenGLVersion versionNumber;
     int glslVersionNumber;
     std::string rendererString, shaderString;
+    std::string extensions;
 
     agpu_command_queue *defaultCommandQueue;
+
+    // Important extensions
+    bool isPersistentMemoryMappingSupported_;
+    bool isCoherentMemoryMappingSupported_;
 
     // OpenGL API
     OpenGLContext *mainContext;
     JobQueue mainContextJobQueue;
+
+    // GetStringi
+    PFNGLGETSTRINGIPROC glGetStringi;
 
     // Vertex buffer object
     PFNGLGENBUFFERSPROC glGenBuffers;

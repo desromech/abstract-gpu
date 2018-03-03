@@ -1,10 +1,33 @@
 #include "platform.hpp"
 #include "device.hpp"
 
-_agpu_platform theVulkanPlatform = { &agpu_vulkan_icd_dispatch };
+_agpu_platform theVulkanPlatform;
+
+_agpu_platform::_agpu_platform()
+    : dispatch(&agpu_vulkan_icd_dispatch), isInitialized(false), isSupported(0), gpuCount(0)
+{
+}
+
+void _agpu_platform::ensureInitialized()
+{
+    std::unique_lock<std::mutex> l(initializationMutex);
+    if(isInitialized)
+        return;
+
+    isSupported = agpu_device::checkVulkanImplementation();
+    isInitialized = true;
+}
 
 AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms)
 {
+    theVulkanPlatform.ensureInitialized();
+    if(!theVulkanPlatform.isSupported)
+    {
+        CHECK_POINTER(ret_numplatforms);
+        *ret_numplatforms = 0;
+        return AGPU_OK;
+    }
+
     if (!platforms && numplatforms == 0)
     {
         CHECK_POINTER(ret_numplatforms);

@@ -28,6 +28,7 @@
 	<structs>
         <struct name="device_open_info">
             <field name="display" type="pointer" />
+            <field name="window_system_name" type="cstring" />
             <field name="debug_layer" type="bool" />
             <field name="application_name" type="cstring" />
             <field name="application_version" type="uint" />
@@ -37,7 +38,9 @@
         </struct>
 
         <struct name="swap_chain_create_info">
+            <field name="display" type="pointer" />
             <field name="window" type="pointer" />
+            <field name="window_system_name" type="cstring" />
             <field name="surface" type="pointer" />
             <field name="colorbuffer_format" type="texture_format" />
             <field name="depth_stencil_format" type="texture_format" />
@@ -202,6 +205,14 @@
 
             <constant name="Patches" value="9" />
 		</enum>
+
+        <enum name="feature">
+            <constant name="FeaturePersistentMemoryMapping" value="1" />
+            <constant name="FeatureCoherentMemoryMapping" value="2" />
+            <constant name="FeaturePersistentCoherentMemoryMapping" value="3" />
+            <constant name="FeatureCommandListReuse" value="4" />
+            <constant name="FeatureNonEmulatedCommandListReuse" value="5" />
+        </enum>
 
         <enum name="renderpass_attachment_action">
             <constant name="AttachmentKeep" value="0" />
@@ -677,12 +688,9 @@
             <method name="hasTopLeftNdcOrigin" cname="HasTopLeftNdcOrigin" returnType="bool">
             </method>
 
-            <method name="isCommandListReuseSupported" cname="IsCommandListReuseSupported" returnType="bool">
+            <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
+                <arg name="feature" type="feature" />
             </method>
-
-            <method name="isCommandListReuseEmulated" cname="isCommandListReuseEmulated" returnType="bool">
-            </method>
-
         </interface>
 
         <interface name="swap_chain">

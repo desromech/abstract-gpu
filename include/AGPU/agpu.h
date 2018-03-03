@@ -95,6 +95,14 @@ typedef enum {
 } agpu_primitive_topology;
 
 typedef enum {
+	AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING = 1,
+	AGPU_FEATURE_COHERENT_MEMORY_MAPPING = 2,
+	AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING = 3,
+	AGPU_FEATURE_COMMAND_LIST_REUSE = 4,
+	AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE = 5,
+} agpu_feature;
+
+typedef enum {
 	AGPU_ATTACHMENT_KEEP = 0,
 	AGPU_ATTACHMENT_CLEAR = 1,
 	AGPU_ATTACHMENT_DISCARD = 2,
@@ -436,6 +444,7 @@ typedef enum {
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
 	agpu_pointer display;
+	agpu_cstring window_system_name;
 	agpu_bool debug_layer;
 	agpu_cstring application_name;
 	agpu_uint application_version;
@@ -446,7 +455,9 @@ typedef struct agpu_device_open_info {
 
 /* Structure agpu_swap_chain_create_info. */
 typedef struct agpu_swap_chain_create_info {
+	agpu_pointer display;
 	agpu_pointer window;
+	agpu_cstring window_system_name;
 	agpu_pointer surface;
 	agpu_texture_format colorbuffer_format;
 	agpu_texture_format depth_stencil_format;
@@ -631,8 +642,7 @@ typedef agpu_texture* (*agpuCreateTexture_FUN) ( agpu_device* device, agpu_textu
 typedef agpu_fence* (*agpuCreateFence_FUN) ( agpu_device* device );
 typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) ( agpu_device* device, agpu_uint sample_count );
 typedef agpu_bool (*agpuHasTopLeftNdcOrigin_FUN) ( agpu_device* device );
-typedef agpu_bool (*agpuIsCommandListReuseSupported_FUN) ( agpu_device* device );
-typedef agpu_bool (*agpuisCommandListReuseEmulated_FUN) ( agpu_device* device );
+typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) ( agpu_device* device, agpu_feature feature );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -655,8 +665,7 @@ AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_
 AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device );
 AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_uint sample_count );
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device );
-AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device );
-AGPU_EXPORT agpu_bool agpuisCommandListReuseEmulated ( agpu_device* device );
+AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -985,8 +994,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateFence_FUN agpuCreateFence;
 	agpuGetMultiSampleQualityLevels_FUN agpuGetMultiSampleQualityLevels;
 	agpuHasTopLeftNdcOrigin_FUN agpuHasTopLeftNdcOrigin;
-	agpuIsCommandListReuseSupported_FUN agpuIsCommandListReuseSupported;
-	agpuisCommandListReuseEmulated_FUN agpuisCommandListReuseEmulated;
+	agpuIsFeatureSupportedOnDevice_FUN agpuIsFeatureSupportedOnDevice;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;

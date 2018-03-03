@@ -28,6 +28,8 @@ public:
 
     void lostReferences();
 
+    static bool checkVulkanImplementation();
+
     static agpu_device *open(agpu_device_open_info* openInfo);
     bool initialize(agpu_device_open_info* openInfo);
 

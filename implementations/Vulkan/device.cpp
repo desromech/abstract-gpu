@@ -9,6 +9,7 @@
 #include "command_allocator.hpp"
 #include "command_list.hpp"
 #include "pipeline_builder.hpp"
+#include "platform.hpp"
 #include "shader_signature_builder.hpp"
 #include "shader.hpp"
 #include "vertex_layout.hpp"
@@ -176,6 +177,57 @@ _agpu_device::_agpu_device()
 void _agpu_device::lostReferences()
 {
 }
+
+bool _agpu_device::checkVulkanImplementation()
+{
+    // Check the required extensions
+    uint32_t instanceExtensionCount;
+    auto error = vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr);
+    if (error || instanceExtensionCount == 0)
+        return false;
+
+    std::vector<VkExtensionProperties> instanceExtensionProperties(instanceExtensionCount);
+    error = vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, &instanceExtensionProperties[0]);
+    if (error)
+        return false;
+
+    if (!hasRequiredExtensions(instanceExtensionProperties))
+        return false;
+
+    VkApplicationInfo applicationInfo;
+    memset(&applicationInfo, 0, sizeof(applicationInfo));
+    applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    if (!applicationInfo.pApplicationName)
+        applicationInfo.pApplicationName = "Generic Abstract GPU Application";
+    if (!applicationInfo.pEngineName)
+        applicationInfo.pEngineName = "Abstract GPU";
+
+    VkInstanceCreateInfo createInfo;
+    memset(&createInfo, 0, sizeof(createInfo));
+    createInfo.pApplicationInfo = &applicationInfo;
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+
+    // Create the instace
+    VkInstance vulkanInstance;
+    error = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
+    if (error)
+        return false;
+
+    // Get the physical devices
+    theVulkanPlatform.gpuCount = 0;
+    error = vkEnumeratePhysicalDevices(vulkanInstance, &theVulkanPlatform.gpuCount, nullptr);
+    if (error || theVulkanPlatform.gpuCount == 0)
+    {
+        vkDestroyInstance(vulkanInstance, nullptr);
+        return false;
+    }
+    printf("gpuCount: %d\n", theVulkanPlatform.gpuCount);
+
+    vkDestroyInstance(vulkanInstance, nullptr);
+
+    return true;
+}
+
 
 agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 {

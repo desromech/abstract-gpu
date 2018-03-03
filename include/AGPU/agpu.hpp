@@ -267,14 +267,9 @@ public:
 		return agpuHasTopLeftNdcOrigin( this );
 	}
 
-	inline agpu_bool isCommandListReuseSupported (  )
+	inline agpu_bool isFeatureSupported ( agpu_feature feature )
 	{
-		return agpuIsCommandListReuseSupported( this );
-	}
-
-	inline agpu_bool isCommandListReuseEmulated (  )
-	{
-		return agpuisCommandListReuseEmulated( this );
+		return agpuIsFeatureSupportedOnDevice( this, feature );
 	}
 
 };
