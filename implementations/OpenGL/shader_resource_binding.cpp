@@ -3,17 +3,19 @@
 #include "texture.hpp"
 #include "buffer.hpp"
 
-inline GLenum mapMinFilter(agpu_filter filter)
+inline GLenum mapMagFilter(agpu_filter filter)
 {
     switch (filter)
     {
     case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:
     case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:
+        return GL_NEAREST;
     case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:
     case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:
-        return GL_NEAREST;
+        return GL_LINEAR;
     case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:
     case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:
+        return GL_NEAREST;
     case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:
     case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:
     case AGPU_FILTER_ANISOTROPIC:
@@ -22,17 +24,17 @@ inline GLenum mapMinFilter(agpu_filter filter)
     }
 }
 
-inline GLenum mapMagFilter(agpu_filter filter)
+inline GLenum mapMinFilter(agpu_filter filter)
 {
     switch (filter)
     {
     case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:    return GL_NEAREST_MIPMAP_NEAREST;
     case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:     return GL_NEAREST_MIPMAP_LINEAR;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:     return GL_LINEAR_MIPMAP_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:      return GL_LINEAR_MIPMAP_LINEAR;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:     return GL_NEAREST_MIPMAP_NEAREST;
+    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:      return GL_NEAREST_MIPMAP_LINEAR;
 
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:     return GL_NEAREST_MIPMAP_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:      return GL_NEAREST_MIPMAP_LINEAR;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:     return GL_LINEAR_MIPMAP_NEAREST;
+    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:      return GL_LINEAR_MIPMAP_LINEAR;
     case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:      return GL_LINEAR_MIPMAP_NEAREST;
     case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:       return GL_LINEAR_MIPMAP_LINEAR;
     case AGPU_FILTER_ANISOTROPIC:                               return GL_LINEAR_MIPMAP_LINEAR;
@@ -107,6 +109,12 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
             binding->storageBuffers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::StorageBuffer]);
             binding->sampledImages.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::SampledImage]);
             binding->samplers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::Sampler]);
+            if(!binding->samplers.empty())
+            {
+                signature->device->onMainContextBlocking([&]{
+                    signature->device->glGenSamplers(binding->samplers.size(), &binding->samplers[0]);
+                });
+            }
         }
         break;
     default:
@@ -169,7 +177,7 @@ agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int locati
     if(element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
         return AGPU_INVALID_OPERATION;
 
-    auto &binding = storageBuffers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::UniformBuffer]];
+    auto &binding = storageBuffers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::StorageBuffer]];
 
     std::unique_lock<std::mutex> l(bindMutex);
 	if(storage_buffer)
@@ -278,6 +286,9 @@ void _agpu_shader_resource_binding::activateBuffers(GLenum target, size_t baseIn
         if (!binding.buffer)
             continue;
 
+        //printf("Bind buffer %d handle %d target %d offset %d size %d[range: %d]\n", int(baseIndex + i), binding.buffer->handle, target, int(binding.offset), int(binding.size), binding.range);
+        //if(baseIndex + i == 1)
+        //    binding.buffer->dumpToFile("camera.bin");
         if (binding.range)
             device->glBindBufferRange(target, GLuint(baseIndex + i), binding.buffer->handle, binding.offset, binding.size);
         else

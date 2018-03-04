@@ -62,6 +62,7 @@ public:
 
     // Miscellaneous
     int renderTargetCount;
+    bool hasSRGBTarget;
     agpu_primitive_topology primitiveTopology;
 
 public:

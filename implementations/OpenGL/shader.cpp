@@ -4,6 +4,8 @@
 #include "shader_signature.hpp"
 #include "spirv_glsl.hpp"
 
+static int shaderDumpCount = 0;
+
 inline GLenum mapShaderType(agpu_shader_type type)
 {
 	switch(type)
@@ -261,6 +263,25 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 
 	// Compile the shader instance object.
 	error = shaderInstance->compile(errorMessage);
+
+	if(getenv("DUMP_SHADER") ||
+		(error != AGPU_OK && getenv("DUMP_SHADER_ON_ERROR")))
+	{
+		snprintf(buffer, sizeof(buffer), "dump%d.spv", shaderDumpCount);
+		auto f = fopen(buffer, "wb");
+		auto res = fwrite(&rawShaderSource, rawShaderSource.size(), 1, f);
+		fclose(f);
+		(void)res;
+
+		snprintf(buffer, sizeof(buffer), "dump%d.glsl", shaderDumpCount);
+		f = fopen(buffer, "wb");
+		res = fwrite(compiled.data(), compiled.size(), 1, f);
+		fclose(f);
+		(void)res;
+
+		++shaderDumpCount;
+	}
+
 	if(error == AGPU_OK)
 	{
 		// Store the result

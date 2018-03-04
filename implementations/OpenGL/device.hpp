@@ -146,6 +146,8 @@ public:
     // Important extensions
     bool isPersistentMemoryMappingSupported_;
     bool isCoherentMemoryMappingSupported_;
+    bool hasExtension_GL_NV_depth_buffer_float;
+    bool hasExtension_GL_ARB_clip_control;
 
     // OpenGL API
     OpenGLContext *mainContext;
@@ -162,6 +164,7 @@ public:
     PFNGLGETBUFFERSUBDATAPROC glGetBufferSubData;
     PFNGLBUFFERSUBDATAPROC glBufferSubData;
     PFNGLMAPBUFFERPROC glMapBuffer;
+    PFNGLMAPBUFFERRANGEPROC glMapBufferRange;
     PFNGLUNMAPBUFFERPROC glUnmapBuffer;
     PFNGLBUFFERSTORAGEPROC glBufferStorage;
 
@@ -260,6 +263,9 @@ public:
     // Separate blending
     PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
     PFNGLBLENDEQUATIONSEPARATEPROC glBlendEquationSeparate;
+
+    // Clip control
+    PFNGLCLIPCONTROLPROC glClipControl;
 };
 
 #endif //_AGPU_DEVICE_HPP_

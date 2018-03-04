@@ -82,6 +82,7 @@ agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
         this->currentPipeline = pipeline;
         if(this->currentPipeline)
         {
+            //printf("Activate pipeline %p\n", this->currentPipeline);
             this->currentPipeline->activate();
             this->primitiveMode = mapPrimitiveTopology(pipeline->primitiveTopology);
             if (stencilReference != 0)

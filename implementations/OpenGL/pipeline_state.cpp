@@ -29,6 +29,9 @@ void _agpu_pipeline_state::activate()
 	// Use the program.
 	device->glUseProgram(programHandle);
 
+    // Always try to use a sRGB framebuffer.
+    enableState(hasSRGBTarget, GL_FRAMEBUFFER_SRGB);
+
 	// The scissor test is always enabled.
 	glEnable(GL_SCISSOR_TEST);
 
@@ -45,14 +48,16 @@ void _agpu_pipeline_state::activate()
     }
 
 	// Depth
-	enableState(depthEnabled, GL_DEPTH_TEST);
+    enableState(depthEnabled, GL_DEPTH_TEST);
 	glDepthMask(depthWriteMask);
 	glDepthFunc(depthFunction);
 
 	// Set the depth range mapping to [0.0, 1.0]. This is the same depth range used by Direct3D.
-	if(device->glDepthRangedNV)
-		device->glDepthRangedNV(-1, 1);
-	else
+    if(device->hasExtension_GL_ARB_clip_control)
+        device->glClipControl(GL_LOWER_LEFT,  GL_ZERO_TO_ONE);
+    else if(device->hasExtension_GL_NV_depth_buffer_float)
+        device->glDepthRangedNV(-1, 1);
+    else
 		glDepthRange(-1, 1);
 
     // Color buffer

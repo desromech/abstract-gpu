@@ -2,6 +2,7 @@
 #include "pipeline_state.hpp"
 #include "shader.hpp"
 #include "shader_signature.hpp"
+#include "../Common/texture_formats_common.hpp"
 
 inline GLenum mapCompareFunction(agpu_compare_function function)
 {
@@ -142,8 +143,10 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     stencilBackDepthPassOp = AGPU_KEEP;
     stencilBackFunc = AGPU_ALWAYS;
 
-    // Miscellaneous
-    renderTargetCount = 1;
+    // Render targets
+    renderTargetFormats.resize(1, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
+    depthStencilFormat = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
+
     primitiveType = AGPU_POINTS;
 }
 
@@ -174,7 +177,6 @@ agpu_error _agpu_pipeline_builder::reset()
 
 agpu_pipeline_state* _agpu_pipeline_builder::build ()
 {
-
     GLuint program = 0;
     bool succeded = true;
     std::vector<agpu_shader_forSignature*> shaderInstances;
@@ -325,7 +327,17 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 
     // Miscellaneous
     pipeline->primitiveTopology = primitiveType;
-    pipeline->renderTargetCount = renderTargetCount;
+    pipeline->renderTargetCount = renderTargetFormats.size();
+    pipeline->hasSRGBTarget = false;
+    for (auto format : renderTargetFormats)
+    {
+        if(isSRGBTextureFormat(format))
+        {
+            pipeline->hasSRGBTarget = true;
+            break;
+        }
+
+    }
 
 	return pipeline;
 }
@@ -441,12 +453,16 @@ agpu_error _agpu_pipeline_builder::setStencilBackFace(agpu_stencil_operation ste
 
 agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
 {
-    renderTargetCount = count;
+    renderTargetFormats.resize(count, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
     return AGPU_OK;
 }
 
 agpu_error _agpu_pipeline_builder::setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
 {
+    if (index >= renderTargetFormats.size())
+        return AGPU_INVALID_PARAMETER;
+
+    renderTargetFormats[index] = format;
     return AGPU_OK;
 }
 

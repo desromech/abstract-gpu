@@ -53,6 +53,10 @@ public:
     agpu_face_winding frontFaceWinding;
     agpu_cull_mode cullingMode;
 
+    // Render targets
+    std::vector<agpu_texture_format> renderTargetFormats;
+    agpu_texture_format depthStencilFormat;
+    
     // Color buffer
     agpu_bool blendingEnabled;
     agpu_bool redMask;
@@ -82,7 +86,6 @@ public:
     agpu_compare_function stencilBackFunc;
 
     // Miscellaneos
-    int renderTargetCount;
     agpu_primitive_topology primitiveType;
 
     // Error messages

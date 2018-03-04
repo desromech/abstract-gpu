@@ -6,8 +6,8 @@ inline GLenum mapBinding(agpu_buffer_binding_type binding)
     {
     case AGPU_ARRAY_BUFFER: return GL_ARRAY_BUFFER;
 	case AGPU_ELEMENT_ARRAY_BUFFER: return GL_ELEMENT_ARRAY_BUFFER;
-	case AGPU_UNIFORM_BUFFER:  return GL_UNIFORM_BUFFER;
-	case AGPU_STORAGE_BUFFER:  return GL_SHADER_STORAGE_BUFFER;
+	case AGPU_UNIFORM_BUFFER: return GL_UNIFORM_BUFFER;
+	case AGPU_STORAGE_BUFFER: return GL_SHADER_STORAGE_BUFFER;
 	case AGPU_DRAW_INDIRECT_BUFFER: return GL_DRAW_INDIRECT_BUFFER;
 	default: abort();
 	}
@@ -42,6 +42,7 @@ agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_de
         device->glBindBuffer(binding, handle);
 
         // Initialize the buffer storage
+        //printf("createBuffer %d %p\n", int(description.size), initialData);
         device->glBufferStorage(binding, description.size, initialData, mappingFlags);
     });
 
@@ -51,6 +52,11 @@ agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_de
     buffer->description = description;
     buffer->target = binding;
     buffer->handle = handle;
+    buffer->extraMappingFlags = 0;
+    if(description.mapping_flags & AGPU_MAP_PERSISTENT_BIT)
+        buffer->extraMappingFlags |= GL_MAP_PERSISTENT_BIT;
+    if(description.mapping_flags & GL_MAP_COHERENT_BIT)
+        buffer->extraMappingFlags |= GL_MAP_COHERENT_BIT;
 
     return buffer;
 }
@@ -63,7 +69,10 @@ agpu_pointer agpu_buffer::mapBuffer(agpu_mapping_access access)
 
     device->onMainContextBlocking([&]{
         bind();
-        mappedPointer = device->glMapBuffer(target, mapMappingAccess(access));
+        if(extraMappingFlags != 0)
+            mappedPointer = device->glMapBufferRange(target, 0, description.size, mapBufferRangeMappingAccess(access) | extraMappingFlags);
+        else
+            mappedPointer = device->glMapBuffer(target, mapMappingAccess(access));
     });
     return mappedPointer;
 }
@@ -80,8 +89,20 @@ agpu_error agpu_buffer::unmapBuffer()
     return (result != GL_FALSE) ? AGPU_OK : AGPU_ERROR;
 }
 
+void agpu_buffer::dumpToFile(const char *fileName)
+{
+    if(!mappedPointer && extraMappingFlags == 0)
+        return;
+
+    auto f = fopen(fileName, "wb");
+    auto res = fwrite(mappedPointer, description.size, 1, f);
+    (void)res;
+    fclose(f);
+}
+
 agpu_error agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
+    //printf("uploadBufferData %d %d %p\n", int(offset), int(size), data);
     device->onMainContextBlocking([&]{
         bind();
         device->glBufferSubData(target, offset, size, data);

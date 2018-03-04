@@ -187,6 +187,7 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetBufferSubData);
     LOAD_FUNCTION(glBufferSubData);
     LOAD_FUNCTION(glMapBuffer);
+    LOAD_FUNCTION(glMapBufferRange);
     LOAD_FUNCTION(glUnmapBuffer);
     LOAD_FUNCTION(glBufferStorage);
 
@@ -286,7 +287,13 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glBlendFuncSeparate);
     LOAD_FUNCTION(glBlendEquationSeparate);
 
+    // Clip control
+    LOAD_FUNCTION(glClipControl);
+
     isPersistentMemoryMappingSupported_ = isCoherentMemoryMappingSupported_ = glBufferStorage != nullptr && hasOpenGLExtension("GL_ARB_buffer_storage");
+    hasExtension_GL_NV_depth_buffer_float = glDepthRangedNV != nullptr && hasOpenGLExtension("GL_NV_depth_buffer_float");
+    hasExtension_GL_ARB_clip_control = glClipControl != nullptr && hasOpenGLExtension("GL_ARB_clip_control");
+
 }
 
 void _agpu_device::initializeObjects()

@@ -21,6 +21,18 @@ inline GLbitfield mapMappingFlags(agpu_bitfield flags)
     return glflags;
 }
 
+inline GLenum mapBufferRangeMappingAccess(agpu_mapping_access flags)
+{
+    switch(flags)
+    {
+    case AGPU_READ_ONLY: return GL_MAP_READ_BIT;
+    case AGPU_WRITE_ONLY: return GL_MAP_WRITE_BIT;
+    case AGPU_READ_WRITE: return GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
+    default: abort();
+    }
+
+}
+
 inline GLenum mapMappingAccess(agpu_mapping_access flags)
 {
     switch(flags)
@@ -43,6 +55,8 @@ public:
 
     static agpu_buffer *createBuffer(agpu_device *device, const agpu_buffer_description &description, agpu_pointer initialData);
 
+    void dumpToFile(const char *fileName);
+
     agpu_pointer mapBuffer(agpu_mapping_access access);
     agpu_error unmapBuffer();
     agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
@@ -58,6 +72,7 @@ public:
     agpu_buffer_description description;
     GLenum target;
     GLuint handle;
+    GLbitfield extraMappingFlags;
     agpu_pointer mappedPointer;
 };
 
