@@ -225,6 +225,14 @@ AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device )
 	return (*dispatchTable)->agpuHasTopLeftNdcOrigin ( device );
 }
 
+AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuHasBottomLeftTextureCoordinates ( device );
+}
+
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )
 {
 	if (device == nullptr)

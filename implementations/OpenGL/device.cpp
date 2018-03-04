@@ -299,6 +299,11 @@ void _agpu_device::loadExtensions()
 
 }
 
+agpu_bool _agpu_device::hasBottomLeftTextureCoordinates()
+{
+    return true;
+}
+
 agpu_bool _agpu_device::hasTopLeftNdcOrigin()
 {
     return false;//hasExtension_GL_ARB_clip_control;
@@ -465,6 +470,13 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_u
     if (!device)
         return 0;
     return device->getMultiSampleQualityLevels(sample_count);
+}
+
+AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
+{
+    if (!device)
+        return false;
+    return device->hasBottomLeftTextureCoordinates();
 }
 
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)

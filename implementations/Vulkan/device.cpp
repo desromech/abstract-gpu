@@ -1046,6 +1046,11 @@ AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
     return true;
 }
 
+AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
+{
+    return false;
+}
+
 AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device )
 {
     return true;

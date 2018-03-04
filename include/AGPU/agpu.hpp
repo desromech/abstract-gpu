@@ -267,6 +267,11 @@ public:
 		return agpuHasTopLeftNdcOrigin( this );
 	}
 
+	inline agpu_bool hasBottomLeftTextureCoordinates (  )
+	{
+		return agpuHasBottomLeftTextureCoordinates( this );
+	}
+
 	inline agpu_bool isFeatureSupported ( agpu_feature feature )
 	{
 		return agpuIsFeatureSupportedOnDevice( this, feature );

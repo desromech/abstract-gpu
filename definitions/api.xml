@@ -688,6 +688,9 @@
             <method name="hasTopLeftNdcOrigin" cname="HasTopLeftNdcOrigin" returnType="bool">
             </method>
 
+            <method name="hasBottomLeftTextureCoordinates" cname="HasBottomLeftTextureCoordinates" returnType="bool">
+            </method>
+
             <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
                 <arg name="feature" type="feature" />
             </method>

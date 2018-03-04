@@ -316,7 +316,6 @@ agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex,
     auto srcPitch = transferLayout.pitch;
     auto dst = reinterpret_cast<uint8_t*> (data);
 
-    printf("Read texture pitch %d\n", dstPitch);
     if (dstPitch >= transferLayout.pitch && slicePitch == transferLayout.slicePitch)
     {
         memcpy(dst, src, slicePitch);

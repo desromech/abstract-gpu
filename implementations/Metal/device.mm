@@ -187,6 +187,11 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu
     return sample_count == 1 ? 1 : 0;
 }
 
+AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
+{
+    return false;
+}
+
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device )
 {
     return false;
