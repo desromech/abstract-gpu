@@ -4,6 +4,44 @@
 #include "texture.hpp"
 #include "texture_formats.hpp"
 
+BufferTextureTransferLayout BufferTextureTransferLayout::fromDescriptionAndLevel(const agpu_texture_description &description, int level)
+{
+    BufferTextureTransferLayout result;
+    result.setFromDescriptionAndLevel(description, level);
+    return result;
+}
+
+void BufferTextureTransferLayout::setFromDescriptionAndLevel(const agpu_texture_description &description, int level)
+{
+    height = std::max(1u, description.height >> level);
+    width = std::max(1u, description.width >> level);
+    depthOrArraySize = std::max(1u, depthOrArraySize >> level);
+    if(description.type != AGPU_TEXTURE_3D || depthOrArraySize == 0)
+        depthOrArraySize = 1;
+
+    if(isCompressedTextureFormat(description.format))
+    {
+        auto compressedBlockSize = blockSizeOfCompressedTextureFormat(description.format);
+        auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
+        auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
+
+        width = std::max(compressedBlockWidth, (width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
+        height = std::max(compressedBlockHeight, (height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
+
+
+        pitch = width / compressedBlockWidth * compressedBlockSize;
+        slicePitch = pitch * (height / compressedBlockHeight);
+        size = slicePitch*depthOrArraySize;
+    }
+    else
+    {
+        auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
+        pitch = (width*uncompressedPixelSize + 3) & -4;
+        slicePitch = height * pitch;
+        size = slicePitch*depthOrArraySize;
+    }
+}
+
 void _agpu_texture::allocateTexture1D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
@@ -93,53 +131,14 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     texture->handle = handle;
     texture->target = target;
     texture->description = *description;
+    texture->isCompressed = isCompressedTextureFormat(description->format);
     return texture;
 }
 
-size_t _agpu_texture::getPixelSize()
-{
-    return pixelSizeOfTextureFormat(description.format);
-}
-
-size_t _agpu_texture::pitchOfLevel(int level)
-{
-    size_t pixelSize = getPixelSize();
-    auto width = std::max(1u, description.width >> level);
-    return (pixelSize * width + 3) & (~3);
-}
-
-size_t _agpu_texture::slicePitchOfLevel(int level)
-{
-    auto pitch = pitchOfLevel(level);
-    int height = std::max(1u, description.height >> level);
-    return pitch*height;
-}
-
-size_t _agpu_texture::sizeOfLevel(int level)
-{
-    auto slicePitch = slicePitchOfLevel(level);
-    size_t depth = std::max(1, description.depthOrArraySize >> level);
-
-    switch(description.type)
-    {
-    case AGPU_TEXTURE_1D:
-        return slicePitch * description.depthOrArraySize;
-    case AGPU_TEXTURE_BUFFER:
-        return slicePitch * description.depthOrArraySize;
-    case AGPU_TEXTURE_2D:
-        return slicePitch * description.depthOrArraySize;
-    case AGPU_TEXTURE_3D:
-        return slicePitch * depth;
-    case AGPU_TEXTURE_CUBE:
-        return slicePitch * description.depthOrArraySize;
-    default:
-        abort();
-    }
-}
 
 void _agpu_texture::createTransferBuffer(GLenum target)
 {
-    auto bufferSize = sizeOfLevel(0);
+    auto bufferSize = BufferTextureTransferLayout::fromDescriptionAndLevel(description, 0).size;
     device->glGenBuffers(1, &transferBuffer);
     device->glBindBuffer(target, transferBuffer);
     device->glBufferStorage(target, bufferSize, nullptr, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT |  GL_CLIENT_STORAGE_BIT);
@@ -153,7 +152,14 @@ void _agpu_texture::performTransferToCpu(int level)
     if(isArray)
         return; // Can't support it.
 
-    glGetTexImage(target, level, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+    if(isCompressed)
+    {
+        printf("TODO: Readback compressed texture\n");
+    }
+    else
+    {
+        glGetTexImage(target, level, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+    }
     glFinish();
 
     device->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
@@ -163,38 +169,78 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
 {
     device->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, transferBuffer);
     glBindTexture(target, handle);
+    auto transferLayout = BufferTextureTransferLayout::fromDescriptionAndLevel(description, level);
     bool isArray = description.depthOrArraySize > 1;
-    int width = description.width >> level;
-    if (!width)
-        width = 1;
-    int height = description.height >> level;
-    if (!height)
-        height = 1;
-    int depth = description.depthOrArraySize >> level;
-    if (!depth)
-        depth = 1;
+    auto width = transferLayout.width;
+    auto height = transferLayout.height;
+    auto depth = transferLayout.depthOrArraySize;
 
     switch(description.type)
     {
     case AGPU_TEXTURE_1D:
-        if(isArray)
-            glTexSubImage2D(target, level, 0, arrayIndex, width, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        if(isCompressed)
+        {
+
+        }
         else
-            glTexSubImage1D(target, level, 0, width, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        {
+            if(isArray)
+                glTexSubImage2D(target, level, 0, arrayIndex, width, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+            else
+                glTexSubImage1D(target, level, 0, width, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        }
         break;
     case AGPU_TEXTURE_BUFFER:
         break;
     case AGPU_TEXTURE_2D:
-        if(isArray)
-            device->glTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        if(isCompressed)
+        {
+            if(isArray)
+                device->glCompressedTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+            else
+                device->glCompressedTexSubImage2D(target, level, 0, 0, width, height, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+        }
         else
-            glTexSubImage2D(target, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        {
+            if(isArray)
+                device->glTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+            else
+                glTexSubImage2D(target, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        }
         break;
     case AGPU_TEXTURE_3D:
-        device->glTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        if(isCompressed)
+        {
+            device->glCompressedTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+        }
+        else
+        {
+            device->glTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        }
         break;
     case AGPU_TEXTURE_CUBE:
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + arrayIndex, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+        if(isCompressed)
+        {
+            if(isArray)
+            {
+                // TODO: Implement this case
+            }
+            else
+            {
+                device->glCompressedTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + arrayIndex, level, 0, 0, width, height, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+            }
+        }
+        else
+        {
+            if(isArray)
+            {
+                // TODO: Implement this case
+            }
+            else
+            {
+                glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + arrayIndex, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+            }
+        }
         break;
     default:
         abort();
@@ -263,27 +309,23 @@ agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex,
     if(!src)
         return AGPU_ERROR;
 
-    auto srcPitch = pitchOfLevel(level);
+    auto transferLayout = BufferTextureTransferLayout::fromDescriptionAndLevel(description, level);
+    auto srcPitch = transferLayout.pitch;
     auto dst = reinterpret_cast<uint8_t*> (data);
-    if(description.type == AGPU_TEXTURE_1D)
-    {
-        memcpy(dst, src, srcPitch);
-        unmapLevel();
-        return AGPU_OK;
-    }
-    else if(description.type == AGPU_TEXTURE_3D)
-    {
-        // TODO: Implement this.
-        unmapLevel();
-        return AGPU_OK;
-    }
 
-    auto height = description.height >> level;
-    auto fsrc = src + (height - 1) *srcPitch;
-    ptrdiff_t fsrcPitch = -ptrdiff_t(srcPitch);
-    for(size_t y = 0; y < height; ++y)
+    if (dstPitch >= transferLayout.pitch && slicePitch == transferLayout.slicePitch)
     {
-        memcpy(dst + dstPitch*y, fsrc + fsrcPitch*y, srcPitch);
+        memcpy(dst, src, slicePitch);
+    }
+    else
+    {
+        auto height = transferLayout.height;
+        auto fsrc = src + (height - 1) *srcPitch;
+        ptrdiff_t fsrcPitch = -ptrdiff_t(srcPitch);
+        for(size_t y = 0; y < height; ++y)
+        {
+            memcpy(dst + dstPitch*y, fsrc + fsrcPitch*y, srcPitch);
+        }
     }
 
     unmapLevel();
@@ -296,33 +338,22 @@ agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayInde
     if(!dst)
         return AGPU_ERROR;
 
-    auto srcPitchAbs = pitch;
-    if(srcPitchAbs < 0)
-        srcPitchAbs = -srcPitchAbs;
-
-    auto dstPitch = pitchOfLevel(level);
+    auto transferLayout = BufferTextureTransferLayout::fromDescriptionAndLevel(description, level);
+    auto dstPitch = transferLayout.pitch;
     auto src = reinterpret_cast<uint8_t*> (data);
-    if(description.type == AGPU_TEXTURE_1D)
-    {
-        memcpy(dst, src, srcPitchAbs);
-        unmapLevel();
-        return AGPU_OK;
-    }
-    else if(description.type == AGPU_TEXTURE_3D)
-    {
-        // TODO: Implement this.
-        unmapLevel();
-        return AGPU_OK;
-    }
 
     // Copy the 2D texture slice.
-    if (pitch >= 0 && slicePitch == slicePitchOfLevel(level))
+    if (pitch >= transferLayout.pitch && slicePitch == transferLayout.slicePitch)
     {
         memcpy(dst, src, slicePitch);
     }
     else
     {
-        auto height = std::max(1u, description.height >> level);
+        auto srcPitchAbs = pitch;
+        if(srcPitchAbs < 0)
+            srcPitchAbs = -srcPitchAbs;
+
+        auto height = transferLayout.height;
         auto fdst = dst + (height - 1)*dstPitch;
         ptrdiff_t fdstPitch = -ptrdiff_t(dstPitch);
         for (size_t y = 0; y < height; ++y)

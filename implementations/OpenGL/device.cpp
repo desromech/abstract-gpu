@@ -262,6 +262,9 @@ void _agpu_device::loadExtensions()
     // Texture functions
     LOAD_FUNCTION(glActiveTexture);
     LOAD_FUNCTION(glTexSubImage3D);
+    LOAD_FUNCTION(glCompressedTexSubImage1D);
+    LOAD_FUNCTION(glCompressedTexSubImage2D);
+    LOAD_FUNCTION(glCompressedTexSubImage3D);
 
     // Samplers
     LOAD_FUNCTION(glGenSamplers);

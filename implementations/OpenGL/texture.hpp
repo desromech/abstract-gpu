@@ -3,6 +3,19 @@
 
 #include "device.hpp"
 
+struct BufferTextureTransferLayout
+{
+    static BufferTextureTransferLayout fromDescriptionAndLevel(const agpu_texture_description &description, int level);
+    void setFromDescriptionAndLevel(const agpu_texture_description &description, int level);
+
+    agpu_int pitch;
+    agpu_int slicePitch;
+    agpu_size width;
+    agpu_size height;
+    agpu_size depthOrArraySize;
+    agpu_size size;
+};
+
 struct _agpu_texture : public Object<_agpu_texture>
 {
 public:
@@ -34,7 +47,8 @@ public:
     agpu_int mappedLevel;
     agpu_uint mappedArrayIndex;
     agpu_pointer mappedPointer;
-
+    bool isCompressed;
+    
 private:
     static void allocateTexture(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
     static void allocateTexture1D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
@@ -42,11 +56,6 @@ private:
     static void allocateTexture3D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
     static void allocateTextureCube(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
     static void allocateTextureBuffer(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
-
-    size_t getPixelSize();
-    size_t pitchOfLevel(int level);
-    size_t slicePitchOfLevel(int level);
-    size_t sizeOfLevel(int level);
 
     void createTransferBuffer(GLenum target);
     void performTransferToCpu(int level);

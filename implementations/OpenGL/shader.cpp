@@ -251,7 +251,17 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	glsl.set_options(options);
 
 	// Compile the shader.
-	auto compiled = glsl.compile();
+	std::string compiled;
+	try
+	{
+		compiled = glsl.compile();
+	}
+	catch(spirv_cross::CompilerError &compileError)
+	{
+		*errorMessage = "Failed to convert Spir-V into glsl\n";
+		*errorMessage += compileError.what();
+		return AGPU_COMPILATION_ERROR;
+	}
 	//printf("Compiled shader:\n%s\n", compiled.c_str());
 
 	// Create the shader instance object
