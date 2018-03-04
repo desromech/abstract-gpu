@@ -1,6 +1,9 @@
 #include "pipeline_state.hpp"
 #include "shader_signature.hpp"
+#include "shader_resource_binding.hpp"
+#include "command_list.hpp"
 #include "shader.hpp"
+#include "texture.hpp"
 
 _agpu_pipeline_state::_agpu_pipeline_state()
 {
@@ -29,7 +32,7 @@ void _agpu_pipeline_state::activate()
 	// Use the program.
 	device->glUseProgram(programHandle);
 
-    // Always try to use a sRGB framebuffer.
+    // Activate the srgb framebuffer if we have a srgb render target attached.
     enableState(hasSRGBTarget, GL_FRAMEBUFFER_SRGB);
 
 	// The scissor test is always enabled.
@@ -54,7 +57,7 @@ void _agpu_pipeline_state::activate()
 
 	// Set the depth range mapping to [0.0, 1.0]. This is the same depth range used by Direct3D.
     if(device->hasExtension_GL_ARB_clip_control)
-        device->glClipControl(GL_LOWER_LEFT,  GL_ZERO_TO_ONE);
+        device->glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
     else if(device->hasExtension_GL_NV_depth_buffer_float)
         device->glDepthRangedNV(-1, 1);
     else
@@ -78,6 +81,48 @@ void _agpu_pipeline_state::activate()
         updateStencilReference(0);
         device->glStencilOpSeparate(GL_FRONT, stencilFrontFailOp, stencilFrontDepthFailOp, stencilFrontDepthPassOp);
         device->glStencilOpSeparate(GL_BACK, stencilBackFailOp, stencilBackDepthFailOp, stencilBackDepthPassOp);
+    }
+}
+
+void _agpu_pipeline_state::activateShaderResourcesOn(CommandListExecutionContext *context)
+{
+    for(auto shaderResource : context->shaderResourceBindings)
+    {
+        if(shaderResource)
+            shaderResource->activate();
+    }
+
+    for(auto &combination : mappedTextureWithSamplerCombinations)
+    {
+        if(combination.combination.textureDescriptorSet >= CommandListExecutionContext::MaxNumberOfShaderResourceBindings)
+            continue;
+
+        auto textureShaderResource = context->shaderResourceBindings[combination.combination.textureDescriptorSet];
+        if(!textureShaderResource)
+            continue;
+
+        // Get the texture binding.
+        auto textureBinding = textureShaderResource->getTextureBindingAt(combination.combination.textureDescriptorBinding);
+        if(!textureBinding)
+            continue;
+
+        if(combination.combination.samplerDescriptorSet >= CommandListExecutionContext::MaxNumberOfShaderResourceBindings ||
+            !context->shaderResourceBindings[combination.combination.samplerDescriptorSet])
+            continue;
+
+        auto samplerShaderResource = context->shaderResourceBindings[combination.combination.samplerDescriptorSet];
+        if(!samplerShaderResource)
+            continue;
+
+        // Get the sampler
+        auto samplerBinding = samplerShaderResource->getSamplerAt(combination.combination.samplerDescriptorBinding);
+
+        // Activate the texture.
+        device->glActiveTexture(GL_TEXTURE0 + combination.mappedTextureUnit);
+        glBindTexture(textureBinding->texture->target, textureBinding->texture->handle);
+
+        // Activate the sampler.
+        device->glBindSampler(combination.mappedTextureUnit, samplerBinding);
     }
 }
 

@@ -299,6 +299,11 @@ void _agpu_device::loadExtensions()
 
 }
 
+agpu_bool _agpu_device::hasTopLeftNdcOrigin()
+{
+    return false;//hasExtension_GL_ARB_clip_control;
+}
+
 void _agpu_device::initializeObjects()
 {
     readVersionInformation();
@@ -464,7 +469,9 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_u
 
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
 {
-    return false;
+    if(!device)
+        return 0;
+    return device->hasTopLeftNdcOrigin();
 }
 
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )

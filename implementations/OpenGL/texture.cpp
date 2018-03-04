@@ -19,6 +19,10 @@ void BufferTextureTransferLayout::setFromDescriptionAndLevel(const agpu_texture_
     if(description.type != AGPU_TEXTURE_3D || depthOrArraySize == 0)
         depthOrArraySize = 1;
 
+    logicalWidth = width;
+    logicalHeight = height;
+    logicalDepthOrArraySize = depthOrArraySize;
+
     if(isCompressedTextureFormat(description.format))
     {
         auto compressedBlockSize = blockSizeOfCompressedTextureFormat(description.format);
@@ -27,7 +31,6 @@ void BufferTextureTransferLayout::setFromDescriptionAndLevel(const agpu_texture_
 
         width = std::max(compressedBlockWidth, (width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
         height = std::max(compressedBlockHeight, (height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
-
 
         pitch = width / compressedBlockWidth * compressedBlockSize;
         slicePitch = pitch * (height / compressedBlockHeight);
@@ -171,9 +174,9 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
     glBindTexture(target, handle);
     auto transferLayout = BufferTextureTransferLayout::fromDescriptionAndLevel(description, level);
     bool isArray = description.depthOrArraySize > 1;
-    auto width = transferLayout.width;
-    auto height = transferLayout.height;
-    auto depth = transferLayout.depthOrArraySize;
+    auto width = transferLayout.logicalWidth;
+    auto height = transferLayout.logicalHeight;
+    auto depth = transferLayout.logicalDepthOrArraySize;
 
     switch(description.type)
     {
@@ -313,6 +316,7 @@ agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex,
     auto srcPitch = transferLayout.pitch;
     auto dst = reinterpret_cast<uint8_t*> (data);
 
+    printf("Read texture pitch %d\n", dstPitch);
     if (dstPitch >= transferLayout.pitch && slicePitch == transferLayout.slicePitch)
     {
         memcpy(dst, src, slicePitch);

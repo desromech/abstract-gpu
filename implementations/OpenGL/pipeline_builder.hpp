@@ -56,7 +56,7 @@ public:
     // Render targets
     std::vector<agpu_texture_format> renderTargetFormats;
     agpu_texture_format depthStencilFormat;
-    
+
     // Color buffer
     agpu_bool blendingEnabled;
     agpu_bool redMask;
@@ -93,6 +93,9 @@ public:
 
     agpu_shader_signature *shaderSignature;
     std::vector<agpu_shader*> shaders;
+
+private:
+    void buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations);
 };
 
 

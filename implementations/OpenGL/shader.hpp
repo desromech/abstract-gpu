@@ -1,22 +1,92 @@
 #ifndef _AGPU_GL_SHADER_HPP_
 #define _AGPU_GL_SHADER_HPP_
 
-#include <string>
-#include <vector>
 #include "device.hpp"
+#include <string>
+#include <string.h>
+#include <vector>
+#include <unordered_map>
 
-struct combine_texture_with_sampler
+struct TextureWithSamplerCombination
 {
     unsigned int textureDescriptorSet;
     unsigned int textureDescriptorBinding;
-    unsigned int textureUnit;
 
     unsigned int samplerDescriptorSet;
     unsigned int samplerDescriptorBinding;
-    unsigned int samplerUnit;
+
+    bool operator==(const TextureWithSamplerCombination &o) const
+    {
+        return textureDescriptorSet == o.textureDescriptorSet &&
+            textureDescriptorBinding == o.textureDescriptorBinding &&
+            samplerDescriptorSet == o.samplerDescriptorSet &&
+            samplerDescriptorBinding == o.samplerDescriptorBinding;
+    }
+
+    bool operator<(const TextureWithSamplerCombination &o) const
+    {
+        if(textureDescriptorSet == o.textureDescriptorSet)
+        {
+            if(textureDescriptorBinding == o.textureDescriptorBinding)
+            {
+                if(samplerDescriptorSet == o.samplerDescriptorSet)
+                {
+                    return samplerDescriptorBinding < o.samplerDescriptorBinding;
+                }
+
+                return samplerDescriptorSet < o.samplerDescriptorSet;
+            }
+
+            return textureDescriptorBinding < o.textureDescriptorBinding;
+        }
+
+        return textureDescriptorSet < o.textureDescriptorSet;
+    }
+
+    size_t hash() const
+    {
+        return std::hash<unsigned int> ()(textureDescriptorSet) ^
+            std::hash<unsigned int> ()(textureDescriptorBinding) ^
+            std::hash<unsigned int> ()(samplerDescriptorSet) ^
+            std::hash<unsigned int> ()(samplerDescriptorBinding);
+    }
+
+    std::string createName() const
+    {
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "SpirV_CombinedSampledImage_%d_%d_WithSampler_%d_%d",
+			textureDescriptorSet, textureDescriptorBinding,
+			samplerDescriptorSet, samplerDescriptorBinding);
+        return buffer;
+    }
+};
+
+namespace std
+{
+template<>
+struct hash<TextureWithSamplerCombination>
+{
+    size_t operator()(const TextureWithSamplerCombination &combination) const
+    {
+        return combination.hash();
+    }
+};
+}
+
+struct MappedTextureWithSamplerCombination
+{
+    TextureWithSamplerCombination combination;
+
+    unsigned int sourceTextureUnit;
+    unsigned int sourceSamplerUnit;
+
+    unsigned int mappedTextureUnit;
+    unsigned int mappedSamplerUnit;
 
     std::string name;
 };
+
+typedef std::unordered_map<TextureWithSamplerCombination, MappedTextureWithSamplerCombination> TextureWithSamplerCombinationMap;
 
 struct agpu_shader_forSignature: public Object<agpu_shader_forSignature>
 {
@@ -35,9 +105,7 @@ public:
 
     GLuint handle;
     std::string glslSource;
-    std::vector<combine_texture_with_sampler> combinedTexturesWithSamplers;
 };
-
 
 struct _agpu_shader: public Object<_agpu_shader>
 {
@@ -47,12 +115,14 @@ public:
     void lostReferences();
 
     static agpu_shader *createShader(agpu_device *device, agpu_shader_type type);
-    agpu_error instanceForSignature(agpu_shader_signature *signature, agpu_shader_forSignature **result, std::string *errorMessage);
+    agpu_error instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
 
     agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength);
     agpu_error compileShader(agpu_cstring options);
     agpu_size getShaderCompilationLogLength();
     agpu_error getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer);
+
+    std::vector<TextureWithSamplerCombination> &getTextureWithSamplerCombination();
 
 public:
     //agpu_error compileGLSLSource(bool parseAgpuPragmas, agpu_string sourceText, agpu_string_length sourceTextLength);
@@ -66,8 +136,14 @@ public:
     std::vector<uint8_t> rawShaderSource;
 
 private:
-    agpu_error getOrCreateGenericShaderInstance(agpu_shader_signature *signature, agpu_shader_forSignature **result, std::string *errorMessage);
-    agpu_error getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, agpu_shader_forSignature **result, std::string *errorMessage);
+    void extractGenericShaderTextureWithSamplerCombinations();
+    void extractSpirVTextureWithSamplerCombinations();
+
+    agpu_error getOrCreateGenericShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
+    agpu_error getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
+
+    bool hasExtractedTextureWithSamplerCombinations;
+    std::vector<TextureWithSamplerCombination> textureWithSamplerCombinations;
 };
 
 

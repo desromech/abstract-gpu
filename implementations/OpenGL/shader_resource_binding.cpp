@@ -2,6 +2,7 @@
 #include "shader_signature.hpp"
 #include "texture.hpp"
 #include "buffer.hpp"
+#include "constants.hpp"
 
 inline GLenum mapMagFilter(agpu_filter filter)
 {
@@ -220,6 +221,23 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
     return AGPU_OK;
 }
 
+TextureBinding *_agpu_shader_resource_binding::getTextureBindingAt(agpu_int location)
+{
+    if(location < 0)
+        return nullptr;
+
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return nullptr;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE &&
+       element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+        return nullptr;
+
+    return &sampledImages[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::SampledImage]];
+}
+
 agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp)
 {
     return AGPU_UNIMPLEMENTED;
@@ -245,10 +263,29 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
         device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, mapMinFilter(description->filter));
         device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, mapAddressMode(description->address_u));
         device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, mapAddressMode(description->address_v));
-        device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, mapAddressMode(description->address_w));
+        device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_LOD, description->min_lod);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_MAX_LOD, description->max_lod);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_MODE, description->comparison_enabled ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
+        device->glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_FUNC, mapCompareFunction(description->comparison_function));
     });
 
     return AGPU_OK;
+}
+
+
+GLuint _agpu_shader_resource_binding::getSamplerAt(agpu_int location)
+{
+    if(location < 0)
+        return 0;
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return 0;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
+        return 0;
+
+    return samplers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::Sampler]];
 }
 
 void _agpu_shader_resource_binding::activate()
@@ -258,10 +295,6 @@ void _agpu_shader_resource_binding::activate()
         activateUniformBuffers();
     if(!storageBuffers.empty())
         activateStorageBuffers();
-    if(!sampledImages.empty())
-        activateSampledImages();
-    if(!samplers.empty())
-        activateSamplers();
 }
 
 void _agpu_shader_resource_binding::activateUniformBuffers()

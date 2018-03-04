@@ -121,6 +121,7 @@ public:
     agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
 
     agpu_bool isFeatureSupported (agpu_feature feature);
+    agpu_bool hasTopLeftNdcOrigin();
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)

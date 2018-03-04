@@ -41,7 +41,11 @@ public:
     agpu_error bindTexture ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
     agpu_error bindTextureArrayRange ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
 
+    TextureBinding *getTextureBindingAt(agpu_int location);
+    GLuint getSamplerAt(agpu_int location);
+
     agpu_error createSampler ( agpu_int location, agpu_sampler_description* description );
+
 
 public:
     void activate();

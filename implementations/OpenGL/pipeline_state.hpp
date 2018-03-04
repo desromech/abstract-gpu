@@ -2,8 +2,11 @@
 #define AGPU_PIPELINE_STATE_HPP_
 
 #include "device.hpp"
+#include "shader.hpp"
 
+struct CommandListExecutionContext;
 struct agpu_shader_forSignature;
+
 struct _agpu_pipeline_state: public Object<_agpu_pipeline_state>
 {
 public:
@@ -12,11 +15,13 @@ public:
     void lostReferences();
 
     agpu_int getUniformLocation ( agpu_cstring name );
+    void activateShaderResourcesOn(CommandListExecutionContext *context);
 
 public:
     agpu_device *device;
     agpu_shader_signature *shaderSignature;
     std::vector<agpu_shader_forSignature*> shaderInstances;
+    std::vector<MappedTextureWithSamplerCombination> mappedTextureWithSamplerCombinations;
     GLuint programHandle;
 
     // States

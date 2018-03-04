@@ -7,6 +7,30 @@
 
 typedef std::function<void()> AgpuGLCommand;
 
+struct CommandListExecutionContext
+{
+    static constexpr unsigned int MaxNumberOfShaderResourceBindings = 16;
+
+    CommandListExecutionContext();
+    void lostReferences();
+
+    void reset();
+    void validateBeforeDrawCall();
+    void usePipelineState(agpu_pipeline_state* newPipeline);
+    void setStencilReference(agpu_uint reference);
+    void useShaderResources ( agpu_shader_resource_binding* binding );
+
+    agpu_device *device;
+    agpu_pipeline_state *currentPipeline;
+    agpu_pipeline_state *activePipeline;
+    agpu_shader_resource_binding *shaderResourceBindings[MaxNumberOfShaderResourceBindings];
+
+    bool hasValidActivePipeline;
+    bool hasValidShaderResources;
+    GLenum primitiveMode;
+    agpu_uint stencilReference;
+};
+
 struct _agpu_command_list: public Object<_agpu_command_list>
 {
 public:
@@ -46,10 +70,7 @@ public:
     agpu_vertex_binding *currentVertexBinding;
     agpu_buffer *currentIndexBuffer;
     agpu_buffer *currentDrawBuffer;
-    GLenum primitiveMode;
     agpu_command_list_type type;
-
-    agpu_uint stencilReference;
 
     void execute();
 
@@ -58,6 +79,7 @@ private:
 
     std::vector<AgpuGLCommand> commands;
     bool closed;
+    CommandListExecutionContext executionContext;
 };
 
 

@@ -19,6 +19,7 @@ public:
 
     agpu_device *device;
     std::vector<ShaderSignatureElement> elements;
+    agpu_uint bindingPointsUsed[(int)OpenGLResourceBindingType::Count];
     agpu_uint uniformVariableCount;
 };
 

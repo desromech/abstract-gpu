@@ -93,6 +93,7 @@ _agpu_shader::_agpu_shader()
 {
 	compiled = false;
 	genericShaderInstance = nullptr;
+	hasExtractedTextureWithSamplerCombinations = false;
 }
 
 void _agpu_shader::lostReferences()
@@ -113,19 +114,59 @@ agpu_shader *_agpu_shader::createShader(agpu_device *device, agpu_shader_type ty
 	return shader;
 }
 
-agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, agpu_shader_forSignature **result, std::string *errorMessage)
+std::vector<TextureWithSamplerCombination> &_agpu_shader::getTextureWithSamplerCombination()
+{
+	if(hasExtractedTextureWithSamplerCombinations)
+		return textureWithSamplerCombinations;
+
+	if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_GLSL)
+		extractGenericShaderTextureWithSamplerCombinations();
+	else if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_SPIR_V)
+		extractSpirVTextureWithSamplerCombinations();
+
+	return textureWithSamplerCombinations;
+}
+
+void _agpu_shader::extractGenericShaderTextureWithSamplerCombinations()
+{
+}
+
+void _agpu_shader::extractSpirVTextureWithSamplerCombinations()
+{
+	uint32_t *rawData = reinterpret_cast<uint32_t *> (&rawShaderSource[0]);
+	size_t rawDataSize = rawShaderSource.size() / 4;
+
+	spirv_cross::CompilerGLSL glsl(rawData, rawDataSize);
+
+	// Combine the samplers and the images.
+	glsl.build_combined_image_samplers();
+
+	// Combined sampler/images
+	for(auto &remap : glsl.get_combined_image_samplers())
+	{
+		TextureWithSamplerCombination combination;
+		combination.textureDescriptorSet = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationDescriptorSet);
+		combination.textureDescriptorBinding = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationBinding);
+
+		combination.samplerDescriptorSet = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationDescriptorSet);
+		combination.samplerDescriptorBinding = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationBinding);
+		textureWithSamplerCombinations.push_back(combination);
+	}
+}
+
+agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage)
 {
 	CHECK_POINTER(result);
 	CHECK_POINTER(errorMessage);
 
 	if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_GLSL)
-		return getOrCreateGenericShaderInstance(signature, result, errorMessage);
+		return getOrCreateGenericShaderInstance(signature, textureWithSamplerCombinationMap, result, errorMessage);
 	else if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_SPIR_V)
-		return getOrCreateSpirVShaderInstance(signature, result, errorMessage);
+		return getOrCreateSpirVShaderInstance(signature, textureWithSamplerCombinationMap, result, errorMessage);
 	return AGPU_INVALID_OPERATION;
 }
 
-agpu_error _agpu_shader::getOrCreateGenericShaderInstance(agpu_shader_signature *signature, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error _agpu_shader::getOrCreateGenericShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage)
 {
 	if(genericShaderInstance)
 	{
@@ -185,7 +226,7 @@ static agpu_error mapShaderResources(spirv_cross::CompilerGLSL &compiler,
 	return AGPU_OK;
 }
 
-agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage)
 {
 	char buffer[256];
 	uint32_t *rawData = reinterpret_cast<uint32_t *> (&rawShaderSource[0]);
@@ -200,41 +241,33 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	spirv_cross::ShaderResources resources = glsl.get_shader_resources();
 
 	// Combined sampler/images
-	std::vector<combine_texture_with_sampler> combinedTexturesWithSamplers;
 	for(auto &remap : glsl.get_combined_image_samplers())
 	{
-		unsigned imageDescriptorSet = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationDescriptorSet);
-		unsigned imageBinding = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationBinding);
-		int textureUnit = signature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, imageDescriptorSet, imageBinding);
+		TextureWithSamplerCombination combination;
+		combination.textureDescriptorSet = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationDescriptorSet);
+		combination.textureDescriptorBinding = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationBinding);
+		int textureUnit = signature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
 		if(textureUnit < 0)
 		{
 			*errorMessage = "Invalid sampled image descriptor set and binding.";
 			return AGPU_INVALID_PARAMETER;
 		}
 
-		unsigned samplerDescriptorSet = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationDescriptorSet);
-		unsigned samplerBinding = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationBinding);
-		int sampler = signature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, samplerDescriptorSet, samplerBinding);
+		combination.samplerDescriptorSet = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationDescriptorSet);
+		combination.samplerDescriptorBinding = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationBinding);
+		int sampler = signature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
 		if(sampler < 0)
 		{
 			*errorMessage = "Invalid sampled image descriptor set and binding.";
 			return AGPU_INVALID_PARAMETER;
 		}
 
-		snprintf(buffer, sizeof(buffer), "SpirV_CombinedSampledImage_%d_%d_WithSampler_%d_%d", imageDescriptorSet, imageBinding, samplerDescriptorSet, samplerBinding);
-		glsl.set_name(remap.combined_id, buffer);
+		auto mappedCombinationIt = textureWithSamplerCombinationMap.find(combination);
+		assert(mappedCombinationIt != textureWithSamplerCombinationMap.end());
 
-		combine_texture_with_sampler combinedTextureWithSampler;
-		combinedTextureWithSampler.textureDescriptorSet = imageDescriptorSet;
-	    combinedTextureWithSampler.textureDescriptorBinding = imageBinding;
-	    combinedTextureWithSampler.textureUnit = (unsigned int)textureUnit;
-
-	    combinedTextureWithSampler.samplerDescriptorSet = samplerDescriptorSet;
-	    combinedTextureWithSampler.samplerDescriptorBinding = samplerBinding;
-	    combinedTextureWithSampler.samplerUnit = (unsigned int)sampler;
-
-	    combinedTextureWithSampler.name = buffer;
-		combinedTexturesWithSamplers.push_back(combinedTextureWithSampler);
+		auto mappedCombination = mappedCombinationIt->second;
+		glsl.set_name(remap.combined_id, mappedCombination.name);
+		glsl.set_decoration(remap.combined_id, spv::DecorationBinding, mappedCombination.mappedTextureUnit);
 	}
 
 	// Uniform buffers
@@ -269,13 +302,12 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	shaderInstance->device = device;
 	shaderInstance->type = type;
 	shaderInstance->glslSource = compiled;
-	shaderInstance->combinedTexturesWithSamplers = combinedTexturesWithSamplers;
 
 	// Compile the shader instance object.
 	error = shaderInstance->compile(errorMessage);
 
-	if(getenv("DUMP_SHADER") ||
-		(error != AGPU_OK && getenv("DUMP_SHADER_ON_ERROR")))
+	if(getenv("DUMP_SHADERS") ||
+		(error != AGPU_OK && getenv("DUMP_SHADERS_ON_ERROR")))
 	{
 		snprintf(buffer, sizeof(buffer), "dump%d.spv", shaderDumpCount);
 		auto f = fopen(buffer, "wb");

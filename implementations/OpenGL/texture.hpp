@@ -14,6 +14,10 @@ struct BufferTextureTransferLayout
     agpu_size height;
     agpu_size depthOrArraySize;
     agpu_size size;
+
+    agpu_size logicalWidth;
+    agpu_size logicalHeight;
+    agpu_size logicalDepthOrArraySize;
 };
 
 struct _agpu_texture : public Object<_agpu_texture>
@@ -48,7 +52,7 @@ public:
     agpu_uint mappedArrayIndex;
     agpu_pointer mappedPointer;
     bool isCompressed;
-    
+
 private:
     static void allocateTexture(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);
     static void allocateTexture1D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description);

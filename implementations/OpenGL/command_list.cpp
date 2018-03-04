@@ -5,6 +5,7 @@
 #include "framebuffer.hpp"
 #include "renderpass.hpp"
 #include "shader_resource_binding.hpp"
+#include <string.h>
 
 inline GLenum mapPrimitiveTopology(agpu_primitive_topology topology)
 {
@@ -35,22 +36,134 @@ inline GLenum mapIndexType(agpu_size stride)
     }
 }
 
+CommandListExecutionContext::CommandListExecutionContext()
+    : currentPipeline(nullptr), activePipeline(nullptr)
+{
+    memset(shaderResourceBindings, 0, sizeof(shaderResourceBindings));
+    reset();
+}
+
+void CommandListExecutionContext::lostReferences()
+{
+    if(currentPipeline)
+        currentPipeline->release();
+
+    if(activePipeline)
+        activePipeline->release();
+    for(auto binding : shaderResourceBindings)
+    {
+        if(binding)
+            binding->release();
+    }
+}
+
+void CommandListExecutionContext::reset()
+{
+    if(currentPipeline)
+    {
+        currentPipeline->release();
+        currentPipeline = nullptr;
+    }
+
+    if(activePipeline)
+    {
+        activePipeline->release();
+        activePipeline = nullptr;
+    }
+
+    for(auto &binding : shaderResourceBindings)
+    {
+        if(binding)
+            binding->release();
+        binding = nullptr;
+    }
+
+    stencilReference = 0;
+    primitiveMode = GL_POINTS;
+    hasValidActivePipeline = false;
+
+    //glActiveTexture(GL_TEXTURE0);
+    // TODO: Unbind the samplers
+}
+
+void CommandListExecutionContext::validateBeforeDrawCall()
+{
+    if(!hasValidActivePipeline || activePipeline != currentPipeline)
+    {
+        hasValidActivePipeline = true;
+        hasValidShaderResources = false;
+        if(currentPipeline)
+            currentPipeline->retain();
+        if(activePipeline)
+            activePipeline->release();
+        activePipeline = currentPipeline;
+
+        if(activePipeline)
+        {
+            activePipeline->activate();
+            primitiveMode = mapPrimitiveTopology(activePipeline->primitiveTopology);
+            if (stencilReference != 0)
+                activePipeline->updateStencilReference(stencilReference);
+        }
+        else
+        {
+            device->glUseProgram(0);
+        }
+    }
+
+    if(activePipeline && !hasValidShaderResources)
+    {
+        hasValidShaderResources = true;
+        activePipeline->activateShaderResourcesOn(this);
+    }
+}
+
+void CommandListExecutionContext::usePipelineState(agpu_pipeline_state* pipeline)
+{
+    if(pipeline)
+        pipeline->retain();
+    if(currentPipeline)
+        currentPipeline->release();
+    currentPipeline = pipeline;
+}
+
+void CommandListExecutionContext::setStencilReference(agpu_uint reference)
+{
+    if (activePipeline)
+        activePipeline->updateStencilReference(reference);
+    stencilReference = reference;
+}
+
+void CommandListExecutionContext::useShaderResources ( agpu_shader_resource_binding* binding )
+{
+    if(size_t(binding->elementIndex) >= MaxNumberOfShaderResourceBindings)
+        return;
+
+    auto &dest = shaderResourceBindings[binding->elementIndex];
+    if(binding)
+        binding->retain();
+    if(dest)
+        dest->release();
+    dest = binding;
+    hasValidShaderResources = false;
+}
+
 _agpu_command_list::_agpu_command_list()
 {
     closed = false;
     currentPipeline = nullptr;
-    stencilReference = 0;
 }
 
 void _agpu_command_list::lostReferences()
 {
-
+    executionContext.lostReferences();
 }
 
 agpu_command_list *_agpu_command_list::create(agpu_device *device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     auto list = new agpu_command_list();
     list->device = device;
+    list->executionContext.device = device;
     list->type = type;;
     if(initial_pipeline_state)
         list->usePipelineState(initial_pipeline_state);
@@ -79,19 +192,7 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
     return addCommand([=] {
-        this->currentPipeline = pipeline;
-        if(this->currentPipeline)
-        {
-            //printf("Activate pipeline %p\n", this->currentPipeline);
-            this->currentPipeline->activate();
-            this->primitiveMode = mapPrimitiveTopology(pipeline->primitiveTopology);
-            if (stencilReference != 0)
-                this->currentPipeline->updateStencilReference(stencilReference);
-        }
-        else
-        {
-            device->glUseProgram(0);
-        }
+        executionContext.usePipelineState(pipeline);
     });
 }
 
@@ -120,7 +221,7 @@ agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding
 {
     CHECK_POINTER(binding);
     return addCommand([=] {
-        binding->activate();
+        executionContext.useShaderResources(binding);
     });
 }
 
@@ -137,7 +238,8 @@ agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint in
             return;
 
         currentVertexBinding->bind();
-        device->glDrawArraysInstancedBaseInstance(primitiveMode, first_vertex, vertex_count, instance_count, base_instance);
+        executionContext.validateBeforeDrawCall();
+        device->glDrawArraysInstancedBaseInstance(executionContext.primitiveMode, first_vertex, vertex_count, instance_count, base_instance);
     });
 }
 
@@ -149,8 +251,9 @@ agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint i
 
         currentVertexBinding->bind();
         currentIndexBuffer->bind();
+        executionContext.validateBeforeDrawCall();
         size_t offset = currentIndexBuffer->description.stride*first_index;
-        device->glDrawElementsInstancedBaseVertexBaseInstance(primitiveMode, index_count,
+        device->glDrawElementsInstancedBaseVertexBaseInstance(executionContext.primitiveMode, index_count,
             mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> (offset),
             instance_count, base_vertex, base_instance);
     });
@@ -165,8 +268,9 @@ agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
         currentVertexBinding->bind();
         currentIndexBuffer->bind();
         currentDrawBuffer->bind();
+        executionContext.validateBeforeDrawCall();
 
-        device->glDrawElementsIndirect(primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset));
+        device->glDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset));
     });
 }
 
@@ -179,18 +283,16 @@ agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_
         currentVertexBinding->bind();
         currentIndexBuffer->bind();
         currentDrawBuffer->bind();
+        executionContext.validateBeforeDrawCall();
 
-        device->glMultiDrawElementsIndirect(primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
+        device->glMultiDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
     });
 }
 
 agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
 {
     return addCommand([=] {
-        if (currentPipeline)
-            currentPipeline->updateStencilReference(reference);
-        stencilReference = reference;
-
+        executionContext.setStencilReference(reference);
     });
 }
 
@@ -214,7 +316,6 @@ agpu_error _agpu_command_list::close()
 agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 {
     closed = false;
-    stencilReference = 0;
     commands.clear();
     if (initial_pipeline_state)
         usePipelineState(initial_pipeline_state);
@@ -225,7 +326,6 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* allocator, agpu_pip
 agpu_error _agpu_command_list::resetBundleCommandList ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
 {
     closed = false;
-    stencilReference = 0;
     commands.clear();
     if (initial_pipeline_state)
         usePipelineState(initial_pipeline_state);
@@ -237,6 +337,8 @@ agpu_error _agpu_command_list::beginRenderPass (agpu_renderpass *renderpass, agp
     CHECK_POINTER(framebuffer)
     return addCommand([=] {
         framebuffer->bind();
+        glViewport(0, 0, framebuffer->width, framebuffer->height);
+        glScissor(0, 0, framebuffer->width, framebuffer->height);
         renderpass->started();
     });
 }
@@ -262,6 +364,8 @@ void _agpu_command_list::execute()
 {
     for (auto &command : commands)
         command();
+
+    executionContext.reset();
 }
 
 agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)

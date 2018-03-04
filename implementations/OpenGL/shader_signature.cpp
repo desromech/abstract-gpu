@@ -17,6 +17,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu
     result->device = device;
     result->elements = builder->elements;
     result->uniformVariableCount = builder->bindingPointsUsed[(int)OpenGLResourceBindingType::UniformVariable];
+    memcpy(result->bindingPointsUsed, builder->bindingPointsUsed, sizeof(result->bindingPointsUsed));
     return result.release();
 }
 
