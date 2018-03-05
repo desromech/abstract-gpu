@@ -3122,8 +3122,9 @@ string CompilerMSL::argument_decl(const SPIRFunction::Parameter &arg)
 	bool pointer = type.storage == StorageClassUniformConstant;
 
 	string decl;
-	if (constref)
-		decl += "const ";
+    // Workaround: Prefer passing by value instead of by reference.
+	//if (constref)
+	//	decl += "const ";
 
 	if (is_builtin_variable(var))
 		decl += builtin_type_decl(static_cast<BuiltIn>(get_decoration(arg.id, DecorationBuiltIn)));
@@ -3139,7 +3140,8 @@ string CompilerMSL::argument_decl(const SPIRFunction::Parameter &arg)
 	}
 	else if (!pointer)
 	{
-		decl += "&";
+        if(!constref)
+		      decl += "&";
 		decl += " ";
 		decl += to_expression(var.self);
 	}
