@@ -18,6 +18,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     renderTargetCount = 1;
     depthEnabled = false;
     stencilEnabled = false;
+    vertexBufferCount = 0;
 }
 
 void _agpu_pipeline_builder::lostReferences()
@@ -45,6 +46,47 @@ _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
 agpu_pipeline_state* _agpu_pipeline_builder::build ( )
 {
     NSError *error;
+    
+    bool succeded = true;
+    for(auto shader : attachedShaders)
+    {
+        if(!shader)
+        {
+            succeded = false;
+            break;
+        }
+    
+        agpu_shader_forSignature *shaderInstance = nullptr;
+        auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, &buildingLog, &shaderInstance);
+        if(error || !shaderInstance || !shaderInstance->function)
+        {
+            if(shaderInstance)
+                shaderInstance->release();
+            succeded = false;
+            break;
+        }
+        
+        switch(shader->type)
+        {
+        case AGPU_VERTEX_SHADER:
+            descriptor.vertexFunction = shaderInstance->function;
+            break;
+        case AGPU_FRAGMENT_SHADER:
+            descriptor.fragmentFunction = shaderInstance->function;
+            break;
+        default:
+            succeded = false;
+            break;
+        }
+        
+        shaderInstance->release();
+        if(!succeded)
+            break;
+    }
+    
+    if(!succeded)
+        return nullptr;
+        
     auto pipelineState = [device->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
     if(!pipelineState)
     {
@@ -63,20 +105,8 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
     CHECK_POINTER(shader);
-    CHECK_POINTER(shader->function);
-
-    switch(shader->type)
-    {
-    case AGPU_VERTEX_SHADER:
-        descriptor.vertexFunction = shader->function;
-        break;
-    case AGPU_FRAGMENT_SHADER:
-        descriptor.fragmentFunction = shader->function;
-        break;
-    default:
-        return AGPU_UNSUPPORTED;
-    }
-
+    shader->retain();
+    attachedShaders.push_back(shader);
     return AGPU_OK;
 }
 
@@ -89,6 +119,8 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
 {
     CHECK_POINTER(buffer);
     memcpy(buffer, buildingLog.data(), std::min((size_t)buffer_size, buildingLog.size()));
+    if(buffer_size > buildingLog.size())
+        buffer[buildingLog.size()] = 0;
     return AGPU_OK;
 }
 
@@ -291,6 +323,7 @@ agpu_error _agpu_pipeline_builder::setVertexLayout ( agpu_vertex_layout* layout 
 {
     CHECK_POINTER(layout);
     descriptor.vertexDescriptor = layout->vertexDescriptor;
+    vertexBufferCount = layout->vertexStrides.size();
     return AGPU_OK;
 }
 

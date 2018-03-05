@@ -50,6 +50,24 @@ agpu_device *_agpu_device::open(agpu_device_open_info *openInfo)
     return result;
 }
 
+agpu_bool _agpu_device::isFeatureSupportedOnDevice ( agpu_feature feature )
+{
+    switch(feature)
+    {
+    case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING:
+    case AGPU_FEATURE_COHERENT_MEMORY_MAPPING:
+    case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING:
+        return true;
+        
+    case AGPU_FEATURE_COMMAND_LIST_REUSE:
+    case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE:
+        return false;
+        
+    default:
+        return false;
+    }
+}
+
 agpu_command_queue* _agpu_device::getDefaultCommandQueue()
 {
     mainCommandQueue->retain();
@@ -147,6 +165,7 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* d
 AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
 {
     return AGPU_SHADER_LANGUAGE_SPIR_V;
+    //return AGPU_SHADER_LANGUAGE_NONE;
 }
 
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device )
@@ -197,12 +216,7 @@ AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device )
     return false;
 }
 
-AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device )
+AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )
 {
-    return false;
-}
-
-AGPU_EXPORT agpu_bool agpuisCommandListReuseEmulated ( agpu_device* device )
-{
-    return true;
+    return device->isFeatureSupportedOnDevice(feature);
 }

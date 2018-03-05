@@ -4,6 +4,7 @@
 #include "device.hpp"
 #include "pipeline_command_state.hpp"
 #include <string>
+#include <vector>
 
 struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
 {
@@ -46,6 +47,9 @@ public:
     agpu_pipeline_command_state commandState;
     agpu_bool depthEnabled;
     agpu_bool stencilEnabled;
+    agpu_uint vertexBufferCount;
+    
+    std::vector<agpu_shader*> attachedShaders;
 };
 
 #endif //AGPU_METAL_PIPELINE_BUILDER_HPP

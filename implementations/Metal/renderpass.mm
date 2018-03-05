@@ -76,7 +76,6 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
     for(size_t i = 0; i < colorAttachments.size(); ++i)
     {
         auto dest = descriptor.colorAttachments[i];
-        auto &view = framebuffer->colorBufferDescriptions[i];
 
         auto &source = colorAttachments[i];
         auto &color = source.clear_value;
@@ -84,8 +83,12 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
         dest.clearColor = MTLClearColorMake(color.r, color.g, color.b, color.a);
         dest.loadAction = mapLoadAction(source.begin_action);
         dest.storeAction = mapStoreAction(source.end_action);
-        dest.level = view.subresource_range.base_miplevel;
-        dest.slice = view.subresource_range.base_arraylayer;
+        if(!framebuffer->ownedBySwapChain)
+        {
+            auto &view = framebuffer->colorBufferDescriptions[i];
+            dest.level = view.subresource_range.base_miplevel;
+            dest.slice = view.subresource_range.base_arraylayer;            
+        }
     }
 
     if(hasDepthStencil)

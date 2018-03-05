@@ -311,7 +311,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	{
 		snprintf(buffer, sizeof(buffer), "dump%d.spv", shaderDumpCount);
 		auto f = fopen(buffer, "wb");
-		auto res = fwrite(&rawShaderSource, rawShaderSource.size(), 1, f);
+		auto res = fwrite(&rawShaderSource[0], rawShaderSource.size(), 1, f);
 		fclose(f);
 		(void)res;
 

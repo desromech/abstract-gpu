@@ -10,6 +10,7 @@ public:
     void lostReferences();
 
     static agpu_device *open(agpu_device_open_info *openInfo);
+    agpu_bool isFeatureSupportedOnDevice ( agpu_feature feature );
 
     agpu_command_queue* getDefaultCommandQueue();
 

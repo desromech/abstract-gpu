@@ -221,7 +221,7 @@ bool _agpu_device::checkVulkanImplementation()
         vkDestroyInstance(vulkanInstance, nullptr);
         return false;
     }
-    printf("gpuCount: %d\n", theVulkanPlatform.gpuCount);
+    //printf("gpuCount: %d\n", theVulkanPlatform.gpuCount);
 
     vkDestroyInstance(vulkanInstance, nullptr);
 
