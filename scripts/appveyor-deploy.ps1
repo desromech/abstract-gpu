@@ -8,7 +8,8 @@ if(!$ARCH) {$ARCH = "x86"}
 
 function deploy_variant($VARIANT)
 {
-    $ARCHIVE_NAME="${PROJECT_NAME}_${VARIANT}_${PLATFORM_NAME}_${VERSION_NAME}.zip"
+    $LOWER_VARIANT=$VARIANT.ToLower()
+    $ARCHIVE_NAME="${PROJECT_NAME}_${LOWER_VARIANT}_${PLATFORM_NAME}_${VERSION_NAME}.zip"
     $BUILD_DIR="builds/$OS_NAME-$ARCH/dist/$VARIANT"
 
     echo "========================================================================="
