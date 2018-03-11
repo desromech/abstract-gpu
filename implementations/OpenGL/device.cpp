@@ -19,6 +19,34 @@
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
+std::string getStringFromEnvironment(const char *varname)
+{
+#ifdef _WIN32
+	char *buffer;
+	size_t size;
+	auto error = _dupenv_s(&buffer, &size, varname);;
+	if (error) return std::string();
+	if (!buffer) return std::string();
+	std::string res = buffer;
+	free(buffer);
+	return res;
+#else
+	auto value = getenv(varname);
+	if (!value)
+		return std::string();
+	return value;
+#endif
+}
+
+bool getBooleanEnvironment(const char *varname, bool defaultValue = false)
+{
+	auto result = getStringFromEnvironment(varname);
+	if (result.empty())
+		return defaultValue;
+	return result != "0" && result != "n";
+}
+
+
 void printMessage(const char *format, ...)
 {
     char buffer[1024];
@@ -164,7 +192,11 @@ void _agpu_device::readVersionInformation()
     {
         int glslMajor;
         int glslMinor;
+#ifdef _WIN32
+		sscanf_s((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION), "%d.%d", &glslMajor, &glslMinor);
+#else
         sscanf((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION), "%d.%d", &glslMajor, &glslMinor);
+#endif
         glslVersionNumber = glslMajor*100 + glslMinor;
     }
 }
@@ -172,6 +204,13 @@ void _agpu_device::readVersionInformation()
 agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
 {
     return 1;
+}
+
+
+void _agpu_device::checkEnvironmentVariables()
+{
+	dumpShaders = getBooleanEnvironment("DUMP_SHADERS", false);
+	dumpShadersOnError = getBooleanEnvironment("DUMP_SHADERS_ON_ERROR", false);
 }
 
 void _agpu_device::loadExtensions()
@@ -312,6 +351,7 @@ agpu_bool _agpu_device::hasTopLeftNdcOrigin()
 void _agpu_device::initializeObjects()
 {
     readVersionInformation();
+	checkEnvironmentVariables();
     loadExtensions();
     createDefaultCommandQueue();
 }

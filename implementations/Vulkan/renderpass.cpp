@@ -123,7 +123,7 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
     VkRenderPassCreateInfo renderPassCreateInfo;
     memset(&renderPassCreateInfo, 0, sizeof(renderPassCreateInfo));
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.attachmentCount = attachments.size();
+    renderPassCreateInfo.attachmentCount = (uint32_t)attachments.size();
     renderPassCreateInfo.pAttachments = &attachments[0];
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpass;

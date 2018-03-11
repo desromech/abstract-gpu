@@ -29,11 +29,11 @@ void BufferTextureTransferLayout::setFromDescriptionAndLevel(const agpu_texture_
         auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
         auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
 
-        width = std::max(compressedBlockWidth, (width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
-        height = std::max(compressedBlockHeight, (height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
+        width = (agpu_size)std::max(compressedBlockWidth, (width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
+        height = (agpu_size)std::max(compressedBlockHeight, (height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
 
-        pitch = width / compressedBlockWidth * compressedBlockSize;
-        slicePitch = pitch * (height / compressedBlockHeight);
+        pitch = agpu_int(width / compressedBlockWidth * compressedBlockSize);
+        slicePitch = agpu_int(pitch * (height / compressedBlockHeight));
         size = slicePitch*depthOrArraySize;
     }
     else

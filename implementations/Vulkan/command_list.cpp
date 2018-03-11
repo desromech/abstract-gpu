@@ -192,10 +192,10 @@ agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature* signatu
 agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
     VkViewport viewport;
-    viewport.width = w;
-    viewport.height = h;
-    viewport.x = x;
-    viewport.y = y;
+    viewport.width = float(w);
+    viewport.height = float(h);
+    viewport.x = float(x);
+    viewport.y = float(y);
     viewport.maxDepth = 1.0f;
     viewport.minDepth = 0.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -224,7 +224,7 @@ agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 agpu_error _agpu_command_list::useVertexBinding(agpu_vertex_binding* vertex_binding)
 {
     CHECK_POINTER(vertex_binding);
-    vkCmdBindVertexBuffers(commandBuffer, 0, vertex_binding->vulkanBuffers.size(), &vertex_binding->vulkanBuffers[0], &vertex_binding->offsets[0]);
+    vkCmdBindVertexBuffers(commandBuffer, 0, (uint32_t)vertex_binding->vulkanBuffers.size(), &vertex_binding->vulkanBuffers[0], &vertex_binding->offsets[0]);
     return AGPU_OK;
 }
 
@@ -393,7 +393,7 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
     // Set the clear values.
     if (!renderpass->clearValues.empty())
     {
-        passBeginInfo.clearValueCount = renderpass->clearValues.size();
+        passBeginInfo.clearValueCount = (uint32_t)renderpass->clearValues.size();
         passBeginInfo.pClearValues = &renderpass->clearValues[0];
     }
 

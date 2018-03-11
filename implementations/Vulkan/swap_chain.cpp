@@ -438,7 +438,7 @@ agpu_size _agpu_swap_chain::getCurrentBackBufferIndex ( )
 
 agpu_size _agpu_swap_chain::getFramebufferCount ( )
 {
-    return framebuffers.size();
+    return (agpu_size)framebuffers.size();
 }
 
 // Exported C interface

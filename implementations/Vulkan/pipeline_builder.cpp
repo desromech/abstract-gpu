@@ -13,7 +13,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
 
     // Render targets
     renderTargetFormats.resize(1, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
-    depthStencilFormat = AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilFormat = AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT;
 
     // Default vertex input state.
     memset(&vertexInputState, 0, sizeof(vertexInputState));
@@ -73,7 +73,7 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
 
     memset(&dynamicState, 0, sizeof(dynamicState));
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = dynamicStates.size();
+    dynamicState.dynamicStateCount = (uint32_t)dynamicStates.size();
     dynamicState.pDynamicStates = &dynamicStates[0];
 
     // Pipeline state info.
@@ -151,14 +151,14 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     // Depth reference
     VkAttachmentReference depthReference;
     memset(&depthReference, 0, sizeof(depthReference));
-    depthReference.attachment = renderTargetFormats.size();
+    depthReference.attachment = (uint32_t)renderTargetFormats.size();
     depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     // Sub pass
     VkSubpassDescription subpass;
     memset(&subpass, 0, sizeof(subpass));
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = renderTargetFormats.size();
+    subpass.colorAttachmentCount = (uint32_t)renderTargetFormats.size();
     subpass.pColorAttachments = &colorReference[0];
     subpass.pDepthStencilAttachment = &depthReference;
     if (depthStencilFormat == AGPU_TEXTURE_FORMAT_UNKNOWN)
@@ -172,7 +172,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     }
     else
     {
-        colorBlendState.attachmentCount = colorBlendAttachmentState.size();
+        colorBlendState.attachmentCount = (uint32_t)colorBlendAttachmentState.size();
         colorBlendState.pAttachments = &colorBlendAttachmentState[0];
     }
 
@@ -180,7 +180,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     VkRenderPassCreateInfo renderPassCreateInfo;
     memset(&renderPassCreateInfo, 0, sizeof(renderPassCreateInfo));
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.attachmentCount = attachments.size();
+    renderPassCreateInfo.attachmentCount = (uint32_t)attachments.size();
     renderPassCreateInfo.pAttachments = &attachments[0];
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpass;
@@ -190,7 +190,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     if (error)
         return nullptr;
 
-    pipelineInfo.stageCount = stages.size();
+    pipelineInfo.stageCount = (uint32_t)stages.size();
     pipelineInfo.pStages = &stages[0];
     pipelineInfo.renderPass = renderPass;
 
@@ -394,7 +394,7 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
     for (auto &bufferData : layout->bufferDimensions)
     {
         VkVertexInputBindingDescription binding;
-        binding.binding = vertexBindings.size();
+        binding.binding = (uint32_t)vertexBindings.size();
         binding.stride = bufferData.size;
         binding.inputRate = bufferData.divisor > 0 ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
         vertexBindings.push_back(binding);
@@ -418,7 +418,7 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
     }
     else
     {
-        vertexInputState.vertexBindingDescriptionCount = vertexBindings.size();
+        vertexInputState.vertexBindingDescriptionCount = (uint32_t)vertexBindings.size();
         vertexInputState.pVertexBindingDescriptions = &vertexBindings[0];
     }
 
@@ -429,7 +429,7 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
     }
     else
     {
-        vertexInputState.vertexAttributeDescriptionCount = vertexAttributes.size();
+        vertexInputState.vertexAttributeDescriptionCount = (uint32_t)vertexAttributes.size();
         vertexInputState.pVertexAttributeDescriptions = &vertexAttributes[0];
     }
 

@@ -94,7 +94,13 @@ void agpu_buffer::dumpToFile(const char *fileName)
     if(!mappedPointer && extraMappingFlags == 0)
         return;
 
-    auto f = fopen(fileName, "wb");
+	FILE *f;
+#ifdef _WIN32
+	auto error = fopen_s(&f, fileName, "wb");
+	if (error) return;
+#else
+	f = fopen(fileName, "wb");
+#endif
     auto res = fwrite(mappedPointer, description.size, 1, f);
     (void)res;
     fclose(f);

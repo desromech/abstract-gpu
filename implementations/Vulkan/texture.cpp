@@ -76,8 +76,8 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
         auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
         auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
 
-        extent.width = std::max(compressedBlockWidth, (extent.width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
-        extent.height = std::max(compressedBlockHeight, (extent.height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
+        extent.width = (uint32_t)std::max(compressedBlockWidth, (extent.width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
+        extent.height = (uint32_t)std::max(compressedBlockHeight, (extent.height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
         copy->imageExtent = extent;
         copy->bufferRowLength = extent.width;
         copy->bufferImageHeight = extent.height;
@@ -94,8 +94,8 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
         layout->rowPitch = (extent.width*uncompressedPixelSize + 3) & -4;
         layout->depthPitch = layout->rowPitch * extent.height;
         layout->size = layout->depthPitch;
-        copy->bufferRowLength = layout->rowPitch / uncompressedPixelSize;
-        copy->bufferImageHeight = extent.height;
+        copy->bufferRowLength = uint32_t(layout->rowPitch / uncompressedPixelSize);
+        copy->bufferImageHeight = uint32_t(extent.height);
     }
 }
 
@@ -287,7 +287,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         bufferDesc.binding = AGPU_GENERIC_DATA_BUFFER;
         bufferDesc.usage = AGPU_STREAM;
         bufferDesc.stride = 1;
-        bufferDesc.size = transferLayout.size;
+        bufferDesc.size = (agpu_uint)transferLayout.size;
 
         // Create the upload buffer
         bool success = true;
@@ -469,7 +469,7 @@ agpu_error _agpu_texture::readData(agpu_int level, agpu_int arrayIndex, agpu_int
     {
         auto srcRow = reinterpret_cast<uint8_t*> (readbackPointer);
         auto dstRow = reinterpret_cast<uint8_t*> (buffer);
-        for (int y = 0; y < copy.imageExtent.height; ++y)
+        for (uint32_t y = 0; y < copy.imageExtent.height; ++y)
         {
             memcpy(dstRow, srcRow, pitch);
             srcRow += layout.rowPitch;
@@ -517,7 +517,7 @@ agpu_error _agpu_texture::uploadData(agpu_int level, agpu_int arrayIndex, agpu_i
     {
         auto srcRow = reinterpret_cast<uint8_t*> (data);
         auto dstRow = reinterpret_cast<uint8_t*> (bufferPointer);
-        for (int y = 0; y < extent.height; ++y)
+        for (uint32_t y = 0; y < extent.height; ++y)
         {
             memcpy(dstRow, srcRow, pitch);
             srcRow += pitch;

@@ -230,7 +230,7 @@ static void loadDriver(const std::string &path)
 
     // Get the driver platforms
     std::vector<agpu_platform*> platforms(platformCount);
-    getPlatforms(platforms.size(), &platforms[0], &platformCount);
+    getPlatforms(agpu_size(platforms.size()), &platforms[0], &platformCount);
 
     // Ensure there is at least one platform defined.
     if (!platformCount)
@@ -306,19 +306,38 @@ static void loadDriversInPath(const std::string &folder)
     });
 }
 
+inline std::string getStringFromEnvironment(const char *varname)
+{
+#ifdef _WIN32
+	char *buffer;
+	size_t size;
+	auto error = _dupenv_s(&buffer, &size, varname);;
+	if (error) return std::string();
+	if (!buffer) return std::string();
+	std::string res = buffer;
+	free(buffer);
+	return res;
+#else
+	auto value = getenv(varname);
+	if (!value)
+		return std::string();
+	return value;
+#endif
+}
+
 static void loadPlatforms()
 {
     // Single driver path
-    auto driverPath = getenv("AGPU_DRIVER_PATH");
-    if(driverPath)
+    auto driverPath = getStringFromEnvironment("AGPU_DRIVER_PATH");
+    if(!driverPath.empty())
     {
         loadDriver(driverPath);
         return;
     }
 
     // Environment variable
-    auto envPath = getenv("AGPU_DRIVERS_PATH");
-    if(envPath)
+    auto envPath = getStringFromEnvironment("AGPU_DRIVERS_PATH");
+    if(!envPath.empty())
         loadDriversInPath(envPath);
 
     // Library relative path.
@@ -366,7 +385,7 @@ AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform*
     {
         if (ret_numplatforms != nullptr)
         {
-            *ret_numplatforms = loadedPlatforms.size();
+            *ret_numplatforms = (agpu_size)loadedPlatforms.size();
             return AGPU_OK;
         }
         else
@@ -384,6 +403,6 @@ AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform*
         platforms[i] = nullptr;
 
     if(ret_numplatforms)
-        *ret_numplatforms = retCount;
+        *ret_numplatforms = (agpu_size)retCount;
     return AGPU_OK;
 }

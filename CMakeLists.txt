@@ -28,7 +28,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/;${CMAKE_MODULE_PATH}")
 # Turn warnings
 if (MSVC)
 	# using Visual Studio C++
-	set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+	#string(REGEX REPLACE "/W3" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+	#string(REGEX REPLACE "/W3" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 else()
 	set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c11")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
@@ -43,7 +44,16 @@ set(VULKAN_FIND_INCLUDE_PATHS)
 set(VULKAN_FIND_LIBRARY_PATHS)
 if(NOT "$ENV{VULKAN_SDK}" STREQUAL "")
 	set(VULKAN_FIND_INCLUDE_PATHS "$ENV{VULKAN_SDK}/include")
-	set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/lib")
+
+	if(MSVC)
+		if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
+			set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/Lib32")
+		else()
+			set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/Lib")
+		endif()
+	else()
+		set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/lib")
+	endif()
 endif()
 
 # Find Vulkan
@@ -103,8 +113,17 @@ thirdparty/spirv-cross/
 )
 
 # Set output dir.
-set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
-set(LIBRARY_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
+set(MainOutputDirectory "${AGPU_BINARY_DIR}/dist")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MainOutputDirectory} )
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${MainOutputDirectory} )
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${MainOutputDirectory} )
+foreach(Config ${CMAKE_CONFIGURATION_TYPES} )
+	set(OutputDirectory "${AGPU_BINARY_DIR}/dist/${Config}")
+    string( TOUPPER ${Config} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
+    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
+    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
+endforeach()
 
 # Find unittest++
 #pkg_check_modules(UNITTESTMM unittest++)

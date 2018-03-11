@@ -3,12 +3,10 @@
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <GL/GL.h>
 #include <GL/glext.h>
-
-#undef min
-#undef max
 
 typedef HGLRC(WINAPI * wglCreateContextAttribsARBProc) (HDC hDC, HGLRC hShareContext, const int *attribList);
 typedef BOOL(WINAPI * wglChoosePixelFormatARBProc) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
@@ -113,6 +111,7 @@ public:
     void setWindowPixelFormat(agpu_pointer window);
 
     void readVersionInformation();
+	void checkEnvironmentVariables();
     void loadExtensions();
     void *getProcAddress(const char *symbolName);
     void initializeObjects();
@@ -144,6 +143,10 @@ public:
     std::string extensions;
 
     agpu_command_queue *defaultCommandQueue;
+
+	// Debugging options.
+	bool dumpShaders;
+	bool dumpShadersOnError;
 
     // Important extensions
     bool isPersistentMemoryMappingSupported_;

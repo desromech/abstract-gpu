@@ -36,7 +36,7 @@ agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buff
         if (attribute.format == AGPU_TEXTURE_FORMAT_UNKNOWN)
             return AGPU_INVALID_PARAMETER;
 
-        attribute.buffer += baseBuffer;
+        attribute.buffer += (agpu_uint)baseBuffer;
         bufferDimensions[attribute.buffer].divisor = std::max(bufferDimensions[attribute.buffer].divisor, attribute.divisor);
 
         allAttributes.push_back(attribute);

@@ -557,7 +557,7 @@ typedef struct agpu_sampler_description {
 	agpu_texture_address_mode address_v;
 	agpu_texture_address_mode address_w;
 	agpu_float mip_lod_bias;
-	agpu_uint maxanisotropy;
+	agpu_float maxanisotropy;
 	agpu_bool comparison_enabled;
 	agpu_compare_function comparison_function;
 	agpu_color4f border_color;

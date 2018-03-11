@@ -65,11 +65,11 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         break;
     case AGPU_UNIFORM_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        bufferDescription.size = alignedTo(bufferDescription.size, 256);
+        bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
         break;
     case AGPU_STORAGE_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        bufferDescription.size = alignedTo(bufferDescription.size, 256);
+        bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
         break;
     case AGPU_UNIFORM_TEXEL_BUFFER:
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;

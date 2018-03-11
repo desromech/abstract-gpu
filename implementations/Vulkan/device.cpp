@@ -201,12 +201,13 @@ bool _agpu_device::checkVulkanImplementation()
         applicationInfo.pApplicationName = "Generic Abstract GPU Application";
     if (!applicationInfo.pEngineName)
         applicationInfo.pEngineName = "Abstract GPU";
+	applicationInfo.apiVersion = VK_API_VERSION_1_0;
 
     VkInstanceCreateInfo createInfo;
     memset(&createInfo, 0, sizeof(createInfo));
     createInfo.pApplicationInfo = &applicationInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-
+	
     // Create the instace
     VkInstance vulkanInstance;
     error = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
@@ -254,6 +255,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     applicationInfo.applicationVersion = openInfo->application_version;
     applicationInfo.pEngineName = openInfo->engine_name;
     applicationInfo.engineVersion = openInfo->engine_version;
+	applicationInfo.apiVersion = VK_API_VERSION_1_0;
     if (!applicationInfo.pApplicationName)
         applicationInfo.pApplicationName = "Generic Abstract GPU Application";
     if (!applicationInfo.pEngineName)
@@ -316,11 +318,11 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     if (!instanceLayers.empty())
     {
         createInfo.ppEnabledLayerNames = &instanceLayers[0];
-        createInfo.enabledLayerCount = instanceLayers.size();
+        createInfo.enabledLayerCount = (uint32_t)instanceLayers.size();
     }
 
     createInfo.ppEnabledExtensionNames = &instanceExtensions[0];
-    createInfo.enabledExtensionCount = instanceExtensions.size();
+    createInfo.enabledExtensionCount = (uint32_t)instanceExtensions.size();
 
     // Create the instace
     error = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
@@ -347,7 +349,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     auto gpuIndex = openInfo->gpu_index;
     if (gpuIndex < 0)
         gpuIndex = 0;
-    if (gpuIndex >= physicalDevices.size())
+    if (size_t(gpuIndex) >= physicalDevices.size())
     {
         printError("Invalid selected gpu index.\n");
         return false;
@@ -432,7 +434,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         maxQueueCount = std::max(maxQueueCount, queueProperties[i].queueCount);
 
     std::vector<float> queuePriorities(maxQueueCount);
-    for (size_t i = 0; i < queueFamilyCount; ++i)
+    for (uint32_t i = 0; i < queueFamilyCount; ++i)
     {
         auto &queueProps = queueProperties[i];
         VkDeviceQueueCreateInfo createQueueInfo;
@@ -448,7 +450,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     VkDeviceCreateInfo deviceCreateInfo;
     memset(&deviceCreateInfo, 0, sizeof(deviceCreateInfo));
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.queueCreateInfoCount = createQueueInfos.size();
+    deviceCreateInfo.queueCreateInfoCount = (uint32_t)createQueueInfos.size();
     deviceCreateInfo.pQueueCreateInfos = &createQueueInfos[0];
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -460,12 +462,12 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     // Set the device layers and extensions
     deviceCreateInfo.ppEnabledExtensionNames = &deviceExtensions[0];
-    deviceCreateInfo.enabledExtensionCount = deviceExtensions.size();
+    deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
 
     if (!deviceLayers.empty())
     {
         deviceCreateInfo.ppEnabledLayerNames = &deviceLayers[0];
-        deviceCreateInfo.enabledLayerCount = deviceLayers.size();
+        deviceCreateInfo.enabledLayerCount = (uint32_t)deviceLayers.size();
     }
 
     // Create the device.
@@ -480,7 +482,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     GET_DEVICE_PROC_ADDR(QueuePresentKHR);
 
     // Get the queues.
-    for (size_t i = 0; i < queueFamilyCount; ++i)
+    for (uint32_t i = 0; i < queueFamilyCount; ++i)
     {
         auto &familyProperties = queueProperties[i];
         auto isGraphics = (familyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0;
@@ -497,7 +499,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         else //if(isTransfer)
             queueType = AGPU_COMMAND_QUEUE_TYPE_TRANSFER;
 
-        for (size_t j = 0; j < familyProperties.queueCount; ++j)
+        for (uint32_t j = 0; j < familyProperties.queueCount; ++j)
         {
             VkQueue queue;
             vkGetDeviceQueue(device, i, j, &queue);
@@ -526,6 +528,19 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     setupQueue = graphicsCommandQueues[0];
 
     return true;
+}
+
+agpu_bool _agpu_device::isFeatureSupported(agpu_feature feature)
+{
+	switch (feature)
+	{
+	case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING: return true;
+	case AGPU_FEATURE_COHERENT_MEMORY_MAPPING: return true;
+	case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING: return true;
+	case AGPU_FEATURE_COMMAND_LIST_REUSE: return true;
+	case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: return false;
+	default: return false;
+	}
 }
 
 agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
@@ -1051,12 +1066,9 @@ AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
     return false;
 }
 
-AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device )
+AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature)
 {
-    return true;
-}
-
-AGPU_EXPORT agpu_bool agpuisCommandListReuseEmulated ( agpu_device* device )
-{
-    return false;
+	if (!device)
+		return false;
+	return device->isFeatureSupported(feature);
 }

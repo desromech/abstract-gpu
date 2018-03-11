@@ -45,4 +45,5 @@ set(AGPU_Metal_SOURCES
 add_definitions(-DAGPU_BUILD)
 
 add_library(AgpuMetal SHARED ${AGPU_Metal_SOURCES} $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl> $<TARGET_OBJECTS:spirv-cross-msl>)
+add_dependencies(AgpuMetal spirv-cross-core spirv-cross-glsl spirv-cross-msl)
 target_link_libraries(AgpuMetal ${METAL_LIBRARY} ${QUARTZCORE_LIBRARY} ${APPKIT_LIBRARY})

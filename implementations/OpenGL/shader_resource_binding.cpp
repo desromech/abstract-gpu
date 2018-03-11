@@ -85,7 +85,7 @@ void _agpu_shader_resource_binding::lostReferences()
     if(!samplers.empty())
     {
         device->onMainContextBlocking([&]{
-            device->glDeleteSamplers(samplers.size(), &samplers[0]);
+            device->glDeleteSamplers((GLsizei)samplers.size(), &samplers[0]);
         });
     }
 
@@ -113,7 +113,7 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
             if(!binding->samplers.empty())
             {
                 signature->device->onMainContextBlocking([&]{
-                    signature->device->glGenSamplers(binding->samplers.size(), &binding->samplers[0]);
+                    signature->device->glGenSamplers((GLsizei)binding->samplers.size(), &binding->samplers[0]);
                 });
             }
         }
@@ -263,8 +263,8 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
         device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, mapMinFilter(description->filter));
         device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, mapAddressMode(description->address_u));
         device->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, mapAddressMode(description->address_v));
-        device->glSamplerParameteri(sampler, GL_TEXTURE_MIN_LOD, description->min_lod);
-        device->glSamplerParameteri(sampler, GL_TEXTURE_MAX_LOD, description->max_lod);
+        device->glSamplerParameterf(sampler, GL_TEXTURE_MIN_LOD, description->min_lod);
+        device->glSamplerParameterf(sampler, GL_TEXTURE_MAX_LOD, description->max_lod);
         device->glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_MODE, description->comparison_enabled ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
         device->glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_FUNC, mapCompareFunction(description->comparison_function));
     });
@@ -343,7 +343,7 @@ void _agpu_shader_resource_binding::activateSampledImages()
         auto id = baseIndex + i;
 
         auto target = binding.texture->target;
-        device->glActiveTexture(GL_TEXTURE0 + id);
+        device->glActiveTexture(GLenum(GL_TEXTURE0 + id));
         glBindTexture(target, binding.texture->handle);
     }
 }
@@ -356,7 +356,7 @@ void _agpu_shader_resource_binding::activateSamplers()
     {
         auto sampler = samplers[i];
         if(sampler)
-            device->glBindSampler(baseIndex + i, sampler);
+            device->glBindSampler(GLuint(baseIndex + i), sampler);
     }
 }
 

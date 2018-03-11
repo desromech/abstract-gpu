@@ -1,9 +1,3 @@
-if(MSVC)
-    set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist")
-else()
-    set(EXECUTABLE_OUTPUT_PATH "${AGPU_BINARY_DIR}/dist/samples")
-endif()
-
 # Data files to distribute.
 file(GLOB DATA_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "data/shaders/*.glsl"

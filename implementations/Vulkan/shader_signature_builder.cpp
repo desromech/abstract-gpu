@@ -54,13 +54,13 @@ agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     if(!descriptorSets.empty())
     {
-        layoutInfo.setLayoutCount = descriptorSets.size();
+        layoutInfo.setLayoutCount = (uint32_t)descriptorSets.size();
         layoutInfo.pSetLayouts = &descriptorSets[0];
     }
 
     if(!pushConstantRanges.empty())
     {
-        layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+        layoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
         layoutInfo.pPushConstantRanges = &pushConstantRanges[0];
     }
 
@@ -102,7 +102,7 @@ agpu_error _agpu_shader_signature_builder::finishBindingBank()
         VkDescriptorSetLayoutCreateInfo setLayoutInfo;
         memset(&setLayoutInfo, 0, sizeof(setLayoutInfo));
         setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        setLayoutInfo.bindingCount = currentElementSet->bindings.size();
+        setLayoutInfo.bindingCount = (uint32_t)currentElementSet->bindings.size();
         setLayoutInfo.pBindings = &currentElementSet->bindings[0];
 
         auto error = vkCreateDescriptorSetLayout(device->device, &setLayoutInfo, nullptr, &currentElementSet->descriptorSetLayout);
@@ -130,11 +130,11 @@ agpu_error _agpu_shader_signature_builder::addBindingBankElement(agpu_shader_bin
         return AGPU_INVALID_OPERATION;
 
     auto descriptorType = mapDescriptorType(type);
-    for(uint i = 0; i < bindingPointCount; ++i)
+    for(agpu_uint i = 0; i < bindingPointCount; ++i)
     {
         VkDescriptorSetLayoutBinding binding;
         memset(&binding, 0, sizeof(binding));
-        binding.binding = currentElementSet->bindings.size();
+        binding.binding = (uint32_t)currentElementSet->bindings.size();
         binding.descriptorType = descriptorType;
         binding.descriptorCount = 1;
         binding.stageFlags = VK_SHADER_STAGE_ALL;

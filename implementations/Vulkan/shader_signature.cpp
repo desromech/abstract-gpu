@@ -76,7 +76,7 @@ agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_
         memset(&poolCreateInfo, 0, sizeof(poolCreateInfo));
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolCreateInfo.maxSets = element.maxBindings;
-        poolCreateInfo.poolSizeCount = poolSizes.size();
+        poolCreateInfo.poolSizeCount = (uint32_t)poolSizes.size();
         poolCreateInfo.pPoolSizes = &poolSizes[0];
         poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 

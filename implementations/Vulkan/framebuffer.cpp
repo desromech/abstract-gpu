@@ -87,7 +87,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     VkRenderPassCreateInfo renderPassCreateInfo;
     memset(&renderPassCreateInfo, 0, sizeof(renderPassCreateInfo));
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassCreateInfo.attachmentCount = attachments.size();
+    renderPassCreateInfo.attachmentCount = (uint32_t)attachments.size();
     renderPassCreateInfo.pAttachments = &attachments[0];
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpass;
@@ -122,7 +122,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     VkFramebufferCreateInfo createInfo;
     memset(&createInfo, 0, sizeof(createInfo));
     createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    createInfo.attachmentCount = attachmentViews.size();
+    createInfo.attachmentCount = (uint32_t)attachmentViews.size();
     createInfo.pAttachments = &attachmentViews[0];
     createInfo.renderPass = renderPass;
     createInfo.width = width;

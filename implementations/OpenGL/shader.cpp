@@ -306,17 +306,29 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	// Compile the shader instance object.
 	error = shaderInstance->compile(errorMessage);
 
-	if(getenv("DUMP_SHADERS") ||
-		(error != AGPU_OK && getenv("DUMP_SHADERS_ON_ERROR")))
+	if(device->dumpShaders ||
+		(error != AGPU_OK && device->dumpShadersOnError))
 	{
 		snprintf(buffer, sizeof(buffer), "dump%d.spv", shaderDumpCount);
-		auto f = fopen(buffer, "wb");
+
+		FILE *f;
+#ifdef _WIN32
+		auto error = fopen_s(&f, buffer, "wb");
+		if (error) abort();
+#else
+		f = fopen(buffer, "wb");
+#endif
 		auto res = fwrite(&rawShaderSource[0], rawShaderSource.size(), 1, f);
 		fclose(f);
 		(void)res;
 
 		snprintf(buffer, sizeof(buffer), "dump%d.glsl", shaderDumpCount);
+#ifdef _WIN32
+		error = fopen_s(&f, buffer, "wb");
+		if (error) abort();
+#else
 		f = fopen(buffer, "wb");
+#endif
 		res = fwrite(compiled.data(), compiled.size(), 1, f);
 		fclose(f);
 		(void)res;

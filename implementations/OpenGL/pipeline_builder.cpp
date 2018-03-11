@@ -5,6 +5,7 @@
 #include "constants.hpp"
 #include "../Common/texture_formats_common.hpp"
 #include <set>
+#include <algorithm>
 
 _agpu_pipeline_builder::_agpu_pipeline_builder()
 {
@@ -301,7 +302,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 
     // Miscellaneous
     pipeline->primitiveTopology = primitiveType;
-    pipeline->renderTargetCount = renderTargetFormats.size();
+    pipeline->renderTargetCount = (int)renderTargetFormats.size();
     pipeline->hasSRGBTarget = false;
     for (auto format : renderTargetFormats)
     {
@@ -327,7 +328,7 @@ agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 
 agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
 {
-	return errorMessages.size();
+	return (agpu_size)errorMessages.size();
 }
 
 agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
