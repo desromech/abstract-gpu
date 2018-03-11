@@ -16,7 +16,7 @@ skip_tags: true
 #skip_commits:
 #  message: /ci skip/      # Regex for matching commit message
 
-image: Visual Studio 2018
+image: Visual Studio 2017
 
 init:
   - git config --global core.autocrlf input
