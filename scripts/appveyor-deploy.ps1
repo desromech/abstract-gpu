@@ -29,11 +29,10 @@ function deploy_variant($VARIANT)
     {
         $secpassword = ConvertTo-SecureString "$BINTRAY_APIKEY" -AsPlainText -Force
         $credential = New-Object System.Management.Automation.PSCredential("ronsaldo", $secpassword)
-        
+
         echo "===================================================================="
         echo "Uploading archive $ARCHIVE_NAME into bintray version $VERSION_NAME"
-        Invoke-RestMethod -InFile "$ARCHIVE_NAME" -Method Post -Credential $credential -Uri "https://api.bintray.com/content/ronsaldo/abstract-gpu/lib/${VERSION_NAME}/${ARCHIVE_NAME}?publish=1"
-        #    curl -T "$ARCHIVE_NAME" -uronsaldo:$BINTRAY_APIKEY
+        Invoke-RestMethod -InFile "$ARCHIVE_NAME" -Method Put -Credential $credential -Uri "https://api.bintray.com/content/ronsaldo/abstract-gpu/lib/${VERSION_NAME}/${ARCHIVE_NAME}?publish=1"
     }
 }
 
