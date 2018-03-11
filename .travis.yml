@@ -23,6 +23,4 @@ matrix:
 
 install: ./.travis_install.sh
 script:
-    - ./.travis_build.sh
-    - ./.travis_deploy.sh
-
+    - ./.travis_build_and_deploy.sh

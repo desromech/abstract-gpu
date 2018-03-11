@@ -33,7 +33,7 @@ public:
     static agpu_device *open(agpu_device_open_info* openInfo);
     bool initialize(agpu_device_open_info* openInfo);
 
-	agpu_bool _agpu_device::isFeatureSupported(agpu_feature feature);
+	agpu_bool isFeatureSupported(agpu_feature feature);
 
     agpu_command_queue* getDefaultCommandQueue();
     agpu_command_queue* getGraphicsCommandQueue(agpu_uint index);
