@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ronsaldo/abstract-gpu.svg?branch=master)](https://travis-ci.org/ronsaldo/abstract-gpu)
+[![Build status](https://ci.appveyor.com/api/projects/status/6b0mvg3kxp9bmr9a?svg=true)](https://ci.appveyor.com/project/ronsaldo/abstract-gpu)
 [ ![Download](https://api.bintray.com/packages/ronsaldo/abstract-gpu/lib/images/download.svg) ](https://bintray.com/ronsaldo/abstract-gpu/lib/_latestVersion)
 
 # AbstractGPU
@@ -28,4 +29,3 @@ the following commands for building:
     cd build
     cmake -DAGPU_BUILD_SAMPLES=True ..
     make
-
