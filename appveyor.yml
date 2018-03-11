@@ -28,7 +28,7 @@ platform:
   - x64
 
 build_script:
-  - cmd: scripts\appveyor-build.bat
+  - cmd: c:\projects\agpu\scripts\appveyor-build.bat
 
 deploy_script:
-  - cmd: scripts\appveyor-deploy.bat
+  - cmd: c:\projects\agpu\scripts\appveyor-deploy.bat
