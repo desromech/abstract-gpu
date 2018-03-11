@@ -31,4 +31,4 @@ build_script:
   - cmd: c:\projects\agpu\scripts\appveyor-build.bat
 
 deploy_script:
-  - cmd: c:\projects\agpu\scripts\appveyor-deploy.bat
+  - ps: powershell -executionpolicy bypass -File c:\projects\agpu\scripts\appveyor-deploy.bat
