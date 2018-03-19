@@ -3,6 +3,7 @@
 
 #include "device.hpp"
 #include <string.h>
+#include <vector>
 
 enum class OpenGLResourceBindingType
 {

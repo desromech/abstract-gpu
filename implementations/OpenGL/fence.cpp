@@ -28,6 +28,8 @@ agpu_error _agpu_fence::waitOnClient()
     {
         device->onMainContextBlocking([&]() {
             device->glClientWaitSync(fenceObject, 0, -1);
+			device->glDeleteSync(fenceObject);
+			fenceObject = nullptr;
         });
     }
     return AGPU_OK;

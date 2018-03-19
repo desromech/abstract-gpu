@@ -2,6 +2,7 @@
 #define _AGPU_GL_VERTEX_BINDING_HPP_
 
 #include "device.hpp"
+#include <vector>
 
 /**
  * Vertex binding

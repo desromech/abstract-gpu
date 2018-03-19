@@ -78,7 +78,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     memset(&subpass, 0, sizeof(subpass));
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = colorCount;
-    subpass.pColorAttachments = &colorReference[0];
+    subpass.pColorAttachments = colorCount > 0 ? &colorReference[0] : nullptr;
     subpass.pDepthStencilAttachment = &depthReference;
     if (!depthStencilView)
         subpass.pDepthStencilAttachment = nullptr;
@@ -88,7 +88,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     memset(&renderPassCreateInfo, 0, sizeof(renderPassCreateInfo));
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassCreateInfo.attachmentCount = (uint32_t)attachments.size();
-    renderPassCreateInfo.pAttachments = &attachments[0];
+    renderPassCreateInfo.pAttachments = attachments.empty() ? nullptr : &attachments[0];
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpass;
 

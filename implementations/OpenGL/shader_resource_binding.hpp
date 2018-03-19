@@ -2,6 +2,7 @@
 #define AGPU_GL_SHADER_RESOURCE_BINDING_HPP
 
 #include "device.hpp"
+#include <vector>
 
 struct BufferBinding
 {

@@ -80,6 +80,7 @@ void OpenGLContext::swapBuffersOfWindow(agpu_pointer window)
     glFlush();
     auto windowDC = GetDC((HWND)window);
     SwapBuffers(windowDC);
+	ReleaseDC((HWND)window, windowDC);
 }
 
 void OpenGLContext::destroy()

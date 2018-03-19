@@ -1,7 +1,6 @@
 #ifndef AGPU_THREADED_QUEUE_HPP
 #define AGPU_THREADED_QUEUE_HPP
 
-#include <vector>
 #include <functional>
 #include <mutex>
 #include <condition_variable>
@@ -16,7 +15,7 @@ class AsyncJob
 {
 public:
     AsyncJob(const JobCommand &command, bool autoreleased = false)
-        : finished(false), autoreleased(autoreleased), command(command) {}
+        : nextJob(nullptr), finished(false), autoreleased(autoreleased), command(command) {}
     ~AsyncJob() { }
 
     void execute()
@@ -40,6 +39,9 @@ public:
         while(!finished)
             finishedCondition.wait(l);
     }
+
+	AsyncJob *nextJob;
+
 private:
     bool finished;
     bool autoreleased;
@@ -55,7 +57,7 @@ class JobQueue
 {
 public:
     JobQueue()
-        : isRunning_(false), isShuttingDown_(false) {}
+        : isRunning_(false), isShuttingDown_(false), firstPendingJob(nullptr), lastPendingJob(nullptr) {}
 
     ~JobQueue()
     {
@@ -91,7 +93,12 @@ public:
     void addJob(AsyncJob* job)
     {
         std::unique_lock<std::mutex> l(mutex);
-        jobs.push_back(job);
+		if (lastPendingJob)
+			lastPendingJob->nextJob = job;
+		else
+			firstPendingJob = job;
+		job->nextJob = nullptr;
+		lastPendingJob = job;
         moreWorkCondition.notify_all();
     }
 
@@ -103,13 +110,15 @@ private:
             AsyncJob *nextJob = nullptr;
             {
                 std::unique_lock<std::mutex> l(mutex);
-                while(!isShuttingDown_ && jobs.empty())
+                while(!isShuttingDown_ && !firstPendingJob)
                     moreWorkCondition.wait(l);
                 if(isShuttingDown_)
                     return;
 
-                nextJob = jobs.back();
-                jobs.pop_back();
+                nextJob = firstPendingJob;
+				firstPendingJob = firstPendingJob->nextJob;
+				if (!firstPendingJob)
+					lastPendingJob = nullptr;
             }
 
             if(nextJob)
@@ -123,7 +132,8 @@ private:
 
     bool isRunning_;
     bool isShuttingDown_;
-    std::vector<AsyncJob*> jobs;
+	AsyncJob *firstPendingJob;
+	AsyncJob *lastPendingJob;
 };
 
 #endif //AGPU_THREADED_QUEUE_HPP

@@ -22,11 +22,10 @@ public:
 
     agpu_device *device;
     agpu_pointer window;
-    bool doublebuffer;
     agpu_uint width;
     agpu_uint height;
     agpu_uint backBufferIndex;
-    agpu_framebuffer* framebuffers[2];
+    std::vector<agpu_framebuffer*> framebuffers;
     agpu_command_queue* commandQueue;
 };
 
