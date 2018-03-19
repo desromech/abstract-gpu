@@ -159,7 +159,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     memset(&subpass, 0, sizeof(subpass));
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = (uint32_t)renderTargetFormats.size();
-    subpass.pColorAttachments = &colorReference[0];
+    subpass.pColorAttachments = colorReference.empty() ? nullptr : &colorReference[0];
     subpass.pDepthStencilAttachment = &depthReference;
     if (depthStencilFormat == AGPU_TEXTURE_FORMAT_UNKNOWN)
         subpass.pDepthStencilAttachment = nullptr;

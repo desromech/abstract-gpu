@@ -114,7 +114,7 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
     memset(&subpass, 0, sizeof(subpass));
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = colorCount;
-    subpass.pColorAttachments = &colorReference[0];
+    subpass.pColorAttachments = colorReference.empty() ? nullptr : &colorReference[0];
     subpass.pDepthStencilAttachment = &depthReference;
     if (!hasDepthStencil)
         subpass.pDepthStencilAttachment = nullptr;
