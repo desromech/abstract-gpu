@@ -38,7 +38,28 @@ struct SampleVertex
     static const int DescriptionSize;
 };
 
-class SampleBase
+class AbstractSampleBase
+{
+public:
+    agpu_shader *compileShaderFromFile(const char *fileName, agpu_shader_type type);
+    agpu_buffer *createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData);
+    agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
+    agpu_buffer *createImmutableDrawBuffer(size_t capacity, void *initialData);
+    agpu_buffer *createUploadableUniformBuffer(size_t capacity, void *initialData);
+	agpu_buffer *createMappableStorage(size_t capacity, void *initialData);
+
+    agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
+    agpu_pipeline_state *buildComputePipeline(agpu_compute_pipeline_builder *builder);
+    agpu_texture *loadTexture(const char *fileName);
+
+    agpu_device *device;
+    agpu_command_queue *commandQueue;
+    agpu_shader_language preferredShaderLanguage;
+
+	bool hasPersistentCoherentMapping;
+};
+
+class SampleBase : public AbstractSampleBase
 {
 public:
     int main(int argc, const char **argv);
@@ -54,24 +75,14 @@ public:
     void swapBuffers();
 
 protected:
-    agpu_shader *compileShaderFromFile(const char *fileName, agpu_shader_type type);
-    agpu_buffer *createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData);
-    agpu_buffer *createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
-    agpu_buffer *createImmutableDrawBuffer(size_t capacity, void *initialData);
-    agpu_buffer *createUploadableUniformBuffer(size_t capacity, void *initialData);
-
-    agpu_pipeline_state *buildPipeline(agpu_pipeline_builder *builder);
-    agpu_texture *loadTexture(const char *fileName);
 
     agpu_renderpass *createMainPass(const glm::vec4 &clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     int screenWidth, screenHeight;
     SDL_Window *window;
 
-    agpu_device *device;
+
     agpu_swap_chain *swapChain;
-    agpu_command_queue *commandQueue;
-    agpu_shader_language preferredShaderLanguage;
     bool quit;
 
     glm::mat4 ortho(float left, float right, float bottom, float top, float near, float far)
@@ -91,6 +102,14 @@ protected:
 
         return matrix;
     }
+};
+
+class ComputeSampleBase : public AbstractSampleBase
+{
+public:
+    int main(int argc, const char **argv);
+
+    virtual int run(int argc, const char **argv);
 };
 
 #define SAMPLE_MAIN(SampleClass) \

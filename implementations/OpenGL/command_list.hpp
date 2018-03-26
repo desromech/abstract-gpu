@@ -16,17 +16,25 @@ struct CommandListExecutionContext
 
     void reset();
     void validateBeforeDrawCall();
+    void validateBeforeComputeDispatch();
     void usePipelineState(agpu_pipeline_state* newPipeline);
+    void useComputePipelineState(agpu_pipeline_state* newPipeline);
+
     void setStencilReference(agpu_uint reference);
-    void useShaderResources ( agpu_shader_resource_binding* binding );
+    
+	void useShaderResources ( agpu_shader_resource_binding* binding );
+	void useComputeShaderResources(agpu_shader_resource_binding* binding);
 
     agpu_device *device;
     agpu_pipeline_state *currentPipeline;
+    agpu_pipeline_state *currentComputePipeline;
     agpu_pipeline_state *activePipeline;
     agpu_shader_resource_binding *shaderResourceBindings[MaxNumberOfShaderResourceBindings];
+    agpu_shader_resource_binding *computeShaderResourceBindings[MaxNumberOfShaderResourceBindings];
 
     bool hasValidActivePipeline;
     bool hasValidShaderResources;
+    bool hasValidComputeShaderResources;
     GLenum primitiveMode;
     agpu_uint stencilReference;
 };
@@ -47,12 +55,16 @@ public:
     agpu_error useVertexBinding(agpu_vertex_binding* vertex_binding);
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
+    agpu_error useComputeDispatchIndirectBuffer(agpu_buffer* draw_buffer);
     agpu_error useShaderResources ( agpu_shader_resource_binding* binding );
+    agpu_error useComputeShaderResources ( agpu_shader_resource_binding* binding );
     agpu_error pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values );
     agpu_error drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
+    agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
-    agpu_error drawElementsIndirect(agpu_size offset);
-    agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
+    agpu_error drawElementsIndirect(agpu_size offset, agpu_size drawcount);
+    agpu_error dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z );
+    agpu_error dispatchComputeIndirect ( agpu_size offset );
     agpu_error setStencilReference(agpu_uint reference);
     agpu_error executeBundle ( agpu_command_list* bundle );
     agpu_error close();
@@ -70,6 +82,7 @@ public:
     agpu_vertex_binding *currentVertexBinding;
     agpu_buffer *currentIndexBuffer;
     agpu_buffer *currentDrawBuffer;
+    agpu_buffer *currentComputeDispatchBuffer;
     agpu_command_list_type type;
 
     void execute();

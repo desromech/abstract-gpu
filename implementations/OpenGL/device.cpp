@@ -5,6 +5,7 @@
 #include "buffer.hpp"
 #include "shader.hpp"
 #include "shader_signature_builder.hpp"
+#include "compute_pipeline_builder.hpp"
 #include "pipeline_builder.hpp"
 #include "command_allocator.hpp"
 #include "command_list.hpp"
@@ -244,6 +245,8 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glDrawElementsInstancedBaseVertexBaseInstance);
 
     // Indirect drawing
+	LOAD_FUNCTION(glDrawArraysIndirect);
+    LOAD_FUNCTION(glMultiDrawArraysIndirect);
     LOAD_FUNCTION(glDrawElementsIndirect);
     LOAD_FUNCTION(glMultiDrawElementsIndirect);
 
@@ -256,6 +259,10 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetShaderiv);
     LOAD_FUNCTION(glGetShaderInfoLog);
     LOAD_FUNCTION(glIsShader);
+
+	// Compute shader
+	LOAD_FUNCTION(glDispatchCompute);
+	LOAD_FUNCTION(glDispatchComputeIndirect);
 
     // Program
     LOAD_FUNCTION(glCreateProgram);
@@ -426,6 +433,13 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
     if (!device)
         return nullptr;
     return agpu_pipeline_builder::createBuilder(device);
+}
+
+AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder(agpu_device* device)
+{
+	if (!device)
+		return nullptr;
+	return agpu_compute_pipeline_builder::create(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue *queue)

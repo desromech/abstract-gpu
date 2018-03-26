@@ -256,7 +256,7 @@
             <constant name="TextureFlagRenderTarget" value="1" />
             <constant name="TextureFlagDepth" value="2" />
             <constant name="TextureFlagStencil" value="4" />
-            <constant name="TextureFlagUnorderedAccess" value="8" />
+            <constant name="TextureFlagStorage" value="8" />
             <constant name="TextureFlagRenderbufferOnly" value="16" />
 
             <constant name="TextureFlagReadedBack" value="32" />
@@ -287,6 +287,7 @@
 			<constant name="StorageBuffer" value="5" />
             <constant name="UniformTexelBuffer" value="6" />
             <constant name="StorageTexelBuffer" value="7" />
+            <constant name="ComputeDispatchIndirectBuffer" value="8" />
 		</enum>
 
 		<enum name="buffer_mapping_flags">
@@ -642,6 +643,9 @@
             <method name="createPipelineBuilder" cname="CreatePipelineBuilder" returnType="pipeline_builder*">
             </method>
 
+            <method name="createComputePipelineBuilder" cname="CreateComputePipelineBuilder" returnType="compute_pipeline_builder*">
+            </method>
+
             <method name="createCommandAllocator" cname="CreateCommandAllocator" returnType="command_allocator*">
                 <arg name="type" type="command_list_type" />
                 <arg name="queue" type="command_queue*" />
@@ -716,6 +720,38 @@
             </method>
         </interface>
 
+        <interface name="compute_pipeline_builder">
+            <method name="addReference" cname="AddComputePipelineBuilderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseComputePipelineBuilder" returnType="error">
+            </method>
+
+            <method name="build" cname="BuildComputePipelineState" returnType="pipeline_state*">
+            </method>
+
+            <method name="attachShader" cname="AttachComputeShader" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="attachShaderWithEntryPoint" cname="AttachComputeShaderWithEntryPoint" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entry_point" type="cstring" />
+            </method>
+
+            <method name="getBuildingLogLength" cname="GetComputePipelineBuildingLogLength" returnType="size">
+            </method>
+
+            <method name="getBuildingLog" cname="GetComputePipelineBuildingLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="setShaderSignature" cname="SetComputePipelineShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
+            </method>
+        </interface>
+
         <interface name="pipeline_builder">
             <method name="addReference" cname="AddPipelineBuilderReference" returnType="error">
             </method>
@@ -728,6 +764,11 @@
 
             <method name="attachShader" cname="AttachShader" returnType="error">
                 <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="attachShaderWithEntryPoint" cname="AttachShaderWithEntryPoint" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entry_point" type="cstring" />
             </method>
 
             <method name="getBuildingLogLength" cname="GetPipelineBuildingLogLength" returnType="size">
@@ -910,7 +951,15 @@
                 <arg name="draw_buffer" type="buffer*" />
             </method>
 
+            <method name="useComputeDispatchIndirectBuffer" cname="UseComputeDispatchIndirectBuffer" returnType="error">
+                <arg name="buffer" type="buffer*" />
+            </method>
+
             <method name="useShaderResources" cname="UseShaderResources" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useComputeShaderResources" cname="UseComputeShaderResources" returnType="error">
                 <arg name="binding" type="shader_resource_binding*" />
             </method>
 
@@ -919,6 +968,11 @@
     			<arg name="instance_count" type="uint" />
     			<arg name="first_vertex" type="uint" />
     			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawArraysIndirect" cname="DrawArraysIndirect" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
             </method>
 
             <method name="drawElements" cname="DrawElements" returnType="error">
@@ -931,11 +985,17 @@
 
             <method name="drawElementsIndirect" cname="DrawElementsIndirect" returnType="error">
                 <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
             </method>
 
-            <method name="multiDrawElementsIndirect" cname="MultiDrawElementsIndirect" returnType="error">
+            <method name="dispatchCompute" cname="DispatchCompute" returnType="error">
+    			<arg name="group_count_x" type="uint" />
+    			<arg name="group_count_y" type="uint" />
+    			<arg name="group_count_z" type="uint" />
+            </method>
+
+            <method name="dispatchComputeIndirect" cname="DispatchComputeIndirect" returnType="error">
                 <arg name="offset" type="size" />
-                <arg name="drawcount" type="size" />
             </method>
 
             <method name="setStencilReference" cname="SetStencilReference" returnType="error">

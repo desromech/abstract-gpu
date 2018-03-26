@@ -137,6 +137,14 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
 	return (*dispatchTable)->agpuCreatePipelineBuilder ( device );
 }
 
+AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_compute_pipeline_builder*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateComputePipelineBuilder ( device );
+}
+
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue )
 {
 	if (device == nullptr)
@@ -289,6 +297,70 @@ AGPU_EXPORT agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain )
 	return (*dispatchTable)->agpuGetFramebufferCount ( swap_chain );
 }
 
+AGPU_EXPORT agpu_error agpuAddComputePipelineBuilderReference ( agpu_compute_pipeline_builder* compute_pipeline_builder )
+{
+	if (compute_pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuAddComputePipelineBuilderReference ( compute_pipeline_builder );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseComputePipelineBuilder ( agpu_compute_pipeline_builder* compute_pipeline_builder )
+{
+	if (compute_pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuReleaseComputePipelineBuilder ( compute_pipeline_builder );
+}
+
+AGPU_EXPORT agpu_pipeline_state* agpuBuildComputePipelineState ( agpu_compute_pipeline_builder* compute_pipeline_builder )
+{
+	if (compute_pipeline_builder == nullptr)
+		return (agpu_pipeline_state*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuBuildComputePipelineState ( compute_pipeline_builder );
+}
+
+AGPU_EXPORT agpu_error agpuAttachComputeShader ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader )
+{
+	if (compute_pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuAttachComputeShader ( compute_pipeline_builder, shader );
+}
+
+AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+{
+	if (compute_pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuAttachComputeShaderWithEntryPoint ( compute_pipeline_builder, shader, entry_point );
+}
+
+AGPU_EXPORT agpu_size agpuGetComputePipelineBuildingLogLength ( agpu_compute_pipeline_builder* compute_pipeline_builder )
+{
+	if (compute_pipeline_builder == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuGetComputePipelineBuildingLogLength ( compute_pipeline_builder );
+}
+
+AGPU_EXPORT agpu_error agpuGetComputePipelineBuildingLog ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer )
+{
+	if (compute_pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuGetComputePipelineBuildingLog ( compute_pipeline_builder, buffer_size, buffer );
+}
+
+AGPU_EXPORT agpu_error agpuSetComputePipelineShaderSignature ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader_signature* signature )
+{
+	if (compute_pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
+	return (*dispatchTable)->agpuSetComputePipelineShaderSignature ( compute_pipeline_builder, signature );
+}
+
 AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder )
 {
 	if (pipeline_builder == nullptr)
@@ -319,6 +391,14 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
 	return (*dispatchTable)->agpuAttachShader ( pipeline_builder, shader );
+}
+
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuAttachShaderWithEntryPoint ( pipeline_builder, shader, entry_point );
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )
@@ -625,12 +705,28 @@ AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_li
 	return (*dispatchTable)->agpuUseDrawIndirectBuffer ( command_list, draw_buffer );
 }
 
+AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* buffer )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuUseComputeDispatchIndirectBuffer ( command_list, buffer );
+}
+
 AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuUseShaderResources ( command_list, binding );
+}
+
+AGPU_EXPORT agpu_error agpuUseComputeShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuUseComputeShaderResources ( command_list, binding );
 }
 
 AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
@@ -641,6 +737,14 @@ AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_ui
 	return (*dispatchTable)->agpuDrawArrays ( command_list, vertex_count, instance_count, first_vertex, base_instance );
 }
 
+AGPU_EXPORT agpu_error agpuDrawArraysIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuDrawArraysIndirect ( command_list, offset, drawcount );
+}
+
 AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
 {
 	if (command_list == nullptr)
@@ -649,20 +753,28 @@ AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_
 	return (*dispatchTable)->agpuDrawElements ( command_list, index_count, instance_count, first_index, base_vertex, base_instance );
 }
 
-AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset )
+AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuDrawElementsIndirect ( command_list, offset );
+	return (*dispatchTable)->agpuDrawElementsIndirect ( command_list, offset, drawcount );
 }
 
-AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
+AGPU_EXPORT agpu_error agpuDispatchCompute ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
-	return (*dispatchTable)->agpuMultiDrawElementsIndirect ( command_list, offset, drawcount );
+	return (*dispatchTable)->agpuDispatchCompute ( command_list, group_count_x, group_count_y, group_count_z );
+}
+
+AGPU_EXPORT agpu_error agpuDispatchComputeIndirect ( agpu_command_list* command_list, agpu_size offset )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuDispatchComputeIndirect ( command_list, offset );
 }
 
 AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_uint reference )

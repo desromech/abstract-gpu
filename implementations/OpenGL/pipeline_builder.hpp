@@ -3,6 +3,11 @@
 
 #include "device.hpp"
 #include "shader.hpp"
+#include <utility>
+#include <string>
+#include <set>
+
+void processTextureWithSamplerCombinations(const std::set<TextureWithSamplerCombination> &rawTextureSamplerCombinations, agpu_shader_signature *shaderSignature, TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations);
 
 struct _agpu_pipeline_builder: public Object<_agpu_pipeline_builder>
 {
@@ -18,6 +23,7 @@ public:
     agpu_error setShaderSignature(agpu_shader_signature* signature);
 
     agpu_error attachShader ( agpu_shader* shader );
+    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point );
 
     agpu_size getBuildingLogLength (  );
     agpu_error getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
@@ -92,7 +98,7 @@ public:
     std::string errorMessages;
 
     agpu_shader_signature *shaderSignature;
-    std::vector<agpu_shader*> shaders;
+    std::vector<std::pair<agpu_shader*, std::string>> shaders;
 
 private:
     void buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations);

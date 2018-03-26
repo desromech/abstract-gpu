@@ -14,6 +14,7 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
 {
     currentFramebuffer = nullptr;
     drawIndirectBuffer = nullptr;
+    computeDispatchIndirectBuffer = nullptr;
     shaderSignature = nullptr;
     isClosed = false;
     isSecondaryContent = false;
@@ -64,7 +65,7 @@ _agpu_command_list* _agpu_command_list::create(agpu_device* device, agpu_command
     }
 
     if (initial_pipeline_state)
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state->pipeline);
+        vkCmdBindPipeline(commandBuffer, initial_pipeline_state->bindPoint, initial_pipeline_state->pipeline);
 
     auto result = new _agpu_command_list(device);
     result->commandBuffer = commandBuffer;
@@ -107,7 +108,7 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* newAllocator, agpu_
     CONVERT_VULKAN_ERROR(error);
 
     if (initial_pipeline_state)
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state->pipeline);
+        vkCmdBindPipeline(commandBuffer, initial_pipeline_state->bindPoint, initial_pipeline_state->pipeline);
 
     resetState();
     return AGPU_OK;
@@ -168,6 +169,12 @@ void _agpu_command_list::resetState()
         drawIndirectBuffer = nullptr;
     }
 
+    if (computeDispatchIndirectBuffer)
+    {
+        computeDispatchIndirectBuffer->release();
+        computeDispatchIndirectBuffer = nullptr;
+    }
+
     if (shaderSignature)
     {
         shaderSignature->release();
@@ -217,7 +224,7 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
     CHECK_POINTER(pipeline);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);
+    vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
     return AGPU_OK;
 }
 
@@ -257,12 +264,34 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_list::useComputeDispatchIndirectBuffer(agpu_buffer* dispatch_buffer)
+{
+    CHECK_POINTER(dispatch_buffer);
+    if (dispatch_buffer->description.binding != AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
+        return AGPU_INVALID_PARAMETER;
+
+    dispatch_buffer->retain();
+    if (computeDispatchIndirectBuffer)
+        computeDispatchIndirectBuffer->release();
+    computeDispatchIndirectBuffer = dispatch_buffer;
+    return AGPU_OK;
+}
+
 agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* binding)
 {
     CHECK_POINTER(binding);
     if (!shaderSignature)
         return AGPU_INVALID_OPERATION;
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderSignature->layout, binding->elementIndex, 1, &binding->descriptorSet, 0, nullptr);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::useComputeShaderResources(agpu_shader_resource_binding* binding)
+{
+    CHECK_POINTER(binding);
+    if (!shaderSignature)
+        return AGPU_INVALID_OPERATION;
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, shaderSignature->layout, binding->elementIndex, 1, &binding->descriptorSet, 0, nullptr);
     return AGPU_OK;
 }
 
@@ -279,24 +308,43 @@ agpu_error _agpu_command_list::drawArrays(agpu_uint vertex_count, agpu_uint inst
     return AGPU_OK;
 }
 
+agpu_error _agpu_command_list::drawArraysIndirect(agpu_size offset, agpu_size drawcount)
+{
+    if (!drawIndirectBuffer)
+        return AGPU_INVALID_OPERATION;
+
+    vkCmdDrawIndirect(commandBuffer, drawIndirectBuffer->getDrawBuffer(), offset, drawcount, drawIndirectBuffer->description.stride);
+    return AGPU_OK;
+}
+
 agpu_error _agpu_command_list::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 {
     vkCmdDrawIndexed(commandBuffer, index_count, instance_count, first_index, base_vertex, base_instance);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
-{
-    return multiDrawElementsIndirect(offset, 1);
-}
-
-agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount)
+agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset, agpu_size drawcount)
 {
     if (!drawIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    //vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer->getDrawBuffer(), offset, drawcount, );
-    return AGPU_UNIMPLEMENTED;
+    vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer->getDrawBuffer(), offset, drawcount, drawIndirectBuffer->description.stride);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
+{
+    vkCmdDispatch(commandBuffer, group_count_x, group_count_y, group_count_z);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
+{
+    if (!computeDispatchIndirectBuffer)
+        return AGPU_INVALID_OPERATION;
+
+    vkCmdDispatchIndirect(commandBuffer, computeDispatchIndirectBuffer->getDrawBuffer(), offset);
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
@@ -564,10 +612,22 @@ AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list
     return command_list->useDrawIndirectBuffer(draw_buffer);
 }
 
+AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* buffer )
+{
+    CHECK_POINTER(command_list);
+    return command_list->useComputeDispatchIndirectBuffer(buffer);
+}
+
 AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding)
 {
     CHECK_POINTER(command_list);
     return command_list->useShaderResources(binding);
+}
+
+AGPU_EXPORT agpu_error agpuUseComputeShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding)
+{
+    CHECK_POINTER(command_list);
+    return command_list->useComputeShaderResources(binding);
 }
 
 AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
@@ -582,22 +642,34 @@ AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* command_list, agpu_uint
     return command_list->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
 }
 
+AGPU_EXPORT agpu_error agpuDrawArraysIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
+{
+    CHECK_POINTER(command_list);
+    return command_list->drawArraysIndirect(offset, drawcount);
+}
+
 AGPU_EXPORT agpu_error agpuDrawElements(agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 {
     CHECK_POINTER(command_list);
     return command_list->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
 }
 
-AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset)
+AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount)
 {
     CHECK_POINTER(command_list);
-    return command_list->drawElementsIndirect(offset);
+    return command_list->drawElementsIndirect(offset, drawcount);
 }
 
-AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount)
+AGPU_EXPORT agpu_error agpuDispatchCompute ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
     CHECK_POINTER(command_list);
-    return command_list->multiDrawElementsIndirect(offset, drawcount);
+    return command_list->dispatchCompute(group_count_x, group_count_y, group_count_z);
+}
+
+AGPU_EXPORT agpu_error agpuDispatchComputeIndirect ( agpu_command_list* command_list, agpu_size offset )
+{
+    CHECK_POINTER(command_list);
+    return command_list->dispatchComputeIndirect(offset);
 }
 
 AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_uint reference)

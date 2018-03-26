@@ -12,6 +12,7 @@ struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
 
     agpu_pipeline_state* buildPipelineState();
     agpu_error attachShader(agpu_shader* shader);
+    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point );
     agpu_size getPipelineBuildingLogLength();
     agpu_error getPipelineBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer);
     agpu_error setBlendState(agpu_int renderTargetMask, agpu_bool enabled);

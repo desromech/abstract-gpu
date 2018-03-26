@@ -68,6 +68,176 @@ std::string readWholeFile(const std::string &fileName)
     return std::string(data.begin(), data.end());
 }
 
+agpu_shader *AbstractSampleBase::compileShaderFromFile(const char *fileName, agpu_shader_type type)
+{
+    // Read the source file
+    std::string fullName = fileName;
+    switch (preferredShaderLanguage)
+    {
+    case AGPU_SHADER_LANGUAGE_GLSL:
+        fullName += ".glsl";
+        break;
+    case AGPU_SHADER_LANGUAGE_HLSL:
+        fullName += ".hlsl";
+        break;
+    case AGPU_SHADER_LANGUAGE_BINARY:
+        fullName += ".cso";
+        break;
+    case AGPU_SHADER_LANGUAGE_SPIR_V:
+        fullName += ".spv";
+        break;
+    case AGPU_SHADER_LANGUAGE_METAL:
+        fullName += ".metal";
+        break;
+    default:
+        break;
+    }
+
+    auto source = readWholeFile(fullName);
+    if(source.empty())
+        return nullptr;
+
+    // Create the shader and compile it.
+    auto shader = agpuCreateShader(device, type);
+    agpuSetShaderSource(shader, preferredShaderLanguage, source.c_str(), (agpu_string_length)source.size());
+    if(agpuCompileShader(shader, nullptr) != AGPU_OK)
+    {
+        auto logLength = agpuGetShaderCompilationLogLength(shader);
+        std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
+        agpuGetShaderCompilationLog(shader, logLength+1, logBuffer.get());
+        agpuReleaseShader(shader);
+        printError("Compilation error of '%s':%s\n", fullName.c_str(), logBuffer.get());
+        return nullptr;
+    }
+
+    return shader;
+}
+
+agpu_pipeline_state *AbstractSampleBase::buildPipeline(agpu_pipeline_builder *builder)
+{
+    auto pipeline = agpuBuildPipelineState(builder);
+
+    // Check the link result.
+    if(!pipeline)
+    {
+        auto logLength = agpuGetPipelineBuildingLogLength(builder);
+        std::unique_ptr<char[]> logBuffer(new char[logLength + 1]);
+        agpuGetPipelineBuildingLog(builder, logLength+1, logBuffer.get());
+        printError("Pipeline building error: %s\n", logBuffer.get());
+        return nullptr;
+    }
+
+    return pipeline;
+}
+
+agpu_pipeline_state *AbstractSampleBase::buildComputePipeline(agpu_compute_pipeline_builder *builder)
+{
+	auto pipeline = agpuBuildComputePipelineState(builder);
+
+	// Check the link result.
+	if (!pipeline)
+	{
+		auto logLength = agpuGetComputePipelineBuildingLogLength(builder);
+		std::unique_ptr<char[]> logBuffer(new char[logLength + 1]);
+		agpuGetComputePipelineBuildingLog(builder, logLength + 1, logBuffer.get());
+		printError("Pipeline building error: %s\n", logBuffer.get());
+		return nullptr;
+	}
+
+	return pipeline;
+}
+
+agpu_buffer *AbstractSampleBase::createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData)
+{
+    agpu_buffer_description desc;
+    desc.size = agpu_uint(capacity * vertexSize);
+    desc.usage = AGPU_STATIC;
+    desc.binding = AGPU_ARRAY_BUFFER;
+    desc.mapping_flags = 0;
+    desc.stride = agpu_uint(vertexSize);
+    return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_buffer *AbstractSampleBase::createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData)
+{
+    agpu_buffer_description desc;
+    desc.size = agpu_uint(capacity * indexSize);
+    desc.usage = AGPU_STATIC;
+    desc.binding = AGPU_ELEMENT_ARRAY_BUFFER;
+    desc.mapping_flags = 0;
+    desc.stride = agpu_uint(indexSize);
+    return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_buffer *AbstractSampleBase::createImmutableDrawBuffer(size_t capacity, void *initialData)
+{
+    size_t commandSize = sizeof(agpu_draw_elements_command);
+    agpu_buffer_description desc;
+    desc.size = agpu_uint(capacity * commandSize);
+    desc.usage = AGPU_STATIC;
+    desc.binding = AGPU_DRAW_INDIRECT_BUFFER;
+    desc.mapping_flags = 0;
+    desc.stride = agpu_uint(commandSize);
+    return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_buffer *AbstractSampleBase::createUploadableUniformBuffer(size_t capacity, void *initialData)
+{
+    agpu_buffer_description desc;
+    desc.size = agpu_uint(capacity);
+    desc.usage = AGPU_DYNAMIC;
+    desc.binding = AGPU_UNIFORM_BUFFER;
+    desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
+    desc.stride = 0;
+    return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_buffer *AbstractSampleBase::createMappableStorage(size_t capacity, void *initialData)
+{
+	agpu_buffer_description desc;
+	desc.size = agpu_uint(capacity);
+	desc.usage = AGPU_DYNAMIC;
+	desc.binding = AGPU_STORAGE_BUFFER;
+	desc.mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_READ_BIT;
+	desc.stride = 0;
+	if (hasPersistentCoherentMapping)
+		desc.mapping_flags |= AGPU_MAP_PERSISTENT_BIT | AGPU_MAP_COHERENT_BIT;
+
+	return agpuCreateBuffer(device, &desc, initialData);
+}
+
+agpu_texture *AbstractSampleBase::loadTexture(const char *fileName)
+{
+    auto surface = SDL_LoadBMP(fileName);
+    if (!surface)
+        return nullptr;
+
+    auto convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
+    SDL_FreeSurface(surface);
+    if (!convertedSurface)
+        return nullptr;
+
+    agpu_texture_description desc;
+    memset(&desc, 0, sizeof(desc));
+    desc.type = AGPU_TEXTURE_2D;
+    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+    desc.width = convertedSurface->w;
+    desc.height = convertedSurface->h;
+    desc.depthOrArraySize = 1;
+    desc.miplevels = 1;
+    desc.sample_count = 1;
+    desc.sample_quality = 0;
+    desc.flags = AGPU_TEXTURE_FLAG_UPLOADED;
+    auto texture = agpuCreateTexture(device, &desc);
+    if (!texture)
+        return nullptr;
+
+    agpuUploadTextureData(texture, 0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, convertedSurface->pixels);
+    SDL_FreeSurface(convertedSurface);
+
+    return texture;
+}
+
 int SampleBase::main(int argc, const char **argv)
 {
     char nameBuffer[256];
@@ -88,7 +258,7 @@ int SampleBase::main(int argc, const char **argv)
     }
 
     printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
-    sprintf(nameBuffer, "AGPU Sample - %s Platform", agpuGetPlatformName(platform));
+    snprintf(nameBuffer, sizeof(nameBuffer), "AGPU Sample - %s Platform", agpuGetPlatformName(platform));
     SDL_Window * window = SDL_CreateWindow(nameBuffer, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
     if(!window)
     {
@@ -145,6 +315,8 @@ int SampleBase::main(int argc, const char **argv)
         printError("Failed to open the device\n");
         return false;
     }
+
+	hasPersistentCoherentMapping = agpuIsFeatureSupportedOnDevice(device, AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
 
     // Get the default command queue
     commandQueue = agpuGetDefaultCommandQueue(device);
@@ -253,145 +425,6 @@ void SampleBase::swapBuffers()
     agpuSwapBuffers(swapChain);
 }
 
-agpu_shader *SampleBase::compileShaderFromFile(const char *fileName, agpu_shader_type type)
-{
-    // Read the source file
-    std::string fullName = fileName;
-    switch (preferredShaderLanguage)
-    {
-    case AGPU_SHADER_LANGUAGE_GLSL:
-        fullName += ".glsl";
-        break;
-    case AGPU_SHADER_LANGUAGE_HLSL:
-        fullName += ".hlsl";
-        break;
-    case AGPU_SHADER_LANGUAGE_BINARY:
-        fullName += ".cso";
-        break;
-    case AGPU_SHADER_LANGUAGE_SPIR_V:
-        fullName += ".spv";
-        break;
-    case AGPU_SHADER_LANGUAGE_METAL:
-        fullName += ".metal";
-        break;
-    default:
-        break;
-    }
-
-    auto source = readWholeFile(fullName);
-    if(source.empty())
-        return nullptr;
-
-    // Create the shader and compile it.
-    auto shader = agpuCreateShader(device, type);
-    agpuSetShaderSource(shader, preferredShaderLanguage, source.c_str(), (agpu_string_length)source.size());
-    if(agpuCompileShader(shader, nullptr) != AGPU_OK)
-    {
-        auto logLength = agpuGetShaderCompilationLogLength(shader);
-        std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
-        agpuGetShaderCompilationLog(shader, logLength+1, logBuffer.get());
-        agpuReleaseShader(shader);
-        printError("Compilation error of '%s':%s\n", fullName.c_str(), logBuffer.get());
-        return nullptr;
-    }
-
-    return shader;
-}
-
-agpu_pipeline_state *SampleBase::buildPipeline(agpu_pipeline_builder *builder)
-{
-    auto pipeline = agpuBuildPipelineState(builder);
-
-    // Check the link result.
-    if(!pipeline)
-    {
-        auto logLength = agpuGetPipelineBuildingLogLength(builder);
-        std::unique_ptr<char[]> logBuffer(new char[logLength + 1]);
-        agpuGetPipelineBuildingLog(builder, logLength+1, logBuffer.get());
-        printError("Pipeline building error: %s\n", logBuffer.get());
-        return nullptr;
-    }
-
-    return pipeline;
-}
-
-agpu_buffer *SampleBase::createImmutableVertexBuffer(size_t capacity, size_t vertexSize, void *initialData)
-{
-    agpu_buffer_description desc;
-    desc.size = agpu_uint(capacity * vertexSize);
-    desc.usage = AGPU_STATIC;
-    desc.binding = AGPU_ARRAY_BUFFER;
-    desc.mapping_flags = 0;
-    desc.stride = agpu_uint(vertexSize);
-    return agpuCreateBuffer(device, &desc, initialData);
-}
-
-agpu_buffer *SampleBase::createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData)
-{
-    agpu_buffer_description desc;
-    desc.size = agpu_uint(capacity * indexSize);
-    desc.usage = AGPU_STATIC;
-    desc.binding = AGPU_ELEMENT_ARRAY_BUFFER;
-    desc.mapping_flags = 0;
-    desc.stride = agpu_uint(indexSize);
-    return agpuCreateBuffer(device, &desc, initialData);
-}
-
-agpu_buffer *SampleBase::createImmutableDrawBuffer(size_t capacity, void *initialData)
-{
-    size_t commandSize = sizeof(agpu_draw_elements_command);
-    agpu_buffer_description desc;
-    desc.size = agpu_uint(capacity * commandSize);
-    desc.usage = AGPU_STATIC;
-    desc.binding = AGPU_DRAW_INDIRECT_BUFFER;
-    desc.mapping_flags = 0;
-    desc.stride = agpu_uint(commandSize);
-    return agpuCreateBuffer(device, &desc, initialData);
-}
-
-agpu_buffer *SampleBase::createUploadableUniformBuffer(size_t capacity, void *initialData)
-{
-    agpu_buffer_description desc;
-    desc.size = agpu_uint(capacity);
-    desc.usage = AGPU_DYNAMIC;
-    desc.binding = AGPU_UNIFORM_BUFFER;
-    desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
-    desc.stride = 0;
-    return agpuCreateBuffer(device, &desc, initialData);
-}
-
-agpu_texture *SampleBase::loadTexture(const char *fileName)
-{
-    auto surface = SDL_LoadBMP(fileName);
-    if (!surface)
-        return nullptr;
-
-    auto convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
-    SDL_FreeSurface(surface);
-    if (!convertedSurface)
-        return nullptr;
-
-    agpu_texture_description desc;
-    memset(&desc, 0, sizeof(desc));
-    desc.type = AGPU_TEXTURE_2D;
-    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-    desc.width = convertedSurface->w;
-    desc.height = convertedSurface->h;
-    desc.depthOrArraySize = 1;
-    desc.miplevels = 1;
-    desc.sample_count = 1;
-    desc.sample_quality = 0;
-    desc.flags = AGPU_TEXTURE_FLAG_UPLOADED;
-    auto texture = agpuCreateTexture(device, &desc);
-    if (!texture)
-        return nullptr;
-
-    agpuUploadTextureData(texture, 0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, convertedSurface->pixels);
-    SDL_FreeSurface(convertedSurface);
-
-    return texture;
-}
-
 agpu_renderpass *SampleBase::createMainPass(const glm::vec4 &clearColor)
 {
     // Color attachment
@@ -419,4 +452,55 @@ agpu_renderpass *SampleBase::createMainPass(const glm::vec4 &clearColor)
     description.color_attachments = &colorAttachment;
     description.depth_stencil_attachment = &depthStencil;
     return agpuCreateRenderPass(device, &description);
+}
+
+
+int ComputeSampleBase::main(int argc, const char **argv)
+{
+    // Get the platform.
+    agpu_platform *platform;
+    agpuGetPlatforms(1, &platform, nullptr);
+    if (!platform)
+    {
+        printError("Failed to get AGPU platform\n");
+        return -1;
+    }
+
+    printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
+
+    // Open the device
+    agpu_device_open_info openInfo;
+    memset(&openInfo, 0, sizeof(openInfo));
+#ifdef _DEBUG
+    // Use the debug layer when debugging. This is useful for low level backends.
+    openInfo.debug_layer= true;
+#endif
+
+    device = agpuOpenDevice(platform, &openInfo);
+    if(!device)
+    {
+        printError("Failed to open the device\n");
+        return false;
+    }
+	
+	hasPersistentCoherentMapping = agpuIsFeatureSupportedOnDevice(device, AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
+
+    // Get the default command queue
+    commandQueue = agpuGetDefaultCommandQueue(device);
+
+    // Get the preferred shader language.
+    preferredShaderLanguage = agpuGetPreferredIntermediateShaderLanguage(device);
+    if(preferredShaderLanguage == AGPU_SHADER_LANGUAGE_NONE)
+    {
+        preferredShaderLanguage = agpuGetPreferredHighLevelShaderLanguage(device);
+        if(preferredShaderLanguage == AGPU_SHADER_LANGUAGE_NONE)
+            preferredShaderLanguage = agpuGetPreferredShaderLanguage(device);
+    }
+    
+    return run(argc, argv);
+}
+
+int ComputeSampleBase::run(int argc, const char **argv)
+{
+    return 0;
 }

@@ -37,9 +37,10 @@ inline GLenum mapIndexType(agpu_size stride)
 }
 
 CommandListExecutionContext::CommandListExecutionContext()
-    : currentPipeline(nullptr), activePipeline(nullptr)
+    : currentPipeline(nullptr), currentComputePipeline(nullptr), activePipeline(nullptr)
 {
     memset(shaderResourceBindings, 0, sizeof(shaderResourceBindings));
+    memset(computeShaderResourceBindings, 0, sizeof(computeShaderResourceBindings));
     reset();
 }
 
@@ -47,10 +48,17 @@ void CommandListExecutionContext::lostReferences()
 {
     if(currentPipeline)
         currentPipeline->release();
+    if(currentComputePipeline)
+        currentComputePipeline->release();
 
     if(activePipeline)
         activePipeline->release();
     for(auto binding : shaderResourceBindings)
+    {
+        if(binding)
+            binding->release();
+    }
+    for(auto binding : computeShaderResourceBindings)
     {
         if(binding)
             binding->release();
@@ -63,6 +71,12 @@ void CommandListExecutionContext::reset()
     {
         currentPipeline->release();
         currentPipeline = nullptr;
+    }
+
+    if(currentComputePipeline)
+    {
+        currentComputePipeline->release();
+        currentComputePipeline = nullptr;
     }
 
     if(activePipeline)
@@ -78,9 +92,18 @@ void CommandListExecutionContext::reset()
         binding = nullptr;
     }
 
+    for(auto &binding : computeShaderResourceBindings)
+    {
+        if(binding)
+            binding->release();
+        binding = nullptr;
+    }
+
     stencilReference = 0;
     primitiveMode = GL_POINTS;
     hasValidActivePipeline = false;
+	hasValidShaderResources = false;
+	hasValidComputeShaderResources = false;
 
     //glActiveTexture(GL_TEXTURE0);
     // TODO: Unbind the samplers
@@ -92,6 +115,7 @@ void CommandListExecutionContext::validateBeforeDrawCall()
     {
         hasValidActivePipeline = true;
         hasValidShaderResources = false;
+        hasValidComputeShaderResources = false;
         if(currentPipeline)
             currentPipeline->retain();
         if(activePipeline)
@@ -101,7 +125,8 @@ void CommandListExecutionContext::validateBeforeDrawCall()
         if(activePipeline)
         {
             activePipeline->activate();
-            primitiveMode = mapPrimitiveTopology(activePipeline->primitiveTopology);
+			if(activePipeline->extraStateData)
+				primitiveMode = mapPrimitiveTopology(activePipeline->extraStateData->getPrimitiveTopology());
             if (stencilReference != 0)
                 activePipeline->updateStencilReference(stencilReference);
         }
@@ -114,7 +139,39 @@ void CommandListExecutionContext::validateBeforeDrawCall()
     if(activePipeline && !hasValidShaderResources)
     {
         hasValidShaderResources = true;
-        activePipeline->activateShaderResourcesOn(this);
+        hasValidComputeShaderResources = false;
+        activePipeline->activateShaderResourcesOn(this, shaderResourceBindings);
+    }
+}
+
+void CommandListExecutionContext::validateBeforeComputeDispatch()
+{
+    if(!hasValidActivePipeline || activePipeline != currentComputePipeline)
+    {
+        hasValidActivePipeline = true;
+        hasValidShaderResources = false;
+        hasValidComputeShaderResources = false;
+        if(currentComputePipeline)
+            currentComputePipeline->retain();
+        if(activePipeline)
+            activePipeline->release();
+        activePipeline = currentComputePipeline;
+
+        if(activePipeline)
+        {
+            activePipeline->activate();
+        }
+        else
+        {
+            device->glUseProgram(0);
+        }
+    }
+
+    if(activePipeline && !hasValidComputeShaderResources)
+    {
+        hasValidComputeShaderResources = true;
+        hasValidShaderResources = false;
+        activePipeline->activateShaderResourcesOn(this, computeShaderResourceBindings);
     }
 }
 
@@ -125,6 +182,15 @@ void CommandListExecutionContext::usePipelineState(agpu_pipeline_state* pipeline
     if(currentPipeline)
         currentPipeline->release();
     currentPipeline = pipeline;
+}
+
+void CommandListExecutionContext::useComputePipelineState(agpu_pipeline_state* pipeline)
+{
+    if(pipeline)
+        pipeline->retain();
+    if(currentComputePipeline)
+        currentComputePipeline->release();
+    currentComputePipeline = pipeline;
 }
 
 void CommandListExecutionContext::setStencilReference(agpu_uint reference)
@@ -146,6 +212,20 @@ void CommandListExecutionContext::useShaderResources ( agpu_shader_resource_bind
         dest->release();
     dest = binding;
     hasValidShaderResources = false;
+}
+
+void CommandListExecutionContext::useComputeShaderResources ( agpu_shader_resource_binding* binding )
+{
+    if(size_t(binding->elementIndex) >= MaxNumberOfShaderResourceBindings)
+        return;
+
+    auto &dest = computeShaderResourceBindings[binding->elementIndex];
+    if(binding)
+        binding->retain();
+    if(dest)
+        dest->release();
+    dest = binding;
+    hasValidComputeShaderResources = false;
 }
 
 _agpu_command_list::_agpu_command_list()
@@ -191,9 +271,19 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
 
 agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
 {
-    return addCommand([=] {
-        executionContext.usePipelineState(pipeline);
-    });
+	switch (pipeline->type)
+	{
+	case AgpuPipelineStateType::Graphics:
+		return addCommand([=] {
+			executionContext.usePipelineState(pipeline);
+		});
+	case AgpuPipelineStateType::Compute:
+		return addCommand([=] {
+			executionContext.useComputePipelineState(pipeline);
+		});
+	default:
+		return AGPU_UNSUPPORTED;
+	}
 }
 
 agpu_error _agpu_command_list::useVertexBinding(agpu_vertex_binding* vertex_binding)
@@ -217,11 +307,26 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
     });
 }
 
+agpu_error _agpu_command_list::useComputeDispatchIndirectBuffer(agpu_buffer* buffer)
+{
+    return addCommand([=] {
+        this->currentComputeDispatchBuffer = buffer;
+    });
+}
+
 agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding* binding )
 {
     CHECK_POINTER(binding);
     return addCommand([=] {
         executionContext.useShaderResources(binding);
+    });
+}
+
+agpu_error _agpu_command_list::useComputeShaderResources ( agpu_shader_resource_binding* binding )
+{
+    CHECK_POINTER(binding);
+    return addCommand([=] {
+        executionContext.useComputeShaderResources(binding);
     });
 }
 
@@ -243,6 +348,23 @@ agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint in
     });
 }
 
+agpu_error _agpu_command_list::drawArraysIndirect(agpu_size offset, agpu_size drawcount)
+{
+    return addCommand([=] {
+        if (!currentVertexBinding || !currentDrawBuffer)
+            return;
+
+        currentVertexBinding->bind();
+        currentDrawBuffer->bind();
+        executionContext.validateBeforeDrawCall();
+
+        if(drawcount > 1)
+            device->glMultiDrawArraysIndirect(executionContext.primitiveMode, reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
+        else
+            device->glDrawArraysIndirect(executionContext.primitiveMode, reinterpret_cast<void*> ((size_t)offset));
+    });
+}
+
 agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
 {
     return addCommand([=] {
@@ -259,7 +381,7 @@ agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint i
     });
 }
 
-agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
+agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset, agpu_size drawcount)
 {
     return addCommand([=] {
         if (!currentVertexBinding || !currentIndexBuffer || !currentDrawBuffer)
@@ -270,22 +392,32 @@ agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset)
         currentDrawBuffer->bind();
         executionContext.validateBeforeDrawCall();
 
-        device->glDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset));
+        if(drawcount > 1)
+            device->glMultiDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
+        else
+            device->glDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset));
     });
 }
 
-agpu_error _agpu_command_list::multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount)
+agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
     return addCommand([=] {
-        if (!currentVertexBinding || !currentIndexBuffer || !currentDrawBuffer)
+        executionContext.validateBeforeComputeDispatch();
+
+        device->glDispatchCompute(group_count_x, group_count_y, group_count_z);
+    });
+}
+
+agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
+{
+    return addCommand([=] {
+        if(!currentComputeDispatchBuffer)
             return;
 
-        currentVertexBinding->bind();
-        currentIndexBuffer->bind();
-        currentDrawBuffer->bind();
-        executionContext.validateBeforeDrawCall();
+        currentComputeDispatchBuffer->bind();
+        executionContext.validateBeforeComputeDispatch();
 
-        device->glMultiDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
+        device->glDispatchComputeIndirect(offset);
     });
 }
 
@@ -362,6 +494,10 @@ agpu_error _agpu_command_list::addCommand(const AgpuGLCommand &command)
 
 void _agpu_command_list::execute()
 {
+    currentVertexBinding = nullptr;
+    currentIndexBuffer = nullptr;
+    currentDrawBuffer = nullptr;
+    currentComputeDispatchBuffer = nullptr;
     for (auto &command : commands)
         command();
 
@@ -428,10 +564,22 @@ AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list
     return command_list->useDrawIndirectBuffer(draw_buffer);
 }
 
+AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* buffer )
+{
+    CHECK_POINTER(command_list);
+    return command_list->useComputeDispatchIndirectBuffer(buffer);
+}
+
 AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
 {
     CHECK_POINTER(command_list);
     return command_list->useShaderResources(binding);
+}
+
+AGPU_EXPORT agpu_error agpuUseComputeShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
+{
+    CHECK_POINTER(command_list);
+    return command_list->useComputeShaderResources(binding);
 }
 
 AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
@@ -440,22 +588,34 @@ AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_ui
     return command_list->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
 }
 
+AGPU_EXPORT agpu_error agpuDrawArraysIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
+{
+    CHECK_POINTER(command_list);
+    return command_list->drawArraysIndirect(offset, drawcount);
+}
+
 AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
 {
     CHECK_POINTER(command_list);
     return command_list->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
 }
 
-AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset)
+AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount)
 {
     CHECK_POINTER(command_list);
-    return command_list->drawElementsIndirect(offset);
+    return command_list->drawElementsIndirect(offset, drawcount);
 }
 
-AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount)
+AGPU_EXPORT agpu_error agpuDispatchCompute ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
     CHECK_POINTER(command_list);
-    return command_list->multiDrawElementsIndirect(offset, drawcount);
+    return command_list->dispatchCompute(group_count_x, group_count_y, group_count_z);
+}
+
+AGPU_EXPORT agpu_error agpuDispatchComputeIndirect ( agpu_command_list* command_list, agpu_size offset )
+{
+    CHECK_POINTER(command_list);
+    return command_list->dispatchComputeIndirect(offset);
 }
 
 AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_uint reference)

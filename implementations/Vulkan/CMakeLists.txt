@@ -8,6 +8,8 @@ set(AGPU_Vulkan_SOURCES
     command_queue.cpp
     command_queue.hpp
     common.hpp
+    compute_pipeline_builder.hpp
+    compute_pipeline_builder.cpp
     device.cpp
     device.hpp
     fence.cpp

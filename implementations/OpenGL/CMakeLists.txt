@@ -7,6 +7,8 @@ set(AGPU_OpenGL_SOURCES
     command_list.hpp
     command_queue.cpp
     command_queue.hpp
+    compute_pipeline_builder.cpp
+    compute_pipeline_builder.hpp
     common.hpp
     device.cpp
     device.hpp

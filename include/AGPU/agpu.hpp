@@ -212,6 +212,11 @@ public:
 		return agpuCreatePipelineBuilder( this );
 	}
 
+	inline agpu_compute_pipeline_builder* createComputePipelineBuilder (  )
+	{
+		return agpuCreateComputePipelineBuilder( this );
+	}
+
 	inline agpu_command_allocator* createCommandAllocator ( agpu_command_list_type type, agpu_command_queue* queue )
 	{
 		return agpuCreateCommandAllocator( this, type, queue );
@@ -322,6 +327,57 @@ public:
 
 typedef agpu_ref<agpu_swap_chain> agpu_swap_chain_ref;
 
+// Interface wrapper for agpu_compute_pipeline_builder.
+struct _agpu_compute_pipeline_builder
+{
+private:
+	_agpu_compute_pipeline_builder() {}
+
+public:
+	inline void addReference (  )
+	{
+		AgpuThrowIfFailed(agpuAddComputePipelineBuilderReference( this ));
+	}
+
+	inline void release (  )
+	{
+		AgpuThrowIfFailed(agpuReleaseComputePipelineBuilder( this ));
+	}
+
+	inline agpu_pipeline_state* build (  )
+	{
+		return agpuBuildComputePipelineState( this );
+	}
+
+	inline void attachShader ( agpu_shader* shader )
+	{
+		AgpuThrowIfFailed(agpuAttachComputeShader( this, shader ));
+	}
+
+	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+	{
+		AgpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint( this, shader, entry_point ));
+	}
+
+	inline agpu_size getBuildingLogLength (  )
+	{
+		return agpuGetComputePipelineBuildingLogLength( this );
+	}
+
+	inline void getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+	{
+		AgpuThrowIfFailed(agpuGetComputePipelineBuildingLog( this, buffer_size, buffer ));
+	}
+
+	inline void setShaderSignature ( agpu_shader_signature* signature )
+	{
+		AgpuThrowIfFailed(agpuSetComputePipelineShaderSignature( this, signature ));
+	}
+
+};
+
+typedef agpu_ref<agpu_compute_pipeline_builder> agpu_compute_pipeline_builder_ref;
+
 // Interface wrapper for agpu_pipeline_builder.
 struct _agpu_pipeline_builder
 {
@@ -347,6 +403,11 @@ public:
 	inline void attachShader ( agpu_shader* shader )
 	{
 		AgpuThrowIfFailed(agpuAttachShader( this, shader ));
+	}
+
+	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+	{
+		AgpuThrowIfFailed(agpuAttachShaderWithEntryPoint( this, shader, entry_point ));
 	}
 
 	inline agpu_size getBuildingLogLength (  )
@@ -583,9 +644,19 @@ public:
 		AgpuThrowIfFailed(agpuUseDrawIndirectBuffer( this, draw_buffer ));
 	}
 
+	inline void useComputeDispatchIndirectBuffer ( agpu_buffer* buffer )
+	{
+		AgpuThrowIfFailed(agpuUseComputeDispatchIndirectBuffer( this, buffer ));
+	}
+
 	inline void useShaderResources ( agpu_shader_resource_binding* binding )
 	{
 		AgpuThrowIfFailed(agpuUseShaderResources( this, binding ));
+	}
+
+	inline void useComputeShaderResources ( agpu_shader_resource_binding* binding )
+	{
+		AgpuThrowIfFailed(agpuUseComputeShaderResources( this, binding ));
 	}
 
 	inline void drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
@@ -593,19 +664,29 @@ public:
 		AgpuThrowIfFailed(agpuDrawArrays( this, vertex_count, instance_count, first_vertex, base_instance ));
 	}
 
+	inline void drawArraysIndirect ( agpu_size offset, agpu_size drawcount )
+	{
+		AgpuThrowIfFailed(agpuDrawArraysIndirect( this, offset, drawcount ));
+	}
+
 	inline void drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
 	{
 		AgpuThrowIfFailed(agpuDrawElements( this, index_count, instance_count, first_index, base_vertex, base_instance ));
 	}
 
-	inline void drawElementsIndirect ( agpu_size offset )
+	inline void drawElementsIndirect ( agpu_size offset, agpu_size drawcount )
 	{
-		AgpuThrowIfFailed(agpuDrawElementsIndirect( this, offset ));
+		AgpuThrowIfFailed(agpuDrawElementsIndirect( this, offset, drawcount ));
 	}
 
-	inline void multiDrawElementsIndirect ( agpu_size offset, agpu_size drawcount )
+	inline void dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 	{
-		AgpuThrowIfFailed(agpuMultiDrawElementsIndirect( this, offset, drawcount ));
+		AgpuThrowIfFailed(agpuDispatchCompute( this, group_count_x, group_count_y, group_count_z ));
+	}
+
+	inline void dispatchComputeIndirect ( agpu_size offset )
+	{
+		AgpuThrowIfFailed(agpuDispatchComputeIndirect( this, offset ));
 	}
 
 	inline void setStencilReference ( agpu_uint reference )

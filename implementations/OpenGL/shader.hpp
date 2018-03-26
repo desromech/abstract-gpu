@@ -115,14 +115,14 @@ public:
     void lostReferences();
 
     static agpu_shader *createShader(agpu_device *device, agpu_shader_type type);
-    agpu_error instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
+    agpu_error instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage);
 
     agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength);
     agpu_error compileShader(agpu_cstring options);
     agpu_size getShaderCompilationLogLength();
     agpu_error getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer);
 
-    std::vector<TextureWithSamplerCombination> &getTextureWithSamplerCombination();
+    std::vector<TextureWithSamplerCombination> &getTextureWithSamplerCombination(const std::string &entryPointName);
 
 public:
     //agpu_error compileGLSLSource(bool parseAgpuPragmas, agpu_string sourceText, agpu_string_length sourceTextLength);
@@ -136,14 +136,13 @@ public:
     std::vector<uint8_t> rawShaderSource;
 
 private:
-    void extractGenericShaderTextureWithSamplerCombinations();
-    void extractSpirVTextureWithSamplerCombinations();
+    void extractGenericShaderTextureWithSamplerCombinations(const std::string &entryPointName);
+    void extractSpirVTextureWithSamplerCombinations(const std::string &entryPointName);
 
     agpu_error getOrCreateGenericShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
-    agpu_error getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
+    agpu_error getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage);
 
-    bool hasExtractedTextureWithSamplerCombinations;
-    std::vector<TextureWithSamplerCombination> textureWithSamplerCombinations;
+    std::unordered_map<std::string, std::vector<TextureWithSamplerCombination>> textureWithSamplerCombinations;
 };
 
 

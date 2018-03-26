@@ -9,6 +9,7 @@
 #include "command_allocator.hpp"
 #include "command_list.hpp"
 #include "pipeline_builder.hpp"
+#include "compute_pipeline_builder.hpp"
 #include "platform.hpp"
 #include "shader_signature_builder.hpp"
 #include "shader.hpp"
@@ -986,6 +987,13 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device
     if (!device)
         return nullptr;
     return agpu_pipeline_builder::create(device);
+}
+
+AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder(agpu_device* device)
+{
+	if (!device)
+		return nullptr;
+	return agpu_compute_pipeline_builder::create(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type, agpu_command_queue *commandQueue)

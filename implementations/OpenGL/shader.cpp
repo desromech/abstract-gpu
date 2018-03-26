@@ -20,6 +20,20 @@ inline GLenum mapShaderType(agpu_shader_type type)
 	}
 }
 
+inline spv::ExecutionModel mapExecutionModel(agpu_shader_type type)
+{
+	switch(type)
+	{
+	case AGPU_VERTEX_SHADER: return spv::ExecutionModelVertex;
+	case AGPU_FRAGMENT_SHADER: return spv::ExecutionModelFragment;
+	case AGPU_COMPUTE_SHADER: return spv::ExecutionModelGLCompute;
+	case AGPU_GEOMETRY_SHADER: return spv::ExecutionModelGeometry;
+	case AGPU_TESSELLATION_CONTROL_SHADER: return spv::ExecutionModelTessellationControl;
+	case AGPU_TESSELLATION_EVALUATION_SHADER: return spv::ExecutionModelTessellationEvaluation;
+	default: abort();
+	}
+}
+
 agpu_shader_forSignature::agpu_shader_forSignature()
 {
     device = nullptr;
@@ -93,7 +107,6 @@ _agpu_shader::_agpu_shader()
 {
 	compiled = false;
 	genericShaderInstance = nullptr;
-	hasExtractedTextureWithSamplerCombinations = false;
 }
 
 void _agpu_shader::lostReferences()
@@ -114,24 +127,26 @@ agpu_shader *_agpu_shader::createShader(agpu_device *device, agpu_shader_type ty
 	return shader;
 }
 
-std::vector<TextureWithSamplerCombination> &_agpu_shader::getTextureWithSamplerCombination()
+std::vector<TextureWithSamplerCombination> &_agpu_shader::getTextureWithSamplerCombination(const std::string &entryPointName)
 {
-	if(hasExtractedTextureWithSamplerCombinations)
-		return textureWithSamplerCombinations;
+	auto it = textureWithSamplerCombinations.find(entryPointName);
+	if (it != textureWithSamplerCombinations.end())
+		return it->second;
 
 	if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_GLSL)
-		extractGenericShaderTextureWithSamplerCombinations();
+		extractGenericShaderTextureWithSamplerCombinations(entryPointName);
 	else if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_SPIR_V)
-		extractSpirVTextureWithSamplerCombinations();
+		extractSpirVTextureWithSamplerCombinations(entryPointName);
 
-	return textureWithSamplerCombinations;
+	return textureWithSamplerCombinations[entryPointName];
 }
 
-void _agpu_shader::extractGenericShaderTextureWithSamplerCombinations()
+void _agpu_shader::extractGenericShaderTextureWithSamplerCombinations(const std::string &entryPointName)
 {
+	textureWithSamplerCombinations.insert(std::make_pair(entryPointName, std::vector<TextureWithSamplerCombination> ()));
 }
 
-void _agpu_shader::extractSpirVTextureWithSamplerCombinations()
+void _agpu_shader::extractSpirVTextureWithSamplerCombinations(const std::string &entryPointName)
 {
 	uint32_t *rawData = reinterpret_cast<uint32_t *> (&rawShaderSource[0]);
 	size_t rawDataSize = rawShaderSource.size() / 4;
@@ -140,6 +155,9 @@ void _agpu_shader::extractSpirVTextureWithSamplerCombinations()
 
 	// Combine the samplers and the images.
 	glsl.build_combined_image_samplers();
+
+	textureWithSamplerCombinations.insert(std::make_pair(entryPointName, std::vector<TextureWithSamplerCombination>()));
+	auto &dest = textureWithSamplerCombinations[entryPointName];
 
 	// Combined sampler/images
 	for(auto &remap : glsl.get_combined_image_samplers())
@@ -150,11 +168,11 @@ void _agpu_shader::extractSpirVTextureWithSamplerCombinations()
 
 		combination.samplerDescriptorSet = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationDescriptorSet);
 		combination.samplerDescriptorBinding = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationBinding);
-		textureWithSamplerCombinations.push_back(combination);
+		dest.push_back(combination);
 	}
 }
 
-agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage)
 {
 	CHECK_POINTER(result);
 	CHECK_POINTER(errorMessage);
@@ -162,7 +180,7 @@ agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, 
 	if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_GLSL)
 		return getOrCreateGenericShaderInstance(signature, textureWithSamplerCombinationMap, result, errorMessage);
 	else if(rawSourceLanguage == AGPU_SHADER_LANGUAGE_SPIR_V)
-		return getOrCreateSpirVShaderInstance(signature, textureWithSamplerCombinationMap, result, errorMessage);
+		return getOrCreateSpirVShaderInstance(signature, textureWithSamplerCombinationMap, entryPoint, result, errorMessage);
 	return AGPU_INVALID_OPERATION;
 }
 
@@ -226,13 +244,15 @@ static agpu_error mapShaderResources(spirv_cross::CompilerGLSL &compiler,
 	return AGPU_OK;
 }
 
-agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage)
 {
 	char buffer[256];
 	uint32_t *rawData = reinterpret_cast<uint32_t *> (&rawShaderSource[0]);
 	size_t rawDataSize = rawShaderSource.size() / 4;
 
 	spirv_cross::CompilerGLSL glsl(rawData, rawDataSize);
+
+	glsl.set_entry_point(entryPoint, mapExecutionModel(type));
 
 	// Combine the samplers and the images.
 	glsl.build_combined_image_samplers();

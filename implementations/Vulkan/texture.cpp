@@ -188,8 +188,12 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     else
     {
         createInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        if(!(flags & AGPU_TEXTURE_FLAG_STORAGE))
+            initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
+    if(flags & AGPU_TEXTURE_FLAG_STORAGE)
+        createInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
     createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     // Image memory allocation

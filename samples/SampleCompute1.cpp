@@ -1,0 +1,114 @@
+#include "SampleBase.hpp"
+
+class SampleCompute1: public ComputeSampleBase
+{
+public:
+    int run(int argc, const char **argv)
+    {
+		// Create the programs.
+		auto computeShader = compileShaderFromFile("data/shaders/computeAdd", AGPU_COMPUTE_SHADER);
+		if (!computeShader)
+			return false;
+
+		// Create the shader signature.
+		auto shaderSignatureBuilder = agpuCreateShaderSignatureBuilder(device);
+		agpuBeginShaderSignatureBindingBank(shaderSignatureBuilder, 1);
+		agpuAddShaderSignatureBindingBankElement(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1);
+		agpuAddShaderSignatureBindingBankElement(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1);
+		agpuAddShaderSignatureBindingBankElement(shaderSignatureBuilder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1);
+		auto shaderSignature = agpuBuildShaderSignature(shaderSignatureBuilder);
+		agpuReleaseShaderSignatureBuilder(shaderSignatureBuilder);
+		if (!shaderSignature)
+			return false;
+
+		// Create the compute pipeline builder
+		auto pipelineBuilder = agpuCreateComputePipelineBuilder(device);
+		agpuSetComputePipelineShaderSignature(pipelineBuilder, shaderSignature);
+		agpuAttachComputeShader(pipelineBuilder, computeShader);
+
+		// Build the pipeline
+		auto pipeline = buildComputePipeline(pipelineBuilder);
+		agpuReleaseComputePipelineBuilder(pipelineBuilder);
+		if (!pipeline)
+			return false;
+
+		// Create the command allocator and the command list
+		auto commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_COMPUTE, commandQueue);
+		auto commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_COMPUTE, commandAllocator, pipeline);
+
+		// Create a buffer with the whole data
+		agpu_size arraySize = 256;
+		agpu_size arrayByteSize = arraySize* sizeof(float);
+		auto buffer = createMappableStorage(arrayByteSize * 3, nullptr);
+
+		// Create the shader bindings
+		auto shaderBindings = agpuCreateShaderResourceBinding(shaderSignature, 0);
+		agpuBindStorageBufferRange(shaderBindings, 0, buffer, 0, arrayByteSize);
+		agpuBindStorageBufferRange(shaderBindings, 1, buffer, arrayByteSize, arrayByteSize);
+		agpuBindStorageBufferRange(shaderBindings, 2, buffer, arrayByteSize*2, arrayByteSize);
+
+		// Write the inputs
+		auto mappedPointer = (float*)agpuMapBuffer(buffer, AGPU_READ_WRITE);
+		float *leftInput = mappedPointer;
+		float *rightInput = mappedPointer + arraySize;
+
+		for (agpu_size i = 0; i < arraySize; ++i)
+		{
+			leftInput[i] = 1.0f + float(i);
+			rightInput[i] = 1.0f + float(i) *2;
+		}
+
+		// Unmap the buffer if needed
+		if (!hasPersistentCoherentMapping)
+			agpuUnmapBuffer(buffer);
+
+		// Dispatch the compute
+		agpuSetShaderSignature(commandList, shaderSignature);
+		agpuUseComputeShaderResources(commandList, shaderBindings);
+		agpuDispatchCompute(commandList, arraySize, 1, 1);
+		agpuCloseCommandList(commandList);
+
+		agpuAddCommandList(commandQueue, commandList);
+		agpuFinishQueueExecution(commandQueue);
+		
+		// Remap the buffer if needed
+		if (!hasPersistentCoherentMapping)
+		{
+			mappedPointer = (float*)agpuMapBuffer(buffer, AGPU_READ_WRITE);
+			leftInput = mappedPointer;
+			rightInput = mappedPointer + arraySize;
+		}
+
+		float *output = rightInput + arraySize;
+
+		// Readback the output
+		int exitCode = 0;
+		for (size_t i = 0; i < arraySize; ++i)
+		{
+			auto left = leftInput[i];
+			auto right = rightInput[i];
+			auto result = output[i];
+			auto expected = left + right;
+			if (expected != result)
+			{
+				fprintf(stderr, "%d: %f + %f = %f\n", (int)i, left, right, result);
+				exitCode = 1;
+			}
+		}
+
+		if (exitCode == 0)
+			printf("Success\n");
+
+		agpuReleaseCommandList(commandList);
+		agpuReleaseCommandAllocator(commandAllocator);
+		agpuReleasePipelineState(pipeline);
+		agpuReleaseShaderResourceBinding(shaderBindings);
+		agpuReleaseShaderSignature(shaderSignature);
+		agpuUnmapBuffer(buffer);
+		agpuReleaseBuffer(buffer);
+
+        return exitCode;
+    }
+};
+
+SAMPLE_MAIN(SampleCompute1)

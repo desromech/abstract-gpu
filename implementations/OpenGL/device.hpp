@@ -187,6 +187,8 @@ public:
     PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXBASEINSTANCEPROC glDrawElementsInstancedBaseVertexBaseInstance;
 
     // Indirect drawing.
+    PFNGLDRAWARRAYSINDIRECTPROC glDrawArraysIndirect;
+    PFNGLMULTIDRAWARRAYSINDIRECTPROC glMultiDrawArraysIndirect;
     PFNGLDRAWELEMENTSINDIRECTPROC glDrawElementsIndirect;
     PFNGLMULTIDRAWELEMENTSINDIRECTPROC glMultiDrawElementsIndirect;
 
@@ -199,6 +201,10 @@ public:
     PFNGLGETSHADERIVPROC glGetShaderiv;
     PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
     PFNGLISSHADERPROC glIsShader;
+
+    // Compute shader
+    PFNGLDISPATCHCOMPUTEPROC glDispatchCompute;
+    PFNGLDISPATCHCOMPUTEINDIRECTPROC glDispatchComputeIndirect;
 
     // Program
     PFNGLCREATEPROGRAMPROC glCreateProgram;

@@ -7,6 +7,58 @@
 #include <set>
 #include <algorithm>
 
+void processTextureWithSamplerCombinations(const std::set<TextureWithSamplerCombination> &rawTextureSamplerCombinations, agpu_shader_signature *shaderSignature, TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
+{
+	// Split between natural pairs, and non-natural pairs.
+	std::vector<MappedTextureWithSamplerCombination> naturalTextureWithSamplerCombinations;
+	std::vector<MappedTextureWithSamplerCombination> nonNaturalTextureWithSamplerCombinations;
+	for (auto & combination : rawTextureSamplerCombinations)
+	{
+		int textureUnit = shaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
+		if (textureUnit < 0)
+			return;
+
+		int sampler = shaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
+		if (sampler < 0)
+			return;
+
+		MappedTextureWithSamplerCombination mappedCombination;
+		mappedCombination.combination = combination;
+		mappedCombination.name = combination.createName();
+		mappedCombination.sourceTextureUnit = textureUnit;
+		mappedCombination.sourceSamplerUnit = sampler;
+
+		if (textureUnit == sampler)
+			naturalTextureWithSamplerCombinations.push_back(mappedCombination);
+		else
+			nonNaturalTextureWithSamplerCombinations.push_back(mappedCombination);
+	}
+
+	auto naturalTextureUnitCount = shaderSignature->bindingPointsUsed[(int)OpenGLResourceBindingType::Sampler];
+
+	// Assign the natural pairs
+	usedCombinations.reserve(naturalTextureWithSamplerCombinations.size() + nonNaturalTextureWithSamplerCombinations.size());
+	for (auto &combination : naturalTextureWithSamplerCombinations)
+	{
+		combination.mappedTextureUnit = combination.mappedSamplerUnit = combination.sourceSamplerUnit;
+		usedCombinations.push_back(combination);
+	}
+
+	// Assign the non-natural pairs
+	auto nextTextureUnit = naturalTextureUnitCount;
+	for (auto &combination : nonNaturalTextureWithSamplerCombinations)
+	{
+		combination.mappedTextureUnit = nextTextureUnit++;
+		combination.mappedSamplerUnit = combination.sourceSamplerUnit;
+		usedCombinations.push_back(combination);
+	}
+
+	for (auto &combination : usedCombinations)
+	{
+		map.insert(std::make_pair(combination.combination, combination));
+	}
+}
+
 _agpu_pipeline_builder::_agpu_pipeline_builder()
 {
     shaderSignature = nullptr;
@@ -59,8 +111,10 @@ void _agpu_pipeline_builder::lostReferences()
 {
     if (shaderSignature)
         shaderSignature->release();
-    for(auto &shader : shaders)
-        shader->release();
+    for(auto &shaderAndEntryPoint : shaders)
+    {
+        shaderAndEntryPoint.first->release();
+    }
 }
 
 agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device)
@@ -73,8 +127,8 @@ agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device
 
 agpu_error _agpu_pipeline_builder::reset()
 {
-    for(auto &shader : shaders)
-        shader->release();
+    for(auto &shaderWithEntryPoint : shaders)
+		shaderWithEntryPoint.first->release();
     shaders.clear();
     errorMessages.clear();
 	return AGPU_OK;
@@ -85,63 +139,17 @@ void _agpu_pipeline_builder::buildTextureWithSampleCombinationMapInto(TextureWit
     std::set<TextureWithSamplerCombination> rawTextureSamplerCombinations;
 
     // Get all of the combinations.
-    for(auto shader : shaders)
+    for(auto &shaderWithEntryPoint : shaders)
     {
+        auto shader = shaderWithEntryPoint.first;
         if(!shader)
             continue;
 
-        for (auto combination : shader->getTextureWithSamplerCombination())
+        for (auto combination : shader->getTextureWithSamplerCombination(shaderWithEntryPoint.second))
             rawTextureSamplerCombinations.insert(combination);
     }
 
-    // Split between natural pairs, and non-natural pairs.
-    std::vector<MappedTextureWithSamplerCombination> naturalTextureWithSamplerCombinations;
-    std::vector<MappedTextureWithSamplerCombination> nonNaturalTextureWithSamplerCombinations;
-    for(auto & combination : rawTextureSamplerCombinations)
-    {
-        int textureUnit = shaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
-        if(textureUnit < 0)
-            return;
-
-        int sampler = shaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
-        if(sampler < 0)
-            return;
-
-        MappedTextureWithSamplerCombination mappedCombination;
-        mappedCombination.combination = combination;
-        mappedCombination.name = combination.createName();
-        mappedCombination.sourceTextureUnit = textureUnit;
-        mappedCombination.sourceSamplerUnit = sampler;
-
-        if(textureUnit == sampler)
-            naturalTextureWithSamplerCombinations.push_back(mappedCombination);
-        else
-            nonNaturalTextureWithSamplerCombinations.push_back(mappedCombination);
-    }
-
-    auto naturalTextureUnitCount = shaderSignature->bindingPointsUsed[(int)OpenGLResourceBindingType::Sampler];
-
-    // Assign the natural pairs
-    usedCombinations.reserve(naturalTextureWithSamplerCombinations.size() + nonNaturalTextureWithSamplerCombinations.size());
-    for(auto &combination : naturalTextureWithSamplerCombinations)
-    {
-        combination.mappedTextureUnit = combination.mappedSamplerUnit = combination.sourceSamplerUnit;
-        usedCombinations.push_back(combination);
-    }
-
-    // Assign the non-natural pairs
-    auto nextTextureUnit = naturalTextureUnitCount;
-    for(auto &combination : nonNaturalTextureWithSamplerCombinations)
-    {
-        combination.mappedTextureUnit = nextTextureUnit++;
-        combination.mappedSamplerUnit = combination.sourceSamplerUnit;
-        usedCombinations.push_back(combination);
-    }
-
-    for(auto &combination : usedCombinations)
-    {
-        map.insert(std::make_pair(combination.combination, combination));
-    }
+	processTextureWithSamplerCombinations(rawTextureSamplerCombinations, shaderSignature, map, usedCombinations);
 }
 
 agpu_pipeline_state* _agpu_pipeline_builder::build ()
@@ -157,8 +165,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
         buildTextureWithSampleCombinationMapInto(textureWithSamplerCombinationMap, mappedTextureWithSamplerCombinations);
 
         // Instantiate the shaders
-        for(auto shader : shaders)
+        for(auto &shaderWithEntryPoint : shaders)
         {
+            auto shader = shaderWithEntryPoint.first;
             if(!shaderSignature)
             {
                 errorMessages += "Missing shader signature.";
@@ -169,7 +178,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
             std::string errorMessage;
 
             // Create the shader instance.
-            auto error = shader->instanceForSignature(shaderSignature, textureWithSamplerCombinationMap, &shaderForSignature, &errorMessage);
+            auto error = shader->instanceForSignature(shaderSignature, textureWithSamplerCombinationMap, shaderWithEntryPoint.second, &shaderForSignature, &errorMessage);
             errorMessages += errorMessage;
             if(error != AGPU_OK)
             {
@@ -213,36 +222,12 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
         	device->glGetProgramiv(program, GL_LINK_STATUS, &status);
             if(status != GL_TRUE)
             {
-                // Get the info log
+				// TODO: Get the info log
                 return;
             }
 
             succeded = true;
-            {
-                /*// Set the uniform block bindings
-                for(auto &binding : uniformBindings)
-                {
-                    auto blockIndex = device->glGetUniformBlockIndex(programHandle, binding.name.c_str());
-                    device->glUniformBlockBinding(programHandle, blockIndex, binding.location);
-                }
-
-                if(!samplerBindings.empty())
-                {
-                    device->glUseProgram(programHandle);
-
-                    // Set the sampler bindings.
-                    for(auto &binding : samplerBindings)
-                    {
-                        auto location = device->glGetUniformLocation(programHandle, binding.name.c_str());
-                        device->glUniform1i(location, binding.location);
-
-                    }
-
-                    device->glUseProgram(0);
-                }*/
-            }
         });
-
     }
 
 	if(!succeded)
@@ -256,59 +241,64 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 	auto pipeline = new agpu_pipeline_state();
 	pipeline->device = device;
 	pipeline->programHandle = program;
+	pipeline->type = AgpuPipelineStateType::Graphics;
     pipeline->shaderSignature = shaderSignature;
     pipeline->shaderInstances = shaderInstances;
     pipeline->mappedTextureWithSamplerCombinations = mappedTextureWithSamplerCombinations;
     if (shaderSignature)
         shaderSignature->retain();
 
+	auto graphicsState = new AgpuGraphicsPipelineStateData();
+	graphicsState->device = device;
+	pipeline->extraStateData = graphicsState;
+
 	// Depth state
-    pipeline->depthEnabled = depthEnabled;
-    pipeline->depthWriteMask = depthWriteMask;
-    pipeline->depthFunction = mapCompareFunction(depthFunction);
+    graphicsState->depthEnabled = depthEnabled;
+    graphicsState->depthWriteMask = depthWriteMask;
+    graphicsState->depthFunction = mapCompareFunction(depthFunction);
 
     // Face culling
-    pipeline->frontFaceWinding = mapFaceWinding(frontFaceWinding);
-    pipeline->cullingMode = mapCullingMode(cullingMode);
+    graphicsState->frontFaceWinding = mapFaceWinding(frontFaceWinding);
+    graphicsState->cullingMode = mapCullingMode(cullingMode);
 
     // Color buffer
-    pipeline->blendingEnabled = blendingEnabled;
-    pipeline->redMask = redMask;
-    pipeline->greenMask = greenMask;
-    pipeline->blueMask = blueMask;
-    pipeline->alphaMask = alphaMask;
+    graphicsState->blendingEnabled = blendingEnabled;
+    graphicsState->redMask = redMask;
+    graphicsState->greenMask = greenMask;
+    graphicsState->blueMask = blueMask;
+    graphicsState->alphaMask = alphaMask;
 
-    pipeline->sourceBlendFactor = mapBlendFactor(sourceBlendFactor, false);
-    pipeline->destBlendFactor = mapBlendFactor(destBlendFactor, false);
-    pipeline->blendOperation = mapBlendOperation(blendOperation);
-    pipeline->sourceBlendFactorAlpha = mapBlendFactor(sourceBlendFactorAlpha, true);
-    pipeline->destBlendFactorAlpha = mapBlendFactor(destBlendFactorAlpha, true);
-    pipeline->blendOperationAlpha = mapBlendOperation(blendOperationAlpha);
+    graphicsState->sourceBlendFactor = mapBlendFactor(sourceBlendFactor, false);
+    graphicsState->destBlendFactor = mapBlendFactor(destBlendFactor, false);
+    graphicsState->blendOperation = mapBlendOperation(blendOperation);
+    graphicsState->sourceBlendFactorAlpha = mapBlendFactor(sourceBlendFactorAlpha, true);
+    graphicsState->destBlendFactorAlpha = mapBlendFactor(destBlendFactorAlpha, true);
+    graphicsState->blendOperationAlpha = mapBlendOperation(blendOperationAlpha);
 
     // Stencil testing
-    pipeline->stencilEnabled = stencilEnabled;
-    pipeline->stencilWriteMask = stencilWriteMask;
-    pipeline->stencilReadMask = stencilReadMask;
+    graphicsState->stencilEnabled = stencilEnabled;
+    graphicsState->stencilWriteMask = stencilWriteMask;
+    graphicsState->stencilReadMask = stencilReadMask;
 
-    pipeline->stencilFrontFailOp = mapStencilOperation(stencilFrontFailOp);
-    pipeline->stencilFrontDepthFailOp = mapStencilOperation(stencilFrontDepthFailOp);
-    pipeline->stencilFrontDepthPassOp = mapStencilOperation(stencilFrontDepthPassOp);
-    pipeline->stencilFrontFunc = mapCompareFunction(stencilFrontFunc);
+    graphicsState->stencilFrontFailOp = mapStencilOperation(stencilFrontFailOp);
+    graphicsState->stencilFrontDepthFailOp = mapStencilOperation(stencilFrontDepthFailOp);
+    graphicsState->stencilFrontDepthPassOp = mapStencilOperation(stencilFrontDepthPassOp);
+    graphicsState->stencilFrontFunc = mapCompareFunction(stencilFrontFunc);
 
-    pipeline->stencilBackFailOp = mapStencilOperation(stencilBackFailOp);
-    pipeline->stencilBackDepthFailOp = mapStencilOperation(stencilBackDepthFailOp);
-    pipeline->stencilBackDepthPassOp = mapStencilOperation(stencilBackDepthPassOp);
-    pipeline->stencilBackFunc = mapCompareFunction(stencilBackFunc);
+    graphicsState->stencilBackFailOp = mapStencilOperation(stencilBackFailOp);
+    graphicsState->stencilBackDepthFailOp = mapStencilOperation(stencilBackDepthFailOp);
+    graphicsState->stencilBackDepthPassOp = mapStencilOperation(stencilBackDepthPassOp);
+    graphicsState->stencilBackFunc = mapCompareFunction(stencilBackFunc);
 
     // Miscellaneous
-    pipeline->primitiveTopology = primitiveType;
-    pipeline->renderTargetCount = (int)renderTargetFormats.size();
-    pipeline->hasSRGBTarget = false;
+    graphicsState->primitiveTopology = primitiveType;
+    graphicsState->renderTargetCount = (int)renderTargetFormats.size();
+    graphicsState->hasSRGBTarget = false;
     for (auto format : renderTargetFormats)
     {
         if(isSRGBTextureFormat(format))
         {
-            pipeline->hasSRGBTarget = true;
+            graphicsState->hasSRGBTarget = true;
             break;
         }
 
@@ -319,10 +309,16 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
+	return attachShaderWithEntryPoint(shader, "main");
+}
+
+
+agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+{
 	CHECK_POINTER(shader);
 
     shader->retain();
-    shaders.push_back(shader);
+    shaders.push_back(std::make_pair(shader, entry_point));
 	return AGPU_OK;
 }
 
@@ -492,6 +488,12 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
 {
 	CHECK_POINTER(pipeline_builder);
 	return pipeline_builder->attachShader(shader);
+}
+
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+{
+	CHECK_POINTER(pipeline_builder);
+	return pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )

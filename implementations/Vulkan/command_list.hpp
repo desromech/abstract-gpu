@@ -19,12 +19,16 @@ public:
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
     agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
+    agpu_error useComputeDispatchIndirectBuffer(agpu_buffer* draw_buffer);
     agpu_error useShaderResources(agpu_shader_resource_binding* binding);
+    agpu_error useComputeShaderResources(agpu_shader_resource_binding* binding);
     agpu_error pushConstants (agpu_uint offset, agpu_uint size, agpu_pointer values);
     agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
+    agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount);
     agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
-    agpu_error drawElementsIndirect(agpu_size offset);
-    agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
+    agpu_error drawElementsIndirect(agpu_size offset, agpu_size drawcount);
+    agpu_error dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z );
+    agpu_error dispatchComputeIndirect ( agpu_size offset );
     agpu_error setStencilReference(agpu_uint reference);
     agpu_error executeBundle(agpu_command_list* bundle);
 
@@ -51,6 +55,7 @@ private:
     agpu_bool isSecondaryContent;
 
     agpu_buffer *drawIndirectBuffer;
+    agpu_buffer *computeDispatchIndirectBuffer;
     agpu_shader_signature *shaderSignature;
 };
 

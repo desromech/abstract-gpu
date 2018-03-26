@@ -4,12 +4,14 @@ _agpu_pipeline_state::_agpu_pipeline_state(agpu_device *device)
     : device(device)
 {
     pipeline = VK_NULL_HANDLE;
+	renderPass = VK_NULL_HANDLE;
 }
 
 void _agpu_pipeline_state::lostReferences()
 {
     vkDestroyPipeline(device->device, pipeline, nullptr);
-    vkDestroyRenderPass(device->device, renderPass, nullptr);
+	if(renderPass != VK_NULL_HANDLE)
+		vkDestroyRenderPass(device->device, renderPass, nullptr);
 }
 
 agpu_int _agpu_pipeline_state::getUniformLocation(agpu_cstring name)

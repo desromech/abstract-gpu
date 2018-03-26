@@ -99,6 +99,8 @@ void _agpu_pipeline_builder::lostReferences()
         shaderSignature->release();
     for (auto shader : shaders)
         shader->release();
+    for(auto &stage : stages)
+        free((void*)stage.pName);
 }
 
 _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
@@ -205,12 +207,19 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
     auto result = new agpu_pipeline_state(device);
     result->pipeline = pipeline;
     result->renderPass = renderPass;
+	result->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     return result;
 }
 
 agpu_error _agpu_pipeline_builder::attachShader(agpu_shader* shader)
 {
+    return attachShaderWithEntryPoint(shader, "main");
+}
+
+agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+{
     CHECK_POINTER(shader);
+    CHECK_POINTER(entry_point);
     if (!shader->shaderModule)
         return AGPU_INVALID_PARAMETER;
 
@@ -218,7 +227,7 @@ agpu_error _agpu_pipeline_builder::attachShader(agpu_shader* shader)
     memset(&stageInfo, 0, sizeof(stageInfo));
     stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stageInfo.module = shader->shaderModule;
-    stageInfo.pName = "main";
+    stageInfo.pName = duplicateCString(entry_point);
     stageInfo.stage = mapShaderType(shader->type);
 
     shader->retain();
@@ -477,6 +486,12 @@ AGPU_EXPORT agpu_error agpuAttachShader(agpu_pipeline_builder* pipeline_builder,
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->attachShader(shader);
+}
+
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength(agpu_pipeline_builder* pipeline_builder)

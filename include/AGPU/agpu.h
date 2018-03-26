@@ -43,6 +43,7 @@ typedef char* agpu_string_buffer;
 typedef struct _agpu_platform agpu_platform;
 typedef struct _agpu_device agpu_device;
 typedef struct _agpu_swap_chain agpu_swap_chain;
+typedef struct _agpu_compute_pipeline_builder agpu_compute_pipeline_builder;
 typedef struct _agpu_pipeline_builder agpu_pipeline_builder;
 typedef struct _agpu_pipeline_state agpu_pipeline_state;
 typedef struct _agpu_command_queue agpu_command_queue;
@@ -144,7 +145,7 @@ typedef enum {
 	AGPU_TEXTURE_FLAG_RENDER_TARGET = 1,
 	AGPU_TEXTURE_FLAG_DEPTH = 2,
 	AGPU_TEXTURE_FLAG_STENCIL = 4,
-	AGPU_TEXTURE_FLAG_UNORDERED_ACCESS = 8,
+	AGPU_TEXTURE_FLAG_STORAGE = 8,
 	AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY = 16,
 	AGPU_TEXTURE_FLAG_READED_BACK = 32,
 	AGPU_TEXTURE_FLAG_UPLOADED = 64,
@@ -174,6 +175,7 @@ typedef enum {
 	AGPU_STORAGE_BUFFER = 5,
 	AGPU_UNIFORM_TEXEL_BUFFER = 6,
 	AGPU_STORAGE_TEXEL_BUFFER = 7,
+	AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER = 8,
 } agpu_buffer_binding_type;
 
 typedef enum {
@@ -631,6 +633,7 @@ typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) ( agpu_device* devic
 typedef agpu_shader* (*agpuCreateShader_FUN) ( agpu_device* device, agpu_shader_type type );
 typedef agpu_shader_signature_builder* (*agpuCreateShaderSignatureBuilder_FUN) ( agpu_device* device );
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) ( agpu_device* device );
+typedef agpu_compute_pipeline_builder* (*agpuCreateComputePipelineBuilder_FUN) ( agpu_device* device );
 typedef agpu_command_allocator* (*agpuCreateCommandAllocator_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
 typedef agpu_command_list* (*agpuCreateCommandList_FUN) ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) ( agpu_device* device );
@@ -655,6 +658,7 @@ AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, 
 AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type );
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device );
+AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder ( agpu_device* device );
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
 AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state );
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device );
@@ -684,11 +688,31 @@ AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_c
 AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain );
 AGPU_EXPORT agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain );
 
+/* Methods for interface agpu_compute_pipeline_builder. */
+typedef agpu_error (*agpuAddComputePipelineBuilderReference_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+typedef agpu_error (*agpuReleaseComputePipelineBuilder_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+typedef agpu_pipeline_state* (*agpuBuildComputePipelineState_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+typedef agpu_error (*agpuAttachComputeShader_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader );
+typedef agpu_error (*agpuAttachComputeShaderWithEntryPoint_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
+typedef agpu_size (*agpuGetComputePipelineBuildingLogLength_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+typedef agpu_error (*agpuGetComputePipelineBuildingLog_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
+typedef agpu_error (*agpuSetComputePipelineShaderSignature_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader_signature* signature );
+
+AGPU_EXPORT agpu_error agpuAddComputePipelineBuilderReference ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+AGPU_EXPORT agpu_error agpuReleaseComputePipelineBuilder ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+AGPU_EXPORT agpu_pipeline_state* agpuBuildComputePipelineState ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+AGPU_EXPORT agpu_error agpuAttachComputeShader ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader );
+AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
+AGPU_EXPORT agpu_size agpuGetComputePipelineBuildingLogLength ( agpu_compute_pipeline_builder* compute_pipeline_builder );
+AGPU_EXPORT agpu_error agpuGetComputePipelineBuildingLog ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
+AGPU_EXPORT agpu_error agpuSetComputePipelineShaderSignature ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader_signature* signature );
+
 /* Methods for interface agpu_pipeline_builder. */
 typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_error (*agpuReleasePipelineBuilder_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_pipeline_state* (*agpuBuildPipelineState_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_error (*agpuAttachShader_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader );
+typedef agpu_error (*agpuAttachShaderWithEntryPoint_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
 typedef agpu_size (*agpuGetPipelineBuildingLogLength_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_error (*agpuGetPipelineBuildingLog_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 typedef agpu_error (*agpuSetBlendState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
@@ -712,6 +736,7 @@ AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* 
 AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader );
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 AGPU_EXPORT agpu_error agpuSetBlendState ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
@@ -772,11 +797,15 @@ typedef agpu_error (*agpuUsePipelineState_FUN) ( agpu_command_list* command_list
 typedef agpu_error (*agpuUseVertexBinding_FUN) ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuUseIndexBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* index_buffer );
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
+typedef agpu_error (*agpuUseComputeDispatchIndirectBuffer_FUN) ( agpu_command_list* command_list, agpu_buffer* buffer );
 typedef agpu_error (*agpuUseShaderResources_FUN) ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
+typedef agpu_error (*agpuUseComputeShaderResources_FUN) ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
 typedef agpu_error (*agpuDrawArrays_FUN) ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
+typedef agpu_error (*agpuDrawArraysIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
 typedef agpu_error (*agpuDrawElements_FUN) ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
-typedef agpu_error (*agpuDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset );
-typedef agpu_error (*agpuMultiDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
+typedef agpu_error (*agpuDrawElementsIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
+typedef agpu_error (*agpuDispatchCompute_FUN) ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z );
+typedef agpu_error (*agpuDispatchComputeIndirect_FUN) ( agpu_command_list* command_list, agpu_size offset );
 typedef agpu_error (*agpuSetStencilReference_FUN) ( agpu_command_list* command_list, agpu_uint reference );
 typedef agpu_error (*agpuExecuteBundle_FUN) ( agpu_command_list* command_list, agpu_command_list* bundle );
 typedef agpu_error (*agpuCloseCommandList_FUN) ( agpu_command_list* command_list );
@@ -796,11 +825,15 @@ AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, a
 AGPU_EXPORT agpu_error agpuUseVertexBinding ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agpu_buffer* index_buffer );
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer );
+AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* buffer );
 AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
+AGPU_EXPORT agpu_error agpuUseComputeShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding );
 AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance );
+AGPU_EXPORT agpu_error agpuDrawArraysIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
 AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance );
-AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset );
-AGPU_EXPORT agpu_error agpuMultiDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
+AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount );
+AGPU_EXPORT agpu_error agpuDispatchCompute ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z );
+AGPU_EXPORT agpu_error agpuDispatchComputeIndirect ( agpu_command_list* command_list, agpu_size offset );
 AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_uint reference );
 AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle );
 AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list );
@@ -985,6 +1018,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateShader_FUN agpuCreateShader;
 	agpuCreateShaderSignatureBuilder_FUN agpuCreateShaderSignatureBuilder;
 	agpuCreatePipelineBuilder_FUN agpuCreatePipelineBuilder;
+	agpuCreateComputePipelineBuilder_FUN agpuCreateComputePipelineBuilder;
 	agpuCreateCommandAllocator_FUN agpuCreateCommandAllocator;
 	agpuCreateCommandList_FUN agpuCreateCommandList;
 	agpuGetPreferredShaderLanguage_FUN agpuGetPreferredShaderLanguage;
@@ -1004,10 +1038,19 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetCurrentBackBuffer_FUN agpuGetCurrentBackBuffer;
 	agpuGetCurrentBackBufferIndex_FUN agpuGetCurrentBackBufferIndex;
 	agpuGetFramebufferCount_FUN agpuGetFramebufferCount;
+	agpuAddComputePipelineBuilderReference_FUN agpuAddComputePipelineBuilderReference;
+	agpuReleaseComputePipelineBuilder_FUN agpuReleaseComputePipelineBuilder;
+	agpuBuildComputePipelineState_FUN agpuBuildComputePipelineState;
+	agpuAttachComputeShader_FUN agpuAttachComputeShader;
+	agpuAttachComputeShaderWithEntryPoint_FUN agpuAttachComputeShaderWithEntryPoint;
+	agpuGetComputePipelineBuildingLogLength_FUN agpuGetComputePipelineBuildingLogLength;
+	agpuGetComputePipelineBuildingLog_FUN agpuGetComputePipelineBuildingLog;
+	agpuSetComputePipelineShaderSignature_FUN agpuSetComputePipelineShaderSignature;
 	agpuAddPipelineBuilderReference_FUN agpuAddPipelineBuilderReference;
 	agpuReleasePipelineBuilder_FUN agpuReleasePipelineBuilder;
 	agpuBuildPipelineState_FUN agpuBuildPipelineState;
 	agpuAttachShader_FUN agpuAttachShader;
+	agpuAttachShaderWithEntryPoint_FUN agpuAttachShaderWithEntryPoint;
 	agpuGetPipelineBuildingLogLength_FUN agpuGetPipelineBuildingLogLength;
 	agpuGetPipelineBuildingLog_FUN agpuGetPipelineBuildingLog;
 	agpuSetBlendState_FUN agpuSetBlendState;
@@ -1046,11 +1089,15 @@ typedef struct _agpu_icd_dispatch {
 	agpuUseVertexBinding_FUN agpuUseVertexBinding;
 	agpuUseIndexBuffer_FUN agpuUseIndexBuffer;
 	agpuUseDrawIndirectBuffer_FUN agpuUseDrawIndirectBuffer;
+	agpuUseComputeDispatchIndirectBuffer_FUN agpuUseComputeDispatchIndirectBuffer;
 	agpuUseShaderResources_FUN agpuUseShaderResources;
+	agpuUseComputeShaderResources_FUN agpuUseComputeShaderResources;
 	agpuDrawArrays_FUN agpuDrawArrays;
+	agpuDrawArraysIndirect_FUN agpuDrawArraysIndirect;
 	agpuDrawElements_FUN agpuDrawElements;
 	agpuDrawElementsIndirect_FUN agpuDrawElementsIndirect;
-	agpuMultiDrawElementsIndirect_FUN agpuMultiDrawElementsIndirect;
+	agpuDispatchCompute_FUN agpuDispatchCompute;
+	agpuDispatchComputeIndirect_FUN agpuDispatchComputeIndirect;
 	agpuSetStencilReference_FUN agpuSetStencilReference;
 	agpuExecuteBundle_FUN agpuExecuteBundle;
 	agpuCloseCommandList_FUN agpuCloseCommandList;
