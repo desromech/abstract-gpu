@@ -35,6 +35,7 @@ public:
     agpu_error createSampler ( agpu_int location, agpu_sampler_description* description );
 
     agpu_error activateOn(agpu_uint vertexBufferCount, id<MTLRenderCommandEncoder> encoder);
+    agpu_error activateComputeOn(id<MTLComputeCommandEncoder> encoder);
 
     agpu_device *device;
     agpu_shader_signature *signature;
@@ -48,6 +49,10 @@ private:
     agpu_error activateBuffersOn(agpu_uint vertexBufferCount, id<MTLRenderCommandEncoder> encoder);
     agpu_error activateSamplersOn(id<MTLRenderCommandEncoder> encoder);
     agpu_error activateTexturesOn(id<MTLRenderCommandEncoder> encoder);
+
+    agpu_error activateComputeBuffersOn(id<MTLComputeCommandEncoder> encoder);
+    agpu_error activateComputeSamplersOn(id<MTLComputeCommandEncoder> encoder);
+    agpu_error activateComputeTexturesOn(id<MTLComputeCommandEncoder> encoder);
 
 };
 

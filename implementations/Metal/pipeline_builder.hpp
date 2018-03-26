@@ -5,6 +5,7 @@
 #include "pipeline_command_state.hpp"
 #include <string>
 #include <vector>
+#include <utility>
 
 struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
 {
@@ -16,6 +17,7 @@ public:
 
     agpu_pipeline_state* build ( );
     agpu_error attachShader ( agpu_shader* shader );
+    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point );
     agpu_size getBuildingLogLength (  );
     agpu_error getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
     agpu_error setBlendState ( agpu_int renderTargetMask, agpu_bool enabled );
@@ -49,7 +51,7 @@ public:
     agpu_bool stencilEnabled;
     agpu_uint vertexBufferCount;
     
-    std::vector<agpu_shader*> attachedShaders;
+    std::vector<std::pair<agpu_shader*, std::string> > attachedShaders;
 };
 
 #endif //AGPU_METAL_PIPELINE_BUILDER_HPP

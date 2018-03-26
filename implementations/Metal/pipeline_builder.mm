@@ -48,8 +48,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
     NSError *error;
     
     bool succeded = true;
-    for(auto shader : attachedShaders)
+    for(auto &shaderWithEntryPoint : attachedShaders)
     {
+        auto shader = shaderWithEntryPoint.first;
         if(!shader)
         {
             succeded = false;
@@ -57,7 +58,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
         }
     
         agpu_shader_forSignature *shaderInstance = nullptr;
-        auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, &buildingLog, &shaderInstance);
+        auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, shaderWithEntryPoint.second, &buildingLog, &shaderInstance);
         if(error || !shaderInstance || !shaderInstance->function)
         {
             if(shaderInstance)
@@ -104,9 +105,14 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
+    return attachShaderWithEntryPoint(shader, "main");
+}
+
+agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+{
     CHECK_POINTER(shader);
     shader->retain();
-    attachedShaders.push_back(shader);
+    attachedShaders.push_back(std::make_pair(shader, entry_point));
     return AGPU_OK;
 }
 
@@ -367,6 +373,12 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->attachShader(shader);
+}
+
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )

@@ -8,6 +8,8 @@ set(AGPU_Metal_SOURCES
     command_queue.hpp
     command_queue.mm
     common.hpp
+    compute_pipeline_builder.mm
+    compute_pipeline_builder.hpp
     device.hpp
     device.mm
     fence.hpp

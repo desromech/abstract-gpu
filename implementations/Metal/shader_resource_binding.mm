@@ -326,6 +326,85 @@ agpu_error _agpu_shader_resource_binding::activateTexturesOn(id<MTLRenderCommand
     return AGPU_OK;
 }
 
+agpu_error _agpu_shader_resource_binding::activateComputeOn(id<MTLComputeCommandEncoder> encoder)
+{
+    agpu_error error;
+    if(!buffers.empty())
+    {
+        error = activateComputeBuffersOn(encoder);
+        if(error != AGPU_OK)
+            return error;
+    }
+
+    if(!textures.empty())
+    {
+        error = activateComputeTexturesOn(encoder);
+        if(error != AGPU_OK)
+            return error;
+    }
+
+    if(!samplers.empty())
+    {
+        error = activateComputeSamplersOn(encoder);
+        if(error != AGPU_OK)
+            return error;
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_shader_resource_binding::activateComputeBuffersOn(id<MTLComputeCommandEncoder> encoder)
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)MetalResourceBindingType::Buffer];
+    for(size_t i = 0; i < buffers.size(); ++i)
+    {
+        auto &binding = buffers[i];
+
+        // Ignore the buffers that are not binded.
+        if(!binding.buffer)
+            continue;
+
+        [encoder setBuffer: binding.buffer->handle offset: binding.offset atIndex: baseIndex + i];
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_shader_resource_binding::activateComputeSamplersOn(id<MTLComputeCommandEncoder> encoder)
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)MetalResourceBindingType::Sampler];
+
+    for(size_t i = 0; i < samplers.size(); ++i)
+    {
+        auto state = samplers[i];
+        if(!state)
+            continue;
+
+        [encoder setSamplerState: state atIndex: baseIndex + i];
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error _agpu_shader_resource_binding::activateComputeTexturesOn(id<MTLComputeCommandEncoder> encoder)
+{
+    const auto &bank = signature->elements[elementIndex];
+    size_t baseIndex = bank.startIndices[(int)MetalResourceBindingType::Texture];
+
+    for(size_t i = 0; i < textures.size(); ++i)
+    {
+        auto texture = textures[i];
+        if(!texture)
+            continue;
+
+        [encoder setTexture: texture->handle atIndex: baseIndex + i];
+    }
+
+    return AGPU_OK;
+}
+
 // The exported C interface
 AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference ( agpu_shader_resource_binding* shader_resource_binding )
 {

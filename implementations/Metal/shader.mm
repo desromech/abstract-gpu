@@ -178,7 +178,7 @@ agpu_error _agpu_shader::getCompilationLog ( agpu_size buffer_size, agpu_string_
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, std::string *errorMessage, agpu_shader_forSignature **result)
+agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, std::string *errorMessage, agpu_shader_forSignature **result)
 {
     if(language == AGPU_SHADER_LANGUAGE_METAL || language == AGPU_SHADER_LANGUAGE_METAL_AIR)
     {
@@ -187,12 +187,12 @@ agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signa
         return AGPU_OK;
     }
     else if(language == AGPU_SHADER_LANGUAGE_SPIR_V)
-        return getOrCreateSpirVShaderInstanceForSignature(signature, vertexBufferCount, errorMessage, result);
+        return getOrCreateSpirVShaderInstanceForSignature(signature, vertexBufferCount, entryPoint, errorMessage, result);
     else
         return AGPU_UNSUPPORTED;
 }
 
-agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, std::string *errorMessage, agpu_shader_forSignature **result)
+agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &expectedEntryPointName, std::string *errorMessage, agpu_shader_forSignature **result)
 {
     char buffer[256];
     uint32_t *rawData = reinterpret_cast<uint32_t *> (&source[0]);
@@ -216,7 +216,8 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_
     std::string usedEntryPoint;
     for(auto entryPoint : msl.get_entry_points_and_stages())
     {
-        if(entryPoint.execution_model == expectedExecutionModel)
+        if(entryPoint.name == expectedEntryPointName &&
+            entryPoint.execution_model == expectedExecutionModel)
         {
             usedEntryPoint = entryPoint.name;
             break;

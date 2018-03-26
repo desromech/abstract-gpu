@@ -9,6 +9,7 @@
 #include "fence.hpp"
 #include "shader.hpp"
 #include "pipeline_builder.hpp"
+#include "compute_pipeline_builder.hpp"
 #include "buffer.hpp"
 #include "vertex_layout.hpp"
 #include "vertex_binding.hpp"
@@ -141,6 +142,13 @@ AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* devi
     if(!device)
         return nullptr;
     return agpu_pipeline_builder::create(device);
+}
+
+AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder ( agpu_device* device )
+{
+    if(!device)
+        return nullptr;
+    return agpu_compute_pipeline_builder::create(device);
 }
 
 AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue )
