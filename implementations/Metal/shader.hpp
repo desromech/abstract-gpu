@@ -24,6 +24,7 @@ public:
     std::string entryPoint;
     id<MTLLibrary> library;
     id<MTLFunction> function;
+    MTLSize localSize; // Only used by compute
 };
 
 struct _agpu_shader : public Object<_agpu_shader>

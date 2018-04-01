@@ -20,10 +20,13 @@ struct _agpu_compute_pipeline_builder : public Object<_agpu_compute_pipeline_bui
 
     agpu_device *device;
 
-private:
     agpu_shader* shader;
+    std::string shaderEntryPoint;
     agpu_shader_signature* shaderSignature;
-    std::string shaderEntryPointName;
+    
+    std::string buildingLog;
+    
+    MTLSize localSize;
 };
 
 #endif //AGPU_METAL_COMPUTE_PIPELINE_BUILDER_HPP

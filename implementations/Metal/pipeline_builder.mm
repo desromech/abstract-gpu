@@ -100,7 +100,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
     depthStencilDescriptor.backFaceStencil = stencilEnabled ? backStencilDescriptor : nil;
     depthStencilDescriptor.frontFaceStencil = stencilEnabled ? frontStencilDescriptor : nil;
 
-    return agpu_pipeline_state::create(device, this, pipelineState);
+    return agpu_pipeline_state::createRender(device, this, pipelineState);
 }
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )

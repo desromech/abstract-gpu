@@ -262,6 +262,15 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_
 	shaderInstance->source = std::vector<uint8_t> ((uint8_t*)&compiled[0], (uint8_t*)&compiled[0] + compiled.size());
     shaderInstance->entryPoint = msl.get_cleansed_entry_point_name(usedEntryPoint, expectedExecutionModel);
     
+    if(type == AGPU_COMPUTE_SHADER)
+    {
+        MTLSize localSize;
+        localSize.width = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
+        localSize.height = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
+        localSize.depth = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
+        shaderInstance->localSize = localSize;
+    }
+    
 	// Compile the shader instance object.
 	auto error = shaderInstance->compile(errorMessage, "");
     //printf("Shader compilation error %d: %s\n", error, errorMessage->c_str());

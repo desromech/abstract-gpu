@@ -32,6 +32,7 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
     vertexBufferCount = 0;
     buffer = nil;
     renderEncoder = nil;
+    computeEncoder = nil;
     used = false;
     pushConstantsModified = true;
     memset(activeShaderResourceBindings, 0, sizeof(activeShaderResourceBindings));
@@ -114,6 +115,8 @@ agpu_error _agpu_command_list::usePipelineState ( agpu_pipeline_state* pipeline 
     currentPipeline = pipeline;
     if(renderEncoder)
         currentPipeline->applyRenderCommands(renderEncoder);
+    if(computeEncoder)
+        currentPipeline->applyComputeCommands(computeEncoder);
 
     return AGPU_OK;
 }
@@ -241,6 +244,12 @@ void _agpu_command_list::uploadPushConstants()
 
 void _agpu_command_list::updateComputeState()
 {
+    if(!computeEncoder)
+    {
+        computeEncoder = [buffer computeCommandEncoder];
+        currentPipeline->applyComputeCommands(computeEncoder);
+    }
+    
     activateComputeShaderResourceBindings();
     uploadComputePushConstants();
 }
@@ -271,7 +280,7 @@ agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint in
         return AGPU_INVALID_OPERATION;
 
     updateRenderState();
-    [renderEncoder drawPrimitives: currentPipeline->commandState.primitiveType
+    [renderEncoder drawPrimitives: currentPipeline->getCommandState().primitiveType
                        vertexStart: first_vertex
                         vertexCount: vertex_count
                     instanceCount: instance_count
@@ -292,7 +301,7 @@ agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint i
         return AGPU_INVALID_OPERATION;
 
     updateRenderState();
-    [renderEncoder drawIndexedPrimitives: currentPipeline->commandState.primitiveType
+    [renderEncoder drawIndexedPrimitives: currentPipeline->getCommandState().primitiveType
                    indexCount: index_count
                     indexType: mapIndexType(currentIndexBuffer->description.stride)
                   indexBuffer: currentIndexBuffer->handle
@@ -312,16 +321,21 @@ agpu_error _agpu_command_list::drawElementsIndirect ( agpu_size offset, agpu_siz
 
 agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
-    if(!currentPipeline || renderEncoder)
+    if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
     
     updateComputeState();
-    return AGPU_UNIMPLEMENTED;
+    MTLSize threadgroups;
+    threadgroups.width = group_count_x;
+    threadgroups.height = group_count_y;
+    threadgroups.depth = group_count_z;
+    [computeEncoder dispatchThreadgroups: threadgroups threadsPerThreadgroup: currentPipeline->extraState->getLocalSize()];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
 {
-    if(!currentPipeline || renderEncoder)
+    if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
     
     updateComputeState();
