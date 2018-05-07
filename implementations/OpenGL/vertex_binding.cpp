@@ -96,7 +96,10 @@ agpu_error _agpu_vertex_binding::activateVertexAttribute ( agpu_size stride, agp
     auto components = getFormatNumberOfComponents(attribute.format);
     auto type = mapExternalFormatType(attribute.format);
 	device->glEnableVertexAttribArray(attribute.binding);
-	device->glVertexAttribPointer(attribute.binding, components, type, isNormalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset)));
+    if(isIntegerVertexAttributeFormat(attribute.format))
+        device->glVertexAttribIPointer(attribute.binding, components, type, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset)));
+    else
+	   device->glVertexAttribPointer(attribute.binding, components, type, isNormalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset)));
 
 	return AGPU_OK;
 }

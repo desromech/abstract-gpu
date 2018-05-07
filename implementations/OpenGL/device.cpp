@@ -283,6 +283,8 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetActiveUniform);
 
     LOAD_FUNCTION(glVertexAttribPointer);
+	LOAD_FUNCTION(glVertexAttribIPointer);
+	LOAD_FUNCTION(glVertexAttribLPointer);
     LOAD_FUNCTION(glDisableVertexAttribArray);
     LOAD_FUNCTION(glEnableVertexAttribArray);
     LOAD_FUNCTION(glGetAttribLocation);
