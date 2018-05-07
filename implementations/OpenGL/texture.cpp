@@ -57,10 +57,17 @@ void _agpu_texture::allocateTexture1D(agpu_device *device, GLuint handle, GLenum
 void _agpu_texture::allocateTexture2D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    if(description->depthOrArraySize > 1)
-        device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+    if(description->sample_count > 1)
+    {
+        device->glTexStorage2DMultisample(target, description->sample_count, mapInternalTextureFormat(description->format), description->width, description->height, GL_FALSE);
+    }
     else
-        device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
+    {
+        if(description->depthOrArraySize > 1)
+            device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+        else
+            device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
+    }
 }
 
 void _agpu_texture::allocateTexture3D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)

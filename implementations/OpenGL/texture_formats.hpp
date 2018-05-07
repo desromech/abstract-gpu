@@ -15,10 +15,17 @@ inline GLenum findTextureTarget(agpu_texture_description *description)
         else
             return GL_TEXTURE_1D;
     case AGPU_TEXTURE_2D:
-        if(description->depthOrArraySize > 1)
-            return GL_TEXTURE_2D_ARRAY;
+        if(description->sample_count > 1)
+        {
+            return GL_TEXTURE_2D_MULTISAMPLE;
+        }
         else
-            return GL_TEXTURE_2D;
+        {
+            if(description->depthOrArraySize > 1)
+                return GL_TEXTURE_2D_ARRAY;
+            else
+                return GL_TEXTURE_2D;
+        }
     case AGPU_TEXTURE_3D:
         return GL_TEXTURE_3D;
     case AGPU_TEXTURE_CUBE:

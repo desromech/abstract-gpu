@@ -290,6 +290,10 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     graphicsState->stencilBackDepthPassOp = mapStencilOperation(stencilBackDepthPassOp);
     graphicsState->stencilBackFunc = mapCompareFunction(stencilBackFunc);
 
+	// Multisampling
+    graphicsState->sampleCount = sampleCount;
+    graphicsState->sampleQuality = sampleQuality;
+
     // Miscellaneous
     graphicsState->primitiveTopology = primitiveType;
     graphicsState->renderTargetCount = (int)renderTargetFormats.size();
@@ -455,6 +459,8 @@ agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
 
 agpu_error _agpu_pipeline_builder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
 {
+	this->sampleCount = sample_count;
+	this->sampleQuality = sample_quality;
     return AGPU_OK;
 }
 

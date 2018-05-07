@@ -506,6 +506,18 @@ void _agpu_command_list::execute()
 
 agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
 {
+    CHECK_POINTER(destFramebuffer);
+    CHECK_POINTER(sourceFramebuffer);
+
+    return addCommand([=] {
+        destFramebuffer->bind(GL_DRAW_FRAMEBUFFER);
+        sourceFramebuffer->bind(GL_READ_FRAMEBUFFER);
+        device->glBlitFramebuffer(
+            0, 0, sourceFramebuffer->width, sourceFramebuffer->height,
+            0, 0, destFramebuffer->width, destFramebuffer->height,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    });
+
     return AGPU_OK;
 }
 

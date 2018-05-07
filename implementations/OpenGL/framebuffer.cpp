@@ -119,7 +119,7 @@ void _agpu_framebuffer::updateAttachments(GLenum target)
     auto status = device->glCheckFramebufferStatus(target);
     if(status != GL_FRAMEBUFFER_COMPLETE)
 	{
-        printError("Warning: %s framebuffer color: %d hasDepth: %d hasStencil: %d\n", framebufferStatusToString(status), renderTargetCount, hasDepth, hasStencil);
+        printError("Warning: %s incomplete framebuffer color: %d hasDepth: %d hasStencil: %d\n", framebufferStatusToString(status), renderTargetCount, hasDepth, hasStencil);
 	}
 	changed = false;
 }

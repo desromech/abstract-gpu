@@ -78,6 +78,10 @@ public:
 	GLenum stencilBackDepthPassOp;
 	GLenum stencilBackFunc;
 
+	// Multisampling
+    agpu_uint sampleCount;
+    agpu_uint sampleQuality;
+
 	// Alpha testing
 	bool alphaTestEnabled;
 	GLenum alphaTestFunction;

@@ -91,6 +91,10 @@ public:
     agpu_stencil_operation stencilBackDepthPassOp;
     agpu_compare_function stencilBackFunc;
 
+    // Multisampling
+    agpu_uint sampleCount;
+    agpu_uint sampleQuality;
+
     // Miscellaneos
     agpu_primitive_topology primitiveType;
 

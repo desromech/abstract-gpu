@@ -247,6 +247,7 @@ public:
     // Texture storage.
     PFNGLTEXSTORAGE1DPROC glTexStorage1D;
     PFNGLTEXSTORAGE2DPROC glTexStorage2D;
+    PFNGLTEXSTORAGE2DMULTISAMPLEPROC glTexStorage2DMultisample;
     PFNGLTEXSTORAGE3DPROC glTexStorage3D;
 
     // Texture

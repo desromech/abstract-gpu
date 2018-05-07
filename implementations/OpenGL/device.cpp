@@ -305,6 +305,7 @@ void _agpu_device::loadExtensions()
     // Texture storage
     LOAD_FUNCTION(glTexStorage1D);
     LOAD_FUNCTION(glTexStorage2D);
+	LOAD_FUNCTION(glTexStorage2DMultisample);
     LOAD_FUNCTION(glTexStorage3D);
 
     // Texture functions

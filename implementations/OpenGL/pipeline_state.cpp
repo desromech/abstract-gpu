@@ -57,6 +57,9 @@ void AgpuGraphicsPipelineStateData::activate()
 		device->glStencilOpSeparate(GL_FRONT, stencilFrontFailOp, stencilFrontDepthFailOp, stencilFrontDepthPassOp);
 		device->glStencilOpSeparate(GL_BACK, stencilBackFailOp, stencilBackDepthFailOp, stencilBackDepthPassOp);
 	}
+
+	// Multisampling
+	enableState(sampleCount > 1, GL_MULTISAMPLE);
 }
 
 void AgpuGraphicsPipelineStateData::updateStencilReference(int reference)
