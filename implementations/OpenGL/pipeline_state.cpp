@@ -71,6 +71,11 @@ void AgpuGraphicsPipelineStateData::updateStencilReference(int reference)
 	device->glStencilFuncSeparate(GL_BACK, stencilBackFunc, reference, stencilReadMask);
 }
 
+void AgpuGraphicsPipelineStateData::setBaseInstance(agpu_uint base_instance)
+{
+	device->glUniform1i(baseInstanceUniformIndex, base_instance);
+}
+
 void AgpuGraphicsPipelineStateData::enableState(bool enabled, GLenum state)
 {
 	if (enabled)
@@ -154,6 +159,30 @@ void _agpu_pipeline_state::activateShaderResourcesOn(CommandListExecutionContext
         // Activate the sampler.
         device->glBindSampler(combination.mappedTextureUnit, samplerBinding);
     }
+}
+
+void _agpu_pipeline_state::setBaseInstance(agpu_uint base_instance)
+{
+	extraStateData->setBaseInstance(base_instance);
+}
+
+void _agpu_pipeline_state::uploadPushConstants(const uint8_t *pushConstantBuffer, size_t pushConstantBufferSize)
+{
+	if(!shaderSignature)
+		return;
+
+	auto uniformVariableCount = shaderSignature->bindingPointsUsed[int(OpenGLResourceBindingType::UniformVariable)];
+	if(uniformVariableCount == 0)
+		return;
+
+	auto usedBufferSize = std::min(pushConstantBufferSize, size_t(uniformVariableCount*4));
+	auto usedUniformCount = usedBufferSize / 4;
+	auto sourceData = reinterpret_cast<const int32_t*> (pushConstantBuffer);
+	for(size_t i = 0; i < usedUniformCount; ++i)
+	{
+		// TODO: Support more types than int.
+		device->glUniform1i(i, sourceData[i]);
+	}
 }
 
 void _agpu_pipeline_state::updateStencilReference(int reference)

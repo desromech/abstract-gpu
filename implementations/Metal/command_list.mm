@@ -249,7 +249,7 @@ void _agpu_command_list::updateComputeState()
         computeEncoder = [buffer computeCommandEncoder];
         currentPipeline->applyComputeCommands(computeEncoder);
     }
-    
+
     activateComputeShaderResourceBindings();
     uploadComputePushConstants();
 }
@@ -270,7 +270,7 @@ void _agpu_command_list::uploadComputePushConstants()
     if(/*!pushConstantsModified || */currentShaderSignature->pushConstantBufferSize == 0)
         return;
 
-    [computeEncoder setBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: 1 + currentShaderSignature->pushConstantBufferIndex];
+    [computeEncoder setBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: currentShaderSignature->pushConstantBufferIndex];
     pushConstantsModified = false;
 }
 
@@ -323,7 +323,7 @@ agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_u
 {
     if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
-    
+
     updateComputeState();
     MTLSize threadgroups;
     threadgroups.width = group_count_x;
@@ -337,7 +337,7 @@ agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
 {
     if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
-    
+
     updateComputeState();
     return AGPU_UNIMPLEMENTED;
 }
@@ -360,7 +360,7 @@ agpu_error _agpu_command_list::close (  )
         [computeEncoder endEncoding];
         computeEncoder = nil;
     }
-    
+
     return AGPU_OK;
 }
 
@@ -387,7 +387,7 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     if(currentComputeDispatchIndirectBuffer)
         currentComputeDispatchIndirectBuffer->release();
     currentComputeDispatchIndirectBuffer = nullptr;
-    
+
     if(currentIndexBuffer)
         currentIndexBuffer->release();
     currentIndexBuffer = nullptr;
@@ -439,7 +439,7 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
         [computeEncoder endEncoding];
         computeEncoder = nil;
     }
-        
+
     auto descriptor = renderpass->createDescriptor(framebuffer);
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];

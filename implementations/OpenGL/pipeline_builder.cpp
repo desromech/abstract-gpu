@@ -155,6 +155,7 @@ void _agpu_pipeline_builder::buildTextureWithSampleCombinationMapInto(TextureWit
 agpu_pipeline_state* _agpu_pipeline_builder::build ()
 {
     GLuint program = 0;
+	GLint baseInstanceUniformIndex = -1;
     bool succeded = true;
     std::vector<agpu_shader_forSignature*> shaderInstances;
     std::vector<MappedTextureWithSamplerCombination> mappedTextureWithSamplerCombinations;
@@ -226,6 +227,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
                 return;
             }
 
+			// Get some special uniforms
+			baseInstanceUniformIndex = device->glGetUniformLocation(program, "SPIRV_Cross_BaseInstance");
+
             succeded = true;
         });
     }
@@ -245,12 +249,15 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
     pipeline->shaderSignature = shaderSignature;
     pipeline->shaderInstances = shaderInstances;
     pipeline->mappedTextureWithSamplerCombinations = mappedTextureWithSamplerCombinations;
-    if (shaderSignature)
+	if (shaderSignature)
         shaderSignature->retain();
 
 	auto graphicsState = new AgpuGraphicsPipelineStateData();
 	graphicsState->device = device;
 	pipeline->extraStateData = graphicsState;
+
+	// Base instance
+	graphicsState->baseInstanceUniformIndex = baseInstanceUniformIndex;
 
 	// Depth state
     graphicsState->depthEnabled = depthEnabled;

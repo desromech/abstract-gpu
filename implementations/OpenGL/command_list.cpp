@@ -41,6 +41,7 @@ CommandListExecutionContext::CommandListExecutionContext()
 {
     memset(shaderResourceBindings, 0, sizeof(shaderResourceBindings));
     memset(computeShaderResourceBindings, 0, sizeof(computeShaderResourceBindings));
+    memset(pushConstantBuffer, 0, sizeof(pushConstantBuffer));
     reset();
 }
 
@@ -104,6 +105,9 @@ void CommandListExecutionContext::reset()
     hasValidActivePipeline = false;
 	hasValidShaderResources = false;
 	hasValidComputeShaderResources = false;
+    hasValidGraphicsPushConstants = false;
+    hasValidComputePushConstants = false;
+    memset(pushConstantBuffer, 0, sizeof(pushConstantBuffer));
 
     //glActiveTexture(GL_TEXTURE0);
     // TODO: Unbind the samplers
@@ -142,6 +146,18 @@ void CommandListExecutionContext::validateBeforeDrawCall()
         hasValidComputeShaderResources = false;
         activePipeline->activateShaderResourcesOn(this, shaderResourceBindings);
     }
+
+    if(!hasValidGraphicsPushConstants)
+    {
+        activePipeline->uploadPushConstants(pushConstantBuffer, sizeof(pushConstantBuffer));
+        hasValidGraphicsPushConstants = true;
+    }
+}
+
+void CommandListExecutionContext::setBaseInstance(agpu_uint base_instance)
+{
+    if(activePipeline)
+        activePipeline->setBaseInstance(base_instance);
 }
 
 void CommandListExecutionContext::validateBeforeComputeDispatch()
@@ -172,6 +188,12 @@ void CommandListExecutionContext::validateBeforeComputeDispatch()
         hasValidComputeShaderResources = true;
         hasValidShaderResources = false;
         activePipeline->activateShaderResourcesOn(this, computeShaderResourceBindings);
+    }
+
+    if(!hasValidComputePushConstants)
+    {
+        activePipeline->uploadPushConstants(pushConstantBuffer, sizeof(pushConstantBuffer));
+        hasValidComputePushConstants = true;
     }
 }
 
@@ -333,7 +355,14 @@ agpu_error _agpu_command_list::useComputeShaderResources ( agpu_shader_resource_
 agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
 {
     CHECK_POINTER(values);
-    return AGPU_UNIMPLEMENTED;
+
+    auto dataCopy = std::shared_ptr<uint8_t[]> (new uint8_t(size));
+    memcpy(dataCopy.get(), values, size);
+    return addCommand([=] {
+        memcpy(executionContext.pushConstantBuffer + offset, dataCopy.get(), size);
+        executionContext.hasValidGraphicsPushConstants = false;
+        executionContext.hasValidComputePushConstants = false;
+    });
 }
 
 agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
@@ -344,6 +373,8 @@ agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint in
 
         currentVertexBinding->bind();
         executionContext.validateBeforeDrawCall();
+        executionContext.setBaseInstance(base_instance);
+
         device->glDrawArraysInstancedBaseInstance(executionContext.primitiveMode, first_vertex, vertex_count, instance_count, base_instance);
     });
 }
@@ -357,6 +388,7 @@ agpu_error _agpu_command_list::drawArraysIndirect(agpu_size offset, agpu_size dr
         currentVertexBinding->bind();
         currentDrawBuffer->bind();
         executionContext.validateBeforeDrawCall();
+        executionContext.setBaseInstance(0);
 
         if(drawcount > 1)
             device->glMultiDrawArraysIndirect(executionContext.primitiveMode, reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
@@ -374,6 +406,8 @@ agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint i
         currentVertexBinding->bind();
         currentIndexBuffer->bind();
         executionContext.validateBeforeDrawCall();
+        executionContext.setBaseInstance(base_instance);
+
         size_t offset = currentIndexBuffer->description.stride*first_index;
         device->glDrawElementsInstancedBaseVertexBaseInstance(executionContext.primitiveMode, index_count,
             mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> (offset),
@@ -391,6 +425,7 @@ agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset, agpu_size 
         currentIndexBuffer->bind();
         currentDrawBuffer->bind();
         executionContext.validateBeforeDrawCall();
+        executionContext.setBaseInstance(0);
 
         if(drawcount > 1)
             device->glMultiDrawElementsIndirect(executionContext.primitiveMode, mapIndexType(currentIndexBuffer->description.stride), reinterpret_cast<void*> ((size_t)offset), (GLsizei)drawcount, currentDrawBuffer->description.stride);
