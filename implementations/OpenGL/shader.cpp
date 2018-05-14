@@ -255,6 +255,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	glsl.set_entry_point(entryPoint, mapExecutionModel(type));
 
 	// Combine the samplers and the images.
+	glsl.build_dummy_sampler_for_combined_images();
 	glsl.build_combined_image_samplers();
 
 	// Modify the resources

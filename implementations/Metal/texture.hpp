@@ -12,10 +12,11 @@ public:
     static agpu_texture *create(agpu_device *device, agpu_texture_description* description);
 
     agpu_error getDescription ( agpu_texture_description* description );
-    agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
+    agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region );
     agpu_error unmapLevel (  );
     agpu_error readData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer );
     agpu_error uploadData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+    agpu_error uploadSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data );
     agpu_error discardUploadBuffer (  );
     agpu_error discardReadbackBuffer (  );
     agpu_error getFullViewDescription ( agpu_texture_view_description* result );

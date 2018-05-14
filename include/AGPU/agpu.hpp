@@ -760,9 +760,9 @@ public:
 		AgpuThrowIfFailed(agpuGetTextureDescription( this, description ));
 	}
 
-	inline agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+	inline agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region )
 	{
-		return agpuMapTextureLevel( this, level, arrayIndex, flags );
+		return agpuMapTextureLevel( this, level, arrayIndex, flags, region );
 	}
 
 	inline void unmapLevel (  )
@@ -778,6 +778,11 @@ public:
 	inline void uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 	{
 		AgpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
+	}
+
+	inline void uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+	{
+		AgpuThrowIfFailed(agpuUploadTextureSubData( this, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data ));
 	}
 
 	inline void discardUploadBuffer (  )

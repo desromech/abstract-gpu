@@ -490,6 +490,8 @@ typedef struct agpu_texture_description {
 	agpu_texture_flags flags;
 	agpu_uint sample_count;
 	agpu_uint sample_quality;
+	agpu_buffer* upload_buffer;
+	agpu_buffer* readback_buffer;
 } agpu_texture_description;
 
 /* Structure agpu_components_swizzle. */
@@ -599,6 +601,23 @@ typedef struct agpu_inheritance_info {
 	agpu_int flat;
 	agpu_renderpass* renderpass;
 } agpu_inheritance_info;
+
+/* Structure agpu_size3d. */
+typedef struct agpu_size3d {
+	agpu_uint width;
+	agpu_uint height;
+	agpu_uint depth;
+} agpu_size3d;
+
+/* Structure agpu_region3d. */
+typedef struct agpu_region3d {
+	agpu_uint x;
+	agpu_uint y;
+	agpu_uint z;
+	agpu_uint width;
+	agpu_uint height;
+	agpu_uint depth;
+} agpu_region3d;
 
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms );
@@ -848,10 +867,11 @@ AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu
 typedef agpu_error (*agpuAddTextureReference_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuReleaseTexture_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuGetTextureDescription_FUN) ( agpu_texture* texture, agpu_texture_description* description );
-typedef agpu_pointer (*agpuMapTextureLevel_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
+typedef agpu_pointer (*agpuMapTextureLevel_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region );
 typedef agpu_error (*agpuUnmapTextureLevel_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuReadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer );
 typedef agpu_error (*agpuUploadTextureData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+typedef agpu_error (*agpuUploadTextureSubData_FUN) ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data );
 typedef agpu_error (*agpuDiscardTextureUploadBuffer_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuDiscardTextureReadbackBuffer_FUN) ( agpu_texture* texture );
 typedef agpu_error (*agpuGetTextureFullViewDescription_FUN) ( agpu_texture* texture, agpu_texture_view_description* result );
@@ -859,10 +879,11 @@ typedef agpu_error (*agpuGetTextureFullViewDescription_FUN) ( agpu_texture* text
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description );
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags );
+AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region );
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer );
 AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data );
+AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data );
 AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture );
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription ( agpu_texture* texture, agpu_texture_view_description* result );
@@ -1114,6 +1135,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuUnmapTextureLevel_FUN agpuUnmapTextureLevel;
 	agpuReadTextureData_FUN agpuReadTextureData;
 	agpuUploadTextureData_FUN agpuUploadTextureData;
+	agpuUploadTextureSubData_FUN agpuUploadTextureSubData;
 	agpuDiscardTextureUploadBuffer_FUN agpuDiscardTextureUploadBuffer;
 	agpuDiscardTextureReadbackBuffer_FUN agpuDiscardTextureReadbackBuffer;
 	agpuGetTextureFullViewDescription_FUN agpuGetTextureFullViewDescription;

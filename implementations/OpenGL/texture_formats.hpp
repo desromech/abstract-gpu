@@ -363,13 +363,13 @@ inline GLenum mapExternalFormatType(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R16_SNORM:                return GL_SHORT;
 	case AGPU_TEXTURE_FORMAT_R16_SINT:                 return GL_SHORT;
 
-	case AGPU_TEXTURE_FORMAT_R8_TYPELESS:              return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_UNORM:                 return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_UINT:                  return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_SNORM:                 return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_SINT:                  return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_A8_UNORM:                 return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R1_UNORM:                 return GL_UNSIGNED_SHORT;
+	case AGPU_TEXTURE_FORMAT_R8_TYPELESS:              return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_UNORM:                 return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_UINT:                  return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_SNORM:                 return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_SINT:                  return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_A8_UNORM:                 return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R1_UNORM:                 return GL_UNSIGNED_BYTE;
 
 /*	case AGPU_TEXTURE_FORMAT_BC1_TYPELESS:
 	case AGPU_TEXTURE_FORMAT_BC1_UNORM:
