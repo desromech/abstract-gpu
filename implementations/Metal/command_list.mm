@@ -461,7 +461,37 @@ agpu_error _agpu_command_list::endRenderPass (  )
 
 agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(destFramebuffer);
+    CHECK_POINTER(sourceFramebuffer);
+
+    auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+    auto passAttachment = descriptor.colorAttachments[0];
+    
+    // Set the source attachment
+    passAttachment.texture = sourceFramebuffer->getColorTexture(0);
+    passAttachment.loadAction = MTLLoadActionLoad;
+    passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
+    
+    if(!sourceFramebuffer->ownedBySwapChain)
+    {
+        auto &view = sourceFramebuffer->colorBufferDescriptions[0];
+        passAttachment.level = view.subresource_range.base_miplevel;
+        passAttachment.slice = view.subresource_range.base_arraylayer;            
+    }
+    
+    // Set the resolve attachment
+    passAttachment.resolveTexture = destFramebuffer->getColorTexture(0);
+    if(!destFramebuffer->ownedBySwapChain)
+    {
+        auto &view = sourceFramebuffer->colorBufferDescriptions[0];
+        passAttachment.resolveLevel = view.subresource_range.base_miplevel;
+        passAttachment.resolveSlice = view.subresource_range.base_arraylayer;            
+    }
+    
+    renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
+    [descriptor release];
+    [renderEncoder endEncoding];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
