@@ -356,7 +356,7 @@ agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size,
 {
     CHECK_POINTER(values);
 
-    auto dataCopy = std::shared_ptr<uint8_t[]> (new uint8_t(size));
+    auto dataCopy = std::shared_ptr<uint8_t[]> (new uint8_t[size]);
     memcpy(dataCopy.get(), values, size);
     return addCommand([=] {
         memcpy(executionContext.pushConstantBuffer + offset, dataCopy.get(), size);
