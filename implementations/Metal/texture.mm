@@ -121,7 +121,7 @@ agpu_error _agpu_texture::uploadData ( agpu_int level, agpu_int arrayIndex, agpu
     return AGPU_OK;
 }
 
-agpu_error uploadSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+agpu_error _agpu_texture::uploadSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
 {
     CHECK_POINTER(data);
 
