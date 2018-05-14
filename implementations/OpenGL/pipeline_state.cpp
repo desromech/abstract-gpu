@@ -4,6 +4,7 @@
 #include "command_list.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include <algorithm>
 
 void AgpuGraphicsPipelineStateData::activate()
 {
