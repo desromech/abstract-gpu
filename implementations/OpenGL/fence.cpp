@@ -24,14 +24,16 @@ agpu_fence* _agpu_fence::create(agpu_device* device)
 
 agpu_error _agpu_fence::waitOnClient()
 {
-    if(fenceObject)
-    {
-        device->onMainContextBlocking([&]() {
-            device->glClientWaitSync(fenceObject, 0, -1);
-			device->glDeleteSync(fenceObject);
-			fenceObject = nullptr;
-        });
-    }
+    device->onMainContextBlocking([&]() {
+        if(fenceObject)
+        {
+            GLenum waitReturn = GL_UNSIGNALED;
+            while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
+                waitReturn = device->glClientWaitSync(fenceObject, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+        	device->glDeleteSync(fenceObject);
+        	fenceObject = nullptr;
+        }
+    });
     return AGPU_OK;
 }
 

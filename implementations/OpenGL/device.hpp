@@ -283,6 +283,10 @@ public:
 
     // Clip control
     PFNGLCLIPCONTROLPROC glClipControl;
+
+    // Memory barrier
+    PFNGLFLUSHMAPPEDBUFFERRANGEPROC glFlushMappedBufferRange;
+    PFNGLMEMORYBARRIERPROC glMemoryBarrier;
 };
 
 #endif //_AGPU_DEVICE_HPP_
