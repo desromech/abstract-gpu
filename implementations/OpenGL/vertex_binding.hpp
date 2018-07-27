@@ -17,13 +17,15 @@ public:
     static agpu_vertex_binding *createVertexBinding(agpu_device *device, agpu_vertex_layout *layout);
 
     agpu_error bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers);
+	agpu_error bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size *offsets);
 
-	agpu_error activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute );
+	agpu_error activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute, agpu_size bufferOffset );
 
 public:
 	agpu_device *device;
     agpu_vertex_layout *vertexLayout;
     std::vector<agpu_buffer*> vertexBuffers;
+	std::vector<agpu_size> offsets;
 
     void bind();
     agpu_error updateBindings();

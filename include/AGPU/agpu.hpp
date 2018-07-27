@@ -882,6 +882,11 @@ public:
 		AgpuThrowIfFailed(agpuBindVertexBuffers( this, count, vertex_buffers ));
 	}
 
+	inline void bindVertexBuffersWithOffsets ( agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
+	{
+		AgpuThrowIfFailed(agpuBindVertexBuffersWithOffsets( this, count, vertex_buffers, offsets ));
+	}
+
 };
 
 typedef agpu_ref<agpu_vertex_binding> agpu_vertex_binding_ref;

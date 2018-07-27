@@ -1176,6 +1176,11 @@
                 <arg name="count" type="uint" />
                 <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
             </method>
+            <method name="bindVertexBuffersWithOffsets" cname="BindVertexBuffersWithOffsets" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
+                <arg name="offsets" type="size*"/>
+            </method>
         </interface>
 
         <interface name="vertex_layout">

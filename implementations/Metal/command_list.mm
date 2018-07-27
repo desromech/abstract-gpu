@@ -209,6 +209,7 @@ void _agpu_command_list::activateVertexBinding ( )
     }
 
     auto &buffers = currentVertexBinding->buffers;
+    auto &offsets = currentVertexBinding->offsets;
     vertexBufferCount = buffers.size();
     for(size_t i = 0; i < vertexBufferCount; ++i)
     {
@@ -216,7 +217,7 @@ void _agpu_command_list::activateVertexBinding ( )
         if(!buffer)
             return;
 
-        [renderEncoder setVertexBuffer: buffer->handle offset: 0 atIndex: i];
+        [renderEncoder setVertexBuffer: buffer->handle offset: offsets[i] atIndex: i];
     }
 }
 
@@ -466,28 +467,28 @@ agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFrameb
 
     auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     auto passAttachment = descriptor.colorAttachments[0];
-    
+
     // Set the source attachment
     passAttachment.texture = sourceFramebuffer->getColorTexture(0);
     passAttachment.loadAction = MTLLoadActionLoad;
     passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
-    
+
     if(!sourceFramebuffer->ownedBySwapChain)
     {
         auto &view = sourceFramebuffer->colorBufferDescriptions[0];
         passAttachment.level = view.subresource_range.base_miplevel;
-        passAttachment.slice = view.subresource_range.base_arraylayer;            
+        passAttachment.slice = view.subresource_range.base_arraylayer;
     }
-    
+
     // Set the resolve attachment
     passAttachment.resolveTexture = destFramebuffer->getColorTexture(0);
     if(!destFramebuffer->ownedBySwapChain)
     {
         auto &view = sourceFramebuffer->colorBufferDescriptions[0];
         passAttachment.resolveLevel = view.subresource_range.base_miplevel;
-        passAttachment.resolveSlice = view.subresource_range.base_arraylayer;            
+        passAttachment.resolveSlice = view.subresource_range.base_arraylayer;
     }
-    
+
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
     [renderEncoder endEncoding];

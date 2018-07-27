@@ -11,6 +11,7 @@ struct _agpu_vertex_binding : public Object<_agpu_vertex_binding>
     static agpu_vertex_binding *create(agpu_device *device, agpu_vertex_layout* layout);
 
     agpu_error bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers);
+    agpu_error bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size *offsets);
 
     agpu_device *device;
 

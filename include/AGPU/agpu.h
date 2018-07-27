@@ -913,10 +913,12 @@ AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer );
 typedef agpu_error (*agpuAddVertexBindingReference_FUN) ( agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuReleaseVertexBinding_FUN) ( agpu_vertex_binding* vertex_binding );
 typedef agpu_error (*agpuBindVertexBuffers_FUN) ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers );
+typedef agpu_error (*agpuBindVertexBuffersWithOffsets_FUN) ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets );
 
 AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuReleaseVertexBinding ( agpu_vertex_binding* vertex_binding );
 AGPU_EXPORT agpu_error agpuBindVertexBuffers ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers );
+AGPU_EXPORT agpu_error agpuBindVertexBuffersWithOffsets ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets );
 
 /* Methods for interface agpu_vertex_layout. */
 typedef agpu_error (*agpuAddVertexLayoutReference_FUN) ( agpu_vertex_layout* vertex_layout );
@@ -1151,6 +1153,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddVertexBindingReference_FUN agpuAddVertexBindingReference;
 	agpuReleaseVertexBinding_FUN agpuReleaseVertexBinding;
 	agpuBindVertexBuffers_FUN agpuBindVertexBuffers;
+	agpuBindVertexBuffersWithOffsets_FUN agpuBindVertexBuffersWithOffsets;
 	agpuAddVertexLayoutReference_FUN agpuAddVertexLayoutReference;
 	agpuReleaseVertexLayout_FUN agpuReleaseVertexLayout;
 	agpuAddVertexAttributeBindings_FUN agpuAddVertexAttributeBindings;

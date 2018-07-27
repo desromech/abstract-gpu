@@ -1033,6 +1033,14 @@ AGPU_EXPORT agpu_error agpuBindVertexBuffers ( agpu_vertex_binding* vertex_bindi
 	return (*dispatchTable)->agpuBindVertexBuffers ( vertex_binding, count, vertex_buffers );
 }
 
+AGPU_EXPORT agpu_error agpuBindVertexBuffersWithOffsets ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
+{
+	if (vertex_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vertex_binding);
+	return (*dispatchTable)->agpuBindVertexBuffersWithOffsets ( vertex_binding, count, vertex_buffers, offsets );
+}
+
 AGPU_EXPORT agpu_error agpuAddVertexLayoutReference ( agpu_vertex_layout* vertex_layout )
 {
 	if (vertex_layout == nullptr)
