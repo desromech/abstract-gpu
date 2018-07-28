@@ -92,7 +92,7 @@ agpu_error _agpu_vertex_binding::updateBindings()
             newBuffer->bind();
 
         // Activate the attribute
-        auto error = activateVertexAttribute(newBuffer->description.stride, attr, offsets[attr.buffer]);
+        auto error = activateVertexAttribute(vertexLayout->strides[attr.buffer], attr, offsets[attr.buffer]);
         if (error < 0)
             return error;
     }
