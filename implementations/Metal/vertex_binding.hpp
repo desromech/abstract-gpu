@@ -17,7 +17,7 @@ public:
 
     agpu_device *device;
     std::vector<agpu_buffer*> buffers;
-    std::vector<agpu_size*> offsets;
+    std::vector<agpu_size> offsets;
 };
 
 #endif //AGPU_METAL_VERTEX_BINDING_HPP
