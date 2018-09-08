@@ -202,13 +202,13 @@ bool _agpu_device::checkVulkanImplementation()
         applicationInfo.pApplicationName = "Generic Abstract GPU Application";
     if (!applicationInfo.pEngineName)
         applicationInfo.pEngineName = "Abstract GPU";
-	applicationInfo.apiVersion = VK_API_VERSION_1_0;
+    applicationInfo.apiVersion = VK_API_VERSION_1_0;
 
     VkInstanceCreateInfo createInfo;
     memset(&createInfo, 0, sizeof(createInfo));
     createInfo.pApplicationInfo = &applicationInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	
+
     // Create the instace
     VkInstance vulkanInstance;
     error = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
@@ -426,6 +426,29 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         if (error)
             printError("Failed to register debug report callback.\n");
     }
+
+    // Presenting directly into a display
+    hasDisplay = hasExtension("VK_KHR_display", instanceExtensionProperties);
+    if(hasDisplay)
+    {
+        GET_INSTANCE_PROC_ADDR(GetPhysicalDeviceDisplayPropertiesKHR);
+        GET_INSTANCE_PROC_ADDR(GetPhysicalDeviceDisplayPlanePropertiesKHR);
+        GET_INSTANCE_PROC_ADDR(GetDisplayPlaneSupportedDisplaysKHR);
+        GET_INSTANCE_PROC_ADDR(GetDisplayModePropertiesKHR);
+        GET_INSTANCE_PROC_ADDR(CreateDisplayModeKHR);
+        GET_INSTANCE_PROC_ADDR(GetDisplayPlaneCapabilitiesKHR);
+        GET_INSTANCE_PROC_ADDR(CreateDisplayPlaneSurfaceKHR);
+    }
+
+    hasDirectModeDisplay = hasExtension("VK_EXT_direct_mode_display", instanceExtensionProperties);
+    if(hasDirectModeDisplay)
+    {
+        GET_INSTANCE_PROC_ADDR(ReleaseDisplayEXT);
+    }
+
+    hasAcquireXLibDisplay = hasExtension("VK_EXT_acquire_xlib_display", instanceExtensionProperties);
+
+    hasDisplayControl = hasExtension("VK_EXT_display_control", deviceExtensionProperties);
 
     // Open all the availables queues.
     std::vector<VkDeviceQueueCreateInfo> createQueueInfos;

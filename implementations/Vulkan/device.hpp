@@ -18,6 +18,8 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+#define DECLARE_VK_EXTENSION_FP(name) PFN_vk ## name fp ## name
+
 /**
 * Agpu vulkan device
 */
@@ -57,7 +59,7 @@ public:
     VkPhysicalDeviceMemoryProperties memoryProperties;
     void *displayHandle;
 
-    PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr;
+    DECLARE_VK_EXTENSION_FP(GetDeviceProcAddr);
 
     // Debug layer extension pointers
     PFN_vkCreateDebugReportCallbackEXT fpCreateDebugReportCallbackEXT;
@@ -66,15 +68,35 @@ public:
     VkDebugReportCallbackEXT debugReportCallback;
 
     // Required extension pointers.
-    PFN_vkGetPhysicalDeviceSurfaceSupportKHR fpGetPhysicalDeviceSurfaceSupportKHR;
-    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
-    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR fpGetPhysicalDeviceSurfaceFormatsKHR;
-    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR fpGetPhysicalDeviceSurfacePresentModesKHR;
-    PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR;
-    PFN_vkCreateSwapchainKHR fpCreateSwapchainKHR;
-    PFN_vkDestroySwapchainKHR fpDestroySwapchainKHR;
-    PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR;
-    PFN_vkQueuePresentKHR fpQueuePresentKHR;
+    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceSurfaceSupportKHR);
+    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceSurfaceFormatsKHR);
+    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceSurfacePresentModesKHR);
+    DECLARE_VK_EXTENSION_FP(GetSwapchainImagesKHR);
+    DECLARE_VK_EXTENSION_FP(CreateSwapchainKHR);
+    DECLARE_VK_EXTENSION_FP(DestroySwapchainKHR);
+    DECLARE_VK_EXTENSION_FP(AcquireNextImageKHR);
+    DECLARE_VK_EXTENSION_FP(QueuePresentKHR);
+
+    // Display extension
+    bool hasDisplay;
+    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceDisplayPropertiesKHR);
+    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceDisplayPlanePropertiesKHR);
+    DECLARE_VK_EXTENSION_FP(GetDisplayPlaneSupportedDisplaysKHR);
+    DECLARE_VK_EXTENSION_FP(GetDisplayModePropertiesKHR);
+    DECLARE_VK_EXTENSION_FP(CreateDisplayModeKHR);
+    DECLARE_VK_EXTENSION_FP(GetDisplayPlaneCapabilitiesKHR);
+    DECLARE_VK_EXTENSION_FP(CreateDisplayPlaneSurfaceKHR);
+
+    // Display direct extension
+    bool hasDirectModeDisplay;
+    DECLARE_VK_EXTENSION_FP(ReleaseDisplayEXT);
+
+    // Acquire xlib
+    bool hasAcquireXLibDisplay;
+
+    // Display control
+    bool hasDisplayControl;
 
     // Queues
     std::vector<agpu_command_queue*> graphicsCommandQueues;

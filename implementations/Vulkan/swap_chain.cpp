@@ -44,13 +44,51 @@ void _agpu_swap_chain::lostReferences()
         vkDestroySurfaceKHR(device->vulkanInstance, surface, nullptr);
 }
 
-_agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo)
+static VkResult createXlibSurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
 {
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    if (!graphicsCommandQueue || !createInfo)
-        return nullptr;
+#ifdef __unix__
+    if(!device->displayHandle)
+        device->displayHandle = XOpenDisplay(nullptr);
 
-#if defined(_WIN32)
+    if (!device->displayHandle || !createInfo->window)
+        return VK_INCOMPLETE;
+
+    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
+    memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.connection = XGetXCBConnection((Display*)device->displayHandle);
+    surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
+
+    return vkCreateXcbSurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
+#else
+    return VK_INCOMPLETE;
+#endif
+}
+
+static VkResult createXcbSurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+{
+#ifdef __unix__
+    if(!device->displayHandle)
+        device->displayHandle = xcb_connect(nullptr, nullptr);
+
+    if (!device->displayHandle || !createInfo->window)
+        return VK_INCOMPLETE;
+
+    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
+    memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.connection = XGetXCBConnection((Display*)device->displayHandle);
+    surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
+
+    return vkCreateXcbSurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
+#else
+    return VK_INCOMPLETE;
+#endif
+}
+
+static VkResult createWin32Surface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+{
+#ifdef _WIN32
     if (!createInfo->window)
         return nullptr;
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo;
@@ -59,25 +97,47 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
     surfaceCreateInfo.hwnd = (HWND)createInfo->window;
 
-    auto error = vkCreateWin32SurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, &surface);
+    return vkCreateWin32SurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
+#else
+    return VK_INCOMPLETE;
+#endif
+}
+
+static VkResult createDisplaySurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+{
+    return VK_INCOMPLETE;
+}
+
+static VkResult createDefaultSurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+{
+#if defined(_WIN32)
+    return createWin32Surface(device, graphicsCommandQueue, createInfo, surface);
 #elif defined(__unix__)
-    if(!device->displayHandle)
-        device->displayHandle = XOpenDisplay(nullptr);
-
-    if (!createInfo->window)
-        return nullptr;
-
-    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
-    memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
-    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.connection = XGetXCBConnection((Display*)device->displayHandle);
-    surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
-
-    auto error = vkCreateXcbSurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, &surface);
+    return createXlibSurface(device, graphicsCommandQueue, createInfo, surface);
 #else
 #error unsupported platform
 #endif
-    if (error)
+}
+
+_agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo)
+{
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    if (!graphicsCommandQueue || !createInfo)
+        return nullptr;
+
+    VkResult error = VK_ERROR_FEATURE_NOT_PRESENT;
+    if(!createInfo->window_system_name)
+        error = createDefaultSurface(device, graphicsCommandQueue, createInfo, &surface);
+    else if(!strcmp(createInfo->window_system_name, "xlib"))
+        error = createXlibSurface(device, graphicsCommandQueue, createInfo, &surface);
+    else if(!strcmp(createInfo->window_system_name, "xcb"))
+        error = createXcbSurface(device, graphicsCommandQueue, createInfo, &surface);
+    else if(!strcmp(createInfo->window_system_name, "win32"))
+        error = createWin32Surface(device, graphicsCommandQueue, createInfo, &surface);
+    else if(!strcmp(createInfo->window_system_name, "display"))
+        error = createDisplaySurface(device, graphicsCommandQueue, createInfo, &surface);
+
+    if(error || surface == VK_NULL_HANDLE)
     {
         printError("Failed to create the swap chain surface\n");
         return nullptr;

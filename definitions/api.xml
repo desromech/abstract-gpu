@@ -206,12 +206,19 @@
             <constant name="Patches" value="9" />
 		</enum>
 
+        <enum name="polygon_mode">
+            <constant name="PolygonModeFill" value="0" />
+            <constant name="PolygonModeLine" value="1" />
+            <constant name="PolygonModePoint" value="2" />
+        </enum>
+
         <enum name="feature">
             <constant name="FeaturePersistentMemoryMapping" value="1" />
             <constant name="FeatureCoherentMemoryMapping" value="2" />
             <constant name="FeaturePersistentCoherentMemoryMapping" value="3" />
             <constant name="FeatureCommandListReuse" value="4" />
             <constant name="FeatureNonEmulatedCommandListReuse" value="5" />
+            <constant name="FeatureDirectDisplay" value="6" />
         </enum>
 
         <enum name="renderpass_attachment_action">
@@ -270,6 +277,7 @@
 			<constant name="ComputeShader" value="3" />
 			<constant name="TessellationControlShader" value="4" />
 			<constant name="TessellationEvaluationShader" value="5" />
+			<constant name="Library" value="5" />
 		</enum>
 
 		<enum name="buffer_usage_type">
@@ -816,6 +824,10 @@
                 <arg name="function" type="compare_function" />
             </method>
 
+            <method name="setPolygonMode" cname="SetPolygonMode" returnType="error">
+                <arg name="mode" type="polygon_mode" />
+            </method>
+
             <method name="setStencilState" cname="SetStencilState" returnType="error">
                 <arg name="enabled" type="bool" />
                 <arg name="writeMask" type="int" />
@@ -1040,6 +1052,11 @@
                 <arg name="values" type="pointer" />
             </method>
 
+            <method name="setDepthBias" cname="PushConstants" returnType="error">
+                <arg name="constant_factor" type="float" />
+                <arg name="clamp" type="float" />
+                <arg name="slope_factor" type="float" />
+            </method>
         </interface>
 
         <interface name="texture">
