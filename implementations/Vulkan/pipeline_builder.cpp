@@ -626,7 +626,7 @@ AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder
     return pipeline_builder->setCullMode(mode);
 }
 
-AGPU_EXPORT agpu_error setPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
+AGPU_EXPORT agpu_error agpuSetPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setPolygonMode(mode);

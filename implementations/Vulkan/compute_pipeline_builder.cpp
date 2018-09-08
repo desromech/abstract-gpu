@@ -49,7 +49,7 @@ agpu_error _agpu_compute_pipeline_builder::attachShader ( agpu_shader* newShader
 {
     CHECK_POINTER(newShader);
 
-    return attachShaderWithEntryPoint(newShader, newShader->type, "main");
+    return attachShaderWithEntryPoint(newShader, AGPU_COMPUTE_SHADER, "main");
 }
 
 agpu_error _agpu_compute_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* newShader, agpu_shader_type type, agpu_cstring entry_point )

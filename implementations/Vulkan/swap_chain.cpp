@@ -90,7 +90,7 @@ static VkResult createWin32Surface(agpu_device *device, agpu_command_queue* grap
 {
 #ifdef _WIN32
     if (!createInfo->window)
-        return nullptr;
+        return VK_INCOMPLETE;
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo;
     memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;

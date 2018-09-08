@@ -17,7 +17,7 @@ public:
 
     agpu_pipeline_state* build ( );
     agpu_error attachShader ( agpu_shader* shader );
-    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point );
+    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
     agpu_size getBuildingLogLength (  );
     agpu_error getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
     agpu_error setBlendState ( agpu_int renderTargetMask, agpu_bool enabled );
@@ -25,6 +25,7 @@ public:
     agpu_error setColorMask ( agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
     agpu_error setFrontFace ( agpu_face_winding winding );
     agpu_error setCullMode ( agpu_cull_mode mode );
+    agpu_error setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor );
     agpu_error setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
     agpu_error setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
     agpu_error setStencilFrontFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
@@ -33,6 +34,7 @@ public:
     agpu_error setRenderTargetFormat ( agpu_uint index, agpu_texture_format format );
     agpu_error setDepthStencilFormat ( agpu_texture_format format );
     agpu_error setPrimitiveType ( agpu_primitive_topology type );
+    agpu_error setPolygonMode(agpu_polygon_mode mode);
     agpu_error setVertexLayout ( agpu_vertex_layout* layout );
     agpu_error setPipelineShaderSignature ( agpu_shader_signature* signature );
     agpu_error setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality );
@@ -50,7 +52,7 @@ public:
     agpu_bool depthEnabled;
     agpu_bool stencilEnabled;
     agpu_uint vertexBufferCount;
-    
+
     std::vector<std::pair<agpu_shader*, std::string> > attachedShaders;
 };
 

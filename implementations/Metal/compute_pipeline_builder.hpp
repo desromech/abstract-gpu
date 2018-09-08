@@ -13,7 +13,7 @@ struct _agpu_compute_pipeline_builder : public Object<_agpu_compute_pipeline_bui
 
     agpu_pipeline_state* build ();
     agpu_error attachShader ( agpu_shader* shader );
-    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point );
+    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
     agpu_size getPipelineBuildingLogLength ( );
     agpu_error getPipelineBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
     agpu_error setShaderSignature ( agpu_shader_signature* newSignature );
@@ -23,9 +23,9 @@ struct _agpu_compute_pipeline_builder : public Object<_agpu_compute_pipeline_bui
     agpu_shader* shader;
     std::string shaderEntryPoint;
     agpu_shader_signature* shaderSignature;
-    
+
     std::string buildingLog;
-    
+
     MTLSize localSize;
 };
 

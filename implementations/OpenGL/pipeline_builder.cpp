@@ -609,7 +609,6 @@ AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipelin
 {
 	CHECK_POINTER(pipeline_builder);
 	return pipeline_builder->setRenderTargetCount(count);
-
 }
 
 AGPU_EXPORT agpu_error agpuSetRenderTargetFormat(agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format)
@@ -642,7 +641,7 @@ AGPU_EXPORT agpu_error agpuSetSampleDescription(agpu_pipeline_builder* pipeline_
     return pipeline_builder->setSampleDescription(sample_count, sample_quality);
 }
 
-AGPU_EXPORT agpu_error setPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
+AGPU_EXPORT agpu_error agpuSetPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setPolygonMode(mode);

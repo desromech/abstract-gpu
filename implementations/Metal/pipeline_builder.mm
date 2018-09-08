@@ -46,7 +46,7 @@ _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
 agpu_pipeline_state* _agpu_pipeline_builder::build ( )
 {
     NSError *error;
-    
+
     bool succeded = true;
     for(auto &shaderWithEntryPoint : attachedShaders)
     {
@@ -56,7 +56,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
             succeded = false;
             break;
         }
-    
+
         agpu_shader_forSignature *shaderInstance = nullptr;
         auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, shaderWithEntryPoint.second, &buildingLog, &shaderInstance);
         if(error || !shaderInstance || !shaderInstance->function)
@@ -66,7 +66,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
             succeded = false;
             break;
         }
-        
+
         switch(shader->type)
         {
         case AGPU_VERTEX_SHADER:
@@ -79,15 +79,15 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
             succeded = false;
             break;
         }
-        
+
         shaderInstance->release();
         if(!succeded)
             break;
     }
-    
+
     if(!succeded)
         return nullptr;
-        
+
     auto pipelineState = [device->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
     if(!pipelineState)
     {
@@ -105,12 +105,17 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
-    return attachShaderWithEntryPoint(shader, "main");
+    CHECK_POINTER(shader);
+    return attachShaderWithEntryPoint(shader, shader->type, "main");
 }
 
-agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(shader);
+    CHECK_POINTER(entry_point);
+    if(type == AGPU_LIBRARY_SHADER)
+        return AGPU_INVALID_PARAMETER;
+
     shader->retain();
     attachedShaders.push_back(std::make_pair(shader, entry_point));
     return AGPU_OK;
@@ -234,6 +239,12 @@ agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
     }
 }
 
+agpu_error _agpu_pipeline_builder::setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+    // TODO: Implement myself
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
     depthEnabled = enabled;
@@ -325,6 +336,12 @@ agpu_error _agpu_pipeline_builder::setPrimitiveType ( agpu_primitive_topology ty
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setPolygonMode(agpu_polygon_mode mode)
+{
+    // TODO: Implement myself
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setVertexLayout ( agpu_vertex_layout* layout )
 {
     CHECK_POINTER(layout);
@@ -375,10 +392,10 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
     return pipeline_builder->attachShader(shader);
 }
 
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
+    return pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )
@@ -422,6 +439,12 @@ AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setCullMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setDepthBias(constant_factor, clamp, slope_factor);
 }
 
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
@@ -488,4 +511,10 @@ AGPU_EXPORT agpu_error agpuSetSampleDescription ( agpu_pipeline_builder* pipelin
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setSampleDescription(sample_count, sample_quality);
+}
+
+AGPU_EXPORT agpu_error agpuSetPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setPolygonMode(mode);
 }
