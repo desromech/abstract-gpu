@@ -329,12 +329,12 @@ AGPU_EXPORT agpu_error agpuAttachComputeShader ( agpu_compute_pipeline_builder* 
 	return (*dispatchTable)->agpuAttachComputeShader ( compute_pipeline_builder, shader );
 }
 
-AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
 	if (compute_pipeline_builder == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (compute_pipeline_builder);
-	return (*dispatchTable)->agpuAttachComputeShaderWithEntryPoint ( compute_pipeline_builder, shader, entry_point );
+	return (*dispatchTable)->agpuAttachComputeShaderWithEntryPoint ( compute_pipeline_builder, shader, type, entry_point );
 }
 
 AGPU_EXPORT agpu_size agpuGetComputePipelineBuildingLogLength ( agpu_compute_pipeline_builder* compute_pipeline_builder )
@@ -393,12 +393,12 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
 	return (*dispatchTable)->agpuAttachShader ( pipeline_builder, shader );
 }
 
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
 	if (pipeline_builder == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
-	return (*dispatchTable)->agpuAttachShaderWithEntryPoint ( pipeline_builder, shader, entry_point );
+	return (*dispatchTable)->agpuAttachShaderWithEntryPoint ( pipeline_builder, shader, type, entry_point );
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )
@@ -457,12 +457,28 @@ AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder
 	return (*dispatchTable)->agpuSetCullMode ( pipeline_builder, mode );
 }
 
+AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetDepthBias ( pipeline_builder, constant_factor, clamp, slope_factor );
+}
+
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
 	if (pipeline_builder == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
 	return (*dispatchTable)->agpuSetDepthState ( pipeline_builder, enabled, writeMask, function );
+}
+
+AGPU_EXPORT agpu_error agpuSetPolygonMode ( agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode )
+{
+	if (pipeline_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (pipeline_builder);
+	return (*dispatchTable)->agpuSetPolygonMode ( pipeline_builder, mode );
 }
 
 AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask )

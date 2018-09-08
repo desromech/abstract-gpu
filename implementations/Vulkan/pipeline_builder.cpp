@@ -213,14 +213,16 @@ agpu_pipeline_state* _agpu_pipeline_builder::buildPipelineState()
 
 agpu_error _agpu_pipeline_builder::attachShader(agpu_shader* shader)
 {
-    return attachShaderWithEntryPoint(shader, "main");
+    CHECK_POINTER(shader);
+
+    return attachShaderWithEntryPoint(shader, shader->type, "main");
 }
 
-agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(shader);
     CHECK_POINTER(entry_point);
-    if (!shader->shaderModule)
+    if (!shader->shaderModule || type == AGPU_LIBRARY_SHADER)
         return AGPU_INVALID_PARAMETER;
 
     VkPipelineShaderStageCreateInfo stageInfo;
@@ -228,7 +230,7 @@ agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* sha
     stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stageInfo.module = shader->shaderModule;
     stageInfo.pName = duplicateCString(entry_point);
-    stageInfo.stage = mapShaderType(shader->type);
+    stageInfo.stage = mapShaderType(type);
 
     shader->retain();
     stages.push_back(stageInfo);
@@ -321,6 +323,15 @@ agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+    rasterizationState.depthBiasEnable = VK_TRUE;
+    rasterizationState.depthBiasConstantFactor = constant_factor;
+    rasterizationState.depthBiasClamp = clamp;
+    rasterizationState.depthBiasSlopeFactor = slope_factor;
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     depthStencilState.depthTestEnable = enabled ? VK_TRUE : VK_FALSE;
@@ -390,6 +401,12 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format for
 agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_topology topology)
 {
     inputAssemblyState.topology = mapTopology(topology);
+    return AGPU_OK;
+}
+
+agpu_error _agpu_pipeline_builder::setPolygonMode(agpu_polygon_mode mode)
+{
+    rasterizationState.polygonMode = mapPolygonMode(mode);
     return AGPU_OK;
 }
 
@@ -488,10 +505,10 @@ AGPU_EXPORT agpu_error agpuAttachShader(agpu_pipeline_builder* pipeline_builder,
     return pipeline_builder->attachShader(shader);
 }
 
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
+    return pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength(agpu_pipeline_builder* pipeline_builder)
@@ -523,6 +540,12 @@ AGPU_EXPORT agpu_error agpuSetColorMask(agpu_pipeline_builder* pipeline_builder,
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setDepthBias(constant_factor, clamp, slope_factor);
 }
 
 AGPU_EXPORT agpu_error agpuSetDepthState(agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
@@ -601,4 +624,10 @@ AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setCullMode(mode);
+}
+
+AGPU_EXPORT agpu_error setPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setPolygonMode(mode);
 }

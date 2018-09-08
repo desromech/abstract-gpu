@@ -133,6 +133,8 @@ public:
     VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages);
 
 private:
+    bool checkDebugReportExtension();
+    
     bool createSetupCommandBuffer();
     bool submitSetupCommandBuffer();
 

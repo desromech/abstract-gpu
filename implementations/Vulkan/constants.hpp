@@ -33,6 +33,17 @@ inline enum VkPrimitiveTopology mapTopology(agpu_primitive_topology topology)
     }
 }
 
+inline enum VkPolygonMode mapPolygonMode(agpu_polygon_mode mode)
+{
+    switch(mode)
+    {
+    default:
+    case AGPU_POLYGON_MODE_FILL: return VK_POLYGON_MODE_FILL;
+    case AGPU_POLYGON_MODE_LINE: return VK_POLYGON_MODE_LINE;
+    case AGPU_POLYGON_MODE_POINT: return VK_POLYGON_MODE_POINT;
+    }
+}
+
 inline enum VkStencilOp mapStencilOperation(agpu_stencil_operation operation)
 {
     switch(operation)

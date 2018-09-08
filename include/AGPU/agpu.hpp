@@ -354,9 +354,9 @@ public:
 		AgpuThrowIfFailed(agpuAttachComputeShader( this, shader ));
 	}
 
-	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 	{
-		AgpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint( this, shader, entry_point ));
+		AgpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint( this, shader, type, entry_point ));
 	}
 
 	inline agpu_size getBuildingLogLength (  )
@@ -405,9 +405,9 @@ public:
 		AgpuThrowIfFailed(agpuAttachShader( this, shader ));
 	}
 
-	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 	{
-		AgpuThrowIfFailed(agpuAttachShaderWithEntryPoint( this, shader, entry_point ));
+		AgpuThrowIfFailed(agpuAttachShaderWithEntryPoint( this, shader, type, entry_point ));
 	}
 
 	inline agpu_size getBuildingLogLength (  )
@@ -445,9 +445,19 @@ public:
 		AgpuThrowIfFailed(agpuSetCullMode( this, mode ));
 	}
 
+	inline void setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+	{
+		AgpuThrowIfFailed(agpuSetDepthBias( this, constant_factor, clamp, slope_factor ));
+	}
+
 	inline void setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 	{
 		AgpuThrowIfFailed(agpuSetDepthState( this, enabled, writeMask, function ));
+	}
+
+	inline void setPolygonMode ( agpu_polygon_mode mode )
+	{
+		AgpuThrowIfFailed(agpuSetPolygonMode( this, mode ));
 	}
 
 	inline void setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )

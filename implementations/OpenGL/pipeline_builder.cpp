@@ -68,9 +68,18 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     depthWriteMask = true;
     depthFunction = AGPU_LESS;
 
+    // Depth biasing
+    depthBiasEnabled = false;
+    depthBiasConstantFactor = 0;
+    depthBiasClamp = 0;
+    depthBiasSlopeFactor = 0;
+
     // Face culling
     frontFaceWinding = AGPU_COUNTER_CLOCKWISE;
     cullingMode = AGPU_CULL_MODE_NONE;
+
+    // Polgons
+    polygonMode = AGPU_POLYGON_MODE_FILL;
 
     // Color buffer
     blendingEnabled = false;
@@ -320,11 +329,11 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 
 agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
 {
-	return attachShaderWithEntryPoint(shader, "main");
+	CHECK_POINTER(shader);
+	return attachShaderWithEntryPoint(shader, shader->type, "main");
 }
 
-
-agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point )
+agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
 	CHECK_POINTER(shader);
 
@@ -399,6 +408,15 @@ agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+    this->depthBiasEnabled = true;
+    this->depthBiasConstantFactor = constant_factor;
+    this->depthBiasClamp = clamp;
+    this->depthBiasSlopeFactor = slope_factor;
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
     this->depthEnabled = enabled;
@@ -453,9 +471,15 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format for
     return AGPU_OK;
 }
 
+agpu_error _agpu_pipeline_builder::setPolygonMode(agpu_polygon_mode mode)
+{
+    this->polygonMode = mode;
+    return AGPU_OK;
+}
+
 agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_topology type)
 {
-    primitiveType = type;
+    this->primitiveType = type;
     return AGPU_OK;
 }
 
@@ -503,10 +527,10 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
 	return pipeline_builder->attachShader(shader);
 }
 
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
 	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
+	return pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )
@@ -549,6 +573,12 @@ AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setCullMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setDepthBias(constant_factor, clamp, slope_factor);
 }
 
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
@@ -610,4 +640,10 @@ AGPU_EXPORT agpu_error agpuSetSampleDescription(agpu_pipeline_builder* pipeline_
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->setSampleDescription(sample_count, sample_quality);
+}
+
+AGPU_EXPORT agpu_error setPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
+{
+    CHECK_POINTER(pipeline_builder);
+    return pipeline_builder->setPolygonMode(mode);
 }

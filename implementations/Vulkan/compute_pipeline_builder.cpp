@@ -47,13 +47,17 @@ agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
 
 agpu_error _agpu_compute_pipeline_builder::attachShader ( agpu_shader* newShader )
 {
-    return attachShaderWithEntryPoint(newShader, "main");
+    CHECK_POINTER(newShader);
+
+    return attachShaderWithEntryPoint(newShader, newShader->type, "main");
 }
 
-agpu_error _agpu_compute_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* newShader, agpu_cstring entry_point )
+agpu_error _agpu_compute_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* newShader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(newShader);
     CHECK_POINTER(entry_point);
+    if(type != AGPU_COMPUTE_SHADER)
+        return AGPU_INVALID_PARAMETER;
 
     newShader->retain();
     if(shader)
@@ -116,10 +120,10 @@ AGPU_EXPORT agpu_error agpuAttachComputeShader ( agpu_compute_pipeline_builder* 
     return compute_pipeline_builder->attachShader(shader);
 }
 
-AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->attachShaderWithEntryPoint(shader, entry_point);
+    return compute_pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
 }
 
 AGPU_EXPORT agpu_size agpuGetComputePipelineBuildingLogLength ( agpu_compute_pipeline_builder* compute_pipeline_builder )

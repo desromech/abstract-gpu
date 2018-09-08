@@ -96,11 +96,18 @@ typedef enum {
 } agpu_primitive_topology;
 
 typedef enum {
+	AGPU_POLYGON_MODE_FILL = 0,
+	AGPU_POLYGON_MODE_LINE = 1,
+	AGPU_POLYGON_MODE_POINT = 2,
+} agpu_polygon_mode;
+
+typedef enum {
 	AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING = 1,
 	AGPU_FEATURE_COHERENT_MEMORY_MAPPING = 2,
 	AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING = 3,
 	AGPU_FEATURE_COMMAND_LIST_REUSE = 4,
 	AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE = 5,
+	AGPU_FEATURE_DIRECT_DISPLAY = 6,
 } agpu_feature;
 
 typedef enum {
@@ -158,6 +165,7 @@ typedef enum {
 	AGPU_COMPUTE_SHADER = 3,
 	AGPU_TESSELLATION_CONTROL_SHADER = 4,
 	AGPU_TESSELLATION_EVALUATION_SHADER = 5,
+	AGPU_LIBRARY_SHADER = 5,
 } agpu_shader_type;
 
 typedef enum {
@@ -712,7 +720,7 @@ typedef agpu_error (*agpuAddComputePipelineBuilderReference_FUN) ( agpu_compute_
 typedef agpu_error (*agpuReleaseComputePipelineBuilder_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
 typedef agpu_pipeline_state* (*agpuBuildComputePipelineState_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
 typedef agpu_error (*agpuAttachComputeShader_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader );
-typedef agpu_error (*agpuAttachComputeShaderWithEntryPoint_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
+typedef agpu_error (*agpuAttachComputeShaderWithEntryPoint_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
 typedef agpu_size (*agpuGetComputePipelineBuildingLogLength_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder );
 typedef agpu_error (*agpuGetComputePipelineBuildingLog_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 typedef agpu_error (*agpuSetComputePipelineShaderSignature_FUN) ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader_signature* signature );
@@ -721,7 +729,7 @@ AGPU_EXPORT agpu_error agpuAddComputePipelineBuilderReference ( agpu_compute_pip
 AGPU_EXPORT agpu_error agpuReleaseComputePipelineBuilder ( agpu_compute_pipeline_builder* compute_pipeline_builder );
 AGPU_EXPORT agpu_pipeline_state* agpuBuildComputePipelineState ( agpu_compute_pipeline_builder* compute_pipeline_builder );
 AGPU_EXPORT agpu_error agpuAttachComputeShader ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader );
-AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
+AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
 AGPU_EXPORT agpu_size agpuGetComputePipelineBuildingLogLength ( agpu_compute_pipeline_builder* compute_pipeline_builder );
 AGPU_EXPORT agpu_error agpuGetComputePipelineBuildingLog ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 AGPU_EXPORT agpu_error agpuSetComputePipelineShaderSignature ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader_signature* signature );
@@ -731,7 +739,7 @@ typedef agpu_error (*agpuAddPipelineBuilderReference_FUN) ( agpu_pipeline_builde
 typedef agpu_error (*agpuReleasePipelineBuilder_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_pipeline_state* (*agpuBuildPipelineState_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_error (*agpuAttachShader_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader );
-typedef agpu_error (*agpuAttachShaderWithEntryPoint_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
+typedef agpu_error (*agpuAttachShaderWithEntryPoint_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
 typedef agpu_size (*agpuGetPipelineBuildingLogLength_FUN) ( agpu_pipeline_builder* pipeline_builder );
 typedef agpu_error (*agpuGetPipelineBuildingLog_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 typedef agpu_error (*agpuSetBlendState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
@@ -739,7 +747,9 @@ typedef agpu_error (*agpuSetBlendFunction_FUN) ( agpu_pipeline_builder* pipeline
 typedef agpu_error (*agpuSetColorMask_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
 typedef agpu_error (*agpuSetFrontFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding );
 typedef agpu_error (*agpuSetCullMode_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode );
+typedef agpu_error (*agpuSetDepthBias_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor );
 typedef agpu_error (*agpuSetDepthState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
+typedef agpu_error (*agpuSetPolygonMode_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode );
 typedef agpu_error (*agpuSetStencilState_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
 typedef agpu_error (*agpuSetStencilFrontFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
 typedef agpu_error (*agpuSetStencilBackFace_FUN) ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
@@ -755,7 +765,7 @@ AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* 
 AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader );
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_cstring entry_point );
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
 AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder );
 AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer );
 AGPU_EXPORT agpu_error agpuSetBlendState ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled );
@@ -763,7 +773,9 @@ AGPU_EXPORT agpu_error agpuSetBlendFunction ( agpu_pipeline_builder* pipeline_bu
 AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled );
 AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding );
 AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode );
+AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor );
 AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
+AGPU_EXPORT agpu_error agpuSetPolygonMode ( agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode );
 AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
 AGPU_EXPORT agpu_error agpuSetStencilFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
 AGPU_EXPORT agpu_error agpuSetStencilBackFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction );
@@ -1081,7 +1093,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetColorMask_FUN agpuSetColorMask;
 	agpuSetFrontFace_FUN agpuSetFrontFace;
 	agpuSetCullMode_FUN agpuSetCullMode;
+	agpuSetDepthBias_FUN agpuSetDepthBias;
 	agpuSetDepthState_FUN agpuSetDepthState;
+	agpuSetPolygonMode_FUN agpuSetPolygonMode;
 	agpuSetStencilState_FUN agpuSetStencilState;
 	agpuSetStencilFrontFace_FUN agpuSetStencilFrontFace;
 	agpuSetStencilBackFace_FUN agpuSetStencilBackFace;

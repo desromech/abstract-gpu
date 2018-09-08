@@ -22,7 +22,7 @@
     {                                                                          \
         fp##procName = (PFN_vk##procName)vkGetInstanceProcAddr(vulkanInstance, "vk" #procName); \
         if (fp##procName == NULL) {                                    \
-            printError("vkGetInstanceProcAddr failed to find vk" #procName, "vkGetInstanceProcAddr Failure");                         \
+            printError("vkGetInstanceProcAddr failed to find vk" #procName, "vkGetInstanceProcAddr Failure\n");                         \
             return false; \
         }                                                                      \
     }
@@ -31,7 +31,7 @@
     {                                                                          \
         fp##procName = (PFN_vk##procName)fpGetDeviceProcAddr(device, "vk" #procName); \
         if (fp##procName == NULL) {                                    \
-            printError("vkGetDeviceProcAddr failed to find vk" #procName, "vkGetInstanceProcAddr Failure");                         \
+            printError("vkGetDeviceProcAddr failed to find vk" #procName, "vkGetInstanceProcAddr Failure\n");                         \
             return false; \
         }                                                                      \
     }
@@ -240,6 +240,30 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     return device.release();
 }
 
+bool _agpu_device::checkDebugReportExtension()
+{
+    GET_INSTANCE_PROC_ADDR(CreateDebugReportCallbackEXT);
+    GET_INSTANCE_PROC_ADDR(DestroyDebugReportCallbackEXT);
+
+    VkDebugReportCallbackCreateInfoEXT debugInfo;
+    memset(&debugInfo, 0, sizeof(debugInfo));
+    debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+    debugInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+        VK_DEBUG_REPORT_WARNING_BIT_EXT |
+        VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+    debugInfo.pfnCallback = debugReportCallbackFunction;
+    debugInfo.pUserData = this;
+
+    auto error = fpCreateDebugReportCallbackEXT(vulkanInstance, &debugInfo, nullptr, &debugReportCallback);
+    if (error)
+    {
+        printError("Failed to register debug report callback.\n");
+        return false;
+    }
+
+    return true;
+}
+
 bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 {
     std::vector<const char *> instanceLayers;
@@ -314,6 +338,14 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         hasDebugReportExtension = true;
         instanceExtensions.push_back("VK_EXT_debug_report");
     }
+
+    // Enable some optional extensions.
+    if(hasExtension("VK_KHR_display", instanceExtensionProperties))
+        instanceExtensions.push_back("VK_KHR_display");
+    if(hasExtension("VK_EXT_direct_mode_display", instanceExtensionProperties))
+        instanceExtensions.push_back("VK_EXT_direct_mode_display");
+    if(hasExtension("VK_EXT_acquire_xlib_display", instanceExtensionProperties))
+        instanceExtensions.push_back("VK_EXT_acquire_xlib_display");
 
     // Set the enabled layers and extensions.
     if (!instanceLayers.empty())
@@ -392,6 +424,10 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     for (size_t i = 0; i < requiredDeviceExtensionCount; ++i)
         deviceExtensions.push_back(requiredDeviceExtensionNames[i]);
 
+    // Enable some optional device extensions.
+    if(hasExtension("VK_EXT_display_control", deviceExtensionProperties))
+        deviceExtensions.push_back("VK_EXT_display_control");
+
     uint32_t queueFamilyCount;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
     if (queueFamilyCount == 0)
@@ -409,23 +445,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     GET_INSTANCE_PROC_ADDR(GetSwapchainImagesKHR);
 
     if (hasDebugReportExtension)
-    {
-        GET_INSTANCE_PROC_ADDR(CreateDebugReportCallbackEXT);
-        GET_INSTANCE_PROC_ADDR(DestroyDebugReportCallbackEXT);
-
-        VkDebugReportCallbackCreateInfoEXT debugInfo;
-        memset(&debugInfo, 0, sizeof(debugInfo));
-        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        debugInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-            VK_DEBUG_REPORT_WARNING_BIT_EXT |
-            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        debugInfo.pfnCallback = debugReportCallbackFunction;
-        debugInfo.pUserData = this;
-
-        auto error = fpCreateDebugReportCallbackEXT(vulkanInstance, &debugInfo, nullptr, &debugReportCallback);
-        if (error)
-            printError("Failed to register debug report callback.\n");
-    }
+        hasDebugReportExtension = checkDebugReportExtension();
 
     // Presenting directly into a display
     hasDisplay = hasExtension("VK_KHR_display", instanceExtensionProperties);

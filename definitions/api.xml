@@ -295,7 +295,7 @@
 			<constant name="ComputeShader" value="3" />
 			<constant name="TessellationControlShader" value="4" />
 			<constant name="TessellationEvaluationShader" value="5" />
-			<constant name="Library" value="5" />
+			<constant name="LibraryShader" value="5" />
 		</enum>
 
 		<enum name="buffer_usage_type">
@@ -762,6 +762,7 @@
 
             <method name="attachShaderWithEntryPoint" cname="AttachComputeShaderWithEntryPoint" returnType="error">
                 <arg name="shader" type="shader*" />
+                <arg name="type" type="shader_type" />
                 <arg name="entry_point" type="cstring" />
             </method>
 
@@ -793,7 +794,8 @@
             </method>
 
             <method name="attachShaderWithEntryPoint" cname="AttachShaderWithEntryPoint" returnType="error">
-                <arg name="shader" type="shader*" />
+                <arg name="shader" type="shader*" />/>
+                <arg name="type" type="shader_type" />
                 <arg name="entry_point" type="cstring" />
             </method>
 
@@ -836,6 +838,12 @@
                 <arg name="mode" type="cull_mode" />
             </method>
 
+            <method name="setDepthBias" cname="SetDepthBias" returnType="error">
+                <arg name="constant_factor" type="float" />
+                <arg name="clamp" type="float" />
+                <arg name="slope_factor" type="float" />
+            </method>
+            
             <method name="setDepthState" cname="SetDepthState" returnType="error">
                 <arg name="enabled" type="bool" />
                 <arg name="writeMask" type="bool" />
@@ -1068,12 +1076,6 @@
                 <arg name="offset" type="uint" />
                 <arg name="size" type="uint" />
                 <arg name="values" type="pointer" />
-            </method>
-
-            <method name="setDepthBias" cname="PushConstants" returnType="error">
-                <arg name="constant_factor" type="float" />
-                <arg name="clamp" type="float" />
-                <arg name="slope_factor" type="float" />
             </method>
         </interface>
 

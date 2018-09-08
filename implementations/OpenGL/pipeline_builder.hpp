@@ -23,7 +23,7 @@ public:
     agpu_error setShaderSignature(agpu_shader_signature* signature);
 
     agpu_error attachShader ( agpu_shader* shader );
-    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_cstring entry_point );
+    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
 
     agpu_size getBuildingLogLength (  );
     agpu_error getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
@@ -33,11 +33,13 @@ public:
     agpu_error setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled);
     agpu_error setFrontFace ( agpu_face_winding winding );
     agpu_error setCullMode ( agpu_cull_mode mode );
+    agpu_error setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor );
     agpu_error setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function );
     agpu_error setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask );
     agpu_error setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
     agpu_error setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
     agpu_error setRenderTargetCount ( agpu_int count );
+    agpu_error setPolygonMode(agpu_polygon_mode mode);
     agpu_error setPrimitiveType(agpu_primitive_topology type);
     agpu_error setVertexLayout(agpu_vertex_layout* layout);
 
@@ -55,9 +57,18 @@ public:
     agpu_bool depthWriteMask;
     agpu_compare_function depthFunction;
 
+    // Depth biasing
+    agpu_bool depthBiasEnabled;
+    agpu_float depthBiasConstantFactor;
+    agpu_float depthBiasClamp;
+    agpu_float depthBiasSlopeFactor;
+
     // Face culling
     agpu_face_winding frontFaceWinding;
     agpu_cull_mode cullingMode;
+
+    // Polgons
+    agpu_polygon_mode polygonMode;
 
     // Render targets
     std::vector<agpu_texture_format> renderTargetFormats;
