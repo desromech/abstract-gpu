@@ -225,6 +225,8 @@ public:
     PFNGLGETACTIVEUNIFORMPROC glGetActiveUniform;
 
     PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+    PFNGLVERTEXATTRIBIPOINTERPROC glVertexAttribIPointer;
+    PFNGLVERTEXATTRIBLPOINTERPROC glVertexAttribLPointer;
     PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
     PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
     PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
@@ -245,6 +247,7 @@ public:
     // Texture storage.
     PFNGLTEXSTORAGE1DPROC glTexStorage1D;
     PFNGLTEXSTORAGE2DPROC glTexStorage2D;
+    PFNGLTEXSTORAGE2DMULTISAMPLEPROC glTexStorage2DMultisample;
     PFNGLTEXSTORAGE3DPROC glTexStorage3D;
 
     // Texture
@@ -280,6 +283,10 @@ public:
 
     // Clip control
     PFNGLCLIPCONTROLPROC glClipControl;
+
+    // Memory barrier
+    PFNGLFLUSHMAPPEDBUFFERRANGEPROC glFlushMappedBufferRange;
+    PFNGLMEMORYBARRIERPROC glMemoryBarrier;
 };
 
 #endif //_AGPU_DEVICE_HPP_

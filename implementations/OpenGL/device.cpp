@@ -99,7 +99,9 @@ void OpenGLContext::finish()
 {
     auto fence = device->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     glFlush();
-    device->glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, -1);
+	GLenum waitReturn = GL_UNSIGNALED;
+	while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
+		waitReturn = device->glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
     device->glDeleteSync(fence);
 }
 
@@ -283,6 +285,8 @@ void _agpu_device::loadExtensions()
     LOAD_FUNCTION(glGetActiveUniform);
 
     LOAD_FUNCTION(glVertexAttribPointer);
+	LOAD_FUNCTION(glVertexAttribIPointer);
+	LOAD_FUNCTION(glVertexAttribLPointer);
     LOAD_FUNCTION(glDisableVertexAttribArray);
     LOAD_FUNCTION(glEnableVertexAttribArray);
     LOAD_FUNCTION(glGetAttribLocation);
@@ -303,6 +307,7 @@ void _agpu_device::loadExtensions()
     // Texture storage
     LOAD_FUNCTION(glTexStorage1D);
     LOAD_FUNCTION(glTexStorage2D);
+	LOAD_FUNCTION(glTexStorage2DMultisample);
     LOAD_FUNCTION(glTexStorage3D);
 
     // Texture functions
@@ -338,6 +343,10 @@ void _agpu_device::loadExtensions()
 
     // Clip control
     LOAD_FUNCTION(glClipControl);
+
+	// Memory barrier
+	LOAD_FUNCTION(glMemoryBarrier);
+	LOAD_FUNCTION(glFlushMappedBufferRange);
 
     isPersistentMemoryMappingSupported_ = isCoherentMemoryMappingSupported_ = glBufferStorage != nullptr && hasOpenGLExtension("GL_ARB_buffer_storage");
     hasExtension_GL_NV_depth_buffer_float = glDepthRangedNV != nullptr && hasOpenGLExtension("GL_NV_depth_buffer_float");

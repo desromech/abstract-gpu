@@ -873,12 +873,12 @@ AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_t
 	return (*dispatchTable)->agpuGetTextureDescription ( texture, description );
 }
 
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region )
 {
 	if (texture == nullptr)
 		return (agpu_pointer)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
-	return (*dispatchTable)->agpuMapTextureLevel ( texture, level, arrayIndex, flags );
+	return (*dispatchTable)->agpuMapTextureLevel ( texture, level, arrayIndex, flags, region );
 }
 
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
@@ -903,6 +903,14 @@ AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int l
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
 	return (*dispatchTable)->agpuUploadTextureData ( texture, level, arrayIndex, pitch, slicePitch, data );
+}
+
+AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuUploadTextureSubData ( texture, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data );
 }
 
 AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
@@ -1023,6 +1031,14 @@ AGPU_EXPORT agpu_error agpuBindVertexBuffers ( agpu_vertex_binding* vertex_bindi
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vertex_binding);
 	return (*dispatchTable)->agpuBindVertexBuffers ( vertex_binding, count, vertex_buffers );
+}
+
+AGPU_EXPORT agpu_error agpuBindVertexBuffersWithOffsets ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
+{
+	if (vertex_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vertex_binding);
+	return (*dispatchTable)->agpuBindVertexBuffersWithOffsets ( vertex_binding, count, vertex_buffers, offsets );
 }
 
 AGPU_EXPORT agpu_error agpuAddVertexLayoutReference ( agpu_vertex_layout* vertex_layout )

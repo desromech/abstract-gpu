@@ -19,6 +19,12 @@ agpu_vertex_binding *_agpu_vertex_binding::create(agpu_device *device, agpu_vert
 
 agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
 {
+    return bindVertexBuffersWithOffsets(count, vertex_buffers, nullptr);
+}
+
+
+agpu_error _agpu_vertex_binding::bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size *offsets)
+{
     for (size_t i = 0; i < count; ++i)
     {
         CHECK_POINTER(vertex_buffers[i]);
@@ -42,9 +48,9 @@ agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer*
     {
         auto buffer = vertex_buffers[i];
         buffer->retain();
-        vertexBuffers[i] = buffer;
-        vulkanBuffers[i] = buffer->getDrawBuffer();
-        offsets[i] = 0;
+        this->vertexBuffers[i] = buffer;
+        this->vulkanBuffers[i] = buffer->getDrawBuffer();
+        this->offsets[i] = offsets ? offsets[i] : 0;
     }
 
     return AGPU_OK;
@@ -67,4 +73,10 @@ AGPU_EXPORT agpu_error agpuBindVertexBuffers(agpu_vertex_binding* vertex_binding
 {
     CHECK_POINTER(vertex_binding);
     return vertex_binding->bindVertexBuffers(count, vertex_buffers);
+}
+
+AGPU_EXPORT agpu_error agpuBindVertexBuffersWithOffsets ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
+{
+    CHECK_POINTER(vertex_binding);
+    return vertex_binding->bindVertexBuffersWithOffsets(count, vertex_buffers, offsets);
 }

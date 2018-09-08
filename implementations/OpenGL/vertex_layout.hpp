@@ -24,6 +24,7 @@ public:
 
     agpu_uint vertexBufferCount;
     std::vector<agpu_vertex_attrib_description> attributes;
+    std::vector<agpu_size> strides;
 };
 
 #endif //_AGPU_GL_VERTEX_LAYOUT_HPP_

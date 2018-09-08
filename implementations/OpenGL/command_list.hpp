@@ -21,9 +21,10 @@ struct CommandListExecutionContext
     void useComputePipelineState(agpu_pipeline_state* newPipeline);
 
     void setStencilReference(agpu_uint reference);
-    
+
 	void useShaderResources ( agpu_shader_resource_binding* binding );
 	void useComputeShaderResources(agpu_shader_resource_binding* binding);
+    void setBaseInstance(agpu_uint base_instance);
 
     agpu_device *device;
     agpu_pipeline_state *currentPipeline;
@@ -35,8 +36,11 @@ struct CommandListExecutionContext
     bool hasValidActivePipeline;
     bool hasValidShaderResources;
     bool hasValidComputeShaderResources;
+    bool hasValidComputePushConstants;
+    bool hasValidGraphicsPushConstants;
     GLenum primitiveMode;
     agpu_uint stencilReference;
+    uint8_t pushConstantBuffer[128];
 };
 
 struct _agpu_command_list: public Object<_agpu_command_list>

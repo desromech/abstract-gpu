@@ -48,6 +48,11 @@ void _agpu_vertex_binding::bind()
 
 agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
 {
+    return bindVertexBuffersWithOffsets(count, vertex_buffers, nullptr);
+}
+
+agpu_error _agpu_vertex_binding::bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size *offsets)
+{
     if (count != vertexLayout->vertexBufferCount)
         return AGPU_ERROR;
 
@@ -61,11 +66,16 @@ agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer*
             vb->release();
     }
 
-    vertexBuffers.resize(count);
+    this->vertexBuffers.resize(count);
+    this->offsets.resize(count);
     for(size_t i = 0; i < count; ++i)
+    {
         this->vertexBuffers[i] = vertex_buffers[i];
+        this->offsets[i] = offsets ? offsets[i] : 0;
+    }
 
 	return AGPU_OK;
+
 }
 
 agpu_error _agpu_vertex_binding::updateBindings()
@@ -82,7 +92,7 @@ agpu_error _agpu_vertex_binding::updateBindings()
             newBuffer->bind();
 
         // Activate the attribute
-        auto error = activateVertexAttribute(newBuffer->description.stride, attr);
+        auto error = activateVertexAttribute(vertexLayout->strides[attr.buffer], attr, offsets[attr.buffer]);
         if (error < 0)
             return error;
     }
@@ -90,13 +100,16 @@ agpu_error _agpu_vertex_binding::updateBindings()
     return AGPU_OK;
 }
 
-agpu_error _agpu_vertex_binding::activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute )
+agpu_error _agpu_vertex_binding::activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute, agpu_size bufferOffset )
 {
     auto isNormalized = isFormatNormalized(attribute.format);
     auto components = getFormatNumberOfComponents(attribute.format);
     auto type = mapExternalFormatType(attribute.format);
 	device->glEnableVertexAttribArray(attribute.binding);
-	device->glVertexAttribPointer(attribute.binding, components, type, isNormalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset)));
+    if(isIntegerVertexAttributeFormat(attribute.format))
+        device->glVertexAttribIPointer(attribute.binding, components, type, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset + bufferOffset)));
+    else
+	   device->glVertexAttribPointer(attribute.binding, components, type, isNormalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset + bufferOffset)));
 
 	return AGPU_OK;
 }
@@ -120,4 +133,10 @@ AGPU_EXPORT agpu_error agpuBindVertexBuffers(agpu_vertex_binding* vertex_binding
 {
     CHECK_POINTER(vertex_binding);
     return vertex_binding->bindVertexBuffers(count, vertex_buffers);
+}
+
+AGPU_EXPORT agpu_error agpuBindVertexBuffersWithOffsets ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
+{
+    CHECK_POINTER(vertex_binding);
+    return vertex_binding->bindVertexBuffersWithOffsets(count, vertex_buffers, offsets);
 }

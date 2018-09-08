@@ -34,6 +34,7 @@ void _agpu_renderpass::started()
         {
             buffers |= GL_COLOR_BUFFER_BIT;
             glClearColor(colorAttachment.clear_value.r, colorAttachment.clear_value.g, colorAttachment.clear_value.b, colorAttachment.clear_value.a);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         }
     }
 
@@ -43,12 +44,14 @@ void _agpu_renderpass::started()
         {
             buffers |= GL_DEPTH_BUFFER_BIT;
             glClearDepth(depthStencilAttachment.clear_value.depth);
+            glDepthMask(GL_TRUE);
         }
 
         if (depthStencilAttachment.stencil_begin_action == AGPU_ATTACHMENT_CLEAR)
         {
             buffers |= GL_STENCIL_BUFFER_BIT;
             glClearStencil(depthStencilAttachment.clear_value.stencil);
+            glStencilMask(GL_TRUE);
         }
     }
 

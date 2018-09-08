@@ -19,6 +19,10 @@ agpu_vertex_layout *_agpu_vertex_layout::createVertexLayout(agpu_device *device)
 agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size *vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
 {
     vertexBufferCount = vertex_buffer_count;
+    this->strides.reserve(vertex_buffer_count);
+    for (size_t i = 0; i < vertex_buffer_count; ++i)
+        this->strides.push_back(vertex_strides[i]);
+
     this->attributes.reserve(attribute_count);
     for (size_t i = 0; i < attribute_count; ++i)
         this->attributes.push_back(attributes[i]);

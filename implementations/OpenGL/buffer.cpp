@@ -54,9 +54,14 @@ agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_de
     buffer->handle = handle;
     buffer->extraMappingFlags = 0;
     if(description.mapping_flags & AGPU_MAP_PERSISTENT_BIT)
+    {
         buffer->extraMappingFlags |= GL_MAP_PERSISTENT_BIT;
-    if(description.mapping_flags & GL_MAP_COHERENT_BIT)
-        buffer->extraMappingFlags |= GL_MAP_COHERENT_BIT;
+        if(description.mapping_flags & AGPU_MAP_COHERENT_BIT)
+            buffer->extraMappingFlags |= GL_MAP_COHERENT_BIT;
+        else
+            buffer->extraMappingFlags |= GL_MAP_FLUSH_EXPLICIT_BIT;
+    }
+
 
     return buffer;
 }
@@ -127,6 +132,13 @@ agpu_error agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_po
 
 agpu_error agpu_buffer::flushWholeBuffer ()
 {
+    if((extraMappingFlags & GL_MAP_FLUSH_EXPLICIT_BIT) == 0)
+        return AGPU_OK;
+
+    device->onMainContextBlocking([&]{
+        bind();
+        device->glFlushMappedBufferRange(target, 0, description.size);
+    });
     return AGPU_OK;
 }
 
@@ -163,7 +175,6 @@ AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buff
 }
 
 AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags )
-
 {
     if(!buffer) return nullptr;
     return buffer->mapBuffer(flags);
@@ -186,7 +197,6 @@ AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offse
     CHECK_POINTER(buffer);
     return buffer->readBufferData(offset, size, data);
 }
-
 
 AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
 {

@@ -56,6 +56,17 @@ void _agpu_shader_signature::buildMSLMapping()
             }
         }
     }
+    
+    // Map the push constants
+    if(pushConstantBufferSize > 0)
+    {
+        spirv_cross::MSLResourceBinding binding;
+        binding.desc_set = spirv_cross::kPushConstDescSet;
+        binding.binding = spirv_cross::kPushConstBinding;
+        
+        binding.msl_buffer = pushConstantBufferIndex;
+        resourceBindings.push_back(binding);
+    }
 }
 
 agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding ( agpu_uint element )

@@ -81,7 +81,7 @@ agpu_error _agpu_texture::getDescription ( agpu_texture_description* description
     return AGPU_OK;
 }
 
-agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
 {
     // TODO: Implement this, if possible
     return nullptr;
@@ -121,6 +121,22 @@ agpu_error _agpu_texture::uploadData ( agpu_int level, agpu_int arrayIndex, agpu
     return AGPU_OK;
 }
 
+agpu_error _agpu_texture::uploadSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+{
+    CHECK_POINTER(data);
+
+    // TODO: Implement this properly.
+    MTLRegion region = getLevelRegion(level);
+
+    [handle replaceRegion:(MTLRegion)region
+          mipmapLevel: level
+                slice: arrayIndex
+            withBytes: data
+          bytesPerRow: pitch
+        bytesPerImage: slicePitch];
+    return AGPU_OK;
+}
+
 agpu_error _agpu_texture::discardUploadBuffer (  )
 {
     return AGPU_OK;
@@ -149,7 +165,7 @@ agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description
     viewDescription->subresource_range.layer_count = description.depthOrArraySize;
     if(viewDescription->subresource_range.layer_count == 1)
         viewDescription->subresource_range.layer_count = 0;
-        
+
     return AGPU_OK;
 }
 
@@ -172,11 +188,11 @@ AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_t
     return texture->getDescription(description);
 }
 
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
 {
     if(!texture)
         return nullptr;
-    return texture->mapLevel(level, arrayIndex, flags);
+    return texture->mapLevel(level, arrayIndex, flags, region);
 }
 
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
@@ -195,6 +211,12 @@ AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int l
 {
     CHECK_POINTER(texture);
     return texture->uploadData(level, arrayIndex, pitch, slicePitch, data);
+}
+
+AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+{
+    CHECK_POINTER(texture);
+    return texture->uploadSubData ( level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data );
 }
 
 AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )

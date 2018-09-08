@@ -57,10 +57,17 @@ void _agpu_texture::allocateTexture1D(agpu_device *device, GLuint handle, GLenum
 void _agpu_texture::allocateTexture2D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    if(description->depthOrArraySize > 1)
-        device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+    if(description->sample_count > 1)
+    {
+        device->glTexStorage2DMultisample(target, description->sample_count, mapInternalTextureFormat(description->format), description->width, description->height, GL_FALSE);
+    }
     else
-        device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
+    {
+        if(description->depthOrArraySize > 1)
+            device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+        else
+            device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
+    }
 }
 
 void _agpu_texture::allocateTexture3D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
@@ -253,7 +260,7 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
     device->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
-agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
 {
     if(mappedPointer)
         return mappedPointer;
@@ -308,7 +315,7 @@ agpu_error _agpu_texture::unmapLevel ( )
 agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int dstPitch, agpu_int slicePitch, agpu_pointer data )
 {
     CHECK_POINTER(data);
-    auto src = reinterpret_cast<uint8_t*> (mapLevel(level, arrayIndex, AGPU_READ_ONLY));
+    auto src = reinterpret_cast<uint8_t*> (mapLevel(level, arrayIndex, AGPU_READ_ONLY, nullptr));
     if(!src)
         return AGPU_ERROR;
 
@@ -337,7 +344,12 @@ agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex,
 
 agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
-    auto dst = reinterpret_cast<uint8_t*> (mapLevel(level, arrayIndex, AGPU_WRITE_ONLY));
+    return uploadTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, data);
+}
+
+agpu_error _agpu_texture::uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+{
+    auto dst = reinterpret_cast<uint8_t*> (mapLevel(level, arrayIndex, AGPU_WRITE_ONLY, destRegion));
     if(!dst)
         return AGPU_ERROR;
 
@@ -346,7 +358,7 @@ agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayInde
     auto src = reinterpret_cast<uint8_t*> (data);
 
     // Copy the 2D texture slice.
-    if (pitch >= transferLayout.pitch && slicePitch == transferLayout.slicePitch)
+    if (pitch >= transferLayout.pitch && slicePitch == transferLayout.slicePitch && !sourceSize && !destRegion)
     {
         memcpy(dst, src, slicePitch);
     }
@@ -379,7 +391,6 @@ agpu_error _agpu_texture::discardUploadBuffer()
 agpu_error _agpu_texture::discardReadbackBuffer()
 {
     return AGPU_OK;
-
 }
 
 agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *viewDescription)
@@ -423,12 +434,12 @@ AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_t
     return AGPU_OK;
 }
 
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags )
+AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
 {
     if(!texture)
         return nullptr;
 
-    return texture->mapLevel(level, arrayIndex, flags);
+    return texture->mapLevel(level, arrayIndex, flags, region);
 }
 
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
@@ -447,6 +458,12 @@ AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int l
 {
     CHECK_POINTER(texture);
     return texture->uploadTextureData(level, arrayIndex, pitch, slicePitch, data);
+}
+
+AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+{
+    CHECK_POINTER(texture);
+    return texture->uploadTextureSubData ( level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data );
 }
 
 AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* texture)

@@ -255,10 +255,20 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	glsl.set_entry_point(entryPoint, mapExecutionModel(type));
 
 	// Combine the samplers and the images.
+	glsl.build_dummy_sampler_for_combined_images();
 	glsl.build_combined_image_samplers();
 
 	// Modify the resources
 	spirv_cross::ShaderResources resources = glsl.get_shader_resources();
+
+	// Push constants.
+	if(!resources.push_constant_buffers.empty())
+	{
+		// Bind the push constants into the first location.
+		assert(resources.push_constant_buffers.size() == 1);
+		auto &resource = resources.push_constant_buffers[0];
+		glsl.set_decoration(resource.id, spv::DecorationLocation, 0);
+	}
 
 	// Combined sampler/images
 	for(auto &remap : glsl.get_combined_image_samplers())

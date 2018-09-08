@@ -209,6 +209,7 @@ void _agpu_command_list::activateVertexBinding ( )
     }
 
     auto &buffers = currentVertexBinding->buffers;
+    auto &offsets = currentVertexBinding->offsets;
     vertexBufferCount = buffers.size();
     for(size_t i = 0; i < vertexBufferCount; ++i)
     {
@@ -216,7 +217,7 @@ void _agpu_command_list::activateVertexBinding ( )
         if(!buffer)
             return;
 
-        [renderEncoder setVertexBuffer: buffer->handle offset: 0 atIndex: i];
+        [renderEncoder setVertexBuffer: buffer->handle offset: offsets[i] atIndex: i];
     }
 }
 
@@ -249,7 +250,7 @@ void _agpu_command_list::updateComputeState()
         computeEncoder = [buffer computeCommandEncoder];
         currentPipeline->applyComputeCommands(computeEncoder);
     }
-    
+
     activateComputeShaderResourceBindings();
     uploadComputePushConstants();
 }
@@ -270,7 +271,7 @@ void _agpu_command_list::uploadComputePushConstants()
     if(/*!pushConstantsModified || */currentShaderSignature->pushConstantBufferSize == 0)
         return;
 
-    [computeEncoder setBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: 1 + currentShaderSignature->pushConstantBufferIndex];
+    [computeEncoder setBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: currentShaderSignature->pushConstantBufferIndex];
     pushConstantsModified = false;
 }
 
@@ -323,7 +324,7 @@ agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_u
 {
     if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
-    
+
     updateComputeState();
     MTLSize threadgroups;
     threadgroups.width = group_count_x;
@@ -337,7 +338,7 @@ agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
 {
     if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
-    
+
     updateComputeState();
     return AGPU_UNIMPLEMENTED;
 }
@@ -360,7 +361,7 @@ agpu_error _agpu_command_list::close (  )
         [computeEncoder endEncoding];
         computeEncoder = nil;
     }
-    
+
     return AGPU_OK;
 }
 
@@ -387,7 +388,7 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     if(currentComputeDispatchIndirectBuffer)
         currentComputeDispatchIndirectBuffer->release();
     currentComputeDispatchIndirectBuffer = nullptr;
-    
+
     if(currentIndexBuffer)
         currentIndexBuffer->release();
     currentIndexBuffer = nullptr;
@@ -439,7 +440,7 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
         [computeEncoder endEncoding];
         computeEncoder = nil;
     }
-        
+
     auto descriptor = renderpass->createDescriptor(framebuffer);
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
@@ -461,7 +462,37 @@ agpu_error _agpu_command_list::endRenderPass (  )
 
 agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(destFramebuffer);
+    CHECK_POINTER(sourceFramebuffer);
+
+    auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+    auto passAttachment = descriptor.colorAttachments[0];
+
+    // Set the source attachment
+    passAttachment.texture = sourceFramebuffer->getColorTexture(0);
+    passAttachment.loadAction = MTLLoadActionLoad;
+    passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
+
+    if(!sourceFramebuffer->ownedBySwapChain)
+    {
+        auto &view = sourceFramebuffer->colorBufferDescriptions[0];
+        passAttachment.level = view.subresource_range.base_miplevel;
+        passAttachment.slice = view.subresource_range.base_arraylayer;
+    }
+
+    // Set the resolve attachment
+    passAttachment.resolveTexture = destFramebuffer->getColorTexture(0);
+    if(!destFramebuffer->ownedBySwapChain)
+    {
+        auto &view = sourceFramebuffer->colorBufferDescriptions[0];
+        passAttachment.resolveLevel = view.subresource_range.base_miplevel;
+        passAttachment.resolveSlice = view.subresource_range.base_arraylayer;
+    }
+
+    renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
+    [descriptor release];
+    [renderEncoder endEncoding];
+    return AGPU_OK;
 }
 
 agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )

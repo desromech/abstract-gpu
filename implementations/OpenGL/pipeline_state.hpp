@@ -20,6 +20,7 @@ public:
 
 	virtual void activate() = 0;
 	virtual void updateStencilReference(int reference) = 0;
+	virtual void setBaseInstance(agpu_uint base_instance) {}
 
 	virtual agpu_primitive_topology getPrimitiveTopology()
 	{
@@ -32,6 +33,7 @@ class AgpuGraphicsPipelineStateData : public AgpuPipelineStateData
 public:
 	virtual void activate() override;
 	virtual void updateStencilReference(int reference) override;
+	virtual void setBaseInstance(agpu_uint base_instance) override;
 	void enableState(bool enabled, GLenum state);
 
 	virtual agpu_primitive_topology getPrimitiveTopology()
@@ -78,6 +80,10 @@ public:
 	GLenum stencilBackDepthPassOp;
 	GLenum stencilBackFunc;
 
+	// Multisampling
+    agpu_uint sampleCount;
+    agpu_uint sampleQuality;
+
 	// Alpha testing
 	bool alphaTestEnabled;
 	GLenum alphaTestFunction;
@@ -86,6 +92,9 @@ public:
 	int renderTargetCount;
 	bool hasSRGBTarget;
 	agpu_primitive_topology primitiveTopology;
+
+	// The instance base index
+	GLint baseInstanceUniformIndex;
 };
 
 struct _agpu_pipeline_state: public Object<_agpu_pipeline_state>
@@ -97,6 +106,8 @@ public:
 
     agpu_int getUniformLocation ( agpu_cstring name );
     void activateShaderResourcesOn(CommandListExecutionContext *context, agpu_shader_resource_binding **shaderResources);
+	void uploadPushConstants(const uint8_t *pushConstantBuffer, size_t pushConstantBufferSize);
+	void setBaseInstance(agpu_uint base_instance);
 
 public:
     agpu_device *device;

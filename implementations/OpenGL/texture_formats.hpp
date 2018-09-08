@@ -15,10 +15,17 @@ inline GLenum findTextureTarget(agpu_texture_description *description)
         else
             return GL_TEXTURE_1D;
     case AGPU_TEXTURE_2D:
-        if(description->depthOrArraySize > 1)
-            return GL_TEXTURE_2D_ARRAY;
+        if(description->sample_count > 1)
+        {
+            return GL_TEXTURE_2D_MULTISAMPLE;
+        }
         else
-            return GL_TEXTURE_2D;
+        {
+            if(description->depthOrArraySize > 1)
+                return GL_TEXTURE_2D_ARRAY;
+            else
+                return GL_TEXTURE_2D;
+        }
     case AGPU_TEXTURE_3D:
         return GL_TEXTURE_3D;
     case AGPU_TEXTURE_CUBE:
@@ -356,13 +363,13 @@ inline GLenum mapExternalFormatType(agpu_texture_format format)
 	case AGPU_TEXTURE_FORMAT_R16_SNORM:                return GL_SHORT;
 	case AGPU_TEXTURE_FORMAT_R16_SINT:                 return GL_SHORT;
 
-	case AGPU_TEXTURE_FORMAT_R8_TYPELESS:              return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_UNORM:                 return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_UINT:                  return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_SNORM:                 return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R8_SINT:                  return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_A8_UNORM:                 return GL_UNSIGNED_SHORT;
-	case AGPU_TEXTURE_FORMAT_R1_UNORM:                 return GL_UNSIGNED_SHORT;
+	case AGPU_TEXTURE_FORMAT_R8_TYPELESS:              return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_UNORM:                 return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_UINT:                  return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_SNORM:                 return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R8_SINT:                  return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_A8_UNORM:                 return GL_UNSIGNED_BYTE;
+	case AGPU_TEXTURE_FORMAT_R1_UNORM:                 return GL_UNSIGNED_BYTE;
 
 /*	case AGPU_TEXTURE_FORMAT_BC1_TYPELESS:
 	case AGPU_TEXTURE_FORMAT_BC1_UNORM:
@@ -559,6 +566,42 @@ inline GLboolean isFormatNormalized(agpu_texture_format format)
         return GL_TRUE;
     default:
         return GL_FALSE;
+    }
+}
+
+inline bool isIntegerVertexAttributeFormat(agpu_texture_format format)
+{
+    switch (format)
+    {
+    case AGPU_TEXTURE_FORMAT_R32G32B32A32_UINT:
+    case AGPU_TEXTURE_FORMAT_R32G32B32A32_SINT:
+    case AGPU_TEXTURE_FORMAT_R32G32B32_UINT:
+    case AGPU_TEXTURE_FORMAT_R32G32B32_SINT:
+    case AGPU_TEXTURE_FORMAT_R16G16B16A16_UINT:
+    case AGPU_TEXTURE_FORMAT_R16G16B16A16_SINT:
+    case AGPU_TEXTURE_FORMAT_R32G32_UINT:
+    case AGPU_TEXTURE_FORMAT_R32G32_SINT:
+    case AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT:
+    case AGPU_TEXTURE_FORMAT_X32_TYPELESS_G8X24_UINT:
+    case AGPU_TEXTURE_FORMAT_R10G10B10A2_UINT:
+    case AGPU_TEXTURE_FORMAT_R8G8B8A8_UINT:
+    case AGPU_TEXTURE_FORMAT_R8G8B8A8_SINT:
+    case AGPU_TEXTURE_FORMAT_R16G16_UINT:
+    case AGPU_TEXTURE_FORMAT_R16G16_SINT:
+    case AGPU_TEXTURE_FORMAT_R32_UINT:
+    case AGPU_TEXTURE_FORMAT_R32_SINT:
+    case AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT:
+    case AGPU_TEXTURE_FORMAT_X24TG8_UINT:
+    case AGPU_TEXTURE_FORMAT_R8G8_UINT:
+    case AGPU_TEXTURE_FORMAT_R8G8_SINT:
+    case AGPU_TEXTURE_FORMAT_R16_UINT:
+    case AGPU_TEXTURE_FORMAT_R16_SINT:
+    case AGPU_TEXTURE_FORMAT_R8_UINT:
+    case AGPU_TEXTURE_FORMAT_R8_SINT:
+        return true;
+    case AGPU_TEXTURE_FORMAT_UNKNOWN:
+    default:
+        return false;
     }
 }
 

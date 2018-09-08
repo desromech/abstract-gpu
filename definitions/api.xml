@@ -69,6 +69,8 @@
             <field name="flags" type="texture_flags" />
             <field name="sample_count" type="uint" />
             <field name="sample_quality" type="uint" />
+            <field name="upload_buffer" type="buffer*" />
+            <field name="readback_buffer" type="buffer*" />
         </struct>
 
         <struct name="components_swizzle">
@@ -166,6 +168,22 @@
             <field name="flat" type="int" />
             <field name="renderpass" type="renderpass*" />
         </struct>
+
+        <struct name="size3d">
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="depth" type="uint" />
+        </struct>
+
+        <struct name="region3d">
+            <field name="x" type="uint" />
+            <field name="y" type="uint" />
+            <field name="z" type="uint" />
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="depth" type="uint" />
+        </struct>
+
 	</structs>
 
     <constants>
@@ -1074,6 +1092,7 @@
                 <arg name="level" type="int" />
                 <arg name="arrayIndex" type="int" />
                 <arg name="flags" type="mapping_access"/>
+                <arg name="region" type="region3d*" />
             </method>
 
             <method name="unmapLevel" cname="UnmapTextureLevel" returnType="error">
@@ -1092,6 +1111,16 @@
                 <arg name="arrayIndex" type="int" />
                 <arg name="pitch" type="int" />
                 <arg name="slicePitch" type="int" />
+                <arg name="data" type="pointer" />
+            </method>
+
+            <method name="uploadTextureSubData" cname="UploadTextureSubData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="sourceSize" type="size3d*" />
+                <arg name="destRegion" type="region3d*" />
                 <arg name="data" type="pointer" />
             </method>
 
@@ -1163,6 +1192,11 @@
             <method name="bindVertexBuffers" cname="BindVertexBuffers" returnType="error">
                 <arg name="count" type="uint" />
                 <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
+            </method>
+            <method name="bindVertexBuffersWithOffsets" cname="BindVertexBuffersWithOffsets" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
+                <arg name="offsets" type="size*"/>
             </method>
         </interface>
 
