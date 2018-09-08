@@ -392,7 +392,7 @@ AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builde
     return pipeline_builder->attachShader(shader);
 }
 
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader_type type, agpu_cstring entry_point )
+AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(pipeline_builder);
     return pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
