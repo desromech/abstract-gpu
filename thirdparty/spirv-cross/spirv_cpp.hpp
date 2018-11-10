@@ -26,13 +26,23 @@ namespace spirv_cross
 class CompilerCPP : public CompilerGLSL
 {
 public:
-	CompilerCPP(std::vector<uint32_t> spirv_)
+	explicit CompilerCPP(std::vector<uint32_t> spirv_)
 	    : CompilerGLSL(move(spirv_))
 	{
 	}
 
-	CompilerCPP(const uint32_t *ir, size_t word_count)
-	    : CompilerGLSL(ir, word_count)
+	CompilerCPP(const uint32_t *ir_, size_t word_count)
+	    : CompilerGLSL(ir_, word_count)
+	{
+	}
+
+	explicit CompilerCPP(const ParsedIR &ir_)
+	    : CompilerGLSL(ir_)
+	{
+	}
+
+	explicit CompilerCPP(ParsedIR &&ir_)
+	    : CompilerGLSL(std::move(ir_))
 	{
 	}
 
@@ -51,7 +61,7 @@ public:
 private:
 	void emit_header() override;
 	void emit_c_linkage();
-	void emit_function_prototype(SPIRFunction &func, uint64_t return_flags) override;
+	void emit_function_prototype(SPIRFunction &func, const Bitset &return_flags) override;
 
 	void emit_resources();
 	void emit_buffer_block(const SPIRVariable &type) override;
@@ -72,6 +82,6 @@ private:
 
 	std::string interface_name;
 };
-}
+} // namespace spirv_cross
 
 #endif

@@ -22,15 +22,11 @@ struct SPIRV_Cross_Output
     float4 FragColor : SV_Target0;
 };
 
-static float lut[4];
-static Foo foos[2];
-
 void frag_main()
 {
-    lut = _16;
-    foos = _28;
-    FragColor = lut[_line].xxxx;
-    FragColor += (foos[_line].a * (foos[1 - _line].a)).xxxx;
+    Foo foos[2] = _28;
+    FragColor = _16[_line].xxxx;
+    FragColor += (foos[_line].a * foos[1 - _line].a).xxxx;
 }
 
 SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)

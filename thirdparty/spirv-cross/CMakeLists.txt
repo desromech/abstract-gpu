@@ -85,6 +85,10 @@ spirv_cross_add_library(spirv-cross-core spirv_cross_core OBJECT
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_parser.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross_parsed_ir.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cross_parsed_ir.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cfg.cpp)
 
@@ -95,6 +99,10 @@ spirv_cross_add_library(spirv-cross-glsl spirv_cross_glsl OBJECT
 spirv_cross_add_library(spirv-cross-cpp spirv_cross_cpp OBJECT
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cpp.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_cpp.cpp)
+
+spirv_cross_add_library(spirv-cross-reflect spirv_cross_reflect OBJECT
+    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.cpp)
 
 spirv_cross_add_library(spirv-cross-msl spirv_cross_msl OBJECT
     ${CMAKE_CURRENT_SOURCE_DIR}/spirv_msl.hpp
