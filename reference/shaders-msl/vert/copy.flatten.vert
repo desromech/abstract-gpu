@@ -16,16 +16,23 @@ struct UBO
     Light lights[4];
 };
 
-struct main0_in
+struct Light_1
 {
-    float3 aNormal [[attribute(1)]];
-    float4 aVertex [[attribute(0)]];
+    float3 Position;
+    float Radius;
+    float4 Color;
 };
 
 struct main0_out
 {
     float4 vColor [[user(locn0)]];
     float4 gl_Position [[position]];
+};
+
+struct main0_in
+{
+    float4 aVertex [[attribute(0)]];
+    float3 aNormal [[attribute(1)]];
 };
 
 vertex main0_out main0(main0_in in [[stage_in]], constant UBO& _21 [[buffer(0)]])
@@ -35,12 +42,12 @@ vertex main0_out main0(main0_in in [[stage_in]], constant UBO& _21 [[buffer(0)]]
     out.vColor = float4(0.0);
     for (int i = 0; i < 4; i++)
     {
-        Light light;
+        Light_1 light;
         light.Position = _21.lights[i].Position;
         light.Radius = _21.lights[i].Radius;
         light.Color = _21.lights[i].Color;
         float3 L = in.aVertex.xyz - light.Position;
-        out.vColor += ((_21.lights[i].Color * clamp(1.0 - (length(L) / light.Radius), 0.0, 1.0)) * dot(in.aNormal, normalize(L)));
+        out.vColor += ((_21.lights[i].Color * fast::clamp(1.0 - (length(L) / light.Radius), 0.0, 1.0)) * dot(in.aNormal, normalize(L)));
     }
     return out;
 }
