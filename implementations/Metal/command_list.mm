@@ -75,6 +75,29 @@ agpu_error _agpu_command_list::setShaderSignature ( agpu_shader_signature* signa
     if(currentShaderSignature)
         currentShaderSignature->release();
     currentShaderSignature = signature;
+    
+    if(currentVertexBinding)
+    {
+        currentVertexBinding->release();
+        currentVertexBinding = nullptr;
+    }
+    
+    if(currentPipeline)
+    {
+        currentPipeline->release();
+        currentPipeline = nullptr;
+    }
+    
+    for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
+    {
+        auto activeBinding = activeShaderResourceBindings[i];
+        if(activeBinding)
+        {
+            activeBinding->release();
+            activeShaderResourceBindings[i] = nullptr;
+        }
+    }    
+
     return AGPU_OK;
 }
 
@@ -238,7 +261,7 @@ void _agpu_command_list::uploadPushConstants()
     if(/*!pushConstantsModified || */currentShaderSignature->pushConstantBufferSize == 0)
         return;
 
-    [renderEncoder setVertexBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: 1 + currentShaderSignature->pushConstantBufferIndex];
+    [renderEncoder setVertexBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: vertexBufferCount + currentShaderSignature->pushConstantBufferIndex];
     [renderEncoder setFragmentBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: currentShaderSignature->pushConstantBufferIndex];
     pushConstantsModified = false;
 }
@@ -445,7 +468,10 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
     if(currentPipeline)
-        currentPipeline->applyRenderCommands(renderEncoder);
+    {
+        currentPipeline->release();
+        currentPipeline = nullptr;
+    }
 
     return AGPU_OK;
 }

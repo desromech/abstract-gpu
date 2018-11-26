@@ -19,6 +19,7 @@ public:
 
     agpu_device *device;
     bool hasDepthStencil;
+    bool hasStencil;
     agpu_renderpass_depth_stencil_description depthStencil;
     std::vector<agpu_renderpass_color_attachment_description> colorAttachments;
 };

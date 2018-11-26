@@ -47,16 +47,24 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     descriptor.width = description->width;
     descriptor.height = description->height;
     descriptor.mipmapLevelCount = description->miplevels;
-    descriptor.storageMode = MTLStorageModePrivate;
+    descriptor.storageMode = MTLStorageModeManaged; // For upload texture.
+    if(description->sample_count > 1)
+    {
+        descriptor.storageMode = MTLStorageModePrivate;
+    }    
 
     auto flags = description->flags;
     if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
     {
         descriptor.usage = MTLTextureUsageRenderTarget;
+        descriptor.storageMode = MTLStorageModePrivate;
+        if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+            descriptor.usage |= MTLTextureUsageShaderRead;
+
     }
     else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
     {
-        descriptor.usage = MTLTextureUsageRenderTarget;
+        descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
     }
     else
     {

@@ -283,6 +283,8 @@ agpu_error _agpu_pipeline_builder::setStencilBackFace ( agpu_stencil_operation s
 
 agpu_error _agpu_pipeline_builder::setRenderTargetCount ( agpu_int count )
 {
+    for(agpu_uint i = 0; i < renderTargetCount; ++i)
+        descriptor.colorAttachments[i].pixelFormat = MTLPixelFormatInvalid;
     renderTargetCount = count;
     for(agpu_uint i = 0; i < count; ++i)
         descriptor.colorAttachments[i].pixelFormat = MTLPixelFormatBGRA8Unorm;
