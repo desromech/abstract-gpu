@@ -28,6 +28,7 @@ _agpu_renderpass::_agpu_renderpass(agpu_device *device)
     : device(device)
 {
     hasDepthStencil = false;
+    hasStencil = false;
 }
 
 void _agpu_renderpass::lostReferences()
@@ -50,7 +51,12 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
 
     result->hasDepthStencil = description->depth_stencil_attachment != nullptr;
     if(result->hasDepthStencil)
+    {
         result->depthStencil = *description->depth_stencil_attachment;
+        auto depthStencilFormat = result->depthStencil.format;
+        result->hasStencil = depthStencilFormat == AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ||
+            depthStencilFormat == AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
+    }
     return result;
 }
 
@@ -103,13 +109,16 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
         depthAttachment.loadAction = mapLoadAction(depthStencil.begin_action);
         depthAttachment.storeAction = mapStoreAction(depthStencil.end_action);
 
-        auto stencilAttachment = descriptor.stencilAttachment;
-        stencilAttachment.texture = framebuffer->depthStencilBuffer->handle;
-        stencilAttachment.level = view.subresource_range.base_miplevel;
-        stencilAttachment.slice = view.subresource_range.base_arraylayer;
-        stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
-        stencilAttachment.loadAction = mapLoadAction(depthStencil.stencil_begin_action);
-        stencilAttachment.storeAction = mapStoreAction(depthStencil.stencil_end_action);
+        if(hasStencil)
+        {
+            auto stencilAttachment = descriptor.stencilAttachment;
+            stencilAttachment.texture = framebuffer->depthStencilBuffer->handle;
+            stencilAttachment.level = view.subresource_range.base_miplevel;
+            stencilAttachment.slice = view.subresource_range.base_arraylayer;
+            stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
+            stencilAttachment.loadAction = mapLoadAction(depthStencil.stencil_begin_action);
+            stencilAttachment.storeAction = mapStoreAction(depthStencil.stencil_end_action);            
+        }
     }
 
     return descriptor;

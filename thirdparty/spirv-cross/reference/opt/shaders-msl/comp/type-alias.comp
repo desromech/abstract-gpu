@@ -8,14 +8,14 @@ struct S0
     float4 a;
 };
 
-struct S1
-{
-    float4 a;
-};
-
 struct SSBO0
 {
     S0 s0s[1];
+};
+
+struct S1
+{
+    float4 a;
 };
 
 struct SSBO1

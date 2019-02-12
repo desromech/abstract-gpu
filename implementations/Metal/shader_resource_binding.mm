@@ -227,7 +227,7 @@ agpu_error _agpu_shader_resource_binding::createSampler ( agpu_int location, agp
     descriptor.mipFilter = mapMipmapMode(description->filter);
     descriptor.lodMinClamp = description->min_lod;
     descriptor.lodMaxClamp = description->max_lod;
-    descriptor.maxAnisotropy = description->maxanisotropy;
+    descriptor.maxAnisotropy = std::max(1.0f, description->maxanisotropy);
     descriptor.normalizedCoordinates = YES;
     descriptor.compareFunction = mapCompareFunction(description->comparison_function);
 

@@ -1,33 +1,52 @@
-language: cpp
-os:
-  - linux
-  - osx
-osx_image: xcode8.3
+language:
+  - cpp
+  - python
 
-# Use Ubuntu 14.04 LTS (Trusty) as the Linux testing environment.
-sudo: required
-dist: trusty
+python: 3.7
 
-# We check out glslang and SPIRV-Tools at specific revisions to avoid test output mismatches
-env:
-  - GLSLANG_REV=9c6f8cc29ba303b43ccf36deea6bb38a304f9b92 SPIRV_TOOLS_REV=e28edd458b729da7bbfd51e375feb33103709e6f
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      env:
+        - GENERATOR="Unix Makefiles"
+    - os: linux
+      dist: trusty
+      compiler: clang
+      env:
+        - GENERATOR="Unix Makefiles"
+    - os: osx
+      compiler: clang
+      osx_image: xcode10
+      env:
+        - GENERATOR="Unix Makefiles"
+    - os: windows
+      before_install:
+        - choco install python3
+        - choco install python2
+        - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
+        - export PATH="/c/Python37:/c/Python37/Scripts:$PATH"
+      env:
+        - GENERATOR="Visual Studio 15 2017"
+    - os: windows
+      before_install:
+        - choco install python3
+        - choco install python2
+        - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
+        - export PATH="/c/Python37:/c/Python37/Scripts:$PATH"
+      env:
+        - GENERATOR="Visual Studio 15 2017 Win64"
 
 before_script:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python3; fi
-  - git clone https://github.com/KhronosGroup/glslang.git glslang
-  - git clone https://github.com/KhronosGroup/SPIRV-Tools SPIRV-Tools
-  - git clone https://github.com/KhronosGroup/SPIRV-Headers.git SPIRV-Tools/external/spirv-headers
+  - ./checkout_glslang_spirv_tools.sh
 
 script:
-  - git -C glslang checkout $GLSLANG_REV
-  - git -C SPIRV-Tools checkout $SPIRV_TOOLS_REV
-  - cd glslang && cmake . && make -j2 && cd ..
-  - cd SPIRV-Tools && cmake . && make -j2 && cd ..
-  - make -j2
-  - PATH=./glslang/StandAlone:./SPIRV-Tools/tools:$PATH
-  - ./test_shaders.py shaders
-  - ./test_shaders.py --msl shaders-msl
-  - ./test_shaders.py --hlsl shaders-hlsl
-  - ./test_shaders.py shaders --opt
-  - ./test_shaders.py --msl shaders-msl --opt
-  - ./test_shaders.py --hlsl shaders-hlsl --opt
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then PYTHON3=$(which python); fi
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then PYTHON3=$(which python3); fi
+  - ./build_glslang_spirv_tools.sh Release
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -G "${GENERATOR}" -DPYTHON_EXECUTABLE:FILEPATH="${PYTHON3}"
+  - cmake --build . --config Release
+  - PATH="../external/glslang-build/output/bin:../external/spirv-tools-build/output/bin:$PATH" ctest --verbose -C Release

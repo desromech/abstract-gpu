@@ -11,32 +11,31 @@ struct Foobar
     float b;
 };
 
-constant float4 _37[3] = {float4(1.0), float4(2.0), float4(3.0)};
-constant float4 _49[2] = {float4(1.0), float4(2.0)};
-constant float4 _54[2] = {float4(8.0), float4(10.0)};
-constant float4 _55[2][2] = {{float4(1.0), float4(2.0)}, {float4(8.0), float4(10.0)}};
-constant Foobar _75[2] = {{10.0, 40.0}, {90.0, 70.0}};
-
-struct main0_in
-{
-    int index [[user(locn0)]];
-};
+constant float4 _37[3] = { float4(1.0), float4(2.0), float4(3.0) };
+constant float4 _49[2] = { float4(1.0), float4(2.0) };
+constant float4 _54[2] = { float4(8.0), float4(10.0) };
+constant float4 _55[2][2] = { { float4(1.0), float4(2.0) }, { float4(8.0), float4(10.0) } };
+constant Foobar _75[2] = { Foobar{ 10.0, 40.0 }, Foobar{ 90.0, 70.0 } };
 
 struct main0_out
 {
     float4 FragColor [[color(0)]];
 };
 
+struct main0_in
+{
+    int index [[user(locn0)]];
+};
+
 // Implementation of an array copy function to cover GLSL's ability to copy an array via assignment.
 template<typename T, uint N>
-void spvArrayCopy(thread T (&dst)[N], thread const T (&src)[N])
+void spvArrayCopyFromStack1(thread T (&dst)[N], thread const T (&src)[N])
 {
     for (uint i = 0; i < N; dst[i] = src[i], i++);
 }
 
-// An overload for constant arrays.
 template<typename T, uint N>
-void spvArrayCopyConstant(thread T (&dst)[N], constant T (&src)[N])
+void spvArrayCopyFromConstant1(thread T (&dst)[N], constant T (&src)[N])
 {
     for (uint i = 0; i < N; dst[i] = src[i], i++);
 }
@@ -44,10 +43,8 @@ void spvArrayCopyConstant(thread T (&dst)[N], constant T (&src)[N])
 fragment main0_out main0(main0_in in [[stage_in]])
 {
     main0_out out = {};
-    float4 indexable[3] = {float4(1.0), float4(2.0), float4(3.0)};
-    float4 indexable_1[2][2] = {{float4(1.0), float4(2.0)}, {float4(8.0), float4(10.0)}};
-    Foobar indexable_2[2] = {{10.0, 40.0}, {90.0, 70.0}};
-    out.FragColor = ((indexable[in.index] + (indexable_1[in.index][in.index + 1])) + float4(10.0 + 20.0)) + float4(indexable_2[in.index].a + indexable_2[in.index].b);
+    Foobar indexable[2] = { Foobar{ 10.0, 40.0 }, Foobar{ 90.0, 70.0 } };
+    out.FragColor = ((_37[in.index] + _55[in.index][in.index + 1]) + float4(30.0)) + float4(indexable[in.index].a + indexable[in.index].b);
     return out;
 }
 

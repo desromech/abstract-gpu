@@ -54,12 +54,16 @@ agpu_error agpu_shader_forSignature::compileMetalSource ( std::string *errorMess
     auto compileOptions = [[MTLCompileOptions alloc] init];
     library = [device->device newLibraryWithSource: sourceString options: compileOptions error: &error];
     [sourceString release];
-    if(!library)
+    
+    // Always read the error, if there is one.
+    if(error)
     {
         auto description = [error localizedDescription];
         *errorMessage = [description UTF8String];
-        return AGPU_COMPILATION_ERROR;
     }
+    
+    if(!library)
+        return AGPU_COMPILATION_ERROR;
 
     if(!entryPoint.empty())
     {
@@ -237,7 +241,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_
 
 	// Set some options.
 	spirv_cross::CompilerMSL::Options options;
-	msl.set_options(options);
+	msl.set_msl_options(options);
 
 	// Compile the shader.
 	std::string compiled;
