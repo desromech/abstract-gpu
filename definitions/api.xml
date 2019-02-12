@@ -1,4 +1,24 @@
-<api name="Abstract GPU" headerFile="agpu.h" constantPrefix="AGPU_" typePrefix="agpu_" functionPrefix="agpu" >
+<api name="Abstract GPU">
+<bindings>
+    <language name="C">
+        <property key="headerFile" value="agpu.h" />
+        <property key="constantPrefix" value="AGPU_" />
+        <property key="typePrefix" value="agpu_" />
+        <property key="functionPrefix" value="agpu" />
+        <property key="headerInclude" value="&lt;AGPU/agpu.h&gt;" />
+        <property key="icdIncludeFile" value="agpu_icd.10.inc" />
+    </language>
+
+    <language name="C++">
+        <property key="headerFile" value="agpu.hpp" />
+    </language>
+
+    <language name="Pharo">
+        <property key="namespacePrefix" value="AGPU" />
+        <property key="package" value="AbstractGPU-Generated" />
+    </language>
+</bindings>
+
 <version name="1.0">
     <types>
         <typedef name="byte" ctype="unsigned char" />
@@ -843,7 +863,7 @@
                 <arg name="clamp" type="float" />
                 <arg name="slope_factor" type="float" />
             </method>
-            
+
             <method name="setDepthState" cname="SetDepthState" returnType="error">
                 <arg name="enabled" type="bool" />
                 <arg name="writeMask" type="bool" />
