@@ -9,6 +9,12 @@ BaselineOfAbstractGPU >> baseline: spec [
     <baseline>
 	spec for: #'common' do: [
 		spec blessing: #'baseline'.
+		spec postLoadDoIt: #postLoadActions.
+		spec 
+			baseline: #'PhaNAPI' with: [
+				spec
+					repository: 'github://ronsaldo/phanapi/tonel' ].
+
 		spec 
 			package: 'AbstractGPU-Core';
 			package: #'AbstractGPU-Generated' with: [
@@ -18,4 +24,9 @@ BaselineOfAbstractGPU >> baseline: spec [
 			package: 'AbstractGPU-Window' with: [
 				spec requires: #(#'AbstractGPU-Generated' 'AbstractGPU-Core' ). ]. ].
 
+]
+
+{ #category : #baselines }
+BaselineOfAbstractGPU >> postLoadActions [
+	(Smalltalk globals at: #AGPUCBindings) fetchLibrary
 ]

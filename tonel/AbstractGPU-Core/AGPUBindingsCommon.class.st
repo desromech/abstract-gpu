@@ -1,10 +1,6 @@
 Class {
 	#name : #AGPUBindingsCommon,
 	#superclass : #Object,
-	#classVars : [
-		'ModuleName',
-		'ModuleSession'
-	],
 	#category : #'AbstractGPU-Core'
 }
 

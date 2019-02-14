@@ -1,20 +1,16 @@
 Class {
 	#name : #AGPUCBindingsBase,
-	#superclass : #FFILibrary,
+	#superclass : #PhaNAPILibrary,
 	#category : #'AbstractGPU-Core'
 }
 
-{ #category : #'accessing platform' }
-AGPUCBindingsBase >> macModuleName [
-	^ 'libAgpu.dylib'
+{ #category : #'library downloading' }
+AGPUCBindingsBase >> fetchLibrary [
+	PhaNAPIBintray fetchLibrary: 'Agpu' fromUser: 'ronsaldo' repository: 'abstract-gpu' package: 'lib'.
+
 ]
 
-{ #category : #'accessing platform' }
-AGPUCBindingsBase >> unixModuleName [
-	^ 'libAgpu.so'
-]
-
-{ #category : #'accessing platform' }
-AGPUCBindingsBase >> win32ModuleName [
-	^ 'Agpu.dll'
+{ #category : #'library path' }
+AGPUCBindingsBase >> findLibraryPath [
+	^ PhaNAPI fullLibraryPathForCurrentPlatform: 'Agpu' package: 'abstract-gpu'
 ]
