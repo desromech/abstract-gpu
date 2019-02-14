@@ -16,13 +16,14 @@ BaselineOfAbstractGPU >> baseline: spec [
 					repository: 'github://ronsaldo/phanapi/tonel' ].
 
 		spec 
-			package: 'AbstractGPU-Core';
+			package: 'AbstractGPU-Core' with: [
+				spec requires: #(#'PhaNAPI' ). ];
 			package: #'AbstractGPU-Generated' with: [
-				spec requires: #('AbstractGPU-Core' ). ];
-			package: 'AbstractGPU-Samples' with: [
-				spec requires: #('AbstractGPU-Window' 'AbstractGPU-Core' #'AbstractGPU-Generated' ). ];
-			package: 'AbstractGPU-Window' with: [
-				spec requires: #(#'AbstractGPU-Generated' 'AbstractGPU-Core' ). ]. ].
+				spec requires: #(#'AbstractGPU-Core' ). ];
+			package: #'AbstractGPU-Samples' with: [
+				spec requires: #(#'AbstractGPU-Window' #'AbstractGPU-Core' #'AbstractGPU-Generated' ). ];
+			package: #'AbstractGPU-Window' with: [
+				spec requires: #(#'AbstractGPU-Generated' #'AbstractGPU-Core' ). ]. ].
 
 ]
 
