@@ -10,6 +10,11 @@ if test "$OS_NAME" = "darwin"; then
     OS_NAME="osx"
 fi
 
+# Rename x86_64 into x64 to distinguis between x86 and x86_64 with grep.
+if test "$ARCH" = "x86_64"; then
+    ARCH="x64"
+fi
+
 PLATFORM_NAME="${OS_NAME}-${ARCH}"
 ARCHIVE_NAME="${PROJECT_NAME}_${VARIANT}_${PLATFORM_NAME}_${VERSION_NAME}.tar.gz"
 
@@ -32,4 +37,3 @@ if test "$BINTRAY_APIKEY" != ""; then
     curl -T "$ARCHIVE_NAME" -uronsaldo:$BINTRAY_APIKEY "https://api.bintray.com/content/ronsaldo/abstract-gpu/lib/${VERSION_NAME}/${ARCHIVE_NAME}?publish=1"
     echo
 fi
-
