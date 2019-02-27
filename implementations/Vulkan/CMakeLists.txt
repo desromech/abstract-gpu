@@ -50,4 +50,5 @@ include_directories(${VULKAN_INCLUDE_DIRS})
 add_definitions(-DAGPU_BUILD)
 
 add_library(AgpuVulkan SHARED ${AGPU_Vulkan_SOURCES})
-target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES})
+add_dependencies(AgpuVulkan openvr_api)
+target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_api>)

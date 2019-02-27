@@ -1,9 +1,26 @@
 #!/bin/bash
 VERSION_NAME=$(git show -s --format=%cd --date=format:%Y%m%d%H%M)
 PROJECT_NAME="abstract-gpu"
+ALLOWED_REPOSITORY="ronsaldo/abstract-gpu"
 OS_NAME=$(uname | tr "[:upper:]" "[:lower:]")
 VARIANT=$(echo "$BUILD_MODE" | tr "[:upper:]" "[:lower:]")
 ARCH=$(uname -m)
+
+# Make sure this is a branch whose deployment is allowed.
+if [[ "${TRAVIS_REPO_SLUG}" != "ronsaldo/abstract-gpu" ]]; then
+  echo "Trying to deploy in repository: ${REPO_NAME}. Skipping."
+  exit
+fi
+
+if [[ -n "${TRAVIS_PULL_REQUEST_SHA}" ]]; then
+  echo "Skipping a deployment with the script provider because PRs are not permitted."
+  exit
+fi
+
+if [[ "${TRAVIS_BRANCH}" != "master" ]] && [[ -z "${TRAVIS_TAG}" ]]; then
+  echo "Skipping a deployment with the script provider because this branch is not permitted."
+  exit
+fi
 
 # Rename darwin into osx
 if test "$OS_NAME" = "darwin"; then
