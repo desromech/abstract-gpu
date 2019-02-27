@@ -176,10 +176,17 @@ _agpu_device::_agpu_device()
     setupCommandBuffer = nullptr;
     hasDebugReportExtension = false;
     debugReportCallback = VK_NULL_HANDLE;
+
+    isVRDisplaySupported = false;
+    isVRInputDevicesSupported = false;
+    vrSystem = nullptr;
 }
 
 void _agpu_device::lostReferences()
 {
+    // Shutdown the VR system, when I die.
+    if(vrSystem)
+        vr::VR_Shutdown();
 }
 
 bool _agpu_device::checkVulkanImplementation()
@@ -276,6 +283,23 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     displayHandle = openInfo->display;
 
+    // Is VR support requested? if so, we may need to request some extensions
+    // that are required by the VR system.
+    if((openInfo->open_flags & AGPU_DEVICE_OPEN_FLAG_ALLOW_VR) != 0)
+    {
+        vr::HmdError hmdError;
+        vrSystem = vr::VR_Init(&hmdError, vr::VRApplication_Scene);
+        if(!vrSystem || hmdError != 0)
+        {
+            printError("VR API initialization error code %d\n", hmdError);
+        }
+        else
+        {
+            printf("VR system inited: %p\n", vrSystem);
+        }
+    }
+
+    // The application info.
     VkApplicationInfo applicationInfo;
     memset(&applicationInfo, 0, sizeof(applicationInfo));
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -551,6 +575,8 @@ agpu_bool _agpu_device::isFeatureSupported(agpu_feature feature)
 	case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING: return true;
 	case AGPU_FEATURE_COMMAND_LIST_REUSE: return true;
 	case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: return false;
+    case AGPU_FEATURE_VRDISPLAY: return isVRDisplaySupported;
+    case AGPU_FEATURE_VRINPUT_DEVICES: return isVRInputDevicesSupported;
 	default: return false;
 	}
 }

@@ -55,6 +55,7 @@
             <field name="engine_name" type="cstring" />
             <field name="engine_version" type="uint" />
             <field name="gpu_index" type="int" />
+            <field name="open_flags" type="device_open_flags" />
         </struct>
 
         <struct name="swap_chain_create_info">
@@ -222,6 +223,11 @@
             <constant name="CommandListClosed" value="-10" />
         </enum>
 
+        <enum name="device_open_flags">
+            <constant name="DeviceOpenFlagNone" value="0" />
+            <constant name="DeviceOpenFlagAllowVR" value="1" />
+        </enum>
+
         <enum name="command_queue_type">
             <constant name="CommandQueueTypeGraphics" value="0" />
             <constant name="CommandQueueTypeCompute" value="1" />
@@ -256,7 +262,8 @@
             <constant name="FeaturePersistentCoherentMemoryMapping" value="3" />
             <constant name="FeatureCommandListReuse" value="4" />
             <constant name="FeatureNonEmulatedCommandListReuse" value="5" />
-            <constant name="FeatureDirectDisplay" value="6" />
+            <constant name="FeatureVRDisplay" value="6" />
+            <constant name="FeatureVRInputDevices" value="7" />
         </enum>
 
         <enum name="renderpass_attachment_action">

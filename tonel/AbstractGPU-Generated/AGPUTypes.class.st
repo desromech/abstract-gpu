@@ -18,6 +18,7 @@ Class {
 		'agpu_compare_function',
 		'agpu_color4f',
 		'agpu_size',
+		'agpu_device_open_flags',
 		'agpu_double',
 		'agpu_filter',
 		'agpu_blending_factor',
@@ -114,6 +115,7 @@ AGPUTypes class >> initialize [
 	agpu_compare_function := #int.
 	agpu_color4f := AGPUColor4f.
 	agpu_size := #'uint'.
+	agpu_device_open_flags := #int.
 	agpu_double := #'double'.
 	agpu_filter := #int.
 	agpu_blending_factor := #int.

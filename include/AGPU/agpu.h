@@ -77,6 +77,11 @@ typedef enum {
 } agpu_error;
 
 typedef enum {
+	AGPU_DEVICE_OPEN_FLAG_NONE = 0,
+	AGPU_DEVICE_OPEN_FLAG_ALLOW_VR = 1,
+} agpu_device_open_flags;
+
+typedef enum {
 	AGPU_COMMAND_QUEUE_TYPE_GRAPHICS = 0,
 	AGPU_COMMAND_QUEUE_TYPE_COMPUTE = 1,
 	AGPU_COMMAND_QUEUE_TYPE_TRANSFER = 2,
@@ -107,7 +112,8 @@ typedef enum {
 	AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING = 3,
 	AGPU_FEATURE_COMMAND_LIST_REUSE = 4,
 	AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE = 5,
-	AGPU_FEATURE_DIRECT_DISPLAY = 6,
+	AGPU_FEATURE_VRDISPLAY = 6,
+	AGPU_FEATURE_VRINPUT_DEVICES = 7,
 } agpu_feature;
 
 typedef enum {
@@ -461,6 +467,7 @@ typedef struct agpu_device_open_info {
 	agpu_cstring engine_name;
 	agpu_uint engine_version;
 	agpu_int gpu_index;
+	agpu_device_open_flags open_flags;
 } agpu_device_open_info;
 
 /* Structure agpu_swap_chain_create_info. */

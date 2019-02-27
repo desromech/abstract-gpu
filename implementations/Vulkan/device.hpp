@@ -17,6 +17,7 @@
 #include <mutex>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include <openvr.h>
 
 #define DECLARE_VK_EXTENSION_FP(name) PFN_vk ## name fp ## name
 
@@ -78,6 +79,12 @@ public:
     DECLARE_VK_EXTENSION_FP(AcquireNextImageKHR);
     DECLARE_VK_EXTENSION_FP(QueuePresentKHR);
 
+    // VR support
+    bool isVRDisplaySupported;
+    bool isVRInputDevicesSupported;
+
+    vr::IVRSystem *vrSystem;
+
     // Queues
     std::vector<agpu_command_queue*> graphicsCommandQueues;
     std::vector<agpu_command_queue*> computeCommandQueues;
@@ -114,7 +121,7 @@ public:
 
 private:
     bool checkDebugReportExtension();
-    
+
     bool createSetupCommandBuffer();
     bool submitSetupCommandBuffer();
 

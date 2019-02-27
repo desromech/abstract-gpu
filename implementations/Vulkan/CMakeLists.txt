@@ -47,8 +47,12 @@ set(AGPU_Vulkan_SOURCES
 
 include_directories(${VULKAN_INCLUDE_DIRS})
 
-add_definitions(-DAGPU_BUILD)
+add_definitions(
+    -DAGPU_BUILD
+    -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
+)
 
 add_library(AgpuVulkan SHARED ${AGPU_Vulkan_SOURCES})
 add_dependencies(AgpuVulkan openvr_api)
-target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_api>)
+include_directories(${OPENVR_INCLUDE})
+target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_api> ${OPENVR_LIBS})
