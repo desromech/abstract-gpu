@@ -156,6 +156,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
             break;
         }
 
+        // Since Vulkan 1.1.82, the message coe is not used anymore.
+        if(strstr(pMessage, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed"))
+            return VK_FALSE;
     }
 
     printError("%s: %d: %s\n", pLayerPrefix, messageCode, pMessage);
@@ -339,14 +342,6 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         instanceExtensions.push_back("VK_EXT_debug_report");
     }
 
-    // Enable some optional extensions.
-    if(hasExtension("VK_KHR_display", instanceExtensionProperties))
-        instanceExtensions.push_back("VK_KHR_display");
-    if(hasExtension("VK_EXT_direct_mode_display", instanceExtensionProperties))
-        instanceExtensions.push_back("VK_EXT_direct_mode_display");
-    if(hasExtension("VK_EXT_acquire_xlib_display", instanceExtensionProperties))
-        instanceExtensions.push_back("VK_EXT_acquire_xlib_display");
-
     // Set the enabled layers and extensions.
     if (!instanceLayers.empty())
     {
@@ -424,10 +419,6 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     for (size_t i = 0; i < requiredDeviceExtensionCount; ++i)
         deviceExtensions.push_back(requiredDeviceExtensionNames[i]);
 
-    // Enable some optional device extensions.
-    if(hasExtension("VK_EXT_display_control", deviceExtensionProperties))
-        deviceExtensions.push_back("VK_EXT_display_control");
-
     uint32_t queueFamilyCount;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
     if (queueFamilyCount == 0)
@@ -446,29 +437,6 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     if (hasDebugReportExtension)
         hasDebugReportExtension = checkDebugReportExtension();
-
-    // Presenting directly into a display
-    hasDisplay = hasExtension("VK_KHR_display", instanceExtensionProperties);
-    if(hasDisplay)
-    {
-        GET_INSTANCE_PROC_ADDR(GetPhysicalDeviceDisplayPropertiesKHR);
-        GET_INSTANCE_PROC_ADDR(GetPhysicalDeviceDisplayPlanePropertiesKHR);
-        GET_INSTANCE_PROC_ADDR(GetDisplayPlaneSupportedDisplaysKHR);
-        GET_INSTANCE_PROC_ADDR(GetDisplayModePropertiesKHR);
-        GET_INSTANCE_PROC_ADDR(CreateDisplayModeKHR);
-        GET_INSTANCE_PROC_ADDR(GetDisplayPlaneCapabilitiesKHR);
-        GET_INSTANCE_PROC_ADDR(CreateDisplayPlaneSurfaceKHR);
-    }
-
-    hasDirectModeDisplay = hasExtension("VK_EXT_direct_mode_display", instanceExtensionProperties);
-    if(hasDirectModeDisplay)
-    {
-        GET_INSTANCE_PROC_ADDR(ReleaseDisplayEXT);
-    }
-
-    hasAcquireXLibDisplay = hasExtension("VK_EXT_acquire_xlib_display", instanceExtensionProperties);
-
-    hasDisplayControl = hasExtension("VK_EXT_display_control", deviceExtensionProperties);
 
     // Open all the availables queues.
     std::vector<VkDeviceQueueCreateInfo> createQueueInfos;

@@ -78,26 +78,6 @@ public:
     DECLARE_VK_EXTENSION_FP(AcquireNextImageKHR);
     DECLARE_VK_EXTENSION_FP(QueuePresentKHR);
 
-    // Display extension
-    bool hasDisplay;
-    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceDisplayPropertiesKHR);
-    DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceDisplayPlanePropertiesKHR);
-    DECLARE_VK_EXTENSION_FP(GetDisplayPlaneSupportedDisplaysKHR);
-    DECLARE_VK_EXTENSION_FP(GetDisplayModePropertiesKHR);
-    DECLARE_VK_EXTENSION_FP(CreateDisplayModeKHR);
-    DECLARE_VK_EXTENSION_FP(GetDisplayPlaneCapabilitiesKHR);
-    DECLARE_VK_EXTENSION_FP(CreateDisplayPlaneSurfaceKHR);
-
-    // Display direct extension
-    bool hasDirectModeDisplay;
-    DECLARE_VK_EXTENSION_FP(ReleaseDisplayEXT);
-
-    // Acquire xlib
-    bool hasAcquireXLibDisplay;
-
-    // Display control
-    bool hasDisplayControl;
-
     // Queues
     std::vector<agpu_command_queue*> graphicsCommandQueues;
     std::vector<agpu_command_queue*> computeCommandQueues;
