@@ -14,7 +14,6 @@ if($Env:APPVEYOR_REPO_NAME -ne $ALLOWED_REPOSITORY)
     exit
 }
 
-
 if($Env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT)
 {
     echo "Skipping a deployment with the script provider because PRs are not permitted."
