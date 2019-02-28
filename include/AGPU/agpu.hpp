@@ -1144,6 +1144,11 @@ public:
 		agpuThrowIfFailed(agpuBindTextureArrayRange( this, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp ));
 	}
 
+	inline void bindImage ( agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+	{
+		agpuThrowIfFailed(agpuBindImage( this, location, texture, level, layer, access, format ));
+	}
+
 	inline void createSampler ( agpu_int location, agpu_sampler_description* description )
 	{
 		agpuThrowIfFailed(agpuCreateSampler( this, location, description ));

@@ -1329,6 +1329,14 @@ AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding*
 	return (*dispatchTable)->agpuBindTextureArrayRange ( shader_resource_binding, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp );
 }
 
+AGPU_EXPORT agpu_error agpuBindImage ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindImage ( shader_resource_binding, location, texture, level, layer, access, format );
+}
+
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description )
 {
 	if (shader_resource_binding == nullptr)

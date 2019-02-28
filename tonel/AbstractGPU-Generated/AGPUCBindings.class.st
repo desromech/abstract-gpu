@@ -839,6 +839,11 @@ AGPUCBindings >> bindTextureArrayRange_shader_resource_binding: shader_resource_
 ]
 
 { #category : #'shader_resource_binding' }
+AGPUCBindings >> bindImage_shader_resource_binding: shader_resource_binding location: location texture: texture level: level layer: layer access: access format: format [
+	^ self ffiCall: #(agpu_error agpuBindImage (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture* texture , agpu_int level , agpu_int layer , agpu_mapping_access access , agpu_texture_format format) )
+]
+
+{ #category : #'shader_resource_binding' }
 AGPUCBindings >> createSampler_shader_resource_binding: shader_resource_binding location: location description: description [
 	^ self ffiCall: #(agpu_error agpuCreateSampler (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_sampler_description* description) )
 ]

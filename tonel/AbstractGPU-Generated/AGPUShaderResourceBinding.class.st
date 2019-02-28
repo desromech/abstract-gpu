@@ -61,6 +61,13 @@ AGPUShaderResourceBinding >> bindTextureArrayRange: location texture: texture st
 ]
 
 { #category : #'wrappers' }
+AGPUShaderResourceBinding >> bindImage: location texture: texture level: level layer: layer access: access format: format [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance bindImage_shader_resource_binding: (self validHandle) location: location texture: (self validHandleOf: texture) level: level layer: layer access: access format: format.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUShaderResourceBinding >> createSampler: location description: description [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance createSampler_shader_resource_binding: (self validHandle) location: location description: description.

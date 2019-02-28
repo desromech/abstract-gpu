@@ -1382,6 +1382,15 @@
                 <arg name="lodclamp" type="float" />
             </method>
 
+            <method name="bindImage" cname="BindImage" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="texture" type="texture*" />
+                <arg name="level" type="int" />
+                <arg name="layer" type="int" />
+                <arg name="access" type="mapping_access" />
+                <arg name="format" type="texture_format" />
+            </method>
+
             <method name="createSampler" cname="CreateSampler" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="description" type="sampler_description*" />

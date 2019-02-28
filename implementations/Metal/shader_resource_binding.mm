@@ -205,6 +205,28 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange ( agpu_int locat
     return AGPU_UNIMPLEMENTED;
 }
 
+agpu_error _agpu_shader_resource_binding::bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
+{
+    CHECK_POINTER(texture);
+    if(location < 0)
+        return AGPU_OK;
+
+    const auto &bank = signature->elements[elementIndex];
+    if(location >= bank.elements.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+        return AGPU_INVALID_OPERATION;
+
+    texture->retain();
+    auto &binding = textures[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Texture]];
+    if(binding)
+        binding->release();
+    binding = texture;
+    return AGPU_OK;
+}
+
 agpu_error _agpu_shader_resource_binding::createSampler ( agpu_int location, agpu_sampler_description* description )
 {
     CHECK_POINTER(description);
@@ -452,6 +474,12 @@ AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding*
 {
     CHECK_POINTER(shader_resource_binding);
     return shader_resource_binding->bindTextureArrayRange(location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
+}
+
+AGPU_EXPORT agpu_error agpuBindImage ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindImage(location, texture, level, layer, access, format);
 }
 
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description )

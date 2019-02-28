@@ -1011,6 +1011,7 @@ typedef agpu_error (*agpuBindStorageBuffer_FUN) ( agpu_shader_resource_binding* 
 typedef agpu_error (*agpuBindStorageBufferRange_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size );
 typedef agpu_error (*agpuBindTexture_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
 typedef agpu_error (*agpuBindTextureArrayRange_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
+typedef agpu_error (*agpuBindImage_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format );
 typedef agpu_error (*agpuCreateSampler_FUN) ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description );
 
 AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference ( agpu_shader_resource_binding* shader_resource_binding );
@@ -1021,6 +1022,7 @@ AGPU_EXPORT agpu_error agpuBindStorageBuffer ( agpu_shader_resource_binding* sha
 AGPU_EXPORT agpu_error agpuBindStorageBufferRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size );
 AGPU_EXPORT agpu_error agpuBindTexture ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
 AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
+AGPU_EXPORT agpu_error agpuBindImage ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format );
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description );
 
 /* Methods for interface agpu_fence. */
@@ -1202,6 +1204,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuBindStorageBufferRange_FUN agpuBindStorageBufferRange;
 	agpuBindTexture_FUN agpuBindTexture;
 	agpuBindTextureArrayRange_FUN agpuBindTextureArrayRange;
+	agpuBindImage_FUN agpuBindImage;
 	agpuCreateSampler_FUN agpuCreateSampler;
 	agpuAddFenceReference_FUN agpuAddFenceReference;
 	agpuReleaseFenceReference_FUN agpuReleaseFenceReference;
