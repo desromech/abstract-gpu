@@ -150,7 +150,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
         {
         case 2: // Unused vertex output
         case 3: // Unused vertex attribute.
-        case 6: // General layout
             return VK_FALSE;
         default:
             // Ignore this case.
@@ -673,7 +672,7 @@ bool _agpu_device::clearImageWithColor(VkImage image, VkImageSubresourceRange ra
     }
 
     // Transition to dst optimal
-    VkImageLayout transferLayout = destLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    VkImageLayout transferLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     if (sourceLayout != transferLayout)
     {
         VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -790,7 +789,7 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange rang
             return false;
     }
 
-    VkImageLayout transferLayout = destLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    VkImageLayout transferLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     if (destLayout != transferLayout)
     {
         VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;

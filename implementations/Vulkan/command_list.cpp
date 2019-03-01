@@ -536,13 +536,13 @@ agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agp
 
     // Transition the source color attachment.
     auto sourceInitialLayout = sourceTexture->initialLayout;
-    auto sourceResolveLayout = sourceInitialLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    auto sourceResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     if(sourceInitialLayout != sourceResolveLayout)
         setImageLayout(sourceTexture->image, range, sourceTexture->imageAspect, sourceInitialLayout, sourceResolveLayout, sourceTexture->initialLayoutAccessBits);
 
     // Transition the dest color attachments.
     auto destInitialLayout = destTexture->initialLayout;
-    auto destResolveLayout = destInitialLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    auto destResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     if(destInitialLayout != destResolveLayout)
         setImageLayout(destTexture->image, range, destTexture->imageAspect, destInitialLayout, destResolveLayout, destTexture->initialLayoutAccessBits);
 
