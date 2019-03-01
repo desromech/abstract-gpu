@@ -544,6 +544,11 @@ AGPUCBindings >> resolveFramebuffer_command_list: command_list destFramebuffer: 
 ]
 
 { #category : #'command_list' }
+AGPUCBindings >> resolveTexture_command_list: command_list sourceTexture: sourceTexture sourceLevel: sourceLevel sourceLayer: sourceLayer destTexture: destTexture destLevel: destLevel destLayer: destLayer levelCount: levelCount layerCount: layerCount aspect: aspect [
+	^ self ffiCall: #(agpu_error agpuResolveTexture (agpu_command_list* command_list , agpu_texture* sourceTexture , agpu_uint sourceLevel , agpu_uint sourceLayer , agpu_texture* destTexture , agpu_uint destLevel , agpu_uint destLayer , agpu_uint levelCount , agpu_uint layerCount , agpu_texture_aspect aspect) )
+]
+
+{ #category : #'command_list' }
 AGPUCBindings >> pushConstants_command_list: command_list offset: offset size: size values: values [
 	^ self ffiCall: #(agpu_error agpuPushConstants (agpu_command_list* command_list , agpu_uint offset , agpu_uint size , agpu_pointer values) )
 ]

@@ -739,6 +739,11 @@ public:
 		agpuThrowIfFailed(agpuResolveFramebuffer( this, destFramebuffer, sourceFramebuffer ));
 	}
 
+	inline void resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+	{
+		agpuThrowIfFailed(agpuResolveTexture( this, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect ));
+	}
+
 	inline void pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
 	{
 		agpuThrowIfFailed(agpuPushConstants( this, offset, size, values ));

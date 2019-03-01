@@ -363,7 +363,7 @@ agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
+agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
 {
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -504,49 +504,97 @@ agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuf
 {
     CHECK_POINTER(destFramebuffer);
     CHECK_POINTER(sourceFramebuffer);
+
     if(sourceFramebuffer->colorCount < 1 || destFramebuffer->colorCount < 1)
         return AGPU_INVALID_PARAMETER;
+
     if(sourceFramebuffer->width != destFramebuffer->width ||
         sourceFramebuffer->height != destFramebuffer->height)
         return AGPU_INVALID_PARAMETER;
 
-    // Transition the dest color attachments.
-    auto destInitialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    auto destResolveLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAccessFlagBits destInitialAccessMask = VkAccessFlagBits(0);
-    if (destFramebuffer->swapChainFramebuffer)
-    {
-        destInitialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        destInitialAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        destResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    }
+    return resolveTexture(sourceFramebuffer->attachmentTextures[0], 0, 0,
+            destFramebuffer->attachmentTextures[0], 0, 0,
+            1, 1, AGPU_TEXTURE_ASPECT_COLOR);
+}
+
+agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+{
+    CHECK_POINTER(destTexture);
+    CHECK_POINTER(sourceTexture);
+    if(sourceTexture->description.width != destTexture->description.width ||
+        sourceTexture->description.height != destTexture->description.height)
+        return AGPU_INVALID_PARAMETER;
+
+    VkImageAspectFlags resolveAspects = sourceTexture->imageAspect & destTexture->imageAspect;
+    if(resolveAspects == 0)
+        return AGPU_INVALID_PARAMETER;
 
     VkImageSubresourceRange range;
     memset(&range, 0, sizeof(range));
     range.layerCount = 1;
     range.levelCount = 1;
-    if(destInitialLayout != VK_IMAGE_LAYOUT_GENERAL)
-        setImageLayout(destFramebuffer->attachmentTextures[0]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, destInitialLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destInitialAccessMask);
 
-    VkImageResolve region;
-    memset(&region, 0, sizeof(region));
-    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.dstSubresource.baseArrayLayer = 0;
-    region.dstSubresource.layerCount = 1;
-    region.dstSubresource.mipLevel = 0;
-    region.srcSubresource = region.dstSubresource;
-    region.extent.width = sourceFramebuffer->width;
-    region.extent.height = sourceFramebuffer->height;
-    region.extent.depth = 1;
+    // Transition the source color attachment.
+    auto sourceInitialLayout = sourceTexture->initialLayout;
+    auto sourceResolveLayout = sourceInitialLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    if(sourceInitialLayout != sourceResolveLayout)
+        setImageLayout(sourceTexture->image, range, resolveAspects, sourceInitialLayout, sourceResolveLayout, sourceTexture->initialLayoutAccessBits);
 
-    vkCmdResolveImage(commandBuffer,
-        sourceFramebuffer->attachmentTextures[0]->image, VK_IMAGE_LAYOUT_GENERAL,
-        destFramebuffer->attachmentTextures[0]->image, destResolveLayout,
-        1, &region);
+    // Transition the dest color attachments.
+    auto destInitialLayout = destTexture->initialLayout;
+    auto destResolveLayout = destInitialLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    if(destInitialLayout != destResolveLayout)
+        setImageLayout(destTexture->image, range, resolveAspects, destInitialLayout, destResolveLayout, destTexture->initialLayoutAccessBits);
+
+    if(sourceTexture->description.sample_count == 1 && destTexture->description.sample_count == 1)
+    {
+        VkImageBlit blitRegion;
+        memset(&blitRegion, 0, sizeof(blitRegion));
+        blitRegion.srcSubresource.aspectMask = resolveAspects;
+        blitRegion.srcSubresource.baseArrayLayer = sourceLayer;
+        blitRegion.srcSubresource.layerCount = layerCount;
+        blitRegion.srcOffsets[1].x = sourceTexture->description.width;
+        blitRegion.srcOffsets[1].y = sourceTexture->description.height;
+        blitRegion.srcOffsets[1].z = 1;
+
+        blitRegion.dstSubresource.aspectMask = resolveAspects;
+        blitRegion.srcSubresource.baseArrayLayer = destLayer;
+        blitRegion.dstSubresource.layerCount = layerCount;
+        blitRegion.dstOffsets[1].x = destTexture->description.width;
+        blitRegion.dstOffsets[1].y = destTexture->description.height;
+        blitRegion.dstOffsets[1].z = 1;
+
+        vkCmdBlitImage(commandBuffer, sourceTexture->image, sourceResolveLayout, destTexture->image, destResolveLayout, 1, &blitRegion, VK_FILTER_NEAREST);
+    }
+    else
+    {
+        VkImageResolve region;
+        memset(&region, 0, sizeof(region));
+        region.dstSubresource.aspectMask = resolveAspects;
+        region.dstSubresource.baseArrayLayer = destLayer;
+        region.dstSubresource.layerCount = layerCount;
+        region.dstSubresource.mipLevel = destLevel;
+
+        region.srcSubresource.aspectMask = resolveAspects;
+        region.srcSubresource.baseArrayLayer = sourceLayer;
+        region.srcSubresource.layerCount = layerCount;
+        region.srcSubresource.mipLevel = sourceLevel;
+
+        region.extent.width = sourceTexture->description.width;
+        region.extent.height = sourceTexture->description.height;
+        region.extent.depth = 1;
+
+        vkCmdResolveImage(commandBuffer,
+            sourceTexture->image, sourceResolveLayout,
+            destTexture->image, destResolveLayout,
+            1, &region);
+    }
 
     // Transition the destination back to its original layout
-    if(destInitialLayout != VK_IMAGE_LAYOUT_GENERAL)
-        setImageLayout(destFramebuffer->attachmentTextures[0]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destInitialLayout, VkAccessFlagBits(0));
+    if(destInitialLayout != destResolveLayout)
+        setImageLayout(destTexture->image, range, resolveAspects, destResolveLayout, destInitialLayout, VkAccessFlagBits(0));
+    if(sourceInitialLayout != sourceResolveLayout)
+        setImageLayout(sourceTexture->image, range, resolveAspects, sourceResolveLayout, sourceInitialLayout, VkAccessFlagBits(0));
 
     return AGPU_OK;
 }
@@ -719,4 +767,10 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, a
 {
     CHECK_POINTER(command_list);
     return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
+}
+
+AGPU_EXPORT agpu_error agpuResolveTexture ( agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+{
+    CHECK_POINTER(command_list);
+    return command_list->resolveTexture(sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect );    
 }

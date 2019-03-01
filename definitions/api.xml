@@ -561,6 +561,13 @@
             <constant name="TextureAddressModeMirrorOnce" value="5" />
         </enum>
 
+        <enum name="texture_aspect">
+            <constant name="TextureAspectColor" value="1" />
+            <constant name="TextureAspectDepth" value="2" />
+            <constant name="TextureAspectStencil" value="4" />
+            <constant name="TextureAspectAll" value="-1" />
+        </enum>
+
         <enum name="command_list_type">
             <constant name="CommandListTypeDirect" value="1" />
             <constant name="CommandListTypeBundle" value="2" />
@@ -1090,6 +1097,20 @@
             <method name="resolveFramebuffer" cname="ResolveFramebuffer" returnType="error">
                 <arg name="destFramebuffer" type="framebuffer*" />
                 <arg name="sourceFramebuffer" type="framebuffer*" />
+            </method>
+
+            <method name="resolveTexture" cname="ResolveTexture" returnType="error">
+                <arg name="sourceTexture" type="texture*" />
+                <arg name="sourceLevel" type="uint" />
+                <arg name="sourceLayer" type="uint" />
+
+                <arg name="destTexture" type="texture*" />
+                <arg name="destLevel" type="uint" />
+                <arg name="destLayer" type="uint" />
+
+                <arg name="levelCount" type="uint" />
+                <arg name="layerCount" type="uint" />
+                <arg name="aspect" type="texture_aspect" />
             </method>
 
             <method name="pushConstants" cname="PushConstants" returnType="error">

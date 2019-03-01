@@ -333,6 +333,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     texture->readbackBuffer = readbackBuffer;
     texture->initialLayout = initialLayout;
     texture->initialLayoutAccessBits = initialLayoutAccessBits;
+    texture->imageAspect = imageAspect;
     return texture.release();
 }
 

@@ -2,6 +2,7 @@ Class {
 	#name : #AGPUTypes,
 	#classVars : [
 		'agpu_cstring',
+		'agpu_texture_aspect',
 		'agpu_string',
 		'agpu_swap_chain',
 		'agpu_texture_view_description',
@@ -98,6 +99,7 @@ AGPUTypes class >> initialize [
 	super initialize.
 
 	agpu_cstring := #'char*'.
+	agpu_texture_aspect := #int.
 	agpu_string := #'char*'.
 	agpu_swap_chain := #'void'.
 	agpu_texture_view_description := AGPUTextureViewDescription.
