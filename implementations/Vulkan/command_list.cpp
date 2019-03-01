@@ -538,13 +538,13 @@ agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agp
     auto sourceInitialLayout = sourceTexture->initialLayout;
     auto sourceResolveLayout = sourceInitialLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     if(sourceInitialLayout != sourceResolveLayout)
-        setImageLayout(sourceTexture->image, range, resolveAspects, sourceInitialLayout, sourceResolveLayout, sourceTexture->initialLayoutAccessBits);
+        setImageLayout(sourceTexture->image, range, sourceTexture->imageAspect, sourceInitialLayout, sourceResolveLayout, sourceTexture->initialLayoutAccessBits);
 
     // Transition the dest color attachments.
     auto destInitialLayout = destTexture->initialLayout;
     auto destResolveLayout = destInitialLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     if(destInitialLayout != destResolveLayout)
-        setImageLayout(destTexture->image, range, resolveAspects, destInitialLayout, destResolveLayout, destTexture->initialLayoutAccessBits);
+        setImageLayout(destTexture->image, range, destTexture->imageAspect, destInitialLayout, destResolveLayout, destTexture->initialLayoutAccessBits);
 
     if(sourceTexture->description.sample_count == 1 && destTexture->description.sample_count == 1)
     {
@@ -592,9 +592,9 @@ agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agp
 
     // Transition the destination back to its original layout
     if(destInitialLayout != destResolveLayout)
-        setImageLayout(destTexture->image, range, resolveAspects, destResolveLayout, destInitialLayout, VkAccessFlagBits(0));
+        setImageLayout(destTexture->image, range, destTexture->imageAspect, destResolveLayout, destInitialLayout, VkAccessFlagBits(0));
     if(sourceInitialLayout != sourceResolveLayout)
-        setImageLayout(sourceTexture->image, range, resolveAspects, sourceResolveLayout, sourceInitialLayout, VkAccessFlagBits(0));
+        setImageLayout(sourceTexture->image, range, sourceTexture->imageAspect, sourceResolveLayout, sourceInitialLayout, VkAccessFlagBits(0));
 
     return AGPU_OK;
 }
@@ -772,5 +772,5 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, a
 AGPU_EXPORT agpu_error agpuResolveTexture ( agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
 {
     CHECK_POINTER(command_list);
-    return command_list->resolveTexture(sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect );    
+    return command_list->resolveTexture(sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect );
 }
