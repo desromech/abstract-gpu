@@ -54,7 +54,13 @@ add_definitions(
     -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
 )
 
+if(WIN32)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_definitions( -DWIN64 )
+  endif()
+endif()
+
 add_library(AgpuVulkan SHARED ${AGPU_Vulkan_SOURCES})
 add_dependencies(AgpuVulkan openvr_api)
 include_directories(${OPENVR_INCLUDE})
-target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_api> ${OPENVR_LIBS})
+target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS})

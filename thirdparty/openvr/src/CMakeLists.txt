@@ -25,6 +25,10 @@ elseif(WIN32)
   endif()
 endif()
 
+if(BUILD_OBJECT)
+    set( LIBNAME "openvr_embeddedapi" )
+endif()
+
 # Add include folders.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../headers ${CMAKE_CURRENT_SOURCE_DIR}/vrcommon)
 
