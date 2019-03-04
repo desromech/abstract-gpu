@@ -838,8 +838,8 @@
 
             <method name="getProjectionMatrix" cname="GetVRProjectionMatrix" returnType="error">
                 <arg name="eye" type="vr_eye" />
-                <arg name="near" type="float" />
-                <arg name="far" type="float" />
+                <arg name="near_distance" type="float" />
+                <arg name="far_distance" type="float" />
                 <arg name="projection_matrix" type="matrix4x4f*" />
             </method>
 

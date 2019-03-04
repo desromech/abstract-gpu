@@ -328,9 +328,9 @@ public:
 		agpuThrowIfFailed(agpuGetVREyeToHeadTransformInto( this, eye, transform ));
 	}
 
-	inline void getProjectionMatrix ( agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix )
+	inline void getProjectionMatrix ( agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
 	{
-		agpuThrowIfFailed(agpuGetVRProjectionMatrix( this, eye, near, far, projection_matrix ));
+		agpuThrowIfFailed(agpuGetVRProjectionMatrix( this, eye, near_distance, far_distance, projection_matrix ));
 	}
 
 	inline void getProjectionFrustumTangents ( agpu_vr_eye eye, agpu_frustum_tangents* frustum )

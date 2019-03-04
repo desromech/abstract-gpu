@@ -305,12 +305,12 @@ AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_syst
 	return (*dispatchTable)->agpuGetVREyeToHeadTransformInto ( vr_system, eye, transform );
 }
 
-AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix )
+AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
 {
 	if (vr_system == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
-	return (*dispatchTable)->agpuGetVRProjectionMatrix ( vr_system, eye, near, far, projection_matrix );
+	return (*dispatchTable)->agpuGetVRProjectionMatrix ( vr_system, eye, near_distance, far_distance, projection_matrix );
 }
 
 AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum )

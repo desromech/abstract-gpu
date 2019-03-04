@@ -199,8 +199,8 @@ AGPUCBindings >> getEyeToHeadTransform_vr_system: vr_system eye: eye transform: 
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getProjectionMatrix_vr_system: vr_system eye: eye near: near far: far projection_matrix: projection_matrix [
-	^ self ffiCall: #(agpu_error agpuGetVRProjectionMatrix (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_float near , agpu_float far , agpu_matrix4x4f* projection_matrix) )
+AGPUCBindings >> getProjectionMatrix_vr_system: vr_system eye: eye near_distance: near_distance far_distance: far_distance projection_matrix: projection_matrix [
+	^ self ffiCall: #(agpu_error agpuGetVRProjectionMatrix (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_float near_distance , agpu_float far_distance , agpu_matrix4x4f* projection_matrix) )
 ]
 
 { #category : #'vr_system' }

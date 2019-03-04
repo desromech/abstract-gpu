@@ -71,10 +71,10 @@ agpu_error _agpu_vr_system::getEyeToHeadTransformInto(agpu_vr_eye eye, agpu_matr
 }
 
 
-agpu_error _agpu_vr_system::getProjectionMatrix ( agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix )
+agpu_error _agpu_vr_system::getProjectionMatrix ( agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
 {
     CHECK_POINTER(projection_matrix);
-    *projection_matrix = convertOVRMatrix(device->vrSystem->GetProjectionMatrix(mapVREye(eye), near, far));
+    *projection_matrix = convertOVRMatrix(device->vrSystem->GetProjectionMatrix(mapVREye(eye), near_distance, far_distance));
     return AGPU_OK;
 }
 
@@ -139,10 +139,10 @@ AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_syst
     return vr_system->getEyeToHeadTransformInto(eye, transform);
 }
 
-AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix )
+AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
 {
     CHECK_POINTER(vr_system);
-    return vr_system->getProjectionMatrix(eye, near, far, projection_matrix);
+    return vr_system->getProjectionMatrix(eye, near_distance, far_distance, projection_matrix);
 }
 
 AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum )

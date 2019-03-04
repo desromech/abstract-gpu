@@ -781,7 +781,7 @@ typedef agpu_cstring (*agpuGetVRSystemName_FUN) ( agpu_vr_system* vr_system );
 typedef agpu_pointer (*agpuGetVRSystemNativeHandle_FUN) ( agpu_vr_system* vr_system );
 typedef agpu_error (*agpuGetVRRecommendedRenderTargetSize_FUN) ( agpu_vr_system* vr_system, agpu_size2d* size );
 typedef agpu_error (*agpuGetVREyeToHeadTransformInto_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform );
-typedef agpu_error (*agpuGetVRProjectionMatrix_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix );
+typedef agpu_error (*agpuGetVRProjectionMatrix_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix );
 typedef agpu_error (*agpuGetVRProjectionFrustumTangents_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum );
 
 AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system );
@@ -790,7 +790,7 @@ AGPU_EXPORT agpu_cstring agpuGetVRSystemName ( agpu_vr_system* vr_system );
 AGPU_EXPORT agpu_pointer agpuGetVRSystemNativeHandle ( agpu_vr_system* vr_system );
 AGPU_EXPORT agpu_error agpuGetVRRecommendedRenderTargetSize ( agpu_vr_system* vr_system, agpu_size2d* size );
 AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform );
-AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix );
+AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix );
 AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum );
 
 /* Methods for interface agpu_swap_chain. */

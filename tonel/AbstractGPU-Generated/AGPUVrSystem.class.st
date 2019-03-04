@@ -47,9 +47,9 @@ AGPUVrSystem >> getEyeToHeadTransform: eye transform: transform [
 ]
 
 { #category : #'wrappers' }
-AGPUVrSystem >> getProjectionMatrix: eye near: near far: far projection_matrix: projection_matrix [
+AGPUVrSystem >> getProjectionMatrix: eye near_distance: near_distance far_distance: far_distance projection_matrix: projection_matrix [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getProjectionMatrix_vr_system: (self validHandle) eye: eye near: near far: far projection_matrix: projection_matrix.
+	resultValue_ := AGPUCBindings uniqueInstance getProjectionMatrix_vr_system: (self validHandle) eye: eye near_distance: near_distance far_distance: far_distance projection_matrix: projection_matrix.
 	self checkErrorCode: resultValue_
 ]
 
