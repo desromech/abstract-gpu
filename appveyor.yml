@@ -2,11 +2,6 @@
 version: 1.0.{build}
 
 branches:
-  # whitelist
-  only:
-    - master
-    - production
-
   # blacklist
   except:
     - gh-pages
