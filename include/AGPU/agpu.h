@@ -42,6 +42,7 @@ typedef char* agpu_string_buffer;
 
 typedef struct _agpu_platform agpu_platform;
 typedef struct _agpu_device agpu_device;
+typedef struct _agpu_vr_system agpu_vr_system;
 typedef struct _agpu_swap_chain agpu_swap_chain;
 typedef struct _agpu_compute_pipeline_builder agpu_compute_pipeline_builder;
 typedef struct _agpu_pipeline_builder agpu_pipeline_builder;
@@ -463,6 +464,11 @@ typedef enum {
 	AGPU_CULL_MODE_FRONT_AND_BACK = 3,
 } agpu_cull_mode;
 
+typedef enum {
+	AGPU_VR_EYE_LEFT = 0,
+	AGPU_VR_EYE_RIGHT = 1,
+} agpu_vr_eye;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -624,12 +630,64 @@ typedef struct agpu_inheritance_info {
 	agpu_renderpass* renderpass;
 } agpu_inheritance_info;
 
+/* Structure agpu_vector3f. */
+typedef struct agpu_vector3f {
+	agpu_float x;
+	agpu_float y;
+	agpu_float z;
+} agpu_vector3f;
+
+/* Structure agpu_vector4f. */
+typedef struct agpu_vector4f {
+	agpu_float x;
+	agpu_float y;
+	agpu_float z;
+	agpu_float w;
+} agpu_vector4f;
+
+/* Structure agpu_quaternionf. */
+typedef struct agpu_quaternionf {
+	agpu_float w;
+	agpu_float x;
+	agpu_float y;
+	agpu_float z;
+} agpu_quaternionf;
+
+/* Structure agpu_matrix3x3f. */
+typedef struct agpu_matrix3x3f {
+	agpu_vector3f c1;
+	agpu_vector3f c2;
+	agpu_vector3f c3;
+} agpu_matrix3x3f;
+
+/* Structure agpu_matrix4x4f. */
+typedef struct agpu_matrix4x4f {
+	agpu_vector4f c1;
+	agpu_vector4f c2;
+	agpu_vector4f c3;
+	agpu_vector4f c4;
+} agpu_matrix4x4f;
+
+/* Structure agpu_size2d. */
+typedef struct agpu_size2d {
+	agpu_uint width;
+	agpu_uint height;
+} agpu_size2d;
+
 /* Structure agpu_size3d. */
 typedef struct agpu_size3d {
 	agpu_uint width;
 	agpu_uint height;
 	agpu_uint depth;
 } agpu_size3d;
+
+/* Structure agpu_frustum_tangents. */
+typedef struct agpu_frustum_tangents {
+	agpu_float left;
+	agpu_float right;
+	agpu_float top;
+	agpu_float bottom;
+} agpu_frustum_tangents;
 
 /* Structure agpu_region3d. */
 typedef struct agpu_region3d {
@@ -688,6 +746,7 @@ typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) ( agpu_device* device, a
 typedef agpu_bool (*agpuHasTopLeftNdcOrigin_FUN) ( agpu_device* device );
 typedef agpu_bool (*agpuHasBottomLeftTextureCoordinates_FUN) ( agpu_device* device );
 typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) ( agpu_device* device, agpu_feature feature );
+typedef agpu_vr_system* (*agpuGetVRSystem_FUN) ( agpu_device* device );
 
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device );
 AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device );
@@ -713,6 +772,26 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device );
 AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates ( agpu_device* device );
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature );
+AGPU_EXPORT agpu_vr_system* agpuGetVRSystem ( agpu_device* device );
+
+/* Methods for interface agpu_vr_system. */
+typedef agpu_error (*agpuAddVRSystemReference_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_error (*agpuReleaseVRSystem_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_cstring (*agpuGetVRSystemName_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_pointer (*agpuGetVRSystemNativeHandle_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_error (*agpuGetVRRecommendedRenderTargetSize_FUN) ( agpu_vr_system* vr_system, agpu_size2d* size );
+typedef agpu_error (*agpuGetVREyeToHeadTransformInto_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform );
+typedef agpu_error (*agpuGetVRProjectionMatrix_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix );
+typedef agpu_error (*agpuGetVRProjectionFrustumTangents_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum );
+
+AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_error agpuReleaseVRSystem ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_cstring agpuGetVRSystemName ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_pointer agpuGetVRSystemNativeHandle ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_error agpuGetVRRecommendedRenderTargetSize ( agpu_vr_system* vr_system, agpu_size2d* size );
+AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform );
+AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix );
+AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -1085,6 +1164,15 @@ typedef struct _agpu_icd_dispatch {
 	agpuHasTopLeftNdcOrigin_FUN agpuHasTopLeftNdcOrigin;
 	agpuHasBottomLeftTextureCoordinates_FUN agpuHasBottomLeftTextureCoordinates;
 	agpuIsFeatureSupportedOnDevice_FUN agpuIsFeatureSupportedOnDevice;
+	agpuGetVRSystem_FUN agpuGetVRSystem;
+	agpuAddVRSystemReference_FUN agpuAddVRSystemReference;
+	agpuReleaseVRSystem_FUN agpuReleaseVRSystem;
+	agpuGetVRSystemName_FUN agpuGetVRSystemName;
+	agpuGetVRSystemNativeHandle_FUN agpuGetVRSystemNativeHandle;
+	agpuGetVRRecommendedRenderTargetSize_FUN agpuGetVRRecommendedRenderTargetSize;
+	agpuGetVREyeToHeadTransformInto_FUN agpuGetVREyeToHeadTransformInto;
+	agpuGetVRProjectionMatrix_FUN agpuGetVRProjectionMatrix;
+	agpuGetVRProjectionFrustumTangents_FUN agpuGetVRProjectionFrustumTangents;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;

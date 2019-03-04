@@ -43,6 +43,8 @@ set(AGPU_Vulkan_SOURCES
     vertex_binding.hpp
     vertex_layout.cpp
     vertex_layout.hpp
+    vr_system.cpp
+    vr_system.hpp
 )
 
 include_directories(${VULKAN_INCLUDE_DIRS})

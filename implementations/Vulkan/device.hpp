@@ -33,6 +33,9 @@ public:
 
     static bool checkVulkanImplementation();
 
+    static bool getInstanceExtensionsRequiredForVR(std::vector<std::string> &requiredInstanceExtensions);
+    static bool getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDevice, std::vector<std::string> &requiredDeviceExtensions);
+
     static agpu_device *open(agpu_device_open_info* openInfo);
     bool initialize(agpu_device_open_info* openInfo);
 
@@ -84,6 +87,7 @@ public:
     bool isVRInputDevicesSupported;
 
     vr::IVRSystem *vrSystem;
+    agpu_vr_system *vrSystemWrapper;
 
     // Queues
     std::vector<agpu_command_queue*> graphicsCommandQueues;

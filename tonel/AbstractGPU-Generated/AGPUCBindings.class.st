@@ -163,6 +163,51 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 	^ self ffiCall: #(agpu_bool agpuIsFeatureSupportedOnDevice (agpu_device* device , agpu_feature feature) )
 ]
 
+{ #category : #'device' }
+AGPUCBindings >> getVRSystem_device: device [
+	^ self ffiCall: #(agpu_vr_system* agpuGetVRSystem (agpu_device* device) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> addReference_vr_system: vr_system [
+	^ self ffiCall: #(agpu_error agpuAddVRSystemReference (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> release_vr_system: vr_system [
+	^ self ffiCall: #(agpu_error agpuReleaseVRSystem (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getVRSystemName_vr_system: vr_system [
+	^ self ffiCall: #(agpu_cstring agpuGetVRSystemName (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getNativeHandle_vr_system: vr_system [
+	^ self ffiCall: #(agpu_pointer agpuGetVRSystemNativeHandle (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getRecommendedRenderTargetSize_vr_system: vr_system size: size [
+	^ self ffiCall: #(agpu_error agpuGetVRRecommendedRenderTargetSize (agpu_vr_system* vr_system , agpu_size2d* size) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getEyeToHeadTransform_vr_system: vr_system eye: eye transform: transform [
+	^ self ffiCall: #(agpu_error agpuGetVREyeToHeadTransformInto (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_matrix4x4f* transform) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getProjectionMatrix_vr_system: vr_system eye: eye near: near far: far projection_matrix: projection_matrix [
+	^ self ffiCall: #(agpu_error agpuGetVRProjectionMatrix (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_float near , agpu_float far , agpu_matrix4x4f* projection_matrix) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getProjectionFrustumTangents_vr_system: vr_system eye: eye frustum: frustum [
+	^ self ffiCall: #(agpu_error agpuGetVRProjectionFrustumTangents (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_frustum_tangents* frustum) )
+]
+
 { #category : #'swap_chain' }
 AGPUCBindings >> addReference_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_error agpuAddSwapChainReference (agpu_swap_chain* swap_chain) )

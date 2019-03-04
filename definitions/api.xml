@@ -190,10 +190,55 @@
             <field name="renderpass" type="renderpass*" />
         </struct>
 
+        <struct name="vector3f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+        </struct>
+
+        <struct name="vector4f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+            <field name="w" type="float" />
+        </struct>
+
+        <struct name="quaternionf">
+            <field name="w" type="float" />
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+        </struct>
+
+        <struct name="matrix3x3f">
+            <field name="c1" type="vector3f" />
+            <field name="c2" type="vector3f" />
+            <field name="c3" type="vector3f" />
+        </struct>
+
+        <struct name="matrix4x4f">
+            <field name="c1" type="vector4f" />
+            <field name="c2" type="vector4f" />
+            <field name="c3" type="vector4f" />
+            <field name="c4" type="vector4f" />
+        </struct>
+
+        <struct name="size2d">
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+        </struct>
+
         <struct name="size3d">
             <field name="width" type="uint" />
             <field name="height" type="uint" />
             <field name="depth" type="uint" />
+        </struct>
+
+        <struct name="frustum_tangents">
+            <field name="left" type="float" />
+            <field name="right" type="float" />
+            <field name="top" type="float" />
+            <field name="bottom" type="float" />
         </struct>
 
         <struct name="region3d">
@@ -631,6 +676,11 @@
             <constant name="CullModeBack" value="2" />
             <constant name="CullModeFrontAndBack" value="3" />
         </enum>
+
+        <enum name="vr_eye">
+            <constant name="VrEyeLeft" value="0" />
+            <constant name="VrEyeRight" value="1" />
+        </enum>
     </constants>
 
     <globals>
@@ -757,6 +807,45 @@
 
             <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
                 <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getVRSystem" cname="GetVRSystem" returnType="vr_system*">
+            </method>
+
+        </interface>
+
+        <interface name="vr_system">
+            <method name="addReference" cname="AddVRSystemReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVRSystem" returnType="error">
+            </method>
+
+            <method name="getVRSystemName" cname="GetVRSystemName" returnType="cstring">
+            </method>
+
+            <method name="getNativeHandle" cname="GetVRSystemNativeHandle" returnType="pointer">
+            </method>
+
+            <method name="getRecommendedRenderTargetSize" cname="GetVRRecommendedRenderTargetSize" returnType="error">
+                <arg name="size" type="size2d*" />
+            </method>
+
+            <method name="getEyeToHeadTransform" cname="GetVREyeToHeadTransformInto" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="transform" type="matrix4x4f*" />
+            </method>
+
+            <method name="getProjectionMatrix" cname="GetVRProjectionMatrix" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+                <arg name="projection_matrix" type="matrix4x4f*" />
+            </method>
+
+            <method name="getProjectionFrustumTangents" cname="GetVRProjectionFrustumTangents" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="frustum" type="frustum_tangents*" />
             </method>
         </interface>
 

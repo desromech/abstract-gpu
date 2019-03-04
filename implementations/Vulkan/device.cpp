@@ -17,6 +17,7 @@
 #include "vertex_binding.hpp"
 #include "buffer.hpp"
 #include "fence.hpp"
+#include "vr_system.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -59,7 +60,7 @@ const char *validationLayerNames[] = {
 
 constexpr size_t validationLayerCount = sizeof(validationLayerNames) / sizeof(validationLayerNames[0]);
 
-const char *requiredExtensionNames[] = {
+const char *coreRequiredInstanceExtensionNames[] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(_WIN32)
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
@@ -70,13 +71,13 @@ const char *requiredExtensionNames[] = {
 #endif
 };
 
-constexpr size_t requiredExtensionCount = sizeof(requiredExtensionNames) / sizeof(requiredExtensionNames[0]);
+constexpr size_t coreRequiredInstanceExtensionCount = sizeof(coreRequiredInstanceExtensionNames) / sizeof(coreRequiredInstanceExtensionNames[0]);
 
-const char *requiredDeviceExtensionNames[] = {
+const char *coreRequiredDeviceExtensionNames[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
-constexpr size_t requiredDeviceExtensionCount = sizeof(requiredDeviceExtensionNames) / sizeof(requiredDeviceExtensionNames[0]);
+constexpr size_t coreRequiredDeviceExtensionCount = sizeof(coreRequiredDeviceExtensionNames) / sizeof(coreRequiredDeviceExtensionNames[0]);
 
 
 static bool hasLayer(const std::string &layerName, const std::vector<VkLayerProperties> &layerProperties)
@@ -112,22 +113,11 @@ static bool hasValidationLayers(const std::vector<VkLayerProperties> &layers)
     return true;
 }
 
-static bool hasRequiredExtensions(const std::vector<VkExtensionProperties> &extensions)
+static bool hasRequiredExtensions(const std::vector<VkExtensionProperties> &extensions, const std::vector<std::string> &requiredExtensionNames)
 {
-    for (size_t i = 0; i < requiredExtensionCount; ++i)
+    for(auto &requiredExtensionName : requiredExtensionNames)
     {
-        if (!hasExtension(requiredExtensionNames[i], extensions))
-            return false;
-    }
-
-    return true;
-}
-
-static bool hasRequiredDeviceExtensions(const std::vector<VkExtensionProperties> &extensions)
-{
-    for (size_t i = 0; i < requiredDeviceExtensionCount; ++i)
-    {
-        if (!hasExtension(requiredDeviceExtensionNames[i], extensions))
+        if (!hasExtension(requiredExtensionName, extensions))
             return false;
     }
 
@@ -180,10 +170,15 @@ _agpu_device::_agpu_device()
     isVRDisplaySupported = false;
     isVRInputDevicesSupported = false;
     vrSystem = nullptr;
+    vrSystemWrapper = nullptr;
 }
 
 void _agpu_device::lostReferences()
 {
+    // Release the VR system wrapper.
+    if(vrSystemWrapper)
+        vrSystemWrapper->release();
+
     // Shutdown the VR system, when I die.
     if(vrSystem)
         vr::VR_Shutdown();
@@ -191,6 +186,9 @@ void _agpu_device::lostReferences()
 
 bool _agpu_device::checkVulkanImplementation()
 {
+    std::vector<std::string> requiredInstanceExtensions(coreRequiredInstanceExtensionNames, coreRequiredInstanceExtensionNames + coreRequiredInstanceExtensionCount);
+    std::vector<std::string> requiredDeviceExtensions(coreRequiredDeviceExtensionNames, coreRequiredDeviceExtensionNames + coreRequiredDeviceExtensionCount);
+
     // Check the required extensions
     uint32_t instanceExtensionCount;
     auto error = vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr);
@@ -202,7 +200,7 @@ bool _agpu_device::checkVulkanImplementation()
     if (error)
         return false;
 
-    if (!hasRequiredExtensions(instanceExtensionProperties))
+    if (!hasRequiredExtensions(instanceExtensionProperties, requiredInstanceExtensions))
         return false;
 
     VkApplicationInfo applicationInfo;
@@ -274,10 +272,62 @@ bool _agpu_device::checkDebugReportExtension()
     return true;
 }
 
+static void splitSpacesInto(const std::string &string, std::vector<std::string> &dest)
+{
+    size_t currentPosition = 0;
+    for(;;)
+    {
+        auto endPosition = string.find(' ', currentPosition);
+        auto substring = string.substr(currentPosition, endPosition - currentPosition);
+        if(!substring.empty())
+            dest.push_back(substring);
+
+        if(endPosition >= string.size())
+            break;
+
+        currentPosition = endPosition + 1;
+    }
+}
+
+bool _agpu_device::getInstanceExtensionsRequiredForVR(std::vector<std::string> &requiredInstanceExtensions)
+{
+    auto compositor = vr::VRCompositor();
+
+    size_t extensionStringBufferSize = compositor->GetVulkanInstanceExtensionsRequired(nullptr, 0);
+    std::unique_ptr<char[]> extensionString(new char[extensionStringBufferSize]);
+
+    auto success = compositor->GetVulkanInstanceExtensionsRequired(extensionString.get(), extensionStringBufferSize);
+    if(!success)
+        return false;
+
+    splitSpacesInto(extensionString.get(), requiredInstanceExtensions);
+    return true;
+}
+
+
+bool _agpu_device::getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDevice, std::vector<std::string> &requiredDeviceExtensions)
+{
+    auto compositor = vr::VRCompositor();
+
+    size_t extensionStringBufferSize = compositor->GetVulkanDeviceExtensionsRequired(physicalDevice, nullptr, 0);
+    std::unique_ptr<char[]> extensionString(new char[extensionStringBufferSize]);
+
+    auto success = compositor->GetVulkanDeviceExtensionsRequired(physicalDevice, extensionString.get(), extensionStringBufferSize);
+    if(!success)
+        return false;
+
+    splitSpacesInto(extensionString.get(), requiredDeviceExtensions);
+    return true;
+}
+
 bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 {
+    std::vector<std::string> requiredInstanceExtensions(coreRequiredInstanceExtensionNames, coreRequiredInstanceExtensionNames + coreRequiredInstanceExtensionCount);
+    std::vector<std::string> requiredDeviceExtensions(coreRequiredDeviceExtensionNames, coreRequiredDeviceExtensionNames + coreRequiredDeviceExtensionCount);
+
     std::vector<const char *> instanceLayers;
     std::vector<const char *> instanceExtensions;
+
     std::vector<const char *> deviceLayers;
     std::vector<const char *> deviceExtensions;
 
@@ -285,17 +335,20 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     // Is VR support requested? if so, we may need to request some extensions
     // that are required by the VR system.
-    if((openInfo->open_flags & AGPU_DEVICE_OPEN_FLAG_ALLOW_VR) != 0)
+    if((openInfo->open_flags & AGPU_DEVICE_OPEN_FLAG_ALLOW_VR) != 0 && vr::VR_IsHmdPresent())
     {
         vr::HmdError hmdError;
         vrSystem = vr::VR_Init(&hmdError, vr::VRApplication_Scene);
         if(!vrSystem || hmdError != 0)
         {
             printError("VR API initialization error code %d\n", hmdError);
+            vrSystem = nullptr;
         }
-        else
+        else if(!getInstanceExtensionsRequiredForVR(requiredInstanceExtensions))
         {
-            printf("VR system inited: %p\n", vrSystem);
+            vr::VR_Shutdown();
+            vrSystem = nullptr;
+            printError("Failed to retrieve the required Vulkan extension for VR\n");
         }
     }
 
@@ -349,15 +402,15 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     if (error)
         return false;
 
-    if (!hasRequiredExtensions(instanceExtensionProperties))
+    if (!hasRequiredExtensions(instanceExtensionProperties, requiredInstanceExtensions))
     {
         printError("Required extensions are missing.\n");
         return false;
     }
 
     // Enable the required extensions
-    for (size_t i = 0; i < requiredExtensionCount; ++i)
-        instanceExtensions.push_back(requiredExtensionNames[i]);
+    for(auto &extension: requiredInstanceExtensions)
+        instanceExtensions.push_back(extension.c_str());
 
     // Enable the debug reporting extension
     if (openInfo->debug_layer && hasExtension("VK_EXT_debug_report", instanceExtensionProperties))
@@ -408,6 +461,31 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     }
 
     physicalDevice = physicalDevices[gpuIndex];
+
+    // Try to use the physical device required by the VR system.
+    if(vrSystem)
+    {
+        uint64_t vrPhysicalDevice = 0;
+        vrSystem->GetOutputDevice(&vrPhysicalDevice, vr::TextureType_Vulkan, vulkanInstance);
+
+        physicalDevice = VK_NULL_HANDLE;
+        for(auto device : physicalDevices)
+        {
+            if(((VkPhysicalDevice)vrPhysicalDevice) == device)
+            {
+                physicalDevice = device;
+                break;
+            }
+        }
+
+        if(physicalDevice == VK_NULL_HANDLE)
+        {
+            physicalDevice = physicalDevices[gpuIndex];
+            printError("Failed to find the physical device required for VR. Falling back to vulkan physical device number %d.\n", gpuIndex);
+        }
+    }
+
+    // Get the device features.
     vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
@@ -433,15 +511,24 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     if (error)
         return false;
 
-    if (!hasRequiredDeviceExtensions(deviceExtensionProperties))
+    if(vrSystem)
+    {
+        if(!getDeviceExtensionsRequiredForVR(physicalDevice, requiredDeviceExtensions))
+        {
+            vr::VR_Shutdown();
+            vrSystem = nullptr;
+        }
+    }
+
+    if (!hasRequiredExtensions(deviceExtensionProperties, requiredDeviceExtensions))
     {
         printError("The device is missing some required extensions.");
         return false;
     }
 
     // Enable the required device extensions.
-    for (size_t i = 0; i < requiredDeviceExtensionCount; ++i)
-        deviceExtensions.push_back(requiredDeviceExtensionNames[i]);
+    for(auto &extension: requiredDeviceExtensions)
+        deviceExtensions.push_back(extension.c_str());
 
     uint32_t queueFamilyCount;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -562,6 +649,9 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     }
 
     setupQueue = graphicsCommandQueues[0];
+
+    if(vrSystem)
+        vrSystemWrapper = new agpu_vr_system(this);
 
     return true;
 }

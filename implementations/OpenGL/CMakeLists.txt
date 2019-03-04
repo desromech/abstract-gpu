@@ -46,6 +46,7 @@ set(AGPU_OpenGL_SOURCES
     vertex_binding.hpp
     vertex_layout.cpp
     vertex_layout.hpp
+    ../Common/dummy_vr.cpp
 )
 
 include_directories(${OPENGL_INCLUDE_DIR})

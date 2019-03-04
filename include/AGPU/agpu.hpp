@@ -282,9 +282,65 @@ public:
 		return agpuIsFeatureSupportedOnDevice( this, feature );
 	}
 
+	inline agpu_vr_system* getVRSystem (  )
+	{
+		return agpuGetVRSystem( this );
+	}
+
 };
 
 typedef agpu_ref<agpu_device> agpu_device_ref;
+
+// Interface wrapper for agpu_vr_system.
+struct _agpu_vr_system
+{
+private:
+	_agpu_vr_system() {}
+
+public:
+	inline void addReference (  )
+	{
+		agpuThrowIfFailed(agpuAddVRSystemReference( this ));
+	}
+
+	inline void release (  )
+	{
+		agpuThrowIfFailed(agpuReleaseVRSystem( this ));
+	}
+
+	inline agpu_cstring getVRSystemName (  )
+	{
+		return agpuGetVRSystemName( this );
+	}
+
+	inline agpu_pointer getNativeHandle (  )
+	{
+		return agpuGetVRSystemNativeHandle( this );
+	}
+
+	inline void getRecommendedRenderTargetSize ( agpu_size2d* size )
+	{
+		agpuThrowIfFailed(agpuGetVRRecommendedRenderTargetSize( this, size ));
+	}
+
+	inline void getEyeToHeadTransform ( agpu_vr_eye eye, agpu_matrix4x4f* transform )
+	{
+		agpuThrowIfFailed(agpuGetVREyeToHeadTransformInto( this, eye, transform ));
+	}
+
+	inline void getProjectionMatrix ( agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix )
+	{
+		agpuThrowIfFailed(agpuGetVRProjectionMatrix( this, eye, near, far, projection_matrix ));
+	}
+
+	inline void getProjectionFrustumTangents ( agpu_vr_eye eye, agpu_frustum_tangents* frustum )
+	{
+		agpuThrowIfFailed(agpuGetVRProjectionFrustumTangents( this, eye, frustum ));
+	}
+
+};
+
+typedef agpu_ref<agpu_vr_system> agpu_vr_system_ref;
 
 // Interface wrapper for agpu_swap_chain.
 struct _agpu_swap_chain
