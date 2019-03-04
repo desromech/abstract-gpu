@@ -20,7 +20,7 @@ if($Env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT)
     exit
 }
 
-if($Env:APPVEYOR_REPO_BRANCH -ne "master && (!$APPVEYOR_REPO_TAG_NAME))
+if($Env:APPVEYOR_REPO_BRANCH -ne "master" && (!$APPVEYOR_REPO_TAG_NAME))
 {
     echo "Skipping a deployment with the script provider because this branch is not permitted."
     exit
