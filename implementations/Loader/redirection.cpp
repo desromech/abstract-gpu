@@ -857,6 +857,14 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list,
 	return (*dispatchTable)->agpuResolveFramebuffer ( command_list, destFramebuffer, sourceFramebuffer );
 }
 
+AGPU_EXPORT agpu_error agpuResolveTexture ( agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuResolveTexture ( command_list, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect );
+}
+
 AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
 {
 	if (command_list == nullptr)
@@ -1327,6 +1335,14 @@ AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding*
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
 	return (*dispatchTable)->agpuBindTextureArrayRange ( shader_resource_binding, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp );
+}
+
+AGPU_EXPORT agpu_error agpuBindImage ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindImage ( shader_resource_binding, location, texture, level, layer, access, format );
 }
 
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description )

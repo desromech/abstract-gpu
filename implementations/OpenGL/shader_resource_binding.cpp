@@ -243,6 +243,11 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int locatio
     return AGPU_UNIMPLEMENTED;
 }
 
+agpu_error _agpu_shader_resource_binding::bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
 {
     CHECK_POINTER(description);
@@ -407,6 +412,12 @@ AGPU_EXPORT agpu_error agpuBindTextureArrayRange ( agpu_shader_resource_binding*
 {
     CHECK_POINTER(shader_resource_binding);
     return shader_resource_binding->bindTextureArrayRange(location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
+}
+
+AGPU_EXPORT agpu_error agpuBindImage ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+{
+    CHECK_POINTER(shader_resource_binding);
+    return shader_resource_binding->bindImage(location, texture, level, layer, access, format);
 }
 
 AGPU_EXPORT agpu_error agpuCreateSampler ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description )

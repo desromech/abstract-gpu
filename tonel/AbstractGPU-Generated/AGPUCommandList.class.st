@@ -187,6 +187,13 @@ AGPUCommandList >> resolveFramebuffer: destFramebuffer sourceFramebuffer: source
 ]
 
 { #category : #'wrappers' }
+AGPUCommandList >> resolveTexture: sourceTexture sourceLevel: sourceLevel sourceLayer: sourceLayer destTexture: destTexture destLevel: destLevel destLayer: destLayer levelCount: levelCount layerCount: layerCount aspect: aspect [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance resolveTexture_command_list: (self validHandle) sourceTexture: (self validHandleOf: sourceTexture) sourceLevel: sourceLevel sourceLayer: sourceLayer destTexture: (self validHandleOf: destTexture) destLevel: destLevel destLayer: destLayer levelCount: levelCount layerCount: layerCount aspect: aspect.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUCommandList >> pushConstants: offset size: size values: values [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance pushConstants_command_list: (self validHandle) offset: offset size: size values: values.

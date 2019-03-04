@@ -361,6 +361,19 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
             return false;
     }
 
+    // Since the depth stencil buffer is used exclusively on the GPU, there is
+    // no need to use triple buffering on it.
+    agpu_texture *depthStencilBuffer = nullptr;
+    if(hasDepth || hasStencil)
+    {
+        depthStencilBuffer = agpu_texture::create(device, &depthStencilDesc);
+        if (!depthStencilBuffer)
+            return false;
+
+        // Get the depth stencil buffer view description.
+        depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
+    }
+
     VkClearColorValue clearColor;
     memset(&clearColor, 0, sizeof(clearColor));
     framebuffers.resize(imageCount);
@@ -375,28 +388,22 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
             return false;
 
         agpu_texture *colorBuffer = nullptr;
-        agpu_texture *depthStencilBuffer = nullptr;
 
         {
             colorBuffer = agpu_texture::createFromImage(device, &colorDesc, colorImage);
             if (!colorBuffer)
-                return false;
-
-            // Get the color buffer view description.
-            colorBuffer->getFullViewDescription(&colorViewDesc);
-        }
-
-        if(hasDepth || hasStencil)
-        {
-            depthStencilBuffer = agpu_texture::create(device, &depthStencilDesc);
-            if (!depthStencilBuffer)
             {
-                colorBuffer->release();
+                if(depthStencilBuffer)
+                    depthStencilBuffer->release();
                 return false;
             }
 
-            // Get the depth stencil buffer view description.
-            depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
+            colorBuffer->initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            colorBuffer->initialLayoutAccessBits = VK_ACCESS_MEMORY_READ_BIT;
+            colorBuffer->imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+
+            // Get the color buffer view description.
+            colorBuffer->getFullViewDescription(&colorViewDesc);
         }
 
         auto framebuffer = agpu_framebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorViewDesc, depthStencilViewPointer);
@@ -405,12 +412,17 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
 
         // Release the references to the buffers.
         colorBuffer->release();
-        if(depthStencilBuffer)
-            depthStencilBuffer->release();
-
         if (!framebuffer)
+        {
+            if(depthStencilBuffer)
+                depthStencilBuffer->release();
             return false;
+        }
     }
+
+    // Release the reference to the depth stencil buffer.
+    if(depthStencilBuffer)
+        depthStencilBuffer->release();
 
     if (!getNextBackBufferIndex())
         return false;

@@ -17,6 +17,7 @@ struct _agpu_shader_resource_binding : public Object<_agpu_shader_resource_bindi
     agpu_error bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size);
     agpu_error bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp);
     agpu_error bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp);
+    agpu_error bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format);
     agpu_error createSampler(agpu_int location, agpu_sampler_description* description);
 
     agpu_device *device;

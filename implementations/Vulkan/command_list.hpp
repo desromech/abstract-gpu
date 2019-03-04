@@ -39,7 +39,8 @@ public:
     agpu_error beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent);
     agpu_error endRenderPass();
     agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
-
+    agpu_error resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect );
+    
     agpu_device *device;
     agpu_command_allocator* allocator;
     agpu_command_list_type type;
@@ -48,7 +49,7 @@ public:
 
 private:
     void resetState();
-    agpu_error setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlagBits aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask);
+    agpu_error setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask);
 
     agpu_framebuffer *currentFramebuffer;
     agpu_bool isClosed;

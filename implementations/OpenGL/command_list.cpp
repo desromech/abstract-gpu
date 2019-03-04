@@ -713,6 +713,12 @@ AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, a
     return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
 }
 
+AGPU_EXPORT agpu_error agpuResolveTexture ( agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+{
+    CHECK_POINTER(command_list);
+    return AGPU_UNIMPLEMENTED;
+}
+
 AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
 {
     CHECK_POINTER(command_list);

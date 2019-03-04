@@ -739,6 +739,11 @@ public:
 		agpuThrowIfFailed(agpuResolveFramebuffer( this, destFramebuffer, sourceFramebuffer ));
 	}
 
+	inline void resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+	{
+		agpuThrowIfFailed(agpuResolveTexture( this, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect ));
+	}
+
 	inline void pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
 	{
 		agpuThrowIfFailed(agpuPushConstants( this, offset, size, values ));
@@ -1142,6 +1147,11 @@ public:
 	inline void bindTextureArrayRange ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp )
 	{
 		agpuThrowIfFailed(agpuBindTextureArrayRange( this, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp ));
+	}
+
+	inline void bindImage ( agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+	{
+		agpuThrowIfFailed(agpuBindImage( this, location, texture, level, layer, access, format ));
 	}
 
 	inline void createSampler ( agpu_int location, agpu_sampler_description* description )

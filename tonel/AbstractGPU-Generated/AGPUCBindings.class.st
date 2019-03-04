@@ -544,6 +544,11 @@ AGPUCBindings >> resolveFramebuffer_command_list: command_list destFramebuffer: 
 ]
 
 { #category : #'command_list' }
+AGPUCBindings >> resolveTexture_command_list: command_list sourceTexture: sourceTexture sourceLevel: sourceLevel sourceLayer: sourceLayer destTexture: destTexture destLevel: destLevel destLayer: destLayer levelCount: levelCount layerCount: layerCount aspect: aspect [
+	^ self ffiCall: #(agpu_error agpuResolveTexture (agpu_command_list* command_list , agpu_texture* sourceTexture , agpu_uint sourceLevel , agpu_uint sourceLayer , agpu_texture* destTexture , agpu_uint destLevel , agpu_uint destLayer , agpu_uint levelCount , agpu_uint layerCount , agpu_texture_aspect aspect) )
+]
+
+{ #category : #'command_list' }
 AGPUCBindings >> pushConstants_command_list: command_list offset: offset size: size values: values [
 	^ self ffiCall: #(agpu_error agpuPushConstants (agpu_command_list* command_list , agpu_uint offset , agpu_uint size , agpu_pointer values) )
 ]
@@ -836,6 +841,11 @@ AGPUCBindings >> bindTexture_shader_resource_binding: shader_resource_binding lo
 { #category : #'shader_resource_binding' }
 AGPUCBindings >> bindTextureArrayRange_shader_resource_binding: shader_resource_binding location: location texture: texture startMiplevel: startMiplevel miplevels: miplevels firstElement: firstElement numberOfElements: numberOfElements lodclamp: lodclamp [
 	^ self ffiCall: #(agpu_error agpuBindTextureArrayRange (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture* texture , agpu_uint startMiplevel , agpu_int miplevels , agpu_int firstElement , agpu_int numberOfElements , agpu_float lodclamp) )
+]
+
+{ #category : #'shader_resource_binding' }
+AGPUCBindings >> bindImage_shader_resource_binding: shader_resource_binding location: location texture: texture level: level layer: layer access: access format: format [
+	^ self ffiCall: #(agpu_error agpuBindImage (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture* texture , agpu_int level , agpu_int layer , agpu_mapping_access access , agpu_texture_format format) )
 ]
 
 { #category : #'shader_resource_binding' }

@@ -211,7 +211,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device->device, image, &memRequirements);
     allocateInfo.allocationSize = memRequirements.size;
-    if (!device->findMemoryType(memRequirements.memoryTypeBits, 0, &allocateInfo.memoryTypeIndex))
+    if (!device->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocateInfo.memoryTypeIndex))
     {
         vkDestroyImage(device->device, image, nullptr);
         return nullptr;
@@ -333,6 +333,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
     texture->readbackBuffer = readbackBuffer;
     texture->initialLayout = initialLayout;
     texture->initialLayoutAccessBits = initialLayoutAccessBits;
+    texture->imageAspect = imageAspect;
     return texture.release();
 }
 
