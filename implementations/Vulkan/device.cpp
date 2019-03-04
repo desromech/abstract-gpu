@@ -651,7 +651,10 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     setupQueue = graphicsCommandQueues[0];
 
     if(vrSystem)
+    {
         vrSystemWrapper = new agpu_vr_system(this);
+        isVRDisplaySupported = true;
+    }
 
     return true;
 }
