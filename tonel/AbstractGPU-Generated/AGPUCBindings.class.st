@@ -208,6 +208,36 @@ AGPUCBindings >> getProjectionFrustumTangents_vr_system: vr_system eye: eye frus
 	^ self ffiCall: #(agpu_error agpuGetVRProjectionFrustumTangents (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_frustum_tangents* frustum) )
 ]
 
+{ #category : #'vr_system' }
+AGPUCBindings >> submitEyeRenderTargets_vr_system: vr_system left_eye: left_eye right_eye: right_eye [
+	^ self ffiCall: #(agpu_error agpuSubmitVREyeRenderTargets (agpu_vr_system* vr_system , agpu_texture* left_eye , agpu_texture* right_eye) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> waitAndFetchPoses_vr_system: vr_system [
+	^ self ffiCall: #(agpu_error agpuWaitAndFetchVRPoses (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetValidVRTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_error agpuGetValidVRTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidRenderTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetValidVRRenderTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidRenderTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_error agpuGetValidVRRenderTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
+]
+
 { #category : #'swap_chain' }
 AGPUCBindings >> addReference_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_error agpuAddSwapChainReference (agpu_swap_chain* swap_chain) )

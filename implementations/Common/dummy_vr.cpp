@@ -44,3 +44,33 @@ AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_s
 {
     return AGPU_UNIMPLEMENTED;
 }
+
+AGPU_EXPORT agpu_error agpuSubmitVREyeRenderTargets ( agpu_vr_system* vr_system, agpu_texture* left_eye, agpu_texture* right_eye )
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses ( agpu_vr_system* vr_system )
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+{
+    return 0;
+}
+
+AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+{
+    return 0;
+}
+
+AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
+{
+    return AGPU_UNIMPLEMENTED;
+}

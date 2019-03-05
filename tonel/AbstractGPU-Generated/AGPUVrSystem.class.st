@@ -60,3 +60,45 @@ AGPUVrSystem >> getProjectionFrustumTangents: eye frustum: frustum [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUVrSystem >> submitEyeRenderTargets: left_eye right_eye: right_eye [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance submitEyeRenderTargets_vr_system: (self validHandle) left_eye: (self validHandleOf: left_eye) right_eye: (self validHandleOf: right_eye).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> waitAndFetchPoses [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance waitAndFetchPoses_vr_system: (self validHandle).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> getValidTrackedDevicePoseCount [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getValidTrackedDevicePoseCount_vr_system: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> getValidTrackedDevicePoseInto: index dest: dest [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getValidTrackedDevicePoseInto_vr_system: (self validHandle) index: index dest: dest.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> getValidRenderTrackedDevicePoseCount [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getValidRenderTrackedDevicePoseCount_vr_system: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> getValidRenderTrackedDevicePoseInto: index dest: dest [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getValidRenderTrackedDevicePoseInto_vr_system: (self validHandle) index: index dest: dest.
+	self checkErrorCode: resultValue_
+]
+

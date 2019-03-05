@@ -469,6 +469,23 @@ typedef enum {
 	AGPU_VR_EYE_RIGHT = 1,
 } agpu_vr_eye;
 
+typedef enum {
+	AGPU_VR_TRACKED_DEVICE_CLASS_INVALID = 0,
+	AGPU_VR_TRACKED_DEVICE_CLASS_HMD = 1,
+	AGPU_VR_TRACKED_DEVICE_CLASS_CONTROLLER = 2,
+	AGPU_VR_TRACKED_DEVICE_CLASS_GENERIC_TRACKER = 3,
+	AGPU_VR_TRACKED_DEVICE_CLASS_TRACKING_REFERENCE = 2,
+	AGPU_VR_TRACKED_DEVICE_CLASS_DISPLAY_REDIRECT = 2,
+} agpu_vr_tracked_device_class;
+
+typedef enum {
+	AGPU_VR_TRACKED_DEVICE_ROLE_INVALID = 0,
+	AGPU_VR_TRACKED_DEVICE_ROLE_LEFT_HAND = 1,
+	AGPU_VR_TRACKED_DEVICE_ROLE_RIGHT_HAND = 2,
+	AGPU_VR_TRACKED_DEVICE_ROLE_OPT_OUT = 3,
+	AGPU_VR_TRACKED_DEVICE_ROLE_THREADMILL = 4,
+} agpu_vr_tracked_device_role;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -699,6 +716,16 @@ typedef struct agpu_region3d {
 	agpu_uint depth;
 } agpu_region3d;
 
+/* Structure agpu_vr_tracked_device_pose. */
+typedef struct agpu_vr_tracked_device_pose {
+	agpu_uint device_id;
+	agpu_vr_tracked_device_class device_class;
+	agpu_vr_tracked_device_role device_role;
+	agpu_matrix4x4f device_to_absolute_tracking;
+	agpu_vector3f velocity;
+	agpu_vector3f angular_velocity;
+} agpu_vr_tracked_device_pose;
+
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms );
 
@@ -783,6 +810,12 @@ typedef agpu_error (*agpuGetVRRecommendedRenderTargetSize_FUN) ( agpu_vr_system*
 typedef agpu_error (*agpuGetVREyeToHeadTransformInto_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform );
 typedef agpu_error (*agpuGetVRProjectionMatrix_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix );
 typedef agpu_error (*agpuGetVRProjectionFrustumTangents_FUN) ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum );
+typedef agpu_error (*agpuSubmitVREyeRenderTargets_FUN) ( agpu_vr_system* vr_system, agpu_texture* left_eye, agpu_texture* right_eye );
+typedef agpu_error (*agpuWaitAndFetchVRPoses_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_size (*agpuGetValidVRTrackedDevicePoseCount_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_error (*agpuGetValidVRTrackedDevicePoseInto_FUN) ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
+typedef agpu_size (*agpuGetValidVRRenderTrackedDevicePoseCount_FUN) ( agpu_vr_system* vr_system );
+typedef agpu_error (*agpuGetValidVRRenderTrackedDevicePoseInto_FUN) ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
 
 AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system );
 AGPU_EXPORT agpu_error agpuReleaseVRSystem ( agpu_vr_system* vr_system );
@@ -792,6 +825,12 @@ AGPU_EXPORT agpu_error agpuGetVRRecommendedRenderTargetSize ( agpu_vr_system* vr
 AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform );
 AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix );
 AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum );
+AGPU_EXPORT agpu_error agpuSubmitVREyeRenderTargets ( agpu_vr_system* vr_system, agpu_texture* left_eye, agpu_texture* right_eye );
+AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
+AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system );
+AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -1173,6 +1212,12 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetVREyeToHeadTransformInto_FUN agpuGetVREyeToHeadTransformInto;
 	agpuGetVRProjectionMatrix_FUN agpuGetVRProjectionMatrix;
 	agpuGetVRProjectionFrustumTangents_FUN agpuGetVRProjectionFrustumTangents;
+	agpuSubmitVREyeRenderTargets_FUN agpuSubmitVREyeRenderTargets;
+	agpuWaitAndFetchVRPoses_FUN agpuWaitAndFetchVRPoses;
+	agpuGetValidVRTrackedDevicePoseCount_FUN agpuGetValidVRTrackedDevicePoseCount;
+	agpuGetValidVRTrackedDevicePoseInto_FUN agpuGetValidVRTrackedDevicePoseInto;
+	agpuGetValidVRRenderTrackedDevicePoseCount_FUN agpuGetValidVRRenderTrackedDevicePoseCount;
+	agpuGetValidVRRenderTrackedDevicePoseInto_FUN agpuGetValidVRRenderTrackedDevicePoseInto;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;

@@ -338,6 +338,36 @@ public:
 		agpuThrowIfFailed(agpuGetVRProjectionFrustumTangents( this, eye, frustum ));
 	}
 
+	inline void submitEyeRenderTargets ( agpu_texture* left_eye, agpu_texture* right_eye )
+	{
+		agpuThrowIfFailed(agpuSubmitVREyeRenderTargets( this, left_eye, right_eye ));
+	}
+
+	inline void waitAndFetchPoses (  )
+	{
+		agpuThrowIfFailed(agpuWaitAndFetchVRPoses( this ));
+	}
+
+	inline agpu_size getValidTrackedDevicePoseCount (  )
+	{
+		return agpuGetValidVRTrackedDevicePoseCount( this );
+	}
+
+	inline void getValidTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+	{
+		agpuThrowIfFailed(agpuGetValidVRTrackedDevicePoseInto( this, index, dest ));
+	}
+
+	inline agpu_size getValidRenderTrackedDevicePoseCount (  )
+	{
+		return agpuGetValidVRRenderTrackedDevicePoseCount( this );
+	}
+
+	inline void getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+	{
+		agpuThrowIfFailed(agpuGetValidVRRenderTrackedDevicePoseInto( this, index, dest ));
+	}
+
 };
 
 typedef agpu_ref<agpu_vr_system> agpu_vr_system_ref;

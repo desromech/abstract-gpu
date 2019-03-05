@@ -146,14 +146,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
             break;
         }
 
-        // Since Vulkan 1.1.82, the message coe is not used anymore.
+        // Since Vulkan 1.1.82, the message code is not used anymore.
         if(strstr(pMessage, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed"))
             return VK_FALSE;
+
+        auto device = reinterpret_cast<agpu_device*> (pUserData);
+        if(device->vrSystemWrapper)
+        {
+            if(strstr(pMessage, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout") &&
+                strstr(pMessage, "of GENERAL"))
+                return VK_FALSE;
+        }
     }
 
     printError("%s: %d: %s\n", pLayerPrefix, messageCode, pMessage);
-    if(flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-        return VK_TRUE;
     return VK_FALSE;
 }
 
@@ -653,7 +659,13 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     if(vrSystem)
     {
         vrSystemWrapper = new agpu_vr_system(this);
-        isVRDisplaySupported = true;
+        if(!vrSystemWrapper->initialize())
+        {
+            vrSystemWrapper->release();
+            vrSystemWrapper = nullptr;
+        }
+
+        isVRDisplaySupported = vrSystemWrapper != nullptr;
     }
 
     return true;

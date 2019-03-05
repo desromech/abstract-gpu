@@ -39,6 +39,7 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUSize3d rebuildFieldAccessors.
 	AGPUFrustumTangents rebuildFieldAccessors.
 	AGPURegion3d rebuildFieldAccessors.
+	AGPUVrTrackedDevicePose rebuildFieldAccessors.
 ]
 
 { #category : #'initialization' }

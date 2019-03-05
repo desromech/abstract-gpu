@@ -250,6 +250,16 @@
             <field name="depth" type="uint" />
         </struct>
 
+        <struct name="vr_tracked_device_pose">
+            <field name="device_id" type="uint" />
+            <field name="device_class" type="vr_tracked_device_class" />
+            <field name="device_role" type="vr_tracked_device_role" />
+
+            <field name="device_to_absolute_tracking" type="matrix4x4f" />
+            <field name="velocity" type="vector3f" />
+            <field name="angular_velocity" type="vector3f" />
+        </struct>
+
 	</structs>
 
     <constants>
@@ -681,6 +691,23 @@
             <constant name="VrEyeLeft" value="0" />
             <constant name="VrEyeRight" value="1" />
         </enum>
+
+        <enum name="vr_tracked_device_class">
+            <constant name="VrTrackedDeviceClassInvalid" value="0" />
+            <constant name="VrTrackedDeviceClassHmd" value="1" />
+            <constant name="VrTrackedDeviceClassController" value="2" />
+            <constant name="VrTrackedDeviceClassGenericTracker" value="3" />
+            <constant name="VrTrackedDeviceClassTrackingReference" value="2" />
+            <constant name="VrTrackedDeviceClassDisplayRedirect" value="2" />
+        </enum>
+
+        <enum name="vr_tracked_device_role">
+            <constant name="VrTrackedDeviceRoleInvalid" value="0" />
+            <constant name="VrTrackedDeviceRoleLeftHand" value="1" />
+            <constant name="VrTrackedDeviceRoleRightHand" value="2" />
+            <constant name="VrTrackedDeviceRoleOptOut" value="3" />
+            <constant name="VrTrackedDeviceRoleThreadmill" value="4" />
+        </enum>
     </constants>
 
     <globals>
@@ -847,6 +874,31 @@
                 <arg name="eye" type="vr_eye" />
                 <arg name="frustum" type="frustum_tangents*" />
             </method>
+
+            <method name="submitEyeRenderTargets" cname="SubmitVREyeRenderTargets" returnType="error">
+                <arg name="left_eye" type="texture*" />
+                <arg name="right_eye" type="texture*" />
+            </method>
+
+            <method name="waitAndFetchPoses" cname="WaitAndFetchVRPoses" returnType="error">
+            </method>
+
+            <method name="getValidTrackedDevicePoseCount" cname="GetValidVRTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getValidTrackedDevicePoseInto" cname="GetValidVRTrackedDevicePoseInto" returnType="error">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
+            <method name="getValidRenderTrackedDevicePoseCount" cname="GetValidVRRenderTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getValidRenderTrackedDevicePoseInto" cname="GetValidVRRenderTrackedDevicePoseInto" returnType="error">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
         </interface>
 
         <interface name="swap_chain">

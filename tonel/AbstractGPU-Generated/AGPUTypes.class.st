@@ -20,6 +20,7 @@ Class {
 		'agpu_enum',
 		'agpu_shader_binding_type',
 		'agpu_shader_type',
+		'agpu_vr_tracked_device_class',
 		'agpu_renderpass_attachment_action',
 		'agpu_depth_stencil_value',
 		'agpu_inheritance_info',
@@ -86,9 +87,11 @@ Class {
 		'agpu_command_list_type',
 		'agpu_bitfield',
 		'agpu_region3d',
+		'agpu_vr_tracked_device_role',
 		'agpu_subresource_range',
 		'agpu_texture_flags',
 		'agpu_stencil_operation',
+		'agpu_vr_tracked_device_pose',
 		'agpu_command_queue',
 		'agpu_component_swizzle',
 		'agpu_command_allocator',
@@ -127,6 +130,7 @@ AGPUTypes class >> initialize [
 	agpu_enum := #'int'.
 	agpu_shader_binding_type := #int.
 	agpu_shader_type := #int.
+	agpu_vr_tracked_device_class := #int.
 	agpu_renderpass_attachment_action := #int.
 	agpu_depth_stencil_value := AGPUDepthStencilValue.
 	agpu_inheritance_info := AGPUInheritanceInfo.
@@ -193,9 +197,11 @@ AGPUTypes class >> initialize [
 	agpu_command_list_type := #int.
 	agpu_bitfield := #'uint'.
 	agpu_region3d := AGPURegion3d.
+	agpu_vr_tracked_device_role := #int.
 	agpu_subresource_range := AGPUSubresourceRange.
 	agpu_texture_flags := #int.
 	agpu_stencil_operation := #int.
+	agpu_vr_tracked_device_pose := AGPUVrTrackedDevicePose.
 	agpu_command_queue := #'void'.
 	agpu_component_swizzle := #int.
 	agpu_command_allocator := #'void'.
