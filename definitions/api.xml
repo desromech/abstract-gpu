@@ -697,8 +697,8 @@
             <constant name="VrTrackedDeviceClassHmd" value="1" />
             <constant name="VrTrackedDeviceClassController" value="2" />
             <constant name="VrTrackedDeviceClassGenericTracker" value="3" />
-            <constant name="VrTrackedDeviceClassTrackingReference" value="2" />
-            <constant name="VrTrackedDeviceClassDisplayRedirect" value="2" />
+            <constant name="VrTrackedDeviceClassTrackingReference" value="4" />
+            <constant name="VrTrackedDeviceClassDisplayRedirect" value="5" />
         </enum>
 
         <enum name="vr_tracked_device_role">

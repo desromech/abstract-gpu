@@ -160,7 +160,7 @@ agpu_vr_tracked_device_pose _agpu_vr_system::convertTrackedDevicePose(agpu_uint 
 
 agpu_error _agpu_vr_system::waitAndFetchVRPoses()
 {
-    vr::VRCompositor()->WaitGetPoses(trackedDevicesPose, vr::k_unMaxTrackedDeviceCount, NULL, 0 );
+    vr::VRCompositor()->WaitGetPoses(trackedDevicesPose, vr::k_unMaxTrackedDeviceCount, renderTrackedDevicesPose, vr::k_unMaxTrackedDeviceCount );
 
 
     validTrackedDevicePoses.clear();
