@@ -19,6 +19,11 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     depthEnabled = false;
     stencilEnabled = false;
     vertexBufferCount = 0;
+    
+    hasDepthBias = false;
+    depthBiasConstantFactor = 0.0f;
+    depthBiasClamp = 0.0f;
+    depthBiasSlopeFactor = 0.0f;
 }
 
 void _agpu_pipeline_builder::lostReferences()

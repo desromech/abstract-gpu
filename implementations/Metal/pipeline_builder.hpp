@@ -52,6 +52,11 @@ public:
     agpu_bool depthEnabled;
     agpu_bool stencilEnabled;
     agpu_uint vertexBufferCount;
+    
+    agpu_bool hasDepthBias;
+    agpu_float depthBiasConstantFactor;
+    agpu_float depthBiasClamp;
+    agpu_float depthBiasSlopeFactor;
 
     std::vector<std::pair<agpu_shader*, std::string> > attachedShaders;
 };

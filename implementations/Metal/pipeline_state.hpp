@@ -53,6 +53,10 @@ public:
     id<MTLRenderPipelineState> handle;
     id<MTLDepthStencilState> depthStencilState;
     agpu_pipeline_command_state commandState;
+    
+    agpu_float depthBiasConstantFactor;
+    agpu_float depthBiasClamp;
+    agpu_float depthBiasSlopeFactor;
 };
 
 class AGPUMTLComputePipelineState : public AGPUMTLPipelineStateExtra
