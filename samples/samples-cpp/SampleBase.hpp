@@ -13,31 +13,6 @@ void printError(const char *format, ...);
 
 std::string readWholeFile(const std::string &fileName);
 
-// Vertex used in the samples
-struct SampleVertex
-{
-    SampleVertex(const glm::vec3 &position, const glm::vec3 &normal, const glm::vec4 &color, const glm::vec2 &texcoord)
-        : position(position), normal(normal), color(color), texcoord(texcoord) {}
-
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec4 color;
-    glm::vec2 texcoord;
-
-    static SampleVertex onlyColor(float x, float y, float z, float r, float g, float b, float a)
-    {
-        return SampleVertex(glm::vec3(x, y, z), glm::vec3(0,0,0), glm::vec4(r, g, b, a), glm::vec2(0, 1));
-    }
-
-    static SampleVertex onlyColorTc(float x, float y, float z, float r, float g, float b, float a, float u, float v)
-    {
-        return SampleVertex(glm::vec3(x, y, z), glm::vec3(0, 0, 0), glm::vec4(r, g, b, a), glm::vec2(u, v));
-    }
-
-    static agpu_vertex_attrib_description Description[];
-    static const int DescriptionSize;
-};
-
 class AbstractSampleBase
 {
 public:
@@ -52,11 +27,16 @@ public:
     agpu_pipeline_state_ref buildComputePipeline(const agpu_compute_pipeline_builder_ref &builder);
     agpu_texture_ref loadTexture(const char *fileName);
 
+    const agpu_vertex_layout_ref &getSampleVertexLayout();
+
     agpu_device_ref device;
     agpu_command_queue_ref commandQueue;
     agpu_shader_language preferredShaderLanguage;
 
 	bool hasPersistentCoherentMapping;
+
+private:
+    agpu_vertex_layout_ref sampleVertexLayout;
 };
 
 class SampleBase : public AbstractSampleBase
@@ -68,9 +48,15 @@ public:
     virtual void shutdownSample();
     virtual void render();
     virtual void processEvents();
+    virtual void update(float deltaTime);
 
-    virtual void onKeyDown(const SDL_Event &event);
-    virtual void onKeyUp(const SDL_Event &event);
+    virtual void onMouseButtonDown(const SDL_MouseButtonEvent &event);
+    virtual void onMouseButtonUp(const SDL_MouseButtonEvent &event);
+    virtual void onMouseMotion(const SDL_MouseMotionEvent &event);
+    virtual void onMouseWheel(const SDL_MouseWheelEvent &event);
+
+    virtual void onKeyDown(const SDL_KeyboardEvent &event);
+    virtual void onKeyUp(const SDL_KeyboardEvent &event);
 
     void swapBuffers();
 
@@ -99,6 +85,32 @@ protected:
         }
 
         return matrix;
+    }
+
+    glm::mat4 frustum(float left, float right, float bottom, float top, float nearDistance, float farDistance)
+    {
+        glm::mat4 m(0.0f);
+        m[0][0] = 2.0*nearDistance / (right - left); m[2][0] = (right + left) / (right - left);
+        m[1][1] = 2.0*nearDistance / (top - bottom); m[2][1] = (top + bottom) / (top - bottom);
+        m[2][2] = -farDistance / (farDistance - nearDistance); m[3][2] = -nearDistance * farDistance / (farDistance - nearDistance);
+        m[2][3] = -1.0f;
+
+        // Flip the Y axis
+        if (device->hasTopLeftNdcOrigin())
+        {
+            m[1][1] = -m[1][1];
+            m[2][1] = -m[2][1];
+        }
+
+        return m;
+    }
+
+    glm::mat4 perspective(float fovy, float aspect, float nearDistance, float farDistance)
+    {
+        auto radians = fovy*(M_PI/180.0f*0.5f);
+        auto top = nearDistance * tan(radians);
+        auto right = top * aspect;
+        return frustum(-right, right, -top, top, nearDistance, farDistance);
     }
 };
 

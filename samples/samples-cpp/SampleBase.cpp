@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include "SampleBase.hpp"
+#include "SampleVertex.hpp"
 #include "SDL_syswm.h"
 
 agpu_vertex_attrib_description SampleVertex::Description[] = {
@@ -241,6 +242,20 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName)
     return texture;
 }
 
+const agpu_vertex_layout_ref &AbstractSampleBase::getSampleVertexLayout()
+{
+    if(!sampleVertexLayout)
+    {
+        // Create the vertex layout.
+        sampleVertexLayout = device->createVertexLayout();
+        agpu_size vertexStride = sizeof(SampleVertex);
+        sampleVertexLayout->addVertexAttributeBindings(1, &vertexStride, SampleVertex::DescriptionSize, SampleVertex::Description);
+    }
+
+    return sampleVertexLayout;
+}
+
+
 int SampleBase::main(int argc, const char **argv)
 {
     char nameBuffer[256];
@@ -364,6 +379,11 @@ int SampleBase::main(int argc, const char **argv)
     return 0;
 }
 
+
+void SampleBase::update(float deltaTime)
+{
+}
+
 void SampleBase::processEvents()
 {
     SDL_Event event;
@@ -372,16 +392,22 @@ void SampleBase::processEvents()
         switch(event.type)
         {
         case SDL_MOUSEBUTTONDOWN:
-            printMessage("Mouse down\n");
+            onMouseButtonDown(event.button);
             break;
-        case SDL_FINGERDOWN:
-            printMessage("Finger down\n");
+        case SDL_MOUSEBUTTONUP:
+            onMouseButtonUp(event.button);
+            break;
+        case SDL_MOUSEMOTION:
+            onMouseMotion(event.motion);
+            break;
+        case SDL_MOUSEWHEEL:
+            onMouseWheel(event.wheel);
             break;
         case SDL_KEYDOWN:
-            onKeyDown(event);
+            onKeyDown(event.key);
             break;
         case SDL_KEYUP:
-            onKeyUp(event);
+            onKeyUp(event.key);
             break;
         case SDL_QUIT:
             quit = true;
@@ -393,9 +419,25 @@ void SampleBase::processEvents()
     }
 }
 
-void SampleBase::onKeyDown(const SDL_Event &event)
+void SampleBase::onMouseButtonDown(const SDL_MouseButtonEvent &event)
 {
-    switch(event.key.keysym.sym)
+}
+
+void SampleBase::onMouseButtonUp(const SDL_MouseButtonEvent &event)
+{
+}
+
+void SampleBase::onMouseMotion(const SDL_MouseMotionEvent &event)
+{
+}
+
+void SampleBase::onMouseWheel(const SDL_MouseWheelEvent &event)
+{
+}
+
+void SampleBase::onKeyDown(const SDL_KeyboardEvent &event)
+{
+    switch(event.keysym.sym)
     {
     case SDLK_ESCAPE:
         quit = true;
@@ -406,7 +448,7 @@ void SampleBase::onKeyDown(const SDL_Event &event)
     }
 }
 
-void SampleBase::onKeyUp(const SDL_Event &event)
+void SampleBase::onKeyUp(const SDL_KeyboardEvent &event)
 {
 }
 

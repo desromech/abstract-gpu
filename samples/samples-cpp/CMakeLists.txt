@@ -11,3 +11,6 @@ target_link_libraries(Sample-Cpp-2 ${AGPU_SAMPLES_LIBS})
 
 add_executable(Sample-Cpp-3 Sample3.cpp ${SampleCommon_SRC})
 target_link_libraries(Sample-Cpp-3 ${AGPU_SAMPLES_LIBS})
+
+add_executable(Sample-Cpp-4 Sample4.cpp ${SampleCommon_SRC})
+target_link_libraries(Sample-Cpp-4 ${AGPU_SAMPLES_LIBS})

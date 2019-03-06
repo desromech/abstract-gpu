@@ -1,4 +1,5 @@
 #include "SampleBase.hpp"
+#include "SampleVertex.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
 static SampleVertex vertices[] = {

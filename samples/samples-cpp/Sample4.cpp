@@ -1,29 +1,8 @@
 #include "SampleBase.hpp"
-#include "SampleVertex.hpp"
+#include "SampleMesh.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
 static const float MaxLod = 10000.0;
-
-static SampleVertex vertices[] = {
-    SampleVertex::onlyColorTc(
-        -1.0, -1.0, 0.0,
-        1.0, 1.0, 1.0, 1.0,
-        0.0, 1.0),
-    SampleVertex::onlyColorTc(1.0, -1.0, 0.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0),
-    SampleVertex::onlyColorTc(1.0, 1.0, 0.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 0.0),
-    SampleVertex::onlyColorTc(-1.0, 1.0, 0.0, 1.0,
-        1.0, 1.0, 1.0,
-        0.0, 0.0),
-};
-
-static uint32_t indices[] = {
-    0, 1, 2,
-    2, 3, 0,
-};
 
 struct TransformationState
 {
@@ -36,6 +15,13 @@ struct TransformationState
 class Sample3: public SampleBase
 {
 public:
+    Sample3()
+    {
+        draggingLeft = false;
+        draggingRight = false;
+        cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+    }
+
     bool initializeSample()
     {
         mainRenderPass = createMainPass();
@@ -65,18 +51,14 @@ public:
             if (!vertexShader || !fragmentShader)
                 return false;
 
-            // Create the vertex layout.
-            vertexLayout = device->createVertexLayout();
-            agpu_size vertexStride = sizeof(SampleVertex);
-            vertexLayout->addVertexAttributeBindings(1, &vertexStride, SampleVertex::DescriptionSize, SampleVertex::Description);
-
             // Create the pipeline builder
             agpu_pipeline_builder_ref pipelineBuilder = device->createPipelineBuilder();
             pipelineBuilder->setShaderSignature(shaderSignature.get());
             pipelineBuilder->attachShader(vertexShader.get());
             pipelineBuilder->attachShader(fragmentShader.get());
-            pipelineBuilder->setVertexLayout(vertexLayout.get());
+            pipelineBuilder->setVertexLayout(getSampleVertexLayout().get());
             pipelineBuilder->setPrimitiveType(AGPU_TRIANGLES);
+            pipelineBuilder->setCullMode(AGPU_CULL_MODE_BACK);
 
             // Build the pipeline
             pipeline = pipelineBuilder->build();
@@ -91,9 +73,14 @@ public:
                 return false;
         }
 
-        // Create the vertex and the index buffer
-        vertexBuffer = createImmutableVertexBuffer(sizeof(vertices)/sizeof(vertices[0]), sizeof(vertices[0]), vertices);
-        indexBuffer = createImmutableIndexBuffer(sizeof(indices)/sizeof(indices[0]), sizeof(indices[0]), indices);
+        // Create the cube mesh
+        {
+            SampleMeshBuilder builder(this);
+            builder.addCubeWithExtent(glm::vec3(1.0f, 1.0f, 1.0f));
+
+            cubeMesh = builder.mesh();
+        }
+
 
         // Create the transformation buffer.
         transformationBuffer = createUploadableUniformBuffer(sizeof(TransformationState), nullptr);
@@ -118,13 +105,6 @@ public:
             samplerBindings->createSampler(0, &samplerDesc);
         }
 
-        // Create the vertex buffer binding.
-        {
-            agpu_buffer *buffer = vertexBuffer.get();
-            vertexBinding = device->createVertexBinding(vertexLayout.get());
-            vertexBinding->bindVertexBuffers(1, &buffer);
-        }
-
         commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue.get());
         commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get(), nullptr);
         commandList->close();
@@ -132,13 +112,65 @@ public:
         return true;
     }
 
+    virtual void onMouseButtonDown(const SDL_MouseButtonEvent &event) override
+    {
+        if(event.button == SDL_BUTTON_LEFT)
+            draggingLeft = true;
+        else if(event.button == SDL_BUTTON_RIGHT)
+            draggingRight = true;
+
+    }
+
+    virtual void onMouseButtonUp(const SDL_MouseButtonEvent &event) override
+    {
+        if(event.button == SDL_BUTTON_LEFT)
+            draggingLeft = false;
+        else if(event.button == SDL_BUTTON_RIGHT)
+            draggingRight = false;
+    }
+
+    virtual void onMouseMotion(const SDL_MouseMotionEvent &event) override
+    {
+        if(draggingLeft)
+        {
+            cameraAngle += glm::vec3(-event.yrel, -event.xrel, 0.0f)*0.01f;
+        }
+        else if(draggingRight)
+        {
+            cameraPosition += glm::vec3(cameraOrientation() * glm::vec4(event.xrel, -event.yrel, 0.0f, 0.0f)*0.01f);
+        }
+    }
+
+    virtual void onMouseWheel(const SDL_MouseWheelEvent &event) override
+    {
+        cameraPosition += glm::vec3(cameraOrientation() * glm::vec4(0.0f, 0.0f, event.y*-0.1f, 0.0f));
+    }
+
+    glm::mat4 cameraTranslation()
+    {
+        return glm::translate(glm::mat4(1.0f), cameraPosition);
+    }
+
+    glm::mat4 cameraOrientation()
+    {
+        glm::mat4 matrix(1.0f);
+        matrix = glm::rotate(matrix, cameraAngle.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        matrix = glm::rotate(matrix, cameraAngle.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        return matrix;
+    }
+
+    glm::mat4 cameraModelMatrix()
+    {
+        return cameraTranslation()*cameraOrientation();
+    }
+
     void render()
     {
         // Compute the projection matrix
         float aspect = float(screenWidth) / float(screenHeight);
-        float h = 2.0;
-        float w = h*aspect;
-        transformationState.projectionMatrix = ortho(-w, w, -h, h, -10.0f, 10.0f);
+        transformationState.projectionMatrix = perspective(60.0f, aspect, 0.01f, 100.0f);
+
+        transformationState.viewMatrix = glm::inverse(cameraModelMatrix());
 
         // Upload the transformation state.
         transformationBuffer->uploadBufferData(0, sizeof(transformationState), &transformationState);
@@ -155,15 +187,13 @@ public:
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
-        // Use the vertices and the indices.
-        commandList->useVertexBinding(vertexBinding.get());
-        commandList->useIndexBuffer(indexBuffer.get());
+        // Set the shader resource bindings
         commandList->useShaderResources(shaderBindings.get());
         commandList->useShaderResources(textureBindings.get());
         commandList->useShaderResources(samplerBindings.get());
 
-        // Draw the objects
-        commandList->drawElements(sizeof(indices) / sizeof(indices[0]), 1, 0, 0, 0);
+        // Draw the mesh
+        cubeMesh->drawWithCommandList(commandList);
 
         // Finish the command list
         commandList->endRenderPass();
@@ -186,10 +216,6 @@ public:
     agpu_shader_resource_binding_ref textureBindings;
     agpu_shader_resource_binding_ref samplerBindings;
 
-    agpu_buffer_ref vertexBuffer;
-    agpu_buffer_ref indexBuffer;
-    agpu_vertex_layout_ref vertexLayout;
-    agpu_vertex_binding_ref vertexBinding;
     agpu_pipeline_state_ref pipeline;
     agpu_command_allocator_ref commandAllocator;
     agpu_command_list_ref commandList;
@@ -197,7 +223,13 @@ public:
     agpu_texture_ref diffuseTexture;
     agpu_renderpass_ref mainRenderPass;
 
+    SampleMeshPtr cubeMesh;
     TransformationState transformationState;
+
+    bool draggingLeft;
+    bool draggingRight;
+    glm::vec3 cameraAngle;
+    glm::vec3 cameraPosition;
 };
 
 SAMPLE_MAIN(Sample3)
