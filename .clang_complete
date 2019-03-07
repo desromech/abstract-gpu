@@ -6,4 +6,5 @@
 -Ithirdparty/spirv-cross
 -Ithirdparty/openvr/headers
 -IC:\VulkanSDK\1.1.70.1\Include
+-/usr/include/SDL2
 -DAGPU_BUILD

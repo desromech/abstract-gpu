@@ -45,8 +45,9 @@ public:
     }
 
     agpu_ref(T* pointer)
-        : pointer(pointer)
+        : pointer(0)
     {
+		reset(pointer);
     }
 
     ~agpu_ref()
@@ -75,6 +76,13 @@ public:
         }
         return *this;
     }
+
+	void reset(T *newPointer = nullptr)
+	{
+		if(pointer)
+			pointer->release();
+		pointer = newPointer;
+	}
 
     operator bool() const
     {

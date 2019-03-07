@@ -5,6 +5,10 @@
 AGPUMTLRenderPipelineState::AGPUMTLRenderPipelineState()
 {
     depthStencilState = nil;
+    
+    depthBiasConstantFactor = 0.0f;
+    depthBiasClamp = 0.0f;
+    depthBiasSlopeFactor = 0.0f;
 }
 
 AGPUMTLRenderPipelineState::~AGPUMTLRenderPipelineState()
@@ -21,6 +25,7 @@ void AGPUMTLRenderPipelineState::applyRenderCommands(id<MTLRenderCommandEncoder>
     [renderEncoder setDepthStencilState: depthStencilState];
     [renderEncoder setCullMode: commandState.cullMode];
     [renderEncoder setFrontFacingWinding: commandState.frontFace];
+    [renderEncoder setDepthBias: depthBiasConstantFactor slopeScale: depthBiasSlopeFactor clamp: depthBiasClamp];
 }
 
 AGPUMTLComputePipelineState::AGPUMTLComputePipelineState()
@@ -59,6 +64,13 @@ agpu_pipeline_state *_agpu_pipeline_state::createRender(agpu_device *device, agp
     
     renderExtraState->handle = handle;
     renderExtraState->commandState = builder->commandState;
+    if(builder->hasDepthBias)
+    {
+        renderExtraState->depthBiasConstantFactor = builder->depthBiasConstantFactor;
+        renderExtraState->depthBiasSlopeFactor = builder->depthBiasSlopeFactor;
+        renderExtraState->depthBiasClamp = builder->depthBiasClamp;        
+    }
+    
     renderExtraState->depthStencilState = [device->device newDepthStencilStateWithDescriptor: builder->depthStencilDescriptor];
     return result;
 }
