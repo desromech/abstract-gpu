@@ -365,7 +365,7 @@ agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
 
 agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
 {
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     auto barrier = device->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
 
@@ -386,14 +386,6 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
     isSecondaryContent = secondaryContent;
 
     // Transition the color attachments.
-    auto sourceLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkAccessFlags srcAccessMask = 0;
-    if (currentFramebuffer->swapChainFramebuffer)
-    {
-        sourceLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    }
-
     auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
     {
@@ -405,14 +397,14 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, srcAccessMask);
+        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, currentFramebuffer->attachmentTextures[i]->initialLayout, destLayout, currentFramebuffer->attachmentTextures[i]->initialLayoutAccessBits);
     }
 
     // Transition the depth stencil attachment, if needed.
     if(currentFramebuffer->hasDepthStencil)
     {
         auto depthStencilAttachment = currentFramebuffer->attachmentTextures.back();
-        if(depthStencilAttachment->initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+        if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
             auto &desc = currentFramebuffer->attachmentDescriptions.back();
             VkImageSubresourceRange range;
@@ -457,9 +449,6 @@ agpu_error _agpu_command_list::endRenderPass()
     vkCmdEndRenderPass(commandBuffer);
 
     // Transition the color attachments.
-    auto destLayout = VK_IMAGE_LAYOUT_GENERAL;
-    if (currentFramebuffer->swapChainFramebuffer)
-        destLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
     {
@@ -470,6 +459,7 @@ agpu_error _agpu_command_list::endRenderPass()
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
+        auto destLayout = currentFramebuffer->attachmentTextures[i]->initialLayout;
         setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
     }
 
@@ -477,7 +467,7 @@ agpu_error _agpu_command_list::endRenderPass()
     if(currentFramebuffer->hasDepthStencil)
     {
         auto depthStencilAttachment = currentFramebuffer->attachmentTextures.back();
-        if(depthStencilAttachment->initialLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+        if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
             auto &desc = currentFramebuffer->attachmentDescriptions.back();
             VkImageSubresourceRange range;
