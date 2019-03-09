@@ -9,6 +9,7 @@ Class {
 		'agpu_vertex_attrib_description',
 		'agpu_framebuffer',
 		'agpu_swap_chain_create_info',
+		'agpu_vr_generic_event',
 		'agpu_texture',
 		'agpu_quaternionf',
 		'agpu_string_length',
@@ -22,6 +23,7 @@ Class {
 		'agpu_shader_type',
 		'agpu_vr_tracked_device_class',
 		'agpu_renderpass_attachment_action',
+		'agpu_vr_event_type',
 		'agpu_depth_stencil_value',
 		'agpu_inheritance_info',
 		'agpu_color4f',
@@ -33,6 +35,7 @@ Class {
 		'agpu_vr_eye',
 		'agpu_primitive_topology',
 		'agpu_byte',
+		'agpu_vr_event_data',
 		'agpu_buffer',
 		'agpu_texture_view_description',
 		'agpu_vertex_layout',
@@ -45,7 +48,9 @@ Class {
 		'agpu_short',
 		'agpu_compute_pipeline_builder',
 		'agpu_int',
+		'agpu_vr_controller_event',
 		'agpu_renderpass',
+		'agpu_vr_dual_analog_event',
 		'agpu_frustum_tangents',
 		'agpu_cstring',
 		'agpu_buffer_usage_type',
@@ -62,11 +67,12 @@ Class {
 		'agpu_pipeline_builder',
 		'agpu_shader_signature_builder',
 		'agpu_texture_format',
-		'agpu_pointer',
+		'agpu_vr_dual_analog_which',
 		'agpu_device',
 		'agpu_feature',
 		'agpu_face_winding',
 		'agpu_shader_resource_binding',
+		'agpu_vr_button',
 		'agpu_buffer_binding_type',
 		'agpu_ushort',
 		'agpu_pipeline_state',
@@ -74,6 +80,8 @@ Class {
 		'agpu_vr_system',
 		'agpu_command_queue_type',
 		'agpu_texture_type',
+		'agpu_vr_event',
+		'agpu_pointer',
 		'agpu_size3d',
 		'agpu_texture_address_mode',
 		'agpu_vector3f',
@@ -119,6 +127,7 @@ AGPUTypes class >> initialize [
 	agpu_vertex_attrib_description := AGPUVertexAttribDescription.
 	agpu_framebuffer := #'void'.
 	agpu_swap_chain_create_info := AGPUSwapChainCreateInfo.
+	agpu_vr_generic_event := AGPUVrGenericEvent.
 	agpu_texture := #'void'.
 	agpu_quaternionf := AGPUQuaternionf.
 	agpu_string_length := #'int'.
@@ -132,6 +141,7 @@ AGPUTypes class >> initialize [
 	agpu_shader_type := #int.
 	agpu_vr_tracked_device_class := #int.
 	agpu_renderpass_attachment_action := #int.
+	agpu_vr_event_type := #int.
 	agpu_depth_stencil_value := AGPUDepthStencilValue.
 	agpu_inheritance_info := AGPUInheritanceInfo.
 	agpu_color4f := AGPUColor4f.
@@ -143,6 +153,7 @@ AGPUTypes class >> initialize [
 	agpu_vr_eye := #int.
 	agpu_primitive_topology := #int.
 	agpu_byte := #'uchar'.
+	agpu_vr_event_data := AGPUVrEventData.
 	agpu_buffer := #'void'.
 	agpu_texture_view_description := AGPUTextureViewDescription.
 	agpu_vertex_layout := #'void'.
@@ -155,7 +166,9 @@ AGPUTypes class >> initialize [
 	agpu_short := #'short'.
 	agpu_compute_pipeline_builder := #'void'.
 	agpu_int := #'int'.
+	agpu_vr_controller_event := AGPUVrControllerEvent.
 	agpu_renderpass := #'void'.
+	agpu_vr_dual_analog_event := AGPUVrDualAnalogEvent.
 	agpu_frustum_tangents := AGPUFrustumTangents.
 	agpu_cstring := #'char*'.
 	agpu_buffer_usage_type := #int.
@@ -172,11 +185,12 @@ AGPUTypes class >> initialize [
 	agpu_pipeline_builder := #'void'.
 	agpu_shader_signature_builder := #'void'.
 	agpu_texture_format := #int.
-	agpu_pointer := #'void*'.
+	agpu_vr_dual_analog_which := #int.
 	agpu_device := #'void'.
 	agpu_feature := #int.
 	agpu_face_winding := #int.
 	agpu_shader_resource_binding := #'void'.
+	agpu_vr_button := #int.
 	agpu_buffer_binding_type := #int.
 	agpu_ushort := #'ushort'.
 	agpu_pipeline_state := #'void'.
@@ -184,6 +198,8 @@ AGPUTypes class >> initialize [
 	agpu_vr_system := #'void'.
 	agpu_command_queue_type := #int.
 	agpu_texture_type := #int.
+	agpu_vr_event := AGPUVrEvent.
+	agpu_pointer := #'void*'.
 	agpu_size3d := AGPUSize3d.
 	agpu_texture_address_mode := #int.
 	agpu_vector3f := AGPUVector3f.

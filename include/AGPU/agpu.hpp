@@ -376,6 +376,11 @@ public:
 		agpuThrowIfFailed(agpuGetValidVRRenderTrackedDevicePoseInto( this, index, dest ));
 	}
 
+	inline agpu_bool pollEvent ( agpu_vr_event* event )
+	{
+		return agpuPollVREvent( this, event );
+	}
+
 };
 
 typedef agpu_ref<agpu_vr_system> agpu_vr_system_ref;

@@ -486,6 +486,61 @@ typedef enum {
 	AGPU_VR_TRACKED_DEVICE_ROLE_THREADMILL = 4,
 } agpu_vr_tracked_device_role;
 
+typedef enum {
+	AGPU_VR_BUTTON_SYSTEM = 0,
+	AGPU_VR_BUTTON_APPLICATION_MENU = 1,
+	AGPU_VR_BUTTON_GRIP = 2,
+	AGPU_VR_BUTTON_DPAD_LEFT = 3,
+	AGPU_VR_BUTTON_DPAD_UP = 4,
+	AGPU_VR_BUTTON_DPAD_RIGHT = 5,
+	AGPU_VR_BUTTON_DPAD_DOWN = 6,
+	AGPU_VR_BUTTON_A = 7,
+	AGPU_VR_BUTTON_PROXIMITY_SENSOR = 31,
+	AGPU_VR_BUTTON_AXIS_0 = 32,
+	AGPU_VR_BUTTON_AXIS_1 = 33,
+	AGPU_VR_BUTTON_AXIS_2 = 34,
+	AGPU_VR_BUTTON_AXIS_3 = 35,
+	AGPU_VR_BUTTON_AXIS_4 = 36,
+	AGPU_VR_BUTTON_STEAM_VR_TOUCHPAD = 32,
+	AGPU_VR_BUTTON_STEAM_VR_TRIGGER = 33,
+	AGPU_VR_BUTTON_DASHBOARD_BACK = 2,
+	AGPU_VR_BUTTON_KNUCKLES_A = 2,
+	AGPU_VR_BUTTON_KNUCKLES_B = 1,
+	AGPU_VR_BUTTON_KNUCKLES_JOY_STICK = 35,
+} agpu_vr_button;
+
+typedef enum {
+	AGPU_VR_DUAL_ANALOG_LEFT = 0,
+	AGPU_VR_DUAL_ANALOG_RIGHT = 1,
+} agpu_vr_dual_analog_which;
+
+typedef enum {
+	AGPU_VR_EVENT_TYPE_INVALID = 0,
+	AGPU_VR_EVENT_TYPE_TRACKED_DEVICE_ACTIVATED = 100,
+	AGPU_VR_EVENT_TYPE_TRACKED_DEVICE_DEACTIVATED = 101,
+	AGPU_VR_EVENT_TYPE_TRACKED_DEVICE_UPDATED = 102,
+	AGPU_VR_EVENT_TYPE_TRACKED_DEVICE_USER_INTERACTION_STARTED = 103,
+	AGPU_VR_EVENT_TYPE_TRACKED_DEVICE_USER_INTERACTION_ENDED = 104,
+	AGPU_VR_EVENT_TYPE_IPD_CHANGED = 105,
+	AGPU_VR_EVENT_TYPE_ENTER_STANDBY_MODE = 106,
+	AGPU_VR_EVENT_TYPE_LEAVE_STANDBY_MODE = 107,
+	AGPU_VR_EVENT_TYPE_TRACKED_DEVICE_ROLE_CHANGED = 108,
+	AGPU_VR_EVENT_TYPE_WIRELESS_DISCONNECT = 112,
+	AGPU_VR_EVENT_TYPE_WIRELESS_RECONNECT = 113,
+	AGPU_VR_EVENT_TYPE_BUTTON_PRESSED = 200,
+	AGPU_VR_EVENT_TYPE_BUTTON_RELEASED = 201,
+	AGPU_VR_EVENT_TYPE_BUTTON_TOUCH = 202,
+	AGPU_VR_EVENT_TYPE_BUTTON_UNTOUCH = 203,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_PRESSED = 250,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_RELEASED = 251,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_TOUCH = 252,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_UNTOUCH = 253,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_MOVE = 254,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_MODE_SWITCH_1 = 255,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_MODE_SWITCH_2 = 256,
+	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_CANCEL = 257,
+} agpu_vr_event_type;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -726,6 +781,48 @@ typedef struct agpu_vr_tracked_device_pose {
 	agpu_vector3f angular_velocity;
 } agpu_vr_tracked_device_pose;
 
+/* Structure agpu_vr_generic_event. */
+typedef struct agpu_vr_generic_event {
+	agpu_uint word1;
+	agpu_uint word2;
+	agpu_uint word3;
+	agpu_uint word4;
+	agpu_uint word5;
+	agpu_uint word6;
+	agpu_uint word7;
+	agpu_uint word8;
+} agpu_vr_generic_event;
+
+/* Structure agpu_vr_controller_event. */
+typedef struct agpu_vr_controller_event {
+	agpu_uint button;
+} agpu_vr_controller_event;
+
+/* Structure agpu_vr_dual_analog_event. */
+typedef struct agpu_vr_dual_analog_event {
+	agpu_float x;
+	agpu_float y;
+	agpu_float transformed_x;
+	agpu_float transformed_y;
+	agpu_uint which;
+} agpu_vr_dual_analog_event;
+
+/* Union agpu_vr_event_data. */
+typedef union agpu_vr_event_data {
+	agpu_uint type;
+	agpu_vr_generic_event generic;
+	agpu_vr_controller_event controller;
+	agpu_vr_dual_analog_event dual_analog;
+} agpu_vr_event_data;
+
+/* Structure agpu_vr_event. */
+typedef struct agpu_vr_event {
+	agpu_uint type;
+	agpu_uint tracked_device_index;
+	agpu_float event_age_seconds;
+	agpu_vr_event_data data;
+} agpu_vr_event;
+
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms );
 
@@ -816,6 +913,7 @@ typedef agpu_size (*agpuGetValidVRTrackedDevicePoseCount_FUN) ( agpu_vr_system* 
 typedef agpu_error (*agpuGetValidVRTrackedDevicePoseInto_FUN) ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
 typedef agpu_size (*agpuGetValidVRRenderTrackedDevicePoseCount_FUN) ( agpu_vr_system* vr_system );
 typedef agpu_error (*agpuGetValidVRRenderTrackedDevicePoseInto_FUN) ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
+typedef agpu_bool (*agpuPollVREvent_FUN) ( agpu_vr_system* vr_system, agpu_vr_event* event );
 
 AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system );
 AGPU_EXPORT agpu_error agpuReleaseVRSystem ( agpu_vr_system* vr_system );
@@ -831,6 +929,7 @@ AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount ( agpu_vr_system* vr_
 AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
 AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system );
 AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest );
+AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event );
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) ( agpu_swap_chain* swap_chain );
@@ -1218,6 +1317,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetValidVRTrackedDevicePoseInto_FUN agpuGetValidVRTrackedDevicePoseInto;
 	agpuGetValidVRRenderTrackedDevicePoseCount_FUN agpuGetValidVRRenderTrackedDevicePoseCount;
 	agpuGetValidVRRenderTrackedDevicePoseInto_FUN agpuGetValidVRRenderTrackedDevicePoseInto;
+	agpuPollVREvent_FUN agpuPollVREvent;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;

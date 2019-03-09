@@ -369,6 +369,14 @@ AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_syste
 	return (*dispatchTable)->agpuGetValidVRRenderTrackedDevicePoseInto ( vr_system, index, dest );
 }
 
+AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
+{
+	if (vr_system == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuPollVREvent ( vr_system, event );
+}
+
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
 {
 	if (swap_chain == nullptr)

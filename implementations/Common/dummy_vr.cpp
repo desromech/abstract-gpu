@@ -74,3 +74,8 @@ AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_syste
 {
     return AGPU_UNIMPLEMENTED;
 }
+
+AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
+{
+    return false;
+}

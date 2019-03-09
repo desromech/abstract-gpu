@@ -212,6 +212,63 @@ agpu_error _agpu_vr_system::getValidRenderTrackedDevicePoseInto ( agpu_size inde
     return AGPU_OK;
 }
 
+agpu_bool _agpu_vr_system::pollEvent ( agpu_vr_event* event )
+{
+    if(!event)
+        return false;
+
+    vr::VREvent_t rawEvent;
+    while(device->vrSystem->PollNextEvent(&rawEvent, sizeof(rawEvent)))
+    {
+        // We are using the same ids, so there is no need to map them.
+        memset(event, 0, sizeof(agpu_vr_event));
+        event->type = rawEvent.eventType;
+        event->tracked_device_index = rawEvent.trackedDeviceIndex;
+        event->event_age_seconds = rawEvent.eventAgeSeconds;
+
+        switch(rawEvent.eventType)
+        {
+        case vr::VREvent_TrackedDeviceActivated:
+        case vr::VREvent_TrackedDeviceDeactivated:
+        case vr::VREvent_TrackedDeviceUpdated:
+        case vr::VREvent_TrackedDeviceUserInteractionStarted:
+        case vr::VREvent_TrackedDeviceUserInteractionEnded:
+        case vr::VREvent_IpdChanged:
+        case vr::VREvent_EnterStandbyMode:
+        case vr::VREvent_LeaveStandbyMode:
+        case vr::VREvent_TrackedDeviceRoleChanged:
+        case vr::VREvent_WirelessDisconnect:
+        case vr::VREvent_WirelessReconnect:
+            return true;
+
+        case vr::VREvent_ButtonPress:
+        case vr::VREvent_ButtonUnpress:
+        case vr::VREvent_ButtonTouch:
+        case vr::VREvent_ButtonUntouch:
+            event->data.controller.button = rawEvent.data.controller.button;
+            return true;
+
+        case vr::VREvent_DualAnalog_Press:
+        case vr::VREvent_DualAnalog_Unpress:
+        case vr::VREvent_DualAnalog_Touch:
+        case vr::VREvent_DualAnalog_Untouch:
+        case vr::VREvent_DualAnalog_Move:
+        case vr::VREvent_DualAnalog_ModeSwitch1:
+        case vr::VREvent_DualAnalog_ModeSwitch2:
+        case vr::VREvent_DualAnalog_Cancel:
+            event->data.dual_analog.x = rawEvent.data.dualAnalog.x;
+            event->data.dual_analog.y = rawEvent.data.dualAnalog.y;
+            event->data.dual_analog.transformed_x = rawEvent.data.dualAnalog.transformedX;
+            event->data.dual_analog.transformed_y = rawEvent.data.dualAnalog.transformedY;
+            event->data.dual_analog.which = rawEvent.data.dualAnalog.which;
+            return true;
+        default:
+            break;
+        }
+    }
+    return false;
+}
+
 // AgpuVkVRSystemSubmissionCommandBuffer
 AgpuVkVRSystemSubmissionCommandBuffer::AgpuVkVRSystemSubmissionCommandBuffer()
     : device(nullptr),
@@ -619,4 +676,12 @@ AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_syste
 {
     CHECK_POINTER(vr_system);
     return vr_system->getValidRenderTrackedDevicePoseInto(index, dest);
+}
+
+AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
+{
+    if(!vr_system)
+        return false;
+
+    return vr_system->pollEvent(event);
 }

@@ -260,6 +260,43 @@
             <field name="angular_velocity" type="vector3f" />
         </struct>
 
+
+        <struct name="vr_generic_event">
+            <field name="word1" type="uint" />
+            <field name="word2" type="uint" />
+            <field name="word3" type="uint" />
+            <field name="word4" type="uint" />
+            <field name="word5" type="uint" />
+            <field name="word6" type="uint" />
+            <field name="word7" type="uint" />
+            <field name="word8" type="uint" />
+        </struct>
+
+        <struct name="vr_controller_event">
+            <field name="button" type="uint" />
+        </struct>
+
+        <struct name="vr_dual_analog_event">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="transformed_x" type="float" />
+            <field name="transformed_y" type="float" />
+            <field name="which" type="uint" />
+        </struct>
+
+        <union name="vr_event_data">
+            <field name="type" type="uint" />
+            <field name="generic" type="vr_generic_event" />
+            <field name="controller" type="vr_controller_event" />
+            <field name="dual_analog" type="vr_dual_analog_event" />
+        </union>
+
+        <struct name="vr_event">
+            <field name="type" type="uint" />
+            <field name="tracked_device_index" type="uint" />
+            <field name="event_age_seconds" type="float" />
+            <field name="data" type="vr_event_data" />
+        </struct>
 	</structs>
 
     <constants>
@@ -708,6 +745,67 @@
             <constant name="VrTrackedDeviceRoleOptOut" value="3" />
             <constant name="VrTrackedDeviceRoleThreadmill" value="4" />
         </enum>
+
+        <enum name="vr_button">
+            <constant name="VrButtonSystem" value="0" />
+            <constant name="VrButtonApplicationMenu" value="1" />
+            <constant name="VrButtonGrip" value="2" />
+            <constant name="VrButtonDpadLeft" value="3" />
+            <constant name="VrButtonDpadUp" value="4" />
+            <constant name="VrButtonDpadRight" value="5" />
+            <constant name="VrButtonDpadDown" value="6" />
+            <constant name="VrButtonA" value="7" />
+
+            <constant name="VrButtonProximitySensor" value="31" />
+            <constant name="VrButtonAxis0" value="32" />
+            <constant name="VrButtonAxis1" value="33" />
+            <constant name="VrButtonAxis2" value="34" />
+            <constant name="VrButtonAxis3" value="35" />
+            <constant name="VrButtonAxis4" value="36" />
+
+            <constant name="VrButtonSteamVrTouchpad" value="32" />
+            <constant name="VrButtonSteamVrTrigger" value="33" />
+            <constant name="VrButtonDashboardBack" value="2" />
+
+            <constant name="VrButtonKnucklesA" value="2" />
+            <constant name="VrButtonKnucklesB" value="1" />
+            <constant name="VrButtonKnucklesJoyStick" value="35" />
+        </enum>
+
+        <enum name="vr_dual_analog_which">
+            <constant name="VrDualAnalogLeft" value="0" />
+            <constant name="VrDualAnalogRight" value="1" />
+        </enum>
+
+        <enum name="vr_event_type">
+            <constant name="VrEventTypeInvalid" value="0" />
+
+            <constant name="VrEventTypeTrackedDeviceActivated" value="100" />
+            <constant name="VrEventTypeTrackedDeviceDeactivated" value="101" />
+            <constant name="VrEventTypeTrackedDeviceUpdated" value="102" />
+            <constant name="VrEventTypeTrackedDeviceUserInteractionStarted" value="103" />
+            <constant name="VrEventTypeTrackedDeviceUserInteractionEnded" value="104" />
+            <constant name="VrEventTypeIpdChanged" value="105" />
+            <constant name="VrEventTypeEnterStandbyMode" value="106" />
+            <constant name="VrEventTypeLeaveStandbyMode" value="107" />
+            <constant name="VrEventTypeTrackedDeviceRoleChanged" value="108" />
+            <constant name="VrEventTypeWirelessDisconnect" value="112" />
+            <constant name="VrEventTypeWirelessReconnect" value="113" />
+
+            <constant name="VrEventTypeButtonPressed" value="200" />
+            <constant name="VrEventTypeButtonReleased" value="201" />
+            <constant name="VrEventTypeButtonTouch" value="202" />
+            <constant name="VrEventTypeButtonUntouch" value="203" />
+
+            <constant name="VrEventTypeDualAnalogPressed" value="250" />
+            <constant name="VrEventTypeDualAnalogReleased" value="251" />
+            <constant name="VrEventTypeDualAnalogTouch" value="252" />
+            <constant name="VrEventTypeDualAnalogUntouch" value="253" />
+            <constant name="VrEventTypeDualAnalogMove" value="254" />
+            <constant name="VrEventTypeDualAnalogModeSwitch1" value="255" />
+            <constant name="VrEventTypeDualAnalogModeSwitch2" value="256" />
+            <constant name="VrEventTypeDualAnalogCancel" value="257" />
+        </enum>
     </constants>
 
     <globals>
@@ -899,6 +997,9 @@
                 <arg name="dest" type="vr_tracked_device_pose*" />
             </method>
 
+            <method name="pollEvent" cname="PollVREvent" returnType="bool">
+                <arg name="event" type="vr_event*" />
+            </method>
         </interface>
 
         <interface name="swap_chain">

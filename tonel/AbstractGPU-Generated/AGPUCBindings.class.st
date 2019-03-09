@@ -238,6 +238,11 @@ AGPUCBindings >> getValidRenderTrackedDevicePoseInto_vr_system: vr_system index:
 	^ self ffiCall: #(agpu_error agpuGetValidVRRenderTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
 ]
 
+{ #category : #'vr_system' }
+AGPUCBindings >> pollEvent_vr_system: vr_system event: event [
+	^ self ffiCall: #(agpu_bool agpuPollVREvent (agpu_vr_system* vr_system , agpu_vr_event* event) )
+]
+
 { #category : #'swap_chain' }
 AGPUCBindings >> addReference_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_error agpuAddSwapChainReference (agpu_swap_chain* swap_chain) )

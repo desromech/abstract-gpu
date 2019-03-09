@@ -53,6 +53,8 @@ struct _agpu_vr_system : public Object<_agpu_vr_system>
     agpu_size getValidRenderTrackedDevicePoseCount ();
     agpu_error getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest );
 
+    agpu_bool pollEvent ( agpu_vr_event* event );
+
     agpu_device *device;
 
 private:

@@ -102,3 +102,10 @@ AGPUVrSystem >> getValidRenderTrackedDevicePoseInto: index dest: dest [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUVrSystem >> pollEvent: event [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance pollEvent_vr_system: (self validHandle) event: event.
+	^ resultValue_
+]
+
