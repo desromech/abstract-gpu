@@ -43,11 +43,24 @@ set(AGPU_Vulkan_SOURCES
     vertex_binding.hpp
     vertex_layout.cpp
     vertex_layout.hpp
+    vr_system.cpp
+    vr_system.hpp
 )
 
 include_directories(${VULKAN_INCLUDE_DIRS})
 
-add_definitions(-DAGPU_BUILD)
+add_definitions(
+    -DAGPU_BUILD
+    -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
+)
+
+if(WIN32)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_definitions( -DWIN64 )
+  endif()
+endif()
 
 add_library(AgpuVulkan SHARED ${AGPU_Vulkan_SOURCES})
-target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES})
+add_dependencies(AgpuVulkan openvr_embeddedapi)
+include_directories(${OPENVR_INCLUDE})
+target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS})

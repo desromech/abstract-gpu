@@ -55,6 +55,7 @@
             <field name="engine_name" type="cstring" />
             <field name="engine_version" type="uint" />
             <field name="gpu_index" type="int" />
+            <field name="open_flags" type="device_open_flags" />
         </struct>
 
         <struct name="swap_chain_create_info">
@@ -189,10 +190,55 @@
             <field name="renderpass" type="renderpass*" />
         </struct>
 
+        <struct name="vector3f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+        </struct>
+
+        <struct name="vector4f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+            <field name="w" type="float" />
+        </struct>
+
+        <struct name="quaternionf">
+            <field name="w" type="float" />
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+        </struct>
+
+        <struct name="matrix3x3f">
+            <field name="c1" type="vector3f" />
+            <field name="c2" type="vector3f" />
+            <field name="c3" type="vector3f" />
+        </struct>
+
+        <struct name="matrix4x4f">
+            <field name="c1" type="vector4f" />
+            <field name="c2" type="vector4f" />
+            <field name="c3" type="vector4f" />
+            <field name="c4" type="vector4f" />
+        </struct>
+
+        <struct name="size2d">
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+        </struct>
+
         <struct name="size3d">
             <field name="width" type="uint" />
             <field name="height" type="uint" />
             <field name="depth" type="uint" />
+        </struct>
+
+        <struct name="frustum_tangents">
+            <field name="left" type="float" />
+            <field name="right" type="float" />
+            <field name="top" type="float" />
+            <field name="bottom" type="float" />
         </struct>
 
         <struct name="region3d">
@@ -204,6 +250,53 @@
             <field name="depth" type="uint" />
         </struct>
 
+        <struct name="vr_tracked_device_pose">
+            <field name="device_id" type="uint" />
+            <field name="device_class" type="vr_tracked_device_class" />
+            <field name="device_role" type="vr_tracked_device_role" />
+
+            <field name="device_to_absolute_tracking" type="matrix4x4f" />
+            <field name="velocity" type="vector3f" />
+            <field name="angular_velocity" type="vector3f" />
+        </struct>
+
+
+        <struct name="vr_generic_event">
+            <field name="word1" type="uint" />
+            <field name="word2" type="uint" />
+            <field name="word3" type="uint" />
+            <field name="word4" type="uint" />
+            <field name="word5" type="uint" />
+            <field name="word6" type="uint" />
+            <field name="word7" type="uint" />
+            <field name="word8" type="uint" />
+        </struct>
+
+        <struct name="vr_controller_event">
+            <field name="button" type="uint" />
+        </struct>
+
+        <struct name="vr_dual_analog_event">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="transformed_x" type="float" />
+            <field name="transformed_y" type="float" />
+            <field name="which" type="uint" />
+        </struct>
+
+        <union name="vr_event_data">
+            <field name="type" type="uint" />
+            <field name="generic" type="vr_generic_event" />
+            <field name="controller" type="vr_controller_event" />
+            <field name="dual_analog" type="vr_dual_analog_event" />
+        </union>
+
+        <struct name="vr_event">
+            <field name="type" type="uint" />
+            <field name="tracked_device_index" type="uint" />
+            <field name="event_age_seconds" type="float" />
+            <field name="data" type="vr_event_data" />
+        </struct>
 	</structs>
 
     <constants>
@@ -220,6 +313,11 @@
             <constant name="CompilationError" value="-9" />
             <constant name="LinkingError" value="-9" />
             <constant name="CommandListClosed" value="-10" />
+        </enum>
+
+        <enum name="device_open_flags">
+            <constant name="DeviceOpenFlagNone" value="0" />
+            <constant name="DeviceOpenFlagAllowVR" value="1" />
         </enum>
 
         <enum name="command_queue_type">
@@ -256,7 +354,8 @@
             <constant name="FeaturePersistentCoherentMemoryMapping" value="3" />
             <constant name="FeatureCommandListReuse" value="4" />
             <constant name="FeatureNonEmulatedCommandListReuse" value="5" />
-            <constant name="FeatureDirectDisplay" value="6" />
+            <constant name="FeatureVRDisplay" value="6" />
+            <constant name="FeatureVRInputDevices" value="7" />
         </enum>
 
         <enum name="renderpass_attachment_action">
@@ -624,6 +723,89 @@
             <constant name="CullModeBack" value="2" />
             <constant name="CullModeFrontAndBack" value="3" />
         </enum>
+
+        <enum name="vr_eye">
+            <constant name="VrEyeLeft" value="0" />
+            <constant name="VrEyeRight" value="1" />
+        </enum>
+
+        <enum name="vr_tracked_device_class">
+            <constant name="VrTrackedDeviceClassInvalid" value="0" />
+            <constant name="VrTrackedDeviceClassHmd" value="1" />
+            <constant name="VrTrackedDeviceClassController" value="2" />
+            <constant name="VrTrackedDeviceClassGenericTracker" value="3" />
+            <constant name="VrTrackedDeviceClassTrackingReference" value="4" />
+            <constant name="VrTrackedDeviceClassDisplayRedirect" value="5" />
+        </enum>
+
+        <enum name="vr_tracked_device_role">
+            <constant name="VrTrackedDeviceRoleInvalid" value="0" />
+            <constant name="VrTrackedDeviceRoleLeftHand" value="1" />
+            <constant name="VrTrackedDeviceRoleRightHand" value="2" />
+            <constant name="VrTrackedDeviceRoleOptOut" value="3" />
+            <constant name="VrTrackedDeviceRoleThreadmill" value="4" />
+        </enum>
+
+        <enum name="vr_button">
+            <constant name="VrButtonSystem" value="0" />
+            <constant name="VrButtonApplicationMenu" value="1" />
+            <constant name="VrButtonGrip" value="2" />
+            <constant name="VrButtonDpadLeft" value="3" />
+            <constant name="VrButtonDpadUp" value="4" />
+            <constant name="VrButtonDpadRight" value="5" />
+            <constant name="VrButtonDpadDown" value="6" />
+            <constant name="VrButtonA" value="7" />
+
+            <constant name="VrButtonProximitySensor" value="31" />
+            <constant name="VrButtonAxis0" value="32" />
+            <constant name="VrButtonAxis1" value="33" />
+            <constant name="VrButtonAxis2" value="34" />
+            <constant name="VrButtonAxis3" value="35" />
+            <constant name="VrButtonAxis4" value="36" />
+
+            <constant name="VrButtonSteamVrTouchpad" value="32" />
+            <constant name="VrButtonSteamVrTrigger" value="33" />
+            <constant name="VrButtonDashboardBack" value="2" />
+
+            <constant name="VrButtonKnucklesA" value="2" />
+            <constant name="VrButtonKnucklesB" value="1" />
+            <constant name="VrButtonKnucklesJoyStick" value="35" />
+        </enum>
+
+        <enum name="vr_dual_analog_which">
+            <constant name="VrDualAnalogLeft" value="0" />
+            <constant name="VrDualAnalogRight" value="1" />
+        </enum>
+
+        <enum name="vr_event_type">
+            <constant name="VrEventTypeInvalid" value="0" />
+
+            <constant name="VrEventTypeTrackedDeviceActivated" value="100" />
+            <constant name="VrEventTypeTrackedDeviceDeactivated" value="101" />
+            <constant name="VrEventTypeTrackedDeviceUpdated" value="102" />
+            <constant name="VrEventTypeTrackedDeviceUserInteractionStarted" value="103" />
+            <constant name="VrEventTypeTrackedDeviceUserInteractionEnded" value="104" />
+            <constant name="VrEventTypeIpdChanged" value="105" />
+            <constant name="VrEventTypeEnterStandbyMode" value="106" />
+            <constant name="VrEventTypeLeaveStandbyMode" value="107" />
+            <constant name="VrEventTypeTrackedDeviceRoleChanged" value="108" />
+            <constant name="VrEventTypeWirelessDisconnect" value="112" />
+            <constant name="VrEventTypeWirelessReconnect" value="113" />
+
+            <constant name="VrEventTypeButtonPressed" value="200" />
+            <constant name="VrEventTypeButtonReleased" value="201" />
+            <constant name="VrEventTypeButtonTouch" value="202" />
+            <constant name="VrEventTypeButtonUntouch" value="203" />
+
+            <constant name="VrEventTypeDualAnalogPressed" value="250" />
+            <constant name="VrEventTypeDualAnalogReleased" value="251" />
+            <constant name="VrEventTypeDualAnalogTouch" value="252" />
+            <constant name="VrEventTypeDualAnalogUntouch" value="253" />
+            <constant name="VrEventTypeDualAnalogMove" value="254" />
+            <constant name="VrEventTypeDualAnalogModeSwitch1" value="255" />
+            <constant name="VrEventTypeDualAnalogModeSwitch2" value="256" />
+            <constant name="VrEventTypeDualAnalogCancel" value="257" />
+        </enum>
     </constants>
 
     <globals>
@@ -750,6 +932,73 @@
 
             <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
                 <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getVRSystem" cname="GetVRSystem" returnType="vr_system*">
+            </method>
+
+        </interface>
+
+        <interface name="vr_system">
+            <method name="addReference" cname="AddVRSystemReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVRSystem" returnType="error">
+            </method>
+
+            <method name="getVRSystemName" cname="GetVRSystemName" returnType="cstring">
+            </method>
+
+            <method name="getNativeHandle" cname="GetVRSystemNativeHandle" returnType="pointer">
+            </method>
+
+            <method name="getRecommendedRenderTargetSize" cname="GetVRRecommendedRenderTargetSize" returnType="error">
+                <arg name="size" type="size2d*" />
+            </method>
+
+            <method name="getEyeToHeadTransform" cname="GetVREyeToHeadTransformInto" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="transform" type="matrix4x4f*" />
+            </method>
+
+            <method name="getProjectionMatrix" cname="GetVRProjectionMatrix" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="near_distance" type="float" />
+                <arg name="far_distance" type="float" />
+                <arg name="projection_matrix" type="matrix4x4f*" />
+            </method>
+
+            <method name="getProjectionFrustumTangents" cname="GetVRProjectionFrustumTangents" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="frustum" type="frustum_tangents*" />
+            </method>
+
+            <method name="submitEyeRenderTargets" cname="SubmitVREyeRenderTargets" returnType="error">
+                <arg name="left_eye" type="texture*" />
+                <arg name="right_eye" type="texture*" />
+            </method>
+
+            <method name="waitAndFetchPoses" cname="WaitAndFetchVRPoses" returnType="error">
+            </method>
+
+            <method name="getValidTrackedDevicePoseCount" cname="GetValidVRTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getValidTrackedDevicePoseInto" cname="GetValidVRTrackedDevicePoseInto" returnType="error">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
+            <method name="getValidRenderTrackedDevicePoseCount" cname="GetValidVRRenderTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getValidRenderTrackedDevicePoseInto" cname="GetValidVRRenderTrackedDevicePoseInto" returnType="error">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
+            <method name="pollEvent" cname="PollVREvent" returnType="bool">
+                <arg name="event" type="vr_event*" />
             </method>
         </interface>
 

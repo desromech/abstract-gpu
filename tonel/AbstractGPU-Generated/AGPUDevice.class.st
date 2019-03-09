@@ -172,3 +172,10 @@ AGPUDevice >> isFeatureSupported: feature [
 	^ resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUDevice >> getVRSystem [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getVRSystem_device: (self validHandle).
+	^ AGPUVrSystem forHandle: resultValue_
+]
+

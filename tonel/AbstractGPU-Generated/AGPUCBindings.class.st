@@ -163,6 +163,86 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 	^ self ffiCall: #(agpu_bool agpuIsFeatureSupportedOnDevice (agpu_device* device , agpu_feature feature) )
 ]
 
+{ #category : #'device' }
+AGPUCBindings >> getVRSystem_device: device [
+	^ self ffiCall: #(agpu_vr_system* agpuGetVRSystem (agpu_device* device) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> addReference_vr_system: vr_system [
+	^ self ffiCall: #(agpu_error agpuAddVRSystemReference (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> release_vr_system: vr_system [
+	^ self ffiCall: #(agpu_error agpuReleaseVRSystem (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getVRSystemName_vr_system: vr_system [
+	^ self ffiCall: #(agpu_cstring agpuGetVRSystemName (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getNativeHandle_vr_system: vr_system [
+	^ self ffiCall: #(agpu_pointer agpuGetVRSystemNativeHandle (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getRecommendedRenderTargetSize_vr_system: vr_system size: size [
+	^ self ffiCall: #(agpu_error agpuGetVRRecommendedRenderTargetSize (agpu_vr_system* vr_system , agpu_size2d* size) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getEyeToHeadTransform_vr_system: vr_system eye: eye transform: transform [
+	^ self ffiCall: #(agpu_error agpuGetVREyeToHeadTransformInto (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_matrix4x4f* transform) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getProjectionMatrix_vr_system: vr_system eye: eye near_distance: near_distance far_distance: far_distance projection_matrix: projection_matrix [
+	^ self ffiCall: #(agpu_error agpuGetVRProjectionMatrix (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_float near_distance , agpu_float far_distance , agpu_matrix4x4f* projection_matrix) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getProjectionFrustumTangents_vr_system: vr_system eye: eye frustum: frustum [
+	^ self ffiCall: #(agpu_error agpuGetVRProjectionFrustumTangents (agpu_vr_system* vr_system , agpu_vr_eye eye , agpu_frustum_tangents* frustum) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> submitEyeRenderTargets_vr_system: vr_system left_eye: left_eye right_eye: right_eye [
+	^ self ffiCall: #(agpu_error agpuSubmitVREyeRenderTargets (agpu_vr_system* vr_system , agpu_texture* left_eye , agpu_texture* right_eye) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> waitAndFetchPoses_vr_system: vr_system [
+	^ self ffiCall: #(agpu_error agpuWaitAndFetchVRPoses (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetValidVRTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_error agpuGetValidVRTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidRenderTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetValidVRRenderTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getValidRenderTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_error agpuGetValidVRRenderTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> pollEvent_vr_system: vr_system event: event [
+	^ self ffiCall: #(agpu_bool agpuPollVREvent (agpu_vr_system* vr_system , agpu_vr_event* event) )
+]
+
 { #category : #'swap_chain' }
 AGPUCBindings >> addReference_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_error agpuAddSwapChainReference (agpu_swap_chain* swap_chain) )

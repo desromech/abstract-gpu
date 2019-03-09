@@ -43,7 +43,7 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     VkFlags defaultMemoryTypeRequirements = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkFlags uploadMemoryTypeRequirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     if (hasCoherentMapping)
-        uploadMemoryTypeRequirements |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        uploadMemoryTypeRequirements |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
 
     VkBufferCreateInfo bufferDescription;
     memset(&bufferDescription, 0, sizeof(bufferDescription));

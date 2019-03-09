@@ -30,8 +30,21 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPURenderpassDepthStencilDescription rebuildFieldAccessors.
 	AGPURenderpassDescription rebuildFieldAccessors.
 	AGPUInheritanceInfo rebuildFieldAccessors.
+	AGPUVector3f rebuildFieldAccessors.
+	AGPUVector4f rebuildFieldAccessors.
+	AGPUQuaternionf rebuildFieldAccessors.
+	AGPUMatrix3x3f rebuildFieldAccessors.
+	AGPUMatrix4x4f rebuildFieldAccessors.
+	AGPUSize2d rebuildFieldAccessors.
 	AGPUSize3d rebuildFieldAccessors.
+	AGPUFrustumTangents rebuildFieldAccessors.
 	AGPURegion3d rebuildFieldAccessors.
+	AGPUVrTrackedDevicePose rebuildFieldAccessors.
+	AGPUVrGenericEvent rebuildFieldAccessors.
+	AGPUVrControllerEvent rebuildFieldAccessors.
+	AGPUVrDualAnalogEvent rebuildFieldAccessors.
+	AGPUVrEventData rebuildFieldAccessors.
+	AGPUVrEvent rebuildFieldAccessors.
 ]
 
 { #category : #'initialization' }

@@ -22,6 +22,7 @@ AGPUDeviceOpenInfo class >> fieldsDesc [
 		 agpu_cstring engine_name;
 		 agpu_uint engine_version;
 		 agpu_int gpu_index;
+		 agpu_device_open_flags open_flags;
 		)
 ]
 

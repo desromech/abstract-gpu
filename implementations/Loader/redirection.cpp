@@ -249,6 +249,134 @@ AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu
 	return (*dispatchTable)->agpuIsFeatureSupportedOnDevice ( device, feature );
 }
 
+AGPU_EXPORT agpu_vr_system* agpuGetVRSystem ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_vr_system*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuGetVRSystem ( device );
+}
+
+AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuAddVRSystemReference ( vr_system );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseVRSystem ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuReleaseVRSystem ( vr_system );
+}
+
+AGPU_EXPORT agpu_cstring agpuGetVRSystemName ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return (agpu_cstring)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRSystemName ( vr_system );
+}
+
+AGPU_EXPORT agpu_pointer agpuGetVRSystemNativeHandle ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return (agpu_pointer)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRSystemNativeHandle ( vr_system );
+}
+
+AGPU_EXPORT agpu_error agpuGetVRRecommendedRenderTargetSize ( agpu_vr_system* vr_system, agpu_size2d* size )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRRecommendedRenderTargetSize ( vr_system, size );
+}
+
+AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVREyeToHeadTransformInto ( vr_system, eye, transform );
+}
+
+AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRProjectionMatrix ( vr_system, eye, near_distance, far_distance, projection_matrix );
+}
+
+AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRProjectionFrustumTangents ( vr_system, eye, frustum );
+}
+
+AGPU_EXPORT agpu_error agpuSubmitVREyeRenderTargets ( agpu_vr_system* vr_system, agpu_texture* left_eye, agpu_texture* right_eye )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuSubmitVREyeRenderTargets ( vr_system, left_eye, right_eye );
+}
+
+AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuWaitAndFetchVRPoses ( vr_system );
+}
+
+AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetValidVRTrackedDevicePoseCount ( vr_system );
+}
+
+AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetValidVRTrackedDevicePoseInto ( vr_system, index, dest );
+}
+
+AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetValidVRRenderTrackedDevicePoseCount ( vr_system );
+}
+
+AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetValidVRRenderTrackedDevicePoseInto ( vr_system, index, dest );
+}
+
+AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
+{
+	if (vr_system == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuPollVREvent ( vr_system, event );
+}
+
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
 {
 	if (swap_chain == nullptr)
