@@ -414,7 +414,7 @@
 			<constant name="ComputeShader" value="3" />
 			<constant name="TessellationControlShader" value="4" />
 			<constant name="TessellationEvaluationShader" value="5" />
-			<constant name="LibraryShader" value="5" />
+			<constant name="LibraryShader" value="6" />
 		</enum>
 
 		<enum name="buffer_usage_type">
