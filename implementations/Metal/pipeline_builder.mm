@@ -32,6 +32,12 @@ void _agpu_pipeline_builder::lostReferences()
         [descriptor release];
     if(depthStencilDescriptor)
         [depthStencilDescriptor release];
+        
+    for(auto &attachedShader : attachedShaders)
+    {
+        if(attachedShader.shader)
+            attachedShader.shader->release();
+    }
 }
 
 _agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
@@ -53,9 +59,9 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
     NSError *error;
 
     bool succeded = true;
-    for(auto &shaderWithEntryPoint : attachedShaders)
+    for(auto &attachedShader : attachedShaders)
     {
-        auto shader = shaderWithEntryPoint.first;
+        auto shader = attachedShader.shader;
         if(!shader)
         {
             succeded = false;
@@ -63,7 +69,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
         }
 
         agpu_shader_forSignature *shaderInstance = nullptr;
-        auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, shaderWithEntryPoint.second, &buildingLog, &shaderInstance);
+        auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
         if(error || !shaderInstance || !shaderInstance->function)
         {
             if(shaderInstance)
@@ -72,7 +78,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
             break;
         }
 
-        switch(shader->type)
+        switch(attachedShader.stage)
         {
         case AGPU_VERTEX_SHADER:
             descriptor.vertexFunction = shaderInstance->function;
@@ -122,7 +128,12 @@ agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* sha
         return AGPU_INVALID_PARAMETER;
 
     shader->retain();
-    attachedShaders.push_back(std::make_pair(shader, entry_point));
+    
+    AgpuShaderAttachment attachment;
+    attachment.shader = shader;
+    attachment.entryPoint = entry_point;
+    attachment.stage = type;
+    attachedShaders.push_back(attachment);
     return AGPU_OK;
 }
 

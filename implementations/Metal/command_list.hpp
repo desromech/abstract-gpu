@@ -53,6 +53,7 @@ public:
     agpu_command_list_type type;
     agpu_command_allocator* allocator;
     id<MTLCommandBuffer> buffer;
+    id<MTLBlitCommandEncoder> blitEncoder;
     id<MTLRenderCommandEncoder> renderEncoder;
     id<MTLComputeCommandEncoder> computeEncoder;
     agpu_buffer *currentIndexBuffer;

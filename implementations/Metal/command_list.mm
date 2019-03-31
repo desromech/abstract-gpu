@@ -31,6 +31,7 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
     currentShaderSignature = nullptr;
     vertexBufferCount = 0;
     buffer = nil;
+    blitEncoder = nil;
     renderEncoder = nil;
     computeEncoder = nil;
     used = false;
@@ -490,12 +491,31 @@ agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFrameb
 {
     CHECK_POINTER(destFramebuffer);
     CHECK_POINTER(sourceFramebuffer);
+    
+    auto sourceTexture = sourceFramebuffer->getColorTexture(0);
+    auto destTexture = destFramebuffer->getColorTexture(0);
+    if(sourceTexture.sampleCount == destTexture.sampleCount)
+    {
+        MTLOrigin copyOrigin = {};
+        MTLSize copySize = {sourceTexture.width, sourceTexture.height, sourceTexture.depth};
+        blitEncoder = [buffer blitCommandEncoder];
+        [blitEncoder copyFromTexture: sourceTexture
+                sourceSlice: 0 sourceLevel: 0
+                sourceOrigin: copyOrigin sourceSize: copySize
+              toTexture: destTexture
+              destinationSlice: 0 destinationLevel: 0
+              destinationOrigin: copyOrigin];
+        [blitEncoder endEncoding];
+        [blitEncoder release];
+        blitEncoder = nil;
+        return AGPU_OK;
+    }
 
     auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
     auto passAttachment = descriptor.colorAttachments[0];
 
     // Set the source attachment
-    passAttachment.texture = sourceFramebuffer->getColorTexture(0);
+    passAttachment.texture = sourceTexture;
     passAttachment.loadAction = MTLLoadActionLoad;
     passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
 
@@ -507,7 +527,7 @@ agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFrameb
     }
 
     // Set the resolve attachment
-    passAttachment.resolveTexture = destFramebuffer->getColorTexture(0);
+    passAttachment.resolveTexture = destTexture;
     if(!destFramebuffer->ownedBySwapChain)
     {
         auto &view = sourceFramebuffer->colorBufferDescriptions[0];
@@ -518,6 +538,7 @@ agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFrameb
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
     [renderEncoder endEncoding];
+    renderEncoder = nil;
     return AGPU_OK;
 }
 

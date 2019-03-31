@@ -7,6 +7,13 @@
 #include <vector>
 #include <utility>
 
+struct AgpuShaderAttachment
+{
+    agpu_shader *shader;
+    agpu_shader_type stage;
+    std::string entryPoint;
+};
+
 struct _agpu_pipeline_builder : public Object<_agpu_pipeline_builder>
 {
 public:
@@ -58,7 +65,7 @@ public:
     agpu_float depthBiasClamp;
     agpu_float depthBiasSlopeFactor;
 
-    std::vector<std::pair<agpu_shader*, std::string> > attachedShaders;
+    std::vector<AgpuShaderAttachment> attachedShaders;
 };
 
 #endif //AGPU_METAL_PIPELINE_BUILDER_HPP

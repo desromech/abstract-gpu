@@ -34,7 +34,7 @@ agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
     }
 
     agpu_shader_forSignature *shaderInstance = nullptr;
-    auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, 0, shaderEntryPoint, &buildingLog, &shaderInstance);
+    auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, 0, shaderEntryPoint, AGPU_COMPUTE_SHADER, &buildingLog, &shaderInstance);
     if(error || !shaderInstance || !shaderInstance->function)
     {
         if(shaderInstance)

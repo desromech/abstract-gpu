@@ -35,8 +35,8 @@ public:
 
     static agpu_shader *create(agpu_device* device, agpu_shader_type type);
     
-    agpu_error getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, std::string *errorMessage, agpu_shader_forSignature **result);
-    agpu_error getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, std::string *errorMessage, agpu_shader_forSignature **result);
+    agpu_error getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, agpu_shader_forSignature **result);
+    agpu_error getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, agpu_shader_forSignature **result);
 
     agpu_error setSource ( agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength );
     agpu_error compile ( agpu_cstring options );

@@ -111,7 +111,7 @@ void CompilerMSL::build_implicit_builtins()
 			if (need_subpass_input && ir.meta[var.self].decoration.builtin_type == BuiltInFragCoord)
 			{
 				builtin_frag_coord_id = var.self;
-				has_frag_coord = true;
+				has_frag_coord = get_execution_model() == ExecutionModelFragment;
 			}
 
 			if (need_sample_pos && ir.meta[var.self].decoration.builtin_type == BuiltInSampleId)
@@ -5546,6 +5546,19 @@ void CompilerMSL::entry_point_args_builtin(string &ep_args)
 		    get_variable_data_type(var).basetype != SPIRType::Struct &&
 		    get_variable_data_type(var).basetype != SPIRType::ControlPointArray)
 		{
+            if(get_execution_model() != ExecutionModelFragment)
+            {
+                if(bi_type == BuiltInFragCoord)
+                    return;
+            }
+
+            if(get_execution_model() != ExecutionModelVertex)
+            {
+                if(bi_type == BuiltInInstanceId || bi_type == BuiltInInstanceIndex ||
+                    bi_type == BuiltInVertexId || bi_type == BuiltInVertexIndex)
+                    return;
+            }
+            
 			if (bi_type != BuiltInSamplePosition && bi_type != BuiltInHelperInvocation &&
 			    bi_type != BuiltInPatchVertices && bi_type != BuiltInTessLevelInner &&
 			    bi_type != BuiltInTessLevelOuter && bi_type != BuiltInPosition && bi_type != BuiltInPointSize &&

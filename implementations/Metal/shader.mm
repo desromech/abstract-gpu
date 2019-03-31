@@ -7,13 +7,21 @@ static spv::ExecutionModel mapShaderTypeIntoExecutionModel(agpu_shader_type type
 {
     switch(type)
     {
-    default:
+    default: abort();
     case AGPU_VERTEX_SHADER: return spv::ExecutionModelVertex;
     case AGPU_FRAGMENT_SHADER: return spv::ExecutionModelFragment;
     case AGPU_COMPUTE_SHADER: return spv::ExecutionModelGLCompute;
     
     }
 }
+
+static inline bool isEntryPointNameBlacklisted(const std::string &entryPointName)
+{
+    return entryPointName == "vertex"|| 
+        entryPointName == "fragment" ||
+        entryPointName == "compute";
+}
+
 agpu_shader_forSignature::agpu_shader_forSignature()
 {
     library = nil;
@@ -182,7 +190,7 @@ agpu_error _agpu_shader::getCompilationLog ( agpu_size buffer_size, agpu_string_
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, std::string *errorMessage, agpu_shader_forSignature **result)
+agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type expectedEntryPointName, std::string *errorMessage, agpu_shader_forSignature **result)
 {
     if(language == AGPU_SHADER_LANGUAGE_METAL || language == AGPU_SHADER_LANGUAGE_METAL_AIR)
     {
@@ -191,30 +199,32 @@ agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signa
         return AGPU_OK;
     }
     else if(language == AGPU_SHADER_LANGUAGE_SPIR_V)
-        return getOrCreateSpirVShaderInstanceForSignature(signature, vertexBufferCount, entryPoint, errorMessage, result);
+        return getOrCreateSpirVShaderInstanceForSignature(signature, vertexBufferCount, entryPoint, expectedEntryPointName, errorMessage, result);
     else
         return AGPU_UNSUPPORTED;
 }
 
-agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &expectedEntryPointName, std::string *errorMessage, agpu_shader_forSignature **result)
+agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &expectedEntryPointName, agpu_shader_type expectedEntryPointStage, std::string *errorMessage, agpu_shader_forSignature **result)
 {
     char buffer[256];
     uint32_t *rawData = reinterpret_cast<uint32_t *> (&source[0]);
 	size_t rawDataSize = source.size() / 4;
 
     auto resourceBindings = signature->resourceBindings;
-    auto expectedExecutionModel = mapShaderTypeIntoExecutionModel(type);
+    auto expectedExecutionModel = mapShaderTypeIntoExecutionModel(expectedEntryPointStage);
     for(auto &binding : resourceBindings)
     {
         binding.stage = expectedExecutionModel;
-        if(type == AGPU_VERTEX_SHADER)
+        if(expectedEntryPointStage == AGPU_VERTEX_SHADER)
         {
             binding.msl_buffer += vertexBufferCount;
         }
     }
 
     //printf("getOrCreateSpirVShaderInstanceForSignature\n");
-	spirv_cross::CompilerMSL msl(rawData, rawDataSize, nullptr, 0, &resourceBindings[0], resourceBindings.size());
+    spirv_cross::CompilerMSL msl(rawData, rawDataSize);
+    for (auto & binding : resourceBindings)
+        msl.add_msl_resource_binding(binding);
     
     // Get the entry point.
     std::string usedEntryPoint;
@@ -230,18 +240,27 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_
     
     if(usedEntryPoint.empty())
     {
-        *errorMessage = "Shader does not have a valid entry point";
+        *errorMessage = "Shader does not have a valid entry point.";
         return AGPU_COMPILATION_ERROR;
     }
     
+    if(isEntryPointNameBlacklisted(usedEntryPoint))
+    {
+        auto newEntryPointName = "_agpu_entry_" + usedEntryPoint;
+        msl.rename_entry_point(usedEntryPoint, newEntryPointName, expectedExecutionModel);
+        usedEntryPoint = newEntryPointName;
+    }
+    
+    // Set the entry point.
     msl.set_entry_point(usedEntryPoint, expectedExecutionModel);
 
-	// Modify the resources
-	spirv_cross::ShaderResources resources = msl.get_shader_resources();
-
-	// Set some options.
+    // Set some options.
 	spirv_cross::CompilerMSL::Options options;
 	msl.set_msl_options(options);
+    
+    // Use only the active interface variables.
+    auto activeInterfaceVariables = msl.get_active_interface_variables();
+    msl.set_enabled_interface_variables(activeInterfaceVariables);
 
 	// Compile the shader.
 	std::string compiled;
