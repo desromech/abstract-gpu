@@ -110,7 +110,8 @@ macro(spirv_cross_add_library name config_name original_library_type)
 			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 			$<INSTALL_INTERFACE:include/spirv_cross>)
 	set_target_properties(${name} PROPERTIES
-			PUBLIC_HEADERS "${hdrs}")
+			PUBLIC_HEADERS "${hdrs}"
+			POSITION_INDEPENDENT_CODE ON)
 	target_compile_options(${name} PRIVATE ${spirv-compiler-options})
 	target_compile_definitions(${name} PRIVATE ${spirv-compiler-defines})
 	if (SPIRV_CROSS_NAMESPACE_OVERRIDE)

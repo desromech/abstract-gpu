@@ -5558,7 +5558,7 @@ void CompilerMSL::entry_point_args_builtin(string &ep_args)
                     bi_type == BuiltInVertexId || bi_type == BuiltInVertexIndex)
                     return;
             }
-            
+
 			if (bi_type != BuiltInSamplePosition && bi_type != BuiltInHelperInvocation &&
 			    bi_type != BuiltInPatchVertices && bi_type != BuiltInTessLevelInner &&
 			    bi_type != BuiltInTessLevelOuter && bi_type != BuiltInPosition && bi_type != BuiltInPointSize &&
@@ -5964,6 +5964,7 @@ string CompilerMSL::argument_decl(const SPIRFunction::Parameter &arg)
 
 	string decl;
     // Workaround: Prefer passing by value instead of by reference.
+    (void)constref;
 	//if (constref)
 	//	decl += "const ";
 

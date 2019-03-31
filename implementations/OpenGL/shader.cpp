@@ -311,7 +311,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	// Set some options.
 	spirv_cross::CompilerGLSL::Options options;
 	options.version = device->glslVersionNumber;
-	glsl.set_options(options);
+	glsl.set_common_options(options);
 
 	// Compile the shader.
 	std::string compiled;
