@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Arm Limited
+ * Copyright 2018-2019 Arm Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,17 @@
  */
 
 #include "spirv_cross_parsed_ir.hpp"
+#include <algorithm>
 #include <assert.h>
 
 using namespace std;
 using namespace spv;
 
-namespace spirv_cross
+namespace SPIRV_CROSS_NAMESPACE
 {
 void ParsedIR::set_id_bounds(uint32_t bounds)
 {
 	ids.resize(bounds);
-	meta.resize(bounds);
 	block_meta.resize(bounds);
 }
 
@@ -65,19 +65,24 @@ static string ensure_valid_identifier(const string &name, bool member)
 
 const string &ParsedIR::get_name(uint32_t id) const
 {
-	return meta[id].decoration.alias;
+	auto *m = find_meta(id);
+	if (m)
+		return m->decoration.alias;
+	else
+		return empty_string;
 }
 
 const string &ParsedIR::get_member_name(uint32_t id, uint32_t index) const
 {
-	auto &m = meta[id];
-	if (index >= m.members.size())
+	auto *m = find_meta(id);
+	if (m)
 	{
-		static string empty;
-		return empty;
+		if (index >= m->members.size())
+			return empty_string;
+		return m->members[index].alias;
 	}
-
-	return m.members[index].alias;
+	else
+		return empty_string;
 }
 
 void ParsedIR::set_name(uint32_t id, const string &name)
@@ -87,21 +92,6 @@ void ParsedIR::set_name(uint32_t id, const string &name)
 
 	if (name.empty())
 		return;
-
-	// glslang uses identifiers to pass along meaningful information
-	// about HLSL reflection.
-	// FIXME: This should be deprecated eventually.
-	auto &m = meta[id];
-	if (source.hlsl && name.size() >= 6 && name.find("@count") == name.size() - 6)
-	{
-		m.hlsl_magic_counter_buffer_candidate = true;
-		m.hlsl_magic_counter_buffer_name = name.substr(0, name.find("@count"));
-	}
-	else
-	{
-		m.hlsl_magic_counter_buffer_candidate = false;
-		m.hlsl_magic_counter_buffer_name.clear();
-	}
 
 	// Reserved for temporaries.
 	if (name[0] == '_' && name.size() >= 2 && isdigit(name[1]))
@@ -196,7 +186,11 @@ void ParsedIR::set_decoration(uint32_t id, Decoration decoration, uint32_t argum
 
 	case DecorationHlslCounterBufferGOOGLE:
 		meta[id].hlsl_magic_counter_buffer = argument;
-		meta[id].hlsl_is_magic_counter_buffer = true;
+		meta[argument].hlsl_is_magic_counter_buffer = true;
+		break;
+
+	case DecorationFPRoundingMode:
+		dec.fp_rounding_mode = static_cast<FPRoundingMode>(argument);
 		break;
 
 	default:
@@ -284,7 +278,10 @@ Bitset ParsedIR::get_buffer_block_flags(const SPIRVariable &var) const
 	// Some flags like non-writable, non-readable are actually found
 	// as member decorations. If all members have a decoration set, propagate
 	// the decoration up as a regular variable decoration.
-	Bitset base_flags = meta[var.self].decoration.decoration_flags;
+	Bitset base_flags;
+	auto *m = find_meta(var.self);
+	if (m)
+		base_flags = m->decoration.decoration_flags;
 
 	if (type.member_types.empty())
 		return base_flags;
@@ -299,14 +296,15 @@ Bitset ParsedIR::get_buffer_block_flags(const SPIRVariable &var) const
 
 const Bitset &ParsedIR::get_member_decoration_bitset(uint32_t id, uint32_t index) const
 {
-	auto &m = meta[id];
-	if (index >= m.members.size())
+	auto *m = find_meta(id);
+	if (m)
 	{
-		static const Bitset cleared = {};
-		return cleared;
+		if (index >= m->members.size())
+			return cleared_bitset;
+		return m->members[index].decoration_flags;
 	}
-
-	return m.members[index].decoration_flags;
+	else
+		return cleared_bitset;
 }
 
 bool ParsedIR::has_decoration(uint32_t id, Decoration decoration) const
@@ -316,7 +314,11 @@ bool ParsedIR::has_decoration(uint32_t id, Decoration decoration) const
 
 uint32_t ParsedIR::get_decoration(uint32_t id, Decoration decoration) const
 {
-	auto &dec = meta[id].decoration;
+	auto *m = find_meta(id);
+	if (!m)
+		return 0;
+
+	auto &dec = m->decoration;
 	if (!dec.decoration_flags.get(decoration))
 		return 0;
 
@@ -344,6 +346,8 @@ uint32_t ParsedIR::get_decoration(uint32_t id, Decoration decoration) const
 		return dec.matrix_stride;
 	case DecorationIndex:
 		return dec.index;
+	case DecorationFPRoundingMode:
+		return dec.fp_rounding_mode;
 	default:
 		return 1;
 	}
@@ -351,11 +355,14 @@ uint32_t ParsedIR::get_decoration(uint32_t id, Decoration decoration) const
 
 const string &ParsedIR::get_decoration_string(uint32_t id, Decoration decoration) const
 {
-	auto &dec = meta[id].decoration;
-	static const string empty;
+	auto *m = find_meta(id);
+	if (!m)
+		return empty_string;
+
+	auto &dec = m->decoration;
 
 	if (!dec.decoration_flags.get(decoration))
-		return empty;
+		return empty_string;
 
 	switch (decoration)
 	{
@@ -363,7 +370,7 @@ const string &ParsedIR::get_decoration_string(uint32_t id, Decoration decoration
 		return dec.hlsl_semantic;
 
 	default:
-		return empty;
+		return empty_string;
 	}
 }
 
@@ -409,6 +416,10 @@ void ParsedIR::unset_decoration(uint32_t id, Decoration decoration)
 		dec.hlsl_semantic.clear();
 		break;
 
+	case DecorationFPRoundingMode:
+		dec.fp_rounding_mode = FPRoundingModeMax;
+		break;
+
 	case DecorationHlslCounterBufferGOOGLE:
 	{
 		auto &counter = meta[id].hlsl_magic_counter_buffer;
@@ -432,11 +443,14 @@ bool ParsedIR::has_member_decoration(uint32_t id, uint32_t index, Decoration dec
 
 uint32_t ParsedIR::get_member_decoration(uint32_t id, uint32_t index, Decoration decoration) const
 {
-	auto &m = meta[id];
-	if (index >= m.members.size())
+	auto *m = find_meta(id);
+	if (!m)
 		return 0;
 
-	auto &dec = m.members[index];
+	if (index >= m->members.size())
+		return 0;
+
+	auto &dec = m->members[index];
 	if (!dec.decoration_flags.get(decoration))
 		return 0;
 
@@ -463,8 +477,14 @@ uint32_t ParsedIR::get_member_decoration(uint32_t id, uint32_t index, Decoration
 
 const Bitset &ParsedIR::get_decoration_bitset(uint32_t id) const
 {
-	auto &dec = meta[id].decoration;
-	return dec.decoration_flags;
+	auto *m = find_meta(id);
+	if (m)
+	{
+		auto &dec = m->decoration;
+		return dec.decoration_flags;
+	}
+	else
+		return cleared_bitset;
 }
 
 void ParsedIR::set_member_decoration_string(uint32_t id, uint32_t index, Decoration decoration, const string &argument)
@@ -486,22 +506,25 @@ void ParsedIR::set_member_decoration_string(uint32_t id, uint32_t index, Decorat
 
 const string &ParsedIR::get_member_decoration_string(uint32_t id, uint32_t index, Decoration decoration) const
 {
-	static const string empty;
-	auto &m = meta[id];
-
-	if (!has_member_decoration(id, index, decoration))
-		return empty;
-
-	auto &dec = m.members[index];
-
-	switch (decoration)
+	auto *m = find_meta(id);
+	if (m)
 	{
-	case DecorationHlslSemanticGOOGLE:
-		return dec.hlsl_semantic;
+		if (!has_member_decoration(id, index, decoration))
+			return empty_string;
 
-	default:
-		return empty;
+		auto &dec = m->members[index];
+
+		switch (decoration)
+		{
+		case DecorationHlslSemanticGOOGLE:
+			return dec.hlsl_semantic;
+
+		default:
+			return empty_string;
+		}
 	}
+	else
+		return empty_string;
 }
 
 void ParsedIR::unset_member_decoration(uint32_t id, uint32_t index, Decoration decoration)
@@ -549,9 +572,77 @@ uint32_t ParsedIR::increase_bound_by(uint32_t incr_amount)
 	auto curr_bound = ids.size();
 	auto new_bound = curr_bound + incr_amount;
 	ids.resize(new_bound);
-	meta.resize(new_bound);
 	block_meta.resize(new_bound);
 	return uint32_t(curr_bound);
+}
+
+void ParsedIR::remove_typed_id(Types type, uint32_t id)
+{
+	auto &type_ids = ids_for_type[type];
+	type_ids.erase(remove(begin(type_ids), end(type_ids), id), end(type_ids));
+}
+
+void ParsedIR::reset_all_of_type(Types type)
+{
+	for (auto &id : ids_for_type[type])
+		if (ids[id].get_type() == type)
+			ids[id].reset();
+
+	ids_for_type[type].clear();
+}
+
+void ParsedIR::add_typed_id(Types type, uint32_t id)
+{
+	if (loop_iteration_depth)
+		SPIRV_CROSS_THROW("Cannot add typed ID while looping over it.");
+
+	switch (type)
+	{
+	case TypeConstant:
+		ids_for_constant_or_variable.push_back(id);
+		ids_for_constant_or_type.push_back(id);
+		break;
+
+	case TypeVariable:
+		ids_for_constant_or_variable.push_back(id);
+		break;
+
+	case TypeType:
+	case TypeConstantOp:
+		ids_for_constant_or_type.push_back(id);
+		break;
+
+	default:
+		break;
+	}
+
+	if (ids[id].empty())
+	{
+		ids_for_type[type].push_back(id);
+	}
+	else if (ids[id].get_type() != type)
+	{
+		remove_typed_id(ids[id].get_type(), id);
+		ids_for_type[type].push_back(id);
+	}
+}
+
+const Meta *ParsedIR::find_meta(uint32_t id) const
+{
+	auto itr = meta.find(id);
+	if (itr != end(meta))
+		return &itr->second;
+	else
+		return nullptr;
+}
+
+Meta *ParsedIR::find_meta(uint32_t id)
+{
+	auto itr = meta.find(id);
+	if (itr != end(meta))
+		return &itr->second;
+	else
+		return nullptr;
 }
 
 } // namespace spirv_cross

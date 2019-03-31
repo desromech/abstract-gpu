@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 Robert Konrad
+ * Copyright 2016-2019 Robert Konrad
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-namespace spirv_cross
+namespace SPIRV_CROSS_NAMESPACE
 {
 // Interface which remaps vertex inputs to a fixed semantic name to make linking easier.
 struct HLSLVertexAttributeRemap
@@ -54,6 +54,12 @@ public:
 
 		// Allows the PointCoord builtin, returns float2(0.5, 0.5), as PointCoord is not supported in HLSL.
 		bool point_coord_compat = false;
+
+		// If true, the backend will assume that VertexIndex and InstanceIndex will need to apply
+		// a base offset, and you will need to fill in a cbuffer with offsets.
+		// Set to false if you know you will never use base instance or base vertex
+		// functionality as it might remove an internal cbuffer.
+		bool support_nonzero_base_vertex_base_instance = false;
 	};
 
 	explicit CompilerHLSL(std::vector<uint32_t> spirv_)
@@ -76,21 +82,9 @@ public:
 	{
 	}
 
-	SPIRV_CROSS_DEPRECATED("CompilerHLSL::get_options() is obsolete, use get_hlsl_options() instead.")
-	const Options &get_options() const
-	{
-		return hlsl_options;
-	}
-
 	const Options &get_hlsl_options() const
 	{
 		return hlsl_options;
-	}
-
-	SPIRV_CROSS_DEPRECATED("CompilerHLSL::get_options() is obsolete, use set_hlsl_options() instead.")
-	void set_options(Options &opts)
-	{
-		hlsl_options = opts;
 	}
 
 	void set_hlsl_options(const Options &opts)
@@ -102,16 +96,13 @@ public:
 	//
 	// Push constants ranges will be split up according to the
 	// layout specified.
-	void set_root_constant_layouts(std::vector<RootConstants> layout)
-	{
-		root_constants_layout = std::move(layout);
-	}
+	void set_root_constant_layouts(std::vector<RootConstants> layout);
 
 	// Compiles and remaps vertex attributes at specific locations to a fixed semantic.
 	// The default is TEXCOORD# where # denotes location.
 	// Matrices are unrolled to vectors with notation ${SEMANTIC}_#, where # denotes row.
 	// $SEMANTIC is either TEXCOORD# or a semantic name specified here.
-	std::string compile(std::vector<HLSLVertexAttributeRemap> vertex_attributes);
+	void add_vertex_attribute_remap(const HLSLVertexAttributeRemap &vertex_attributes);
 	std::string compile() override;
 
 	// This is a special HLSL workaround for the NumWorkGroups builtin.
@@ -148,7 +139,7 @@ private:
 	void emit_uniform(const SPIRVariable &var) override;
 	void emit_modern_uniform(const SPIRVariable &var);
 	void emit_legacy_uniform(const SPIRVariable &var);
-	void emit_specialization_constants();
+	void emit_specialization_constants_and_structs();
 	void emit_composite_constants();
 	void emit_fixup() override;
 	std::string builtin_to_glsl(spv::BuiltIn builtin, spv::StorageClass storage) override;
@@ -178,7 +169,6 @@ private:
 
 	Options hlsl_options;
 	bool requires_op_fmod = false;
-	bool requires_textureProj = false;
 	bool requires_fp16_packing = false;
 	bool requires_explicit_fp16_packing = false;
 	bool requires_unorm8_packing = false;

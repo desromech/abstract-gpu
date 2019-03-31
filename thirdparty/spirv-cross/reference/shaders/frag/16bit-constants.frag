@@ -3,15 +3,11 @@
 #extension GL_AMD_gpu_shader_half_float : require
 #elif defined(GL_NV_gpu_shader5)
 #extension GL_NV_gpu_shader5 : require
-#elif defined(GL_EXT_shader_16bit_storage)
-#extension GL_EXT_shader_16bit_storage : require
 #else
 #error No extension available for FP16.
 #endif
 #if defined(GL_AMD_gpu_shader_int16)
 #extension GL_AMD_gpu_shader_int16 : require
-#elif defined(GL_EXT_shader_16bit_storage)
-#extension GL_EXT_shader_16bit_storage : require
 #else
 #error No extension available for Int16.
 #endif
@@ -22,7 +18,7 @@ layout(location = 2) out uint16_t baz;
 
 void main()
 {
-    foo = 1.0hf;
+    foo = float16_t(1.0);
     bar = 2s;
     baz = 3us;
 }

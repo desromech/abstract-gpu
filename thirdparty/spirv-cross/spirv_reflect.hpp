@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Bradley Austin Davis
+ * Copyright 2018-2019 Bradley Austin Davis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ namespace simple_json
 class Stream;
 }
 
-namespace spirv_cross
+namespace SPIRV_CROSS_NAMESPACE
 {
 class CompilerReflection : public CompilerGLSL
 {

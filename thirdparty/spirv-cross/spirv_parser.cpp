@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Arm Limited
+ * Copyright 2018-2019 Arm Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 using namespace std;
 using namespace spv;
 
-namespace spirv_cross
+namespace SPIRV_CROSS_NAMESPACE
 {
 Parser::Parser(std::vector<uint32_t> spirv)
 {
@@ -30,6 +30,18 @@ Parser::Parser(std::vector<uint32_t> spirv)
 Parser::Parser(const uint32_t *spirv_data, size_t word_count)
 {
 	ir.spirv = vector<uint32_t>(spirv_data, spirv_data + word_count);
+}
+
+static bool decoration_is_string(Decoration decoration)
+{
+	switch (decoration)
+	{
+	case DecorationHlslSemanticGOOGLE:
+		return true;
+
+	default:
+		return false;
+	}
 }
 
 static inline uint32_t swap_endian(uint32_t v)
@@ -147,11 +159,13 @@ void Parser::parse(const Instruction &instruction)
 	switch (op)
 	{
 	case OpMemoryModel:
+	case OpSourceContinued:
 	case OpSourceExtension:
 	case OpNop:
 	case OpLine:
 	case OpNoLine:
 	case OpString:
+	case OpModuleProcessed:
 		break;
 
 	case OpSource:
@@ -298,9 +312,71 @@ void Parser::parse(const Instruction &instruction)
 		break;
 	}
 
+	case OpDecorationGroup:
+	{
+		// Noop, this simply means an ID should be a collector of decorations.
+		// The meta array is already a flat array of decorations which will contain the relevant decorations.
+		break;
+	}
+
+	case OpGroupDecorate:
+	{
+		uint32_t group_id = ops[0];
+		auto &decorations = ir.meta[group_id].decoration;
+		auto &flags = decorations.decoration_flags;
+
+		// Copies decorations from one ID to another. Only copy decorations which are set in the group,
+		// i.e., we cannot just copy the meta structure directly.
+		for (uint32_t i = 1; i < length; i++)
+		{
+			uint32_t target = ops[i];
+			flags.for_each_bit([&](uint32_t bit) {
+				auto decoration = static_cast<Decoration>(bit);
+
+				if (decoration_is_string(decoration))
+				{
+					ir.set_decoration_string(target, decoration, ir.get_decoration_string(group_id, decoration));
+				}
+				else
+				{
+					ir.meta[target].decoration_word_offset[decoration] =
+					    ir.meta[group_id].decoration_word_offset[decoration];
+					ir.set_decoration(target, decoration, ir.get_decoration(group_id, decoration));
+				}
+			});
+		}
+		break;
+	}
+
+	case OpGroupMemberDecorate:
+	{
+		uint32_t group_id = ops[0];
+		auto &flags = ir.meta[group_id].decoration.decoration_flags;
+
+		// Copies decorations from one ID to another. Only copy decorations which are set in the group,
+		// i.e., we cannot just copy the meta structure directly.
+		for (uint32_t i = 1; i + 1 < length; i += 2)
+		{
+			uint32_t target = ops[i + 0];
+			uint32_t index = ops[i + 1];
+			flags.for_each_bit([&](uint32_t bit) {
+				auto decoration = static_cast<Decoration>(bit);
+
+				if (decoration_is_string(decoration))
+					ir.set_member_decoration_string(target, index, decoration,
+					                                ir.get_decoration_string(group_id, decoration));
+				else
+					ir.set_member_decoration(target, index, decoration, ir.get_decoration(group_id, decoration));
+			});
+		}
+		break;
+	}
+
 	case OpDecorate:
 	case OpDecorateId:
 	{
+		// OpDecorateId technically supports an array of arguments, but our only supported decorations are single uint,
+		// so merge decorate and decorate-id here.
 		uint32_t id = ops[0];
 
 		auto decoration = static_cast<Decoration>(ops[1]);
@@ -383,25 +459,9 @@ void Parser::parse(const Instruction &instruction)
 	{
 		uint32_t id = ops[0];
 		uint32_t width = ops[1];
-		bool signedness = ops[2];
+		bool signedness = ops[2] != 0;
 		auto &type = set<SPIRType>(id);
-		switch (width)
-		{
-		case 64:
-			type.basetype = signedness ? SPIRType::Int64 : SPIRType::UInt64;
-			break;
-		case 32:
-			type.basetype = signedness ? SPIRType::Int : SPIRType::UInt;
-			break;
-		case 16:
-			type.basetype = signedness ? SPIRType::Short : SPIRType::UShort;
-			break;
-		case 8:
-			type.basetype = signedness ? SPIRType::SByte : SPIRType::UByte;
-			break;
-		default:
-			SPIRV_CROSS_THROW("Unrecognized bit-width of integral type.");
-		}
+		type.basetype = signedness ? to_signed_basetype(width) : to_unsigned_basetype(width);
 		type.width = width;
 		break;
 	}
@@ -523,9 +583,8 @@ void Parser::parse(const Instruction &instruction)
 		auto &ptrbase = set<SPIRType>(id);
 
 		ptrbase = base;
-		if (ptrbase.pointer)
-			SPIRV_CROSS_THROW("Cannot make pointer-to-pointer type.");
 		ptrbase.pointer = true;
+		ptrbase.pointer_depth++;
 		ptrbase.storage = static_cast<StorageClass>(ops[1]);
 
 		if (ptrbase.storage == StorageClassAtomicCounter)
@@ -583,6 +642,14 @@ void Parser::parse(const Instruction &instruction)
 		auto &func = set<SPIRFunctionPrototype>(id, ret);
 		for (uint32_t i = 2; i < length; i++)
 			func.parameter_types.push_back(ops[i]);
+		break;
+	}
+
+	case OpTypeAccelerationStructureNV:
+	{
+		uint32_t id = ops[0];
+		auto &type = set<SPIRType>(id);
+		type.basetype = SPIRType::AccelerationStructureNV;
 		break;
 	}
 
@@ -708,6 +775,7 @@ void Parser::parse(const Instruction &instruction)
 				// We do not know their value, so any attempt to query SPIRConstant later
 				// will fail. We can only propagate the ID of the expression and use to_expression on it.
 				auto *constant_op = maybe_get<SPIRConstantOp>(ops[2 + i]);
+				auto *undef_op = maybe_get<SPIRUndef>(ops[2 + i]);
 				if (constant_op)
 				{
 					if (op == OpConstantComposite)
@@ -717,6 +785,13 @@ void Parser::parse(const Instruction &instruction)
 					remapped_constant_ops[i].self = constant_op->self;
 					remapped_constant_ops[i].constant_type = constant_op->basetype;
 					remapped_constant_ops[i].specialization = true;
+					c[i] = &remapped_constant_ops[i];
+				}
+				else if (undef_op)
+				{
+					// Undefined, just pick 0.
+					remapped_constant_ops[i].make_null(get<SPIRType>(undef_op->basetype));
+					remapped_constant_ops[i].constant_type = undef_op->basetype;
 					c[i] = &remapped_constant_ops[i];
 				}
 				else
@@ -819,9 +894,6 @@ void Parser::parse(const Instruction &instruction)
 	{
 		if (!current_block)
 			SPIRV_CROSS_THROW("Trying to end a non-existing block.");
-
-		if (current_block->merge == SPIRBlock::MergeNone)
-			SPIRV_CROSS_THROW("Switch statement is not structured");
 
 		current_block->terminator = SPIRBlock::MultiSelect;
 
@@ -988,8 +1060,11 @@ bool Parser::types_are_logically_equivalent(const SPIRType &a, const SPIRType &b
 bool Parser::variable_storage_is_aliased(const SPIRVariable &v) const
 {
 	auto &type = get<SPIRType>(v.basetype);
+
+	auto *type_meta = ir.find_meta(type.self);
+
 	bool ssbo = v.storage == StorageClassStorageBuffer ||
-	            ir.meta[type.self].decoration.decoration_flags.get(DecorationBufferBlock);
+	            (type_meta && type_meta->decoration.decoration_flags.get(DecorationBufferBlock));
 	bool image = type.basetype == SPIRType::Image;
 	bool counter = type.basetype == SPIRType::AtomicCounter;
 
@@ -1006,7 +1081,12 @@ void Parser::make_constant_null(uint32_t id, uint32_t type)
 {
 	auto &constant_type = get<SPIRType>(type);
 
-	if (!constant_type.array.empty())
+	if (constant_type.pointer)
+	{
+		auto &constant = set<SPIRConstant>(id, type);
+		constant.make_null(constant_type);
+	}
+	else if (!constant_type.array.empty())
 	{
 		assert(constant_type.parent_type);
 		uint32_t parent_id = ir.increase_bound_by(1);

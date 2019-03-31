@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 ARM Limited
+ * Copyright 2015-2019 Arm Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "spirv_cfg.hpp"
 #include "spirv_cross_parsed_ir.hpp"
 
-namespace spirv_cross
+namespace SPIRV_CROSS_NAMESPACE
 {
 struct Resource
 {
@@ -62,6 +62,7 @@ struct ShaderResources
 	std::vector<Resource> storage_images;
 	std::vector<Resource> sampled_images;
 	std::vector<Resource> atomic_counters;
+	std::vector<Resource> acceleration_structures;
 
 	// There can only be one push constant block,
 	// but keep the vector in case this restriction is lifted in the future.
@@ -114,6 +115,15 @@ struct EntryPoint
 	spv::ExecutionModel execution_model;
 };
 
+enum ExtendedDecorations
+{
+	SPIRVCrossDecorationPacked,
+	SPIRVCrossDecorationPackedType,
+	SPIRVCrossDecorationInterfaceMemberIndex,
+	SPIRVCrossDecorationInterfaceOrigID,
+	SPIRVCrossDecorationArgumentBufferID
+};
+
 class Compiler
 {
 public:
@@ -152,8 +162,6 @@ public:
 
 	// Gets a bitmask for the decorations which are applied to ID.
 	// I.e. (1ull << spv::DecorationFoo) | (1ull << spv::DecorationBar)
-	SPIRV_CROSS_DEPRECATED("Please use get_decoration_bitset instead.")
-	uint64_t get_decoration_mask(uint32_t id) const;
 	const Bitset &get_decoration_bitset(uint32_t id) const;
 
 	// Returns whether the decoration has been applied to the ID.
@@ -176,18 +184,6 @@ public:
 
 	// Gets the SPIR-V type of a variable.
 	const SPIRType &get_type_from_variable(uint32_t id) const;
-
-	// Gets the id of SPIR-V type underlying the given type_id, which might be a pointer.
-	uint32_t get_non_pointer_type_id(uint32_t type_id) const;
-
-	// Gets the SPIR-V type underlying the given type, which might be a pointer.
-	const SPIRType &get_non_pointer_type(const SPIRType &type) const;
-
-	// Gets the SPIR-V type underlying the given type_id, which might be a pointer.
-	const SPIRType &get_non_pointer_type(uint32_t type_id) const;
-
-	// Returns if the given type refers to a sampled image.
-	bool is_sampled_image_type(const SPIRType &type);
 
 	// Gets the underlying storage class for an OpVariable.
 	spv::StorageClass get_storage_class(uint32_t id) const;
@@ -215,12 +211,7 @@ public:
 	// or an empty string if no qualified alias exists
 	const std::string &get_member_qualified_name(uint32_t type_id, uint32_t index) const;
 
-	// Sets the qualified member identifier for OpTypeStruct ID, member number "index".
-	void set_member_qualified_name(uint32_t type_id, uint32_t index, const std::string &name);
-
 	// Gets the decoration mask for a member of a struct, similar to get_decoration_mask.
-	SPIRV_CROSS_DEPRECATED("Please use get_member_decoration_bitset instead.")
-	uint64_t get_member_decoration_mask(uint32_t id, uint32_t index) const;
 	const Bitset &get_member_decoration_bitset(uint32_t id, uint32_t index) const;
 
 	// Returns whether the decoration has been applied to a member of a struct.
@@ -264,9 +255,6 @@ public:
 	// Returns the effective size of a buffer block struct member.
 	virtual size_t get_declared_struct_member_size(const SPIRType &struct_type, uint32_t index) const;
 
-	// Legacy GLSL compatibility method. Deprecated in favor of CompilerGLSL::flatten_buffer_block
-	SPIRV_CROSS_DEPRECATED("Please use flatten_buffer_block instead.") void flatten_interface_block(uint32_t id);
-
 	// Returns a set of all global variables which are statically accessed
 	// by the control flow graph from the current entry point.
 	// Only variables which change the interface for a shader are returned, that is,
@@ -307,24 +295,6 @@ public:
 	// Entry points should be set right after the constructor completes as some reflection functions traverse the graph from the entry point.
 	// Resource reflection also depends on the entry point.
 	// By default, the current entry point is set to the first OpEntryPoint which appears in the SPIR-V module.
-	SPIRV_CROSS_DEPRECATED("Please use get_entry_points_and_stages instead.")
-	std::vector<std::string> get_entry_points() const;
-	SPIRV_CROSS_DEPRECATED("Please use set_entry_point(const std::string &, spv::ExecutionModel) instead.")
-	void set_entry_point(const std::string &name);
-
-	// Renames an entry point from old_name to new_name.
-	// If old_name is currently selected as the current entry point, it will continue to be the current entry point,
-	// albeit with a new name.
-	// get_entry_points() is essentially invalidated at this point.
-	SPIRV_CROSS_DEPRECATED(
-	    "Please use rename_entry_point(const std::string&, const std::string&, spv::ExecutionModel) instead.")
-	void rename_entry_point(const std::string &old_name, const std::string &new_name);
-
-	// Returns the internal data structure for entry points to allow poking around.
-	SPIRV_CROSS_DEPRECATED("Please use get_entry_point(const std::string &, spv::ExecutionModel instead.")
-	const SPIREntryPoint &get_entry_point(const std::string &name) const;
-	SPIRV_CROSS_DEPRECATED("Please use get_entry_point(const std::string &, spv::ExecutionModel instead.")
-	SPIREntryPoint &get_entry_point(const std::string &name);
 
 	// Some shader languages restrict the names that can be given to entry points, and the
 	// corresponding backend will automatically rename an entry point name, during the call
@@ -334,15 +304,17 @@ public:
 	// the name, as updated by the backend during the call to compile(). If the name is not
 	// illegal, and has not been renamed, or if this function is called before compile(),
 	// this function will simply return the same name.
-	SPIRV_CROSS_DEPRECATED(
-	    "Please use get_cleansed_entry_point_name(const std::string &, spv::ExecutionModel) instead.")
-	const std::string &get_cleansed_entry_point_name(const std::string &name) const;
 
 	// New variants of entry point query and reflection.
 	// Names for entry points in the SPIR-V module may alias if they belong to different execution models.
 	// To disambiguate, we must pass along with the entry point names the execution model.
 	std::vector<EntryPoint> get_entry_points_and_stages() const;
 	void set_entry_point(const std::string &entry, spv::ExecutionModel execution_model);
+
+	// Renames an entry point from old_name to new_name.
+	// If old_name is currently selected as the current entry point, it will continue to be the current entry point,
+	// albeit with a new name.
+	// get_entry_points() is essentially invalidated at this point.
 	void rename_entry_point(const std::string &old_name, const std::string &new_name,
 	                        spv::ExecutionModel execution_model);
 	const SPIREntryPoint &get_entry_point(const std::string &name, spv::ExecutionModel execution_model) const;
@@ -351,8 +323,6 @@ public:
 	                                                 spv::ExecutionModel execution_model) const;
 
 	// Query and modify OpExecutionMode.
-	SPIRV_CROSS_DEPRECATED("Please use get_execution_mode_bitset instead.")
-	uint64_t get_execution_mode_mask() const;
 	const Bitset &get_execution_mode_bitset() const;
 
 	void unset_execution_mode(spv::ExecutionMode mode);
@@ -363,6 +333,8 @@ public:
 	// For execution modes which do not have arguments, 0 is returned.
 	uint32_t get_execution_mode_argument(spv::ExecutionMode mode, uint32_t index = 0) const;
 	spv::ExecutionModel get_execution_model() const;
+
+	bool is_tessellation_shader() const;
 
 	// In SPIR-V, the compute work group size can be represented by a constant vector, in which case
 	// the LocalSize execution mode is ignored.
@@ -552,7 +524,8 @@ protected:
 	template <typename T, typename... P>
 	T &set(uint32_t id, P &&... args)
 	{
-		auto &var = variant_set<T>(ir.ids.at(id), std::forward<P>(args)...);
+		ir.add_typed_id(static_cast<Types>(T::type), id);
+		auto &var = variant_set<T>(ir.ids[id], std::forward<P>(args)...);
 		var.self = id;
 		return var;
 	}
@@ -560,13 +533,15 @@ protected:
 	template <typename T>
 	T &get(uint32_t id)
 	{
-		return variant_get<T>(ir.ids.at(id));
+		return variant_get<T>(ir.ids[id]);
 	}
 
 	template <typename T>
 	T *maybe_get(uint32_t id)
 	{
-		if (ir.ids.at(id).get_type() == T::type)
+		if (id >= ir.ids.size())
+			return nullptr;
+		else if (ir.ids[id].get_type() == static_cast<Types>(T::type))
 			return &get<T>(id);
 		else
 			return nullptr;
@@ -575,20 +550,52 @@ protected:
 	template <typename T>
 	const T &get(uint32_t id) const
 	{
-		return variant_get<T>(ir.ids.at(id));
+		return variant_get<T>(ir.ids[id]);
 	}
 
 	template <typename T>
 	const T *maybe_get(uint32_t id) const
 	{
-		if (ir.ids.at(id).get_type() == T::type)
+		if (ir.ids[id].get_type() == static_cast<Types>(T::type))
 			return &get<T>(id);
 		else
 			return nullptr;
 	}
 
+	// Gets the id of SPIR-V type underlying the given type_id, which might be a pointer.
+	uint32_t get_pointee_type_id(uint32_t type_id) const;
+
+	// Gets the SPIR-V type underlying the given type, which might be a pointer.
+	const SPIRType &get_pointee_type(const SPIRType &type) const;
+
+	// Gets the SPIR-V type underlying the given type_id, which might be a pointer.
+	const SPIRType &get_pointee_type(uint32_t type_id) const;
+
+	// Gets the ID of the SPIR-V type underlying a variable.
+	uint32_t get_variable_data_type_id(const SPIRVariable &var) const;
+
+	// Gets the SPIR-V type underlying a variable.
+	SPIRType &get_variable_data_type(const SPIRVariable &var);
+
+	// Gets the SPIR-V type underlying a variable.
+	const SPIRType &get_variable_data_type(const SPIRVariable &var) const;
+
+	// Gets the SPIR-V element type underlying an array variable.
+	SPIRType &get_variable_element_type(const SPIRVariable &var);
+
+	// Gets the SPIR-V element type underlying an array variable.
+	const SPIRType &get_variable_element_type(const SPIRVariable &var) const;
+
+	// Sets the qualified member identifier for OpTypeStruct ID, member number "index".
+	void set_member_qualified_name(uint32_t type_id, uint32_t index, const std::string &name);
+	void set_qualified_name(uint32_t id, const std::string &name);
+
+	// Returns if the given type refers to a sampled image.
+	bool is_sampled_image_type(const SPIRType &type);
+
 	const SPIREntryPoint &get_entry_point() const;
 	SPIREntryPoint &get_entry_point();
+	static bool is_tessellation_shader(spv::ExecutionModel model);
 
 	virtual std::string to_name(uint32_t id, bool allow_alias = true) const;
 	bool is_builtin_variable(const SPIRVariable &var) const;
@@ -649,6 +656,12 @@ protected:
 
 	void update_name_cache(std::unordered_set<std::string> &cache, std::string &name);
 
+	// A variant which takes two sets of names. The secondary is only used to verify there are no collisions,
+	// but the set is not updated when we have found a new name.
+	// Used primarily when adding block interface names.
+	void update_name_cache(std::unordered_set<std::string> &cache_primary,
+	                       const std::unordered_set<std::string> &cache_secondary, std::string &name);
+
 	bool function_is_pure(const SPIRFunction &func);
 	bool block_is_pure(const SPIRBlock &block);
 	bool block_is_outside_flow_control_from_block(const SPIRBlock &from, const SPIRBlock &to);
@@ -663,6 +676,8 @@ protected:
 
 	bool types_are_logically_equivalent(const SPIRType &a, const SPIRType &b) const;
 	void inherit_expression_dependencies(uint32_t dst, uint32_t source);
+	void add_implied_read_expression(SPIRExpression &e, uint32_t source);
+	void add_implied_read_expression(SPIRAccessChain &e, uint32_t source);
 
 	// For proper multiple entry point support, allow querying if an Input or Output
 	// variable is part of that entry points interface.
@@ -914,7 +929,8 @@ protected:
 	};
 
 	void analyze_variable_scope(SPIRFunction &function, AnalyzeVariableScopeAccessHandler &handler);
-	void find_function_local_luts(SPIRFunction &function, const AnalyzeVariableScopeAccessHandler &handler);
+	void find_function_local_luts(SPIRFunction &function, const AnalyzeVariableScopeAccessHandler &handler,
+	                              bool single_function);
 
 	void make_constant_null(uint32_t id, uint32_t type);
 
@@ -928,6 +944,17 @@ protected:
 
 	bool image_is_comparison(const SPIRType &type, uint32_t id) const;
 
+	void set_extended_decoration(uint32_t id, ExtendedDecorations decoration, uint32_t value = 0);
+	uint32_t get_extended_decoration(uint32_t id, ExtendedDecorations decoration) const;
+	bool has_extended_decoration(uint32_t id, ExtendedDecorations decoration) const;
+	void unset_extended_decoration(uint32_t id, ExtendedDecorations decoration);
+
+	void set_extended_member_decoration(uint32_t type, uint32_t index, ExtendedDecorations decoration,
+	                                    uint32_t value = 0);
+	uint32_t get_extended_member_decoration(uint32_t type, uint32_t index, ExtendedDecorations decoration) const;
+	bool has_extended_member_decoration(uint32_t type, uint32_t index, ExtendedDecorations decoration) const;
+	void unset_extended_member_decoration(uint32_t type, uint32_t index, ExtendedDecorations decoration);
+
 private:
 	// Used only to implement the old deprecated get_entry_point() interface.
 	const SPIREntryPoint &get_first_entry_point(const std::string &name) const;
@@ -935,6 +962,7 @@ private:
 
 	void fixup_type_alias();
 	bool type_is_block_like(const SPIRType &type) const;
+	bool type_is_opaque_value(const SPIRType &type) const;
 };
 } // namespace spirv_cross
 

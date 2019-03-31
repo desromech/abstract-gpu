@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 ARM Limited
+ * Copyright 2015-2019 Arm Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@
 #endif
 
 using namespace spv;
-using namespace spirv_cross;
+using namespace SPIRV_CROSS_NAMESPACE;
 using namespace std;
 
 #ifdef SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS
@@ -310,6 +310,18 @@ static const char *execution_model_to_str(spv::ExecutionModel model)
 		return "fragment";
 	case ExecutionModelGLCompute:
 		return "compute";
+	case ExecutionModelRayGenerationNV:
+		return "raygenNV";
+	case ExecutionModelIntersectionNV:
+		return "intersectionNV";
+	case ExecutionModelCallableNV:
+		return "callableNV";
+	case ExecutionModelAnyHitNV:
+		return "anyhitNV";
+	case ExecutionModelClosestHitNV:
+		return "closesthitNV";
+	case ExecutionModelMissNV:
+		return "missNV";
 	default:
 		return "???";
 	}
@@ -396,6 +408,7 @@ static void print_resources(const Compiler &compiler, const ShaderResources &res
 	print_resources(compiler, "ubos", res.uniform_buffers);
 	print_resources(compiler, "push", res.push_constant_buffers);
 	print_resources(compiler, "counters", res.atomic_counters);
+	print_resources(compiler, "acceleration structures", res.acceleration_structures);
 }
 
 static void print_push_constant_resources(const Compiler &compiler, const vector<Resource> &res)
@@ -490,8 +503,14 @@ struct CLIArguments
 	bool yflip = false;
 	bool sso = false;
 	bool support_nonzero_baseinstance = true;
+	bool msl_capture_output_to_buffer = false;
 	bool msl_swizzle_texture_samples = false;
 	bool msl_ios = false;
+	bool msl_pad_fragment_output = false;
+	bool msl_domain_lower_left = false;
+	bool msl_argument_buffers = false;
+	bool glsl_emit_push_constant_as_ubo = false;
+	vector<uint32_t> msl_discrete_descriptor_sets;
 	vector<PLSArg> pls_in;
 	vector<PLSArg> pls_out;
 	vector<Remap> remaps;
@@ -516,6 +535,7 @@ struct CLIArguments
 	bool msl = false;
 	bool hlsl = false;
 	bool hlsl_compat = false;
+	bool hlsl_support_nonzero_base = false;
 	bool vulkan_semantics = false;
 	bool flatten_multidimensional_arrays = false;
 	bool use_420pack_extension = true;
@@ -541,14 +561,21 @@ static void print_help()
 	                "\t[--iterations iter]\n"
 	                "\t[--cpp]\n"
 	                "\t[--cpp-interface-name <name>]\n"
+	                "\t[--glsl-emit-push-constant-as-ubo]\n"
 	                "\t[--msl]\n"
 	                "\t[--msl-version <MMmmpp>]\n"
+	                "\t[--msl-capture-output]\n"
 	                "\t[--msl-swizzle-texture-samples]\n"
 	                "\t[--msl-ios]\n"
+	                "\t[--msl-pad-fragment-output]\n"
+	                "\t[--msl-domain-lower-left]\n"
+	                "\t[--msl-argument-buffers]\n"
+	                "\t[--msl-discrete-descriptor-set <index>]\n"
 	                "\t[--hlsl]\n"
 	                "\t[--reflect]\n"
 	                "\t[--shader-model]\n"
 	                "\t[--hlsl-enable-compat]\n"
+	                "\t[--hlsl-support-nonzero-basevertex-baseinstance]\n"
 	                "\t[--separate-shader-objects]\n"
 	                "\t[--pls-in format input-name]\n"
 	                "\t[--pls-out format output-name]\n"
@@ -702,14 +729,23 @@ static int main_inner(int argc, char *argv[])
 	cbs.add("--reflect", [&args](CLIParser &parser) { args.reflect = parser.next_value_string("json"); });
 	cbs.add("--cpp-interface-name", [&args](CLIParser &parser) { args.cpp_interface_name = parser.next_string(); });
 	cbs.add("--metal", [&args](CLIParser &) { args.msl = true; }); // Legacy compatibility
+	cbs.add("--glsl-emit-push-constant-as-ubo", [&args](CLIParser &) { args.glsl_emit_push_constant_as_ubo = true; });
 	cbs.add("--msl", [&args](CLIParser &) { args.msl = true; });
 	cbs.add("--hlsl", [&args](CLIParser &) { args.hlsl = true; });
 	cbs.add("--hlsl-enable-compat", [&args](CLIParser &) { args.hlsl_compat = true; });
+	cbs.add("--hlsl-support-nonzero-basevertex-baseinstance",
+	        [&args](CLIParser &) { args.hlsl_support_nonzero_base = true; });
 	cbs.add("--vulkan-semantics", [&args](CLIParser &) { args.vulkan_semantics = true; });
 	cbs.add("--flatten-multidimensional-arrays", [&args](CLIParser &) { args.flatten_multidimensional_arrays = true; });
 	cbs.add("--no-420pack-extension", [&args](CLIParser &) { args.use_420pack_extension = false; });
+	cbs.add("--msl-capture-output", [&args](CLIParser &) { args.msl_capture_output_to_buffer = true; });
 	cbs.add("--msl-swizzle-texture-samples", [&args](CLIParser &) { args.msl_swizzle_texture_samples = true; });
 	cbs.add("--msl-ios", [&args](CLIParser &) { args.msl_ios = true; });
+	cbs.add("--msl-pad-fragment-output", [&args](CLIParser &) { args.msl_pad_fragment_output = true; });
+	cbs.add("--msl-domain-lower-left", [&args](CLIParser &) { args.msl_domain_lower_left = true; });
+	cbs.add("--msl-argument-buffers", [&args](CLIParser &) { args.msl_argument_buffers = true; });
+	cbs.add("--msl-discrete-descriptor-set",
+	        [&args](CLIParser &parser) { args.msl_discrete_descriptor_sets.push_back(parser.next_uint()); });
 	cbs.add("--extension", [&args](CLIParser &parser) { args.extensions.push_back(parser.next_string()); });
 	cbs.add("--rename-entry-point", [&args](CLIParser &parser) {
 		auto old_name = parser.next_string();
@@ -836,10 +872,16 @@ static int main_inner(int argc, char *argv[])
 		auto msl_opts = msl_comp->get_msl_options();
 		if (args.set_msl_version)
 			msl_opts.msl_version = args.msl_version;
+		msl_opts.capture_output_to_buffer = args.msl_capture_output_to_buffer;
 		msl_opts.swizzle_texture_samples = args.msl_swizzle_texture_samples;
 		if (args.msl_ios)
 			msl_opts.platform = CompilerMSL::Options::iOS;
+		msl_opts.pad_fragment_output_components = args.msl_pad_fragment_output;
+		msl_opts.tess_domain_origin_lower_left = args.msl_domain_lower_left;
+		msl_opts.argument_buffers = args.msl_argument_buffers;
 		msl_comp->set_msl_options(msl_opts);
+		for (auto &v : args.msl_discrete_descriptor_sets)
+			msl_comp->add_discrete_descriptor_set(v);
 	}
 	else if (args.hlsl)
 		compiler.reset(new CompilerHLSL(move(spirv_parser.get_parsed_ir())));
@@ -960,6 +1002,7 @@ static int main_inner(int argc, char *argv[])
 	opts.vertex.fixup_clipspace = args.fixup;
 	opts.vertex.flip_vert_y = args.yflip;
 	opts.vertex.support_nonzero_base_instance = args.support_nonzero_baseinstance;
+	opts.emit_push_constant_as_uniform_buffer = args.glsl_emit_push_constant_as_ubo;
 	compiler->set_common_options(opts);
 
 	// Set HLSL specific options.
@@ -984,6 +1027,14 @@ static int main_inner(int argc, char *argv[])
 			hlsl_opts.point_size_compat = true;
 			hlsl_opts.point_coord_compat = true;
 		}
+
+		if (hlsl_opts.shader_model <= 30)
+		{
+			combined_image_samplers = true;
+			build_dummy_sampler = true;
+		}
+
+		hlsl_opts.support_nonzero_base_vertex_base_instance = args.hlsl_support_nonzero_base;
 		hlsl->set_hlsl_options(hlsl_opts);
 	}
 
@@ -1085,9 +1136,12 @@ static int main_inner(int argc, char *argv[])
 	for (uint32_t i = 0; i < args.iterations; i++)
 	{
 		if (args.hlsl)
-			glsl = static_cast<CompilerHLSL *>(compiler.get())->compile(move(args.hlsl_attr_remap));
-		else
-			glsl = compiler->compile();
+		{
+			for (auto &remap : args.hlsl_attr_remap)
+				static_cast<CompilerHLSL *>(compiler.get())->add_vertex_attribute_remap(remap);
+		}
+
+		glsl = compiler->compile();
 	}
 
 	if (args.output)
