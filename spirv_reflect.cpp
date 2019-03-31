@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Bradley Austin Davis
+ * Copyright 2018-2019 Bradley Austin Davis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include <iomanip>
 
 using namespace spv;
-using namespace spirv_cross;
+using namespace SPIRV_CROSS_NAMESPACE;
 using namespace std;
 
 namespace simple_json
@@ -247,9 +247,6 @@ void CompilerReflection::set_format(const std::string &format)
 
 string CompilerReflection::compile()
 {
-	// Force a classic "C" locale, reverts when function returns
-	ClassicLocale classic_locale;
-
 	// Move constructor for this type is broken on GCC 4.9 ...
 	json_stream = std::make_shared<simple_json::Stream>();
 	json_stream->begin_json_object();
@@ -264,18 +261,11 @@ string CompilerReflection::compile()
 void CompilerReflection::emit_types()
 {
 	bool emitted_open_tag = false;
-	for (auto &id : ir.ids)
-	{
-		auto idType = id.get_type();
-		if (idType == TypeType)
-		{
-			auto &type = id.get<SPIRType>();
-			if (type.basetype == SPIRType::Struct && !type.pointer && type.array.empty())
-			{
-				emit_type(type, emitted_open_tag);
-			}
-		}
-	}
+
+	ir.for_each_typed_id<SPIRType>([&](uint32_t, SPIRType &type) {
+		if (type.basetype == SPIRType::Struct && !type.pointer && type.array.empty())
+			emit_type(type, emitted_open_tag);
+	});
 
 	if (emitted_open_tag)
 	{
@@ -375,9 +365,9 @@ string CompilerReflection::execution_model_to_str(spv::ExecutionModel model)
 {
 	switch (model)
 	{
-	case spv::ExecutionModelVertex:
+	case ExecutionModelVertex:
 		return "vert";
-	case spv::ExecutionModelTessellationControl:
+	case ExecutionModelTessellationControl:
 		return "tesc";
 	case ExecutionModelTessellationEvaluation:
 		return "tese";
@@ -387,6 +377,18 @@ string CompilerReflection::execution_model_to_str(spv::ExecutionModel model)
 		return "frag";
 	case ExecutionModelGLCompute:
 		return "comp";
+	case ExecutionModelRayGenerationNV:
+		return "rgen";
+	case ExecutionModelIntersectionNV:
+		return "rint";
+	case ExecutionModelAnyHitNV:
+		return "rahit";
+	case ExecutionModelClosestHitNV:
+		return "rchit";
+	case ExecutionModelMissNV:
+		return "rmiss";
+	case ExecutionModelCallableNV:
+		return "rcall";
 	default:
 		return "???";
 	}
@@ -398,6 +400,16 @@ void CompilerReflection::emit_entry_points()
 	auto entries = get_entry_points_and_stages();
 	if (!entries.empty())
 	{
+		// Needed to make output deterministic.
+		sort(begin(entries), end(entries), [](const EntryPoint &a, const EntryPoint &b) -> bool {
+			if (a.execution_model < b.execution_model)
+				return true;
+			else if (a.execution_model > b.execution_model)
+				return false;
+			else
+				return a.name < b.name;
+		});
+
 		json_stream->emit_json_key_array("entryPoints");
 		for (auto &e : entries)
 		{
@@ -424,6 +436,7 @@ void CompilerReflection::emit_resources()
 	emit_resources("ubos", res.uniform_buffers);
 	emit_resources("push_constants", res.push_constant_buffers);
 	emit_resources("counters", res.atomic_counters);
+	emit_resources("acceleration_structures", res.acceleration_structures);
 }
 
 void CompilerReflection::emit_resources(const char *tag, const vector<Resource> &resources)
@@ -482,7 +495,8 @@ void CompilerReflection::emit_resources(const char *tag, const vector<Resource> 
 
 		{
 			bool is_sized_block = is_block && (get_storage_class(res.id) == StorageClassUniform ||
-			                                   get_storage_class(res.id) == StorageClassUniformConstant);
+			                                   get_storage_class(res.id) == StorageClassUniformConstant ||
+			                                   get_storage_class(res.id) == StorageClassStorageBuffer);
 			if (is_sized_block)
 			{
 				uint32_t block_size = uint32_t(get_declared_struct_size(get_type(res.base_type_id)));
@@ -565,9 +579,16 @@ void CompilerReflection::emit_specialization_constants()
 
 string CompilerReflection::to_member_name(const SPIRType &type, uint32_t index) const
 {
-	auto &memb = ir.meta[type.self].members;
-	if (index < memb.size() && !memb[index].alias.empty())
-		return memb[index].alias;
+	auto *type_meta = ir.find_meta(type.self);
+
+	if (type_meta)
+	{
+		auto &memb = type_meta->members;
+		if (index < memb.size() && !memb[index].alias.empty())
+			return memb[index].alias;
+		else
+			return join("_m", index);
+	}
 	else
 		return join("_m", index);
 }

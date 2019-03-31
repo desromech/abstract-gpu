@@ -3,6 +3,11 @@
 
 using namespace metal;
 
+struct _28
+{
+    float4 _m0;
+};
+
 struct _6
 {
     float4 _m0;
@@ -68,7 +73,7 @@ struct _18
     float2 _m24;
     float2 _m25;
     float2 _m26;
-    char pad27[8];
+    char _m27_pad[8];
     packed_float3 _m27;
     float _m28;
     float _m29;
@@ -81,11 +86,6 @@ struct _18
     float3 _m36;
     float4x4 _m37[2];
     float4 _m38[2];
-};
-
-struct _28
-{
-    float4 _m0;
 };
 
 constant _28 _74 = {};
