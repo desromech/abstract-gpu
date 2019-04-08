@@ -46,10 +46,10 @@ if(NOT "$ENV{VULKAN_SDK}" STREQUAL "")
 	set(VULKAN_FIND_INCLUDE_PATHS "$ENV{VULKAN_SDK}/include")
 
 	if(MSVC)
-		if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
-			set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/Lib32")
-		else()
+		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 			set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/Lib")
+		else()
+			set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/Lib32")
 		endif()
 	else()
 		set(VULKAN_FIND_LIBRARY_PATHS "$ENV{VULKAN_SDK}/lib")
@@ -99,10 +99,6 @@ if(VULKAN_INCLUDE_DIRS AND VULKAN_LIBRARY)
 	include_directories(${VULKAN_INCLUDE_DIRS})
 endif()
 
-if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
-	set(D3D12_FOUND TRUE)
-endif()
-
 # Add some include directories
 include_directories(
 .
@@ -135,15 +131,8 @@ endforeach()
 find_package(OpenGL)
 
 # Find Direct3D 12
-find_path(D3D12_INCLUDE_DIRS
-  NAMES d3d12.h
-)
-
-find_library(D3D12_LIBRARY NAMES d3d12)
-
-if(D3D12_INCLUDE_DIRS AND D3D12_LIBRARY)
-	set(D3D12_FOUND TRUE)
-endif()
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+find_package(D3D12)
 
 # For VisualStudio in Window
 find_path(SDL2_INCLUDE_DIRS
