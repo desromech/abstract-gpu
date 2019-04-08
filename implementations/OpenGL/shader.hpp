@@ -7,6 +7,9 @@
 #include <vector>
 #include <unordered_map>
 
+namespace AgpuGL
+{
+
 struct TextureWithSamplerCombination
 {
     unsigned int textureDescriptorSet;
@@ -61,17 +64,22 @@ struct TextureWithSamplerCombination
     }
 };
 
+} // End of namespace AgpuGL
+
 namespace std
 {
 template<>
-struct hash<TextureWithSamplerCombination>
+struct hash<AgpuGL::TextureWithSamplerCombination>
 {
-    size_t operator()(const TextureWithSamplerCombination &combination) const
+    size_t operator()(const AgpuGL::TextureWithSamplerCombination &combination) const
     {
         return combination.hash();
     }
 };
 }
+
+namespace AgpuGL
+{
 
 struct MappedTextureWithSamplerCombination
 {
@@ -88,18 +96,19 @@ struct MappedTextureWithSamplerCombination
 
 typedef std::unordered_map<TextureWithSamplerCombination, MappedTextureWithSamplerCombination> TextureWithSamplerCombinationMap;
 
-struct agpu_shader_forSignature: public Object<agpu_shader_forSignature>
+struct GLShaderForSignature: public agpu::base_interface
 {
 public:
-    agpu_shader_forSignature();
+	typedef GLShaderForSignature main_interface;
 
-    void lostReferences();
+    GLShaderForSignature();
+    ~GLShaderForSignature();
 
     agpu_error compile(std::string *errorMessage);
     agpu_error attachToProgram(GLuint programHandle, std::string *errorMessage);
 
 public:
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_shader_type type;
     agpu_shader_language rawSourceLanguage;
 
@@ -107,28 +116,29 @@ public:
     std::string glslSource;
 };
 
-struct _agpu_shader: public Object<_agpu_shader>
+typedef agpu::ref<GLShaderForSignature> GLShaderForSignatureRef;
+
+struct GLShader: public agpu::shader
 {
 public:
-    _agpu_shader();
+    GLShader();
+    ~GLShader();
 
-    void lostReferences();
+    static agpu::shader_ref createShader(const agpu::device_ref &device, agpu_shader_type type);
+    agpu_error instanceForSignature(const agpu::shader_signature_ref &signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, GLShaderForSignatureRef *result, std::string *errorMessage);
 
-    static agpu_shader *createShader(agpu_device *device, agpu_shader_type type);
-    agpu_error instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage);
-
-    agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength);
-    agpu_error compileShader(agpu_cstring options);
-    agpu_size getShaderCompilationLogLength();
-    agpu_error getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer);
+    virtual agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength) override;
+    virtual agpu_error compileShader(agpu_cstring options) override;
+    virtual agpu_size getCompilationLogLength() override;
+    virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
 
     std::vector<TextureWithSamplerCombination> &getTextureWithSamplerCombination(const std::string &entryPointName);
 
 public:
     //agpu_error compileGLSLSource(bool parseAgpuPragmas, agpu_string sourceText, agpu_string_length sourceTextLength);
 
-    agpu_device *device;
-    agpu_shader_forSignature *genericShaderInstance;
+    agpu::device_ref device;
+    GLShaderForSignatureRef genericShaderInstance;
     agpu_shader_type type;
     bool compiled;
 
@@ -139,11 +149,12 @@ private:
     void extractGenericShaderTextureWithSamplerCombinations(const std::string &entryPointName);
     void extractSpirVTextureWithSamplerCombinations(const std::string &entryPointName);
 
-    agpu_error getOrCreateGenericShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage);
-    agpu_error getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage);
+    agpu_error getOrCreateGenericShaderInstance(const agpu::shader_signature_ref &signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, GLShaderForSignatureRef *result, std::string *errorMessage);
+    agpu_error getOrCreateSpirVShaderInstance(const agpu::shader_signature_ref &signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, GLShaderForSignatureRef *result, std::string *errorMessage);
 
     std::unordered_map<std::string, std::vector<TextureWithSamplerCombination>> textureWithSamplerCombinations;
 };
 
+} // End of namespace AgpuGL
 
 #endif //_AGPU_GL_SHADER_HPP_

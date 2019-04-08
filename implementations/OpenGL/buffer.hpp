@@ -3,6 +3,9 @@
 
 #include "device.hpp"
 
+namespace AgpuGL
+{
+
 inline GLbitfield mapMappingFlags(agpu_bitfield flags)
 {
     GLbitfield glflags = 0;
@@ -46,34 +49,36 @@ inline GLenum mapMappingAccess(agpu_mapping_access flags)
 }
 
 
-struct _agpu_buffer: public Object<_agpu_buffer>
+struct GLBuffer: public agpu::buffer
 {
 public:
-    _agpu_buffer();
+    GLBuffer();
+    ~GLBuffer();
 
-    void lostReferences();
-
-    static agpu_buffer *createBuffer(agpu_device *device, const agpu_buffer_description &description, agpu_pointer initialData);
+    static agpu::buffer_ref createBuffer(const agpu::device_ref &device, const agpu_buffer_description &description, agpu_pointer initialData);
 
     void dumpToFile(const char *fileName);
 
-    agpu_pointer mapBuffer(agpu_mapping_access access);
-    agpu_error unmapBuffer();
-    agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
-    agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
-    agpu_error flushWholeBuffer ();
-    agpu_error invalidateWholeBuffer ();
+    virtual agpu_pointer mapBuffer(agpu_mapping_access access) override;
+    virtual agpu_error unmapBuffer() override;
+	virtual agpu_error getDescription(agpu_buffer_description* description) override;
+    virtual agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+    virtual agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+    virtual agpu_error flushWholeBuffer () override;
+    virtual agpu_error invalidateWholeBuffer () override;
 
     void bind();
 
 public:
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_buffer_description description;
     GLenum target;
     GLuint handle;
     GLbitfield extraMappingFlags;
     agpu_pointer mappedPointer;
 };
+
+} // End of namespace AgpuGL
 
 #endif //_AGPU_BUFFER_HPP_

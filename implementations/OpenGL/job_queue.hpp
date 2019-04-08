@@ -5,6 +5,10 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include <assert.h>
+
+namespace AgpuGL
+{
 
 typedef std::function<void ()> JobCommand;
 
@@ -135,5 +139,7 @@ private:
 	AsyncJob *firstPendingJob;
 	AsyncJob *lastPendingJob;
 };
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_THREADED_QUEUE_HPP

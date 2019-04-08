@@ -4,68 +4,55 @@
 #include "buffer.hpp"
 #include "texture_formats.hpp"
 
-_agpu_vertex_binding::_agpu_vertex_binding()
+namespace AgpuGL
+{
+
+GLVertexBinding::GLVertexBinding()
 {
     changed = true;
 }
 
-void _agpu_vertex_binding::lostReferences()
+GLVertexBinding::~GLVertexBinding()
 {
-    device->onMainContextBlocking([&] {
-        device->glBindVertexArray(0);
-        device->glDeleteVertexArrays(1, &handle);
+    deviceForGL->onMainContextBlocking([&] {
+        deviceForGL->glBindVertexArray(0);
+        deviceForGL->glDeleteVertexArrays(1, &handle);
     });
-
-    for(auto &vb : vertexBuffers)
-    {
-        if(vb)
-            vb->release();
-    }
-    vertexLayout->release();
 }
 
-agpu_vertex_binding *_agpu_vertex_binding::createVertexBinding(agpu_device *device, agpu_vertex_layout *layout)
+agpu::vertex_binding_ref GLVertexBinding::createVertexBinding(const agpu::device_ref &device, const agpu::vertex_layout_ref &layout)
 {
     GLuint handle;
-    device->onMainContextBlocking([&] {
-        device->glGenVertexArrays(1, &handle);
+    deviceForGL->onMainContextBlocking([&] {
+        deviceForGL->glGenVertexArrays(1, &handle);
     });
 
-	auto binding = new agpu_vertex_binding();
+    auto result = agpu::makeObject<GLVertexBinding> ();
+	auto binding = result.as<GLVertexBinding> ();
     binding->handle = handle;
 	binding->device = device;
     binding->vertexLayout = layout;
-    binding->vertexLayout->retain();
-	return binding;
+	return result;
 }
 
-void _agpu_vertex_binding::bind()
+void GLVertexBinding::bind()
 {
-    device->glBindVertexArray(handle);
+    deviceForGL->glBindVertexArray(handle);
     if(changed)
         updateBindings();
 }
 
-agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
+agpu_error GLVertexBinding::bindVertexBuffers(agpu_uint count, agpu::buffer_ref* vertex_buffers)
 {
     return bindVertexBuffersWithOffsets(count, vertex_buffers, nullptr);
 }
 
-agpu_error _agpu_vertex_binding::bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size *offsets)
+agpu_error GLVertexBinding::bindVertexBuffersWithOffsets(agpu_uint count, agpu::buffer_ref* vertex_buffers, agpu_size *offsets)
 {
-    if (count != vertexLayout->vertexBufferCount)
+    if (count != vertexLayout.as<GLVertexLayout> ()->vertexBufferCount)
         return AGPU_ERROR;
 
     changed = true;
-    for(size_t i = 0; i < count; ++i)
-        vertex_buffers[i]->retain();
-
-    for(auto &vb : vertexBuffers)
-    {
-        if(vb)
-            vb->release();
-    }
-
     this->vertexBuffers.resize(count);
     this->offsets.resize(count);
     for(size_t i = 0; i < count; ++i)
@@ -75,13 +62,13 @@ agpu_error _agpu_vertex_binding::bindVertexBuffersWithOffsets(agpu_uint count, a
     }
 
 	return AGPU_OK;
-
 }
 
-agpu_error _agpu_vertex_binding::updateBindings()
+agpu_error GLVertexBinding::updateBindings()
 {
-    agpu_buffer *prevBuffer = nullptr;
-    for (auto &attr : vertexLayout->attributes)
+    agpu::buffer_ref prevBuffer;
+    auto glVertxLayout = vertexLayout.as<GLVertexLayout> ();
+    for (auto &attr : glVertxLayout->attributes)
     {
         if (attr.buffer > vertexBuffers.size())
             return AGPU_ERROR;
@@ -89,10 +76,13 @@ agpu_error _agpu_vertex_binding::updateBindings()
         // Bind the buffer
         auto newBuffer = vertexBuffers[attr.buffer];
         if (newBuffer != prevBuffer)
-            newBuffer->bind();
+        {
+            newBuffer.as<GLBuffer>()->bind();
+            prevBuffer = newBuffer;
+        }
 
         // Activate the attribute
-        auto error = activateVertexAttribute(vertexLayout->strides[attr.buffer], attr, offsets[attr.buffer]);
+        auto error = activateVertexAttribute(glVertxLayout->strides[attr.buffer], attr, offsets[attr.buffer]);
         if (error < 0)
             return error;
     }
@@ -100,43 +90,18 @@ agpu_error _agpu_vertex_binding::updateBindings()
     return AGPU_OK;
 }
 
-agpu_error _agpu_vertex_binding::activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute, agpu_size bufferOffset )
+agpu_error GLVertexBinding::activateVertexAttribute ( agpu_size stride, agpu_vertex_attrib_description &attribute, agpu_size bufferOffset )
 {
     auto isNormalized = isFormatNormalized(attribute.format);
     auto components = getFormatNumberOfComponents(attribute.format);
     auto type = mapExternalFormatType(attribute.format);
-	device->glEnableVertexAttribArray(attribute.binding);
+	deviceForGL->glEnableVertexAttribArray(attribute.binding);
     if(isIntegerVertexAttributeFormat(attribute.format))
-        device->glVertexAttribIPointer(attribute.binding, components, type, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset + bufferOffset)));
+        deviceForGL->glVertexAttribIPointer(attribute.binding, components, type, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset + bufferOffset)));
     else
-	   device->glVertexAttribPointer(attribute.binding, components, type, isNormalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset + bufferOffset)));
+	   deviceForGL->glVertexAttribPointer(attribute.binding, components, type, isNormalized, (GLsizei)stride, reinterpret_cast<void*> (size_t(attribute.offset + bufferOffset)));
 
 	return AGPU_OK;
 }
 
-// C interface
-AGPU_EXPORT agpu_error agpuAddVertexBindingReference ( agpu_vertex_binding* vertex_binding )
-{
-	CHECK_POINTER(vertex_binding);
-	vertex_binding->retain();
-	return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_error agpuReleaseVertexBinding ( agpu_vertex_binding* vertex_binding )
-{
-	CHECK_POINTER(vertex_binding);
-	vertex_binding->release();
-	return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_error agpuBindVertexBuffers(agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers)
-{
-    CHECK_POINTER(vertex_binding);
-    return vertex_binding->bindVertexBuffers(count, vertex_buffers);
-}
-
-AGPU_EXPORT agpu_error agpuBindVertexBuffersWithOffsets ( agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
-{
-    CHECK_POINTER(vertex_binding);
-    return vertex_binding->bindVertexBuffersWithOffsets(count, vertex_buffers, offsets);
-}
+} // End of namespace AgpuGL

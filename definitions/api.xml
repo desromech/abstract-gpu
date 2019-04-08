@@ -13,6 +13,12 @@
         <property key="headerFile" value="agpu.hpp" />
     </language>
 
+    <language name="C++/Impl">
+        <property key="headerFile" value="agpu_impl.hpp" />
+        <property key="dispatchIncludeFile" value="agpu_impl_dispatch.inc" />
+        <property key="namespace" value="agpu" />
+    </language>
+
     <language name="Pharo">
         <property key="namespacePrefix" value="AGPU" />
         <property key="package" value="AbstractGPU-Generated" />

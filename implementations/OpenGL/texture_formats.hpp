@@ -4,6 +4,9 @@
 #include <AGPU/agpu.h>
 #include "../Common/texture_formats_common.hpp"
 
+namespace AgpuGL
+{
+
 inline GLenum findTextureTarget(agpu_texture_description *description)
 {
     assert(description);
@@ -604,5 +607,7 @@ inline bool isIntegerVertexAttributeFormat(agpu_texture_format format)
         return false;
     }
 }
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_TEXTURE_FORMATS_HPP

@@ -28,8 +28,11 @@ typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXC
 #include <map>
 #include <list>
 
-#include "object.hpp"
+#include "common.hpp"
 #include "job_queue.hpp"
+
+namespace AgpuGL
+{
 
 class AgpuGLImmediateContext;
 
@@ -68,7 +71,7 @@ struct OpenGLContext
 
     static OpenGLContext *getCurrent();
 
-    agpu_device *device;
+    agpu::device_weakref weakDevice;
 
     bool ownsWindow;
     bool ownsDisplay;
@@ -97,14 +100,13 @@ struct OpenGLContext
 /**
  * Agpu OpenGL device
  */
-struct _agpu_device: public Object<_agpu_device>
+struct GLDevice: public agpu::device
 {
 public:
-    _agpu_device();
+    GLDevice();
+    ~GLDevice();
 
-    void lostReferences();
-
-    static agpu_device *open(agpu_device_open_info* openInfo);
+    static agpu::device_ref open(agpu_device_open_info* openInfo);
     static bool isExtensionSupported(const char *extList, const char *extension);
     bool hasOpenGLExtension(const char *extension);
 
@@ -116,12 +118,6 @@ public:
     void *getProcAddress(const char *symbolName);
     void initializeObjects();
     void createDefaultCommandQueue();
-
-    agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
-
-    agpu_bool isFeatureSupported (agpu_feature feature);
-    agpu_bool hasBottomLeftTextureCoordinates();
-    agpu_bool hasTopLeftNdcOrigin();
 
     template<typename FT>
     void loadExtensionFunction(FT &functionPointer, const char *functionName)
@@ -137,12 +133,40 @@ public:
         job.wait();
     }
 
+public:
+    virtual agpu::command_queue_ptr getDefaultCommandQueue() override;
+	virtual agpu::swap_chain_ptr createSwapChain(const agpu::command_queue_ref & commandQueue, agpu_swap_chain_create_info* swapChainInfo) override;
+	virtual agpu::buffer_ptr createBuffer(agpu_buffer_description* description, agpu_pointer initial_data) override;
+	virtual agpu::vertex_layout_ptr createVertexLayout() override;
+	virtual agpu::vertex_binding_ptr createVertexBinding(const agpu::vertex_layout_ref & layout) override;
+	virtual agpu::shader_ptr createShader(agpu_shader_type type) override;
+	virtual agpu::shader_signature_builder_ptr createShaderSignatureBuilder() override;
+	virtual agpu::pipeline_builder_ptr createPipelineBuilder() override;
+	virtual agpu::compute_pipeline_builder_ptr createComputePipelineBuilder() override;
+	virtual agpu::command_allocator_ptr createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue) override;
+	virtual agpu::command_list_ptr createCommandList(agpu_command_list_type type, const agpu::command_allocator_ref & allocator, const agpu::pipeline_state_ref & initial_pipeline_state) override;
+	virtual agpu_shader_language getPreferredShaderLanguage() override;
+	virtual agpu_shader_language getPreferredIntermediateShaderLanguage() override;
+	virtual agpu_shader_language getPreferredHighLevelShaderLanguage() override;
+	virtual agpu::framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView) override;
+	virtual agpu::renderpass_ptr createRenderPass(agpu_renderpass_description* description) override;
+	virtual agpu::texture_ptr createTexture(agpu_texture_description* description) override;
+	virtual agpu::fence_ptr createFence() override;
+
+	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) override;
+	virtual agpu_bool hasTopLeftNdcOrigin() override;
+	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
+	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
+
+	virtual agpu::vr_system_ptr getVRSystem() override;
+
+public:
     OpenGLVersion versionNumber;
     int glslVersionNumber;
     std::string rendererString, shaderString;
     std::string extensions;
 
-    agpu_command_queue *defaultCommandQueue;
+    agpu::command_queue_ref defaultCommandQueue;
 
 	// Debugging options.
 	bool dumpShaders;
@@ -288,5 +312,7 @@ public:
     PFNGLFLUSHMAPPEDBUFFERRANGEPROC glFlushMappedBufferRange;
     PFNGLMEMORYBARRIERPROC glMemoryBarrier;
 };
+
+} // End of namespace AgpuGL
 
 #endif //_AGPU_DEVICE_HPP_

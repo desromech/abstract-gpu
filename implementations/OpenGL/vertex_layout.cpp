@@ -1,22 +1,25 @@
 #include "vertex_layout.hpp"
 
-_agpu_vertex_layout::_agpu_vertex_layout()
+namespace AgpuGL
+{
+
+GLVertexLayout::GLVertexLayout()
 {
     vertexBufferCount = 0;
 }
 
-void _agpu_vertex_layout::lostReferences()
+GLVertexLayout::~GLVertexLayout()
 {
 }
 
-agpu_vertex_layout *_agpu_vertex_layout::createVertexLayout(agpu_device *device)
+agpu::vertex_layout_ref GLVertexLayout::createVertexLayout(const agpu::device_ref &device)
 {
-    auto layout = new agpu_vertex_layout();
-    layout->device = device;
-    return layout;
+    auto result = agpu::makeObject<GLVertexLayout> ();
+    result.as<GLVertexLayout> ()->device = device;
+    return result;
 }
 
-agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size *vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
+agpu_error GLVertexLayout::addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size *vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
 {
     vertexBufferCount = vertex_buffer_count;
     this->strides.reserve(vertex_buffer_count);
@@ -29,21 +32,4 @@ agpu_error _agpu_vertex_layout::addVertexAttributeBindings(agpu_uint vertex_buff
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddVertexLayoutReference(agpu_vertex_layout* vertex_layout)
-{
-    CHECK_POINTER(vertex_layout);
-    return vertex_layout->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseVertexLayout(agpu_vertex_layout* vertex_layout)
-{
-    CHECK_POINTER(vertex_layout);
-    return vertex_layout->release();
-}
-
-AGPU_EXPORT agpu_error agpuAddVertexAttributeBindings(agpu_vertex_layout* vertex_layout, agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
-{
-    CHECK_POINTER(vertex_layout);
-    return vertex_layout->addVertexAttributeBindings(vertex_buffer_count, vertex_strides, attribute_count, attributes);
-}
+} // End of namespace AgpuGL

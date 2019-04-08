@@ -4,6 +4,9 @@
 #include "texture.hpp"
 #include "texture_formats.hpp"
 
+namespace AgpuGL
+{
+
 BufferTextureTransferLayout BufferTextureTransferLayout::fromDescriptionAndLevel(const agpu_texture_description &description, int level)
 {
     BufferTextureTransferLayout result;
@@ -45,50 +48,50 @@ void BufferTextureTransferLayout::setFromDescriptionAndLevel(const agpu_texture_
     }
 }
 
-void _agpu_texture::allocateTexture1D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
+void GLTexture::allocateTexture1D(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
     if(description->depthOrArraySize > 1)
-        device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->depthOrArraySize);
+        deviceForGL->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->depthOrArraySize);
     else
-        device->glTexStorage1D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width);
+        deviceForGL->glTexStorage1D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width);
 }
 
-void _agpu_texture::allocateTexture2D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
+void GLTexture::allocateTexture2D(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
     if(description->sample_count > 1)
     {
-        device->glTexStorage2DMultisample(target, description->sample_count, mapInternalTextureFormat(description->format), description->width, description->height, GL_FALSE);
+        deviceForGL->glTexStorage2DMultisample(target, description->sample_count, mapInternalTextureFormat(description->format), description->width, description->height, GL_FALSE);
     }
     else
     {
         if(description->depthOrArraySize > 1)
-            device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+            deviceForGL->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
         else
-            device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
+            deviceForGL->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
     }
 }
 
-void _agpu_texture::allocateTexture3D(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
+void GLTexture::allocateTexture3D(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    device->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+    deviceForGL->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
 }
 
-void _agpu_texture::allocateTextureCube(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
+void GLTexture::allocateTextureCube(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    device->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
+    deviceForGL->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
 }
 
-void _agpu_texture::allocateTextureBuffer(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
+void GLTexture::allocateTextureBuffer(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
     // Do nothing here.
 }
 
-void _agpu_texture::allocateTexture(agpu_device *device, GLuint handle, GLenum target, agpu_texture_description *description)
+void GLTexture::allocateTexture(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     switch(description->type)
     {
@@ -107,56 +110,57 @@ void _agpu_texture::allocateTexture(agpu_device *device, GLuint handle, GLenum t
     }
 }
 
-_agpu_texture::_agpu_texture()
+GLTexture::GLTexture()
     : transferBuffer(0), mappedLevel(0), mappedPointer(nullptr)
 {
 }
 
-void _agpu_texture::lostReferences()
+GLTexture::~GLTexture()
 {
-    device->onMainContextBlocking([&]() {
+    deviceForGL->onMainContextBlocking([&]() {
         if(transferBuffer)
         {
-            device->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-            device->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-            device->glDeleteBuffers(1, &transferBuffer);
+            deviceForGL->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+            deviceForGL->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+            deviceForGL->glDeleteBuffers(1, &transferBuffer);
         }
         glDeleteTextures(1, &handle);
     });
 }
 
-agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_description *description)
+agpu::texture_ref GLTexture::create(const agpu::device_ref &device, agpu_texture_description *description)
 {
     GLuint handle;
     GLenum target = findTextureTarget(description);
 
-    device->onMainContextBlocking([&]() {
+    deviceForGL->onMainContextBlocking([&]() {
         glGenTextures(1, &handle);
         allocateTexture(device, handle, target, description);
         glFinish();
     });
 
-    auto texture = new agpu_texture();
+    auto result = agpu::makeObject<GLTexture> ();
+    auto texture = result.as<GLTexture> ();
     texture->device = device;
     texture->handle = handle;
     texture->target = target;
     texture->description = *description;
     texture->isCompressed = isCompressedTextureFormat(description->format);
-    return texture;
+    return result;
 }
 
 
-void _agpu_texture::createTransferBuffer(GLenum target)
+void GLTexture::createTransferBuffer(GLenum target)
 {
     auto bufferSize = BufferTextureTransferLayout::fromDescriptionAndLevel(description, 0).size;
-    device->glGenBuffers(1, &transferBuffer);
-    device->glBindBuffer(target, transferBuffer);
-    device->glBufferStorage(target, bufferSize, nullptr, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT |  GL_CLIENT_STORAGE_BIT);
+    deviceForGL->glGenBuffers(1, &transferBuffer);
+    deviceForGL->glBindBuffer(target, transferBuffer);
+    deviceForGL->glBufferStorage(target, bufferSize, nullptr, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT |  GL_CLIENT_STORAGE_BIT);
 }
 
-void _agpu_texture::performTransferToCpu(int level)
+void GLTexture::performTransferToCpu(int level)
 {
-    device->glBindBuffer(GL_PIXEL_PACK_BUFFER, transferBuffer);
+    deviceForGL->glBindBuffer(GL_PIXEL_PACK_BUFFER, transferBuffer);
     glBindTexture(target, handle);
     bool isArray = description.depthOrArraySize > 1;
     if(isArray)
@@ -172,12 +176,12 @@ void _agpu_texture::performTransferToCpu(int level)
     }
     glFinish();
 
-    device->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    deviceForGL->glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
-void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
+void GLTexture::performTransferToGpu(int level, int arrayIndex)
 {
-    device->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, transferBuffer);
+    deviceForGL->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, transferBuffer);
     glBindTexture(target, handle);
     auto transferLayout = BufferTextureTransferLayout::fromDescriptionAndLevel(description, level);
     bool isArray = description.depthOrArraySize > 1;
@@ -206,14 +210,14 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
         if(isCompressed)
         {
             if(isArray)
-                device->glCompressedTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+                deviceForGL->glCompressedTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapInternalTextureFormat(description.format), transferLayout.size, 0);
             else
-                device->glCompressedTexSubImage2D(target, level, 0, 0, width, height, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+                deviceForGL->glCompressedTexSubImage2D(target, level, 0, 0, width, height, mapInternalTextureFormat(description.format), transferLayout.size, 0);
         }
         else
         {
             if(isArray)
-                device->glTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+                deviceForGL->glTexSubImage3D(target, level, 0, 0, arrayIndex, width, height, 1, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
             else
                 glTexSubImage2D(target, level, 0, 0, width, height, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
         }
@@ -221,11 +225,11 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
     case AGPU_TEXTURE_3D:
         if(isCompressed)
         {
-            device->glCompressedTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+            deviceForGL->glCompressedTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapInternalTextureFormat(description.format), transferLayout.size, 0);
         }
         else
         {
-            device->glTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
+            deviceForGL->glTexSubImage3D(target, level, 0, 0, 0, width, height, depth, mapExternalFormat(description.format), mapExternalFormatType(description.format), 0);
         }
         break;
     case AGPU_TEXTURE_CUBE:
@@ -237,7 +241,7 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
             }
             else
             {
-                device->glCompressedTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + arrayIndex, level, 0, 0, width, height, mapInternalTextureFormat(description.format), transferLayout.size, 0);
+                deviceForGL->glCompressedTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + arrayIndex, level, 0, 0, width, height, mapInternalTextureFormat(description.format), transferLayout.size, 0);
             }
         }
         else
@@ -257,10 +261,10 @@ void _agpu_texture::performTransferToGpu(int level, int arrayIndex)
     }
 
     glFinish();
-    device->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    deviceForGL->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
-agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
+agpu_pointer GLTexture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
 {
     if(mappedPointer)
         return mappedPointer;
@@ -273,16 +277,16 @@ agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu
     GLenum target = isWrite ? GL_PIXEL_UNPACK_BUFFER : GL_PIXEL_PACK_BUFFER;
     GLenum access = mapMappingAccess(mappingAccess);
 
-    device->onMainContextBlocking([&]() {
+    deviceForGL->onMainContextBlocking([&]() {
         if(!transferBuffer)
             createTransferBuffer(GL_PIXEL_PACK_BUFFER);
 
         if(isRead)
             performTransferToCpu(level);
 
-        device->glBindBuffer(target, transferBuffer);
-        mappedPointer = device->glMapBuffer(target, access);
-        device->glBindBuffer(target, 0);
+        deviceForGL->glBindBuffer(target, transferBuffer);
+        mappedPointer = deviceForGL->glMapBuffer(target, access);
+        deviceForGL->glBindBuffer(target, 0);
     });
 
     mappedArrayIndex = arrayIndex;
@@ -290,7 +294,7 @@ agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu
     return mappedPointer;
 }
 
-agpu_error _agpu_texture::unmapLevel ( )
+agpu_error GLTexture::unmapLevel ( )
 {
     if(!mappedPointer)
         return AGPU_INVALID_OPERATION;
@@ -299,10 +303,10 @@ agpu_error _agpu_texture::unmapLevel ( )
     bool isWrite = mappingAccess == AGPU_WRITE_ONLY || mappingAccess == AGPU_READ_WRITE;
     GLenum target = isWrite ? GL_PIXEL_UNPACK_BUFFER : GL_PIXEL_PACK_BUFFER;
 
-    device->onMainContextBlocking([&]() {
-        device->glBindBuffer(target, transferBuffer);
-        device->glUnmapBuffer(target);
-        device->glBindBuffer(target, 0);
+    deviceForGL->onMainContextBlocking([&]() {
+        deviceForGL->glBindBuffer(target, transferBuffer);
+        deviceForGL->glUnmapBuffer(target);
+        deviceForGL->glBindBuffer(target, 0);
 
         if(isWrite)
             performTransferToGpu(mappedLevel, mappedArrayIndex);
@@ -312,7 +316,7 @@ agpu_error _agpu_texture::unmapLevel ( )
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int dstPitch, agpu_int slicePitch, agpu_pointer data )
+agpu_error GLTexture::readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int dstPitch, agpu_int slicePitch, agpu_pointer data )
 {
     CHECK_POINTER(data);
     auto src = reinterpret_cast<uint8_t*> (mapLevel(level, arrayIndex, AGPU_READ_ONLY, nullptr));
@@ -342,12 +346,12 @@ agpu_error _agpu_texture::readTextureData ( agpu_int level, agpu_int arrayIndex,
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+agpu_error GLTexture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
     return uploadTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, data);
 }
 
-agpu_error _agpu_texture::uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+agpu_error GLTexture::uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
 {
     auto dst = reinterpret_cast<uint8_t*> (mapLevel(level, arrayIndex, AGPU_WRITE_ONLY, destRegion));
     if(!dst)
@@ -383,22 +387,22 @@ agpu_error _agpu_texture::uploadTextureSubData ( agpu_int level, agpu_int arrayI
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::discardUploadBuffer()
+agpu_error GLTexture::discardUploadBuffer()
 {
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::discardReadbackBuffer()
+agpu_error GLTexture::discardReadbackBuffer()
 {
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *viewDescription)
+agpu_error GLTexture::getFullViewDescription(agpu_texture_view_description *viewDescription)
 {
     CHECK_POINTER(viewDescription);
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
-    viewDescription->texture = this;
+    viewDescription->texture = reinterpret_cast<agpu_texture*> (refFromThis().asPtrWithoutNewRef());
     viewDescription->format = description.format;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
@@ -412,74 +416,11 @@ agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *
     return AGPU_OK;
 }
 
-// Exported C interface.
-AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
+agpu_error GLTexture::getDescription(agpu_texture_description* description)
 {
-    CHECK_POINTER(texture);
-    return texture->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->release();
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description )
-{
-    CHECK_POINTER(texture);
     CHECK_POINTER(description);
-
-    *description = texture->description;
+    *description = this->description;
     return AGPU_OK;
 }
 
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
-{
-    if(!texture)
-        return nullptr;
-
-    return texture->mapLevel(level, arrayIndex, flags, region);
-}
-
-AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->unmapLevel();
-}
-
-AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
-{
-    CHECK_POINTER(texture);
-    return texture->readTextureData(level, arrayIndex, pitch, slicePitch, data);
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
-{
-    CHECK_POINTER(texture);
-    return texture->uploadTextureData(level, arrayIndex, pitch, slicePitch, data);
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
-{
-    CHECK_POINTER(texture);
-    return texture->uploadTextureSubData ( level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data );
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* texture)
-{
-    CHECK_POINTER(texture);
-    return texture->discardUploadBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* texture)
-{
-    CHECK_POINTER(texture);
-    return texture->discardReadbackBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description *description)
-{
-    CHECK_POINTER(texture);
-    return texture->getFullViewDescription(description);
-}
+} // End of namespace AgpuGL

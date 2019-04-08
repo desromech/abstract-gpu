@@ -18,15 +18,13 @@ set(AGPU_OpenGL_SOURCES
     fence.hpp
     framebuffer.cpp
     framebuffer.hpp
-    icd.c
+    icd.cpp
     job_queue.hpp
-    object.hpp
     pipeline_builder.cpp
     pipeline_builder.hpp
     pipeline_state.cpp
     pipeline_state.hpp
     platform.cpp
-    platform.hpp
     renderpass.cpp
     renderpass.hpp
     shader.cpp
@@ -46,7 +44,6 @@ set(AGPU_OpenGL_SOURCES
     vertex_binding.hpp
     vertex_layout.cpp
     vertex_layout.hpp
-    ../Common/dummy_vr.cpp
 )
 
 include_directories(${OPENGL_INCLUDE_DIR})

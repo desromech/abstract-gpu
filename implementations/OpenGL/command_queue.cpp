@@ -2,6 +2,9 @@
 #include "command_list.hpp"
 #include "fence.hpp"
 
+namespace AgpuGL
+{
+
 class GpuCommand
 {
 public:
@@ -51,7 +54,7 @@ public:
 class GpuSignalFenceCommand: public GpuCommand
 {
 public:
-    GpuSignalFenceCommand(agpu_fence *fence)
+    GpuSignalFenceCommand(const agpu::fence_ref &fence)
         : fence(fence), signaled(false)
     {
 
@@ -59,53 +62,54 @@ public:
 
     virtual void execute()
     {
-        std::unique_lock<std::mutex> l(fence->mutex);
+        auto glFence = fence.as<GLFence> ();
+        std::unique_lock<std::mutex> l(glFence->mutex);
 
-        auto device = OpenGLContext::getCurrent()->device;
-        if(fence->fenceObject)
-            device->glDeleteSync(fence->fenceObject);
+        auto device = OpenGLContext::getCurrent()->weakDevice.lock();
+        if(glFence->fenceObject)
+            deviceForGL->glDeleteSync(glFence->fenceObject);
 
-        fence->fenceObject = device->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        glFence->fenceObject = deviceForGL->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         glFlush();
     }
 
     virtual void destroy()
     {
-        std::unique_lock<std::mutex> l(fence->mutex);
+        auto glFence = fence.as<GLFence> ();
+        std::unique_lock<std::mutex> l(glFence->mutex);
         signaled = true;
-        fence->sendCommandCondition.notify_all();
+        glFence->sendCommandCondition.notify_all();
     }
 
     void wait()
     {
+        auto glFence = fence.as<GLFence> ();
         {
-            std::unique_lock<std::mutex> l(fence->mutex);
+            std::unique_lock<std::mutex> l(glFence->mutex);
             while(!signaled)
-                fence->sendCommandCondition.wait(l);
+                glFence->sendCommandCondition.wait(l);
         }
     }
 
-    agpu_fence *fence;
+    agpu::fence_ref fence;
     bool signaled;
 };
 
 class GpuExecuteCommandList: public GpuCommand
 {
 public:
-    GpuExecuteCommandList(agpu_command_list *command_list)
+    GpuExecuteCommandList(const agpu::command_list_ref &command_list)
         : command_list(command_list)
     {
-        command_list->retain();
     }
 
     ~GpuExecuteCommandList()
     {
-        command_list->release();
     }
 
     virtual void execute()
     {
-        command_list->execute();
+        command_list.as<GLCommandList> ()->execute();
     }
 
     virtual void destroy()
@@ -113,7 +117,7 @@ public:
         delete this;
     }
 
-    agpu_command_list *command_list;
+    agpu::command_list_ref command_list;
 };
 
 class GpuCustomCommand : public GpuCommand
@@ -141,43 +145,43 @@ public:
     std::function<void()> command;
 };
 
-_agpu_command_queue::_agpu_command_queue()
+GLCommandQueue::GLCommandQueue()
 {
 }
 
-agpu_command_queue *_agpu_command_queue::create(agpu_device *device)
-{
-	auto queue = new _agpu_command_queue();
-    queue->device = device;
-	return queue;
-}
-
-void _agpu_command_queue::lostReferences()
+GLCommandQueue::~GLCommandQueue()
 {
 }
 
-agpu_error _agpu_command_queue::addCommandList ( agpu_command_list* command_list )
+agpu::command_queue_ref GLCommandQueue::create(const agpu::device_ref &device)
+{
+	auto result = agpu::makeObject<GLCommandQueue> ();
+    result.as<GLCommandQueue> ()->weakDevice = device;
+	return result;
+}
+
+agpu_error GLCommandQueue::addCommandList(const agpu::command_list_ref &command_list)
 {
 	CHECK_POINTER(command_list);
     addCommand(new GpuExecuteCommandList(command_list));
 	return AGPU_OK;
 }
 
-agpu_error _agpu_command_queue::addCustomCommand(const std::function<void()> &command)
+agpu_error GLCommandQueue::addCustomCommand(const std::function<void()> &command)
 {
     addCommand(new GpuCustomCommand(command));
     return AGPU_OK;
 }
 
-void _agpu_command_queue::addCommand(GpuCommand *command)
+void GLCommandQueue::addCommand(GpuCommand *command)
 {
-    device->mainContextJobQueue.addJob(new AsyncJob([=] {
+    lockWeakDeviceForGL->mainContextJobQueue.addJob(new AsyncJob([=] {
         command->execute();
         command->destroy();
     }, true));
 }
 
-agpu_error _agpu_command_queue::finish()
+agpu_error GLCommandQueue::finishExecution()
 {
     GpuFinishCommand finishCommand;
     addCommand(&finishCommand);
@@ -185,7 +189,7 @@ agpu_error _agpu_command_queue::finish()
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_queue::signalFence ( agpu_fence* fence )
+agpu_error GLCommandQueue::signalFence(const agpu::fence_ref &fence )
 {
     GpuSignalFenceCommand signalCommand(fence);
     addCommand(&signalCommand);
@@ -193,53 +197,20 @@ agpu_error _agpu_command_queue::signalFence ( agpu_fence* fence )
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_queue::waitFence ( agpu_fence* fence )
+agpu_error GLCommandQueue::waitFence(const agpu::fence_ref &fence )
 {
     GLsync fenceObject = nullptr;
     {
-        std::unique_lock<std::mutex> l(fence->mutex);
-        fenceObject = fence->fenceObject;
+        auto glFence = fence.as<GLFence> ();
+        std::unique_lock<std::mutex> l(glFence->mutex);
+        fenceObject = glFence->fenceObject;
     }
     if(fenceObject)
         addCustomCommand([=]() {
             glFlush();
-            device->glWaitSync(fenceObject, 0, -1);
+            lockWeakDeviceForGL->glWaitSync(fenceObject, 0, -1);
         });
     return AGPU_OK;
 }
 
-AGPU_EXPORT agpu_error agpuAddCommandQueueReference ( agpu_command_queue* command_queue )
-{
-	CHECK_POINTER(command_queue);
-	return command_queue->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseCommandQueue ( agpu_command_queue* command_queue )
-{
-	CHECK_POINTER(command_queue);
-	return command_queue->release();
-}
-
-AGPU_EXPORT agpu_error agpuAddCommandList ( agpu_command_queue* command_queue, agpu_command_list* command_list )
-{
-	CHECK_POINTER(command_queue);
-	return command_queue->addCommandList(command_list);
-}
-
-AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queue)
-{
-    CHECK_POINTER(command_queue);
-	return command_queue->finish();
-}
-
-AGPU_EXPORT agpu_error agpuSignalFence ( agpu_command_queue* command_queue, agpu_fence* fence )
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->signalFence(fence);
-}
-
-AGPU_EXPORT agpu_error agpuWaitFence ( agpu_command_queue* command_queue, agpu_fence* fence )
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->waitFence(fence);
-}
+} // End of namespace AgpuGL

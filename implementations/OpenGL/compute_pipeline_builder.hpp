@@ -7,30 +7,36 @@
 #include <string>
 #include <set>
 
-struct _agpu_compute_pipeline_builder : public Object<_agpu_compute_pipeline_builder>
+namespace AgpuGL
 {
-    _agpu_compute_pipeline_builder(agpu_device *device);
-    void lostReferences();
 
-    static _agpu_compute_pipeline_builder *create(agpu_device *device);
+struct GLComputePipelineBuilder : public agpu::compute_pipeline_builder
+{
+public:
+    GLComputePipelineBuilder(const agpu::device_ref &device);
+    ~GLComputePipelineBuilder();
 
-    agpu_pipeline_state* build ();
-    agpu_error attachShader ( agpu_shader* shader );
-    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
-    agpu_size getBuildingLogLength( );
-    agpu_error getBuildingLog( agpu_size buffer_size, agpu_string_buffer buffer );
-    agpu_error setShaderSignature ( agpu_shader_signature* newSignature );
+    static agpu::compute_pipeline_builder_ref create(const agpu::device_ref &device);
 
-    agpu_device *device;
+    virtual agpu::pipeline_state_ptr build() override;
+    virtual agpu_error attachShader(const agpu::shader_ref &shader ) override;
+    virtual agpu_error attachShaderWithEntryPoint(const agpu::shader_ref &shader, agpu_shader_type type, agpu_cstring entry_point) override;
+    virtual agpu_size getBuildingLogLength() override;
+    virtual agpu_error getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
+    virtual agpu_error setShaderSignature (const agpu::shader_signature_ref &newSignature) override;
+
+    agpu::device_ref device;
 
 private:
-    agpu_shader* shader;
-    agpu_shader_signature* shaderSignature;
+    agpu::shader_ref shader;
+    agpu::shader_signature_ref shaderSignature;
     std::string shaderEntryPointName;
     std::string errorMessages;
 
 private:
 	void buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations);
 };
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_OPENGL_COMPUTE_PIPELINE_BUILDER_HPP

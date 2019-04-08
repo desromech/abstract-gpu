@@ -4,12 +4,15 @@
 #include "device.hpp"
 #include <vector>
 
+namespace AgpuGL
+{
+
 struct BufferBinding
 {
     BufferBinding()
-        : buffer(nullptr), range(false), offset(0), size(-1) {}
+        : range(false), offset(0), size(-1) {}
 
-    agpu_buffer *buffer;
+    agpu::buffer_ref buffer;
     bool range;
     size_t offset;
     size_t size;
@@ -17,31 +20,29 @@ struct BufferBinding
 
 struct TextureBinding
 {
-    TextureBinding()
-        : texture(nullptr) {}
+    TextureBinding() {}
 
-    agpu_texture *texture;
+    agpu::texture_ref texture;
     agpu_uint startMiplevel;
     agpu_int miplevels;
     agpu_float lodClamp;
 };
 
-struct _agpu_shader_resource_binding : public Object<_agpu_shader_resource_binding>
+struct GLShaderResourceBinding : public agpu::shader_resource_binding
 {
 public:
-    _agpu_shader_resource_binding();
+    GLShaderResourceBinding();
+    ~GLShaderResourceBinding();
 
-    void lostReferences();
+    static agpu::shader_resource_binding_ref create(const agpu::shader_signature_ref &signature, int elementIndex);
 
-    static agpu_shader_resource_binding *create(agpu_shader_signature *signature, int elementIndex);
-
-    agpu_error bindUniformBuffer ( agpu_int location, agpu_buffer* uniform_buffer );
-    agpu_error bindUniformBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
-    agpu_error bindStorageBuffer ( agpu_int location, agpu_buffer* uniform_buffer );
-    agpu_error bindStorageBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size );
-    agpu_error bindTexture ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp );
-    agpu_error bindTextureArrayRange ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp );
-    agpu_error bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format);
+    virtual agpu_error bindUniformBuffer(agpu_int location, const agpu::buffer_ref &uniform_buffer) override;
+    virtual agpu_error bindUniformBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size) override;
+    virtual agpu_error bindStorageBuffer(agpu_int location, const agpu::buffer_ref &uniform_buffer) override;
+    virtual agpu_error bindStorageBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size) override;
+    virtual agpu_error bindTexture(agpu_int location, const agpu::texture_ref& texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp) override;
+    virtual agpu_error bindTextureArrayRange(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp) override;
+    virtual agpu_error bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format) override;
 
     TextureBinding *getTextureBindingAt(agpu_int location);
     GLuint getSamplerAt(agpu_int location);
@@ -52,8 +53,8 @@ public:
 public:
     void activate();
 
-    agpu_device *device;
-    agpu_shader_signature *signature;
+    agpu::device_ref device;
+    agpu::shader_signature_ref signature;
     int elementIndex;
 
 private:
@@ -65,11 +66,12 @@ private:
     void activateSampledImages();
     void activateSamplers();
 
-    std::mutex bindMutex;
     std::vector<BufferBinding> uniformBuffers;
     std::vector<BufferBinding> storageBuffers;
     std::vector<TextureBinding> sampledImages;
     std::vector<GLuint> samplers;
 };
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_GL_SHADER_RESOURCE_BINDING_HPP

@@ -8,29 +8,33 @@
 
 #include "device.hpp"
 
+namespace AgpuGL
+{
+
 class GpuCommand;
 
-struct _agpu_command_queue: public Object<_agpu_command_queue>
+struct GLCommandQueue: public agpu::command_queue
 {
 public:
-    _agpu_command_queue();
+    GLCommandQueue();
+    ~GLCommandQueue();
 
-    static agpu_command_queue *create(agpu_device *device);
+    static agpu::command_queue_ref create(const agpu::device_ref &device);
 
     agpu_error addCustomCommand(const std::function<void()> &command);
 
-    void lostReferences();
-    agpu_error addCommandList ( agpu_command_list* command_list );
-    agpu_error finish();
-    agpu_error signalFence ( agpu_fence* fence );
-    agpu_error waitFence ( agpu_fence* fence );
+    virtual agpu_error addCommandList (const agpu::command_list_ref &command_list) override;
+    virtual agpu_error finishExecution() override;
+    virtual agpu_error signalFence(const agpu::fence_ref &fence) override;
+    virtual agpu_error waitFence(const agpu::fence_ref &fence) override;
 
 
 public:
     void addCommand(GpuCommand *command);
 
-    agpu_device *device;
+    agpu::device_weakref weakDevice;
 };
 
+} // End of namespace AgpuGL
 
 #endif //AGPU_COMMAND_QUEUE_HPP_

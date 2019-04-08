@@ -7,18 +7,22 @@
 #include <set>
 #include <algorithm>
 
-void processTextureWithSamplerCombinations(const std::set<TextureWithSamplerCombination> &rawTextureSamplerCombinations, agpu_shader_signature *shaderSignature, TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
+namespace AgpuGL
+{
+
+void processTextureWithSamplerCombinations(const std::set<TextureWithSamplerCombination> &rawTextureSamplerCombinations, const agpu::shader_signature_ref &shaderSignature, TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
 {
 	// Split between natural pairs, and non-natural pairs.
 	std::vector<MappedTextureWithSamplerCombination> naturalTextureWithSamplerCombinations;
 	std::vector<MappedTextureWithSamplerCombination> nonNaturalTextureWithSamplerCombinations;
+	auto glShaderSignature = shaderSignature.as<GLShaderSignature> ();
 	for (auto & combination : rawTextureSamplerCombinations)
 	{
-		int textureUnit = shaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
+		int textureUnit = glShaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
 		if (textureUnit < 0)
 			return;
 
-		int sampler = shaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
+		int sampler = glShaderSignature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
 		if (sampler < 0)
 			return;
 
@@ -34,7 +38,7 @@ void processTextureWithSamplerCombinations(const std::set<TextureWithSamplerComb
 			nonNaturalTextureWithSamplerCombinations.push_back(mappedCombination);
 	}
 
-	auto naturalTextureUnitCount = shaderSignature->bindingPointsUsed[(int)OpenGLResourceBindingType::Sampler];
+	auto naturalTextureUnitCount = glShaderSignature->bindingPointsUsed[(int)OpenGLResourceBindingType::Sampler];
 
 	// Assign the natural pairs
 	usedCombinations.reserve(naturalTextureWithSamplerCombinations.size() + nonNaturalTextureWithSamplerCombinations.size());
@@ -59,10 +63,8 @@ void processTextureWithSamplerCombinations(const std::set<TextureWithSamplerComb
 	}
 }
 
-_agpu_pipeline_builder::_agpu_pipeline_builder()
+GLGraphicsPipelineBuilder::GLGraphicsPipelineBuilder()
 {
-    shaderSignature = nullptr;
-
     // Depth buffer
     depthEnabled = false;
     depthWriteMask = true;
@@ -116,34 +118,27 @@ _agpu_pipeline_builder::_agpu_pipeline_builder()
     primitiveType = AGPU_POINTS;
 }
 
-void _agpu_pipeline_builder::lostReferences()
+GLGraphicsPipelineBuilder::~GLGraphicsPipelineBuilder()
 {
-    if (shaderSignature)
-        shaderSignature->release();
-    for(auto &shaderAndEntryPoint : shaders)
-    {
-        shaderAndEntryPoint.first->release();
-    }
 }
 
-agpu_pipeline_builder *_agpu_pipeline_builder::createBuilder(agpu_device *device)
+agpu::pipeline_builder_ref GLGraphicsPipelineBuilder::createBuilder(const agpu::device_ref &device)
 {
-	auto builder = new agpu_pipeline_builder();
+	auto result = agpu::makeObject<GLGraphicsPipelineBuilder> ();
+	auto builder = result.as<GLGraphicsPipelineBuilder> ();
 	builder->device = device;
 	builder->reset();
-	return builder;
+	return result;
 }
 
-agpu_error _agpu_pipeline_builder::reset()
+agpu_error GLGraphicsPipelineBuilder::reset()
 {
-    for(auto &shaderWithEntryPoint : shaders)
-		shaderWithEntryPoint.first->release();
     shaders.clear();
     errorMessages.clear();
 	return AGPU_OK;
 }
 
-void _agpu_pipeline_builder::buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
+void GLGraphicsPipelineBuilder::buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
 {
     std::set<TextureWithSamplerCombination> rawTextureSamplerCombinations;
 
@@ -154,19 +149,19 @@ void _agpu_pipeline_builder::buildTextureWithSampleCombinationMapInto(TextureWit
         if(!shader)
             continue;
 
-        for (auto combination : shader->getTextureWithSamplerCombination(shaderWithEntryPoint.second))
+        for (auto combination : shader.as<GLShader>()->getTextureWithSamplerCombination(shaderWithEntryPoint.second))
             rawTextureSamplerCombinations.insert(combination);
     }
 
 	processTextureWithSamplerCombinations(rawTextureSamplerCombinations, shaderSignature, map, usedCombinations);
 }
 
-agpu_pipeline_state* _agpu_pipeline_builder::build ()
+agpu::pipeline_state_ptr GLGraphicsPipelineBuilder::build ()
 {
     GLuint program = 0;
 	GLint baseInstanceUniformIndex = -1;
     bool succeded = true;
-    std::vector<agpu_shader_forSignature*> shaderInstances;
+    std::vector<GLShaderForSignatureRef> shaderInstances;
     std::vector<MappedTextureWithSamplerCombination> mappedTextureWithSamplerCombinations;
     TextureWithSamplerCombinationMap textureWithSamplerCombinationMap;
 
@@ -177,18 +172,18 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
         // Instantiate the shaders
         for(auto &shaderWithEntryPoint : shaders)
         {
-            auto shader = shaderWithEntryPoint.first;
+            const auto &shader = shaderWithEntryPoint.first;
             if(!shaderSignature)
             {
                 errorMessages += "Missing shader signature.";
                 succeded = false;
                 break;
             }
-            agpu_shader_forSignature *shaderForSignature;
+            GLShaderForSignatureRef shaderForSignature;
             std::string errorMessage;
 
             // Create the shader instance.
-            auto error = shader->instanceForSignature(shaderSignature, textureWithSamplerCombinationMap, shaderWithEntryPoint.second, &shaderForSignature, &errorMessage);
+            auto error = shader.as<GLShader> ()->instanceForSignature(shaderSignature, textureWithSamplerCombinationMap, shaderWithEntryPoint.second, &shaderForSignature, &errorMessage);
             errorMessages += errorMessage;
             if(error != AGPU_OK)
             {
@@ -201,16 +196,12 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
         }
 
         if(!succeded)
-        {
-            for(auto instance : shaderInstances)
-                instance->release();
             return nullptr;
-        }
 
         succeded = false;
-        device->onMainContextBlocking([&]{
+        deviceForGL->onMainContextBlocking([&]{
             // Create the progrma
-            program = device->glCreateProgram();
+            program = deviceForGL->glCreateProgram();
 
             // Attach the shaders.
             for(auto shaderInstance : shaderInstances)
@@ -225,11 +216,11 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
             }
 
         	// Link the program.
-        	device->glLinkProgram(program);
+        	deviceForGL->glLinkProgram(program);
 
         	// Check the link status
         	GLint status;
-        	device->glGetProgramiv(program, GL_LINK_STATUS, &status);
+        	deviceForGL->glGetProgramiv(program, GL_LINK_STATUS, &status);
             if(status != GL_TRUE)
             {
 				// TODO: Get the info log
@@ -237,29 +228,24 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
             }
 
 			// Get some special uniforms
-			baseInstanceUniformIndex = device->glGetUniformLocation(program, "SPIRV_Cross_BaseInstance");
+			baseInstanceUniformIndex = deviceForGL->glGetUniformLocation(program, "SPIRV_Cross_BaseInstance");
 
             succeded = true;
         });
     }
 
 	if(!succeded)
-    {
-        for(auto instance : shaderInstances)
-            instance->release();
 		return nullptr;
-    }
 
 	// Create the pipeline state object
-	auto pipeline = new agpu_pipeline_state();
+	auto result = agpu::makeObject<GLPipelineState> ();
+	auto pipeline = result.as<GLPipelineState> ();
 	pipeline->device = device;
 	pipeline->programHandle = program;
 	pipeline->type = AgpuPipelineStateType::Graphics;
     pipeline->shaderSignature = shaderSignature;
     pipeline->shaderInstances = shaderInstances;
     pipeline->mappedTextureWithSamplerCombinations = mappedTextureWithSamplerCombinations;
-	if (shaderSignature)
-        shaderSignature->retain();
 
 	auto graphicsState = new AgpuGraphicsPipelineStateData();
 	graphicsState->device = device;
@@ -324,30 +310,29 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ()
 
     }
 
-	return pipeline;
+	return result.disown();
 }
 
-agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
+agpu_error GLGraphicsPipelineBuilder::attachShader(const agpu::shader_ref &shader )
 {
 	CHECK_POINTER(shader);
-	return attachShaderWithEntryPoint(shader, shader->type, "main");
+	return attachShaderWithEntryPoint(shader, shader.as<GLShader> ()->type, "main");
 }
 
-agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
+agpu_error GLGraphicsPipelineBuilder::attachShaderWithEntryPoint(const agpu::shader_ref &shader, agpu_shader_type type, agpu_cstring entry_point )
 {
 	CHECK_POINTER(shader);
 
-    shader->retain();
     shaders.push_back(std::make_pair(shader, entry_point));
 	return AGPU_OK;
 }
 
-agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
+agpu_size GLGraphicsPipelineBuilder::getBuildingLogLength (  )
 {
 	return (agpu_size)errorMessages.size();
 }
 
-agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+agpu_error GLGraphicsPipelineBuilder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
 {
     if(buffer_size == 0)
         return AGPU_OK;
@@ -359,24 +344,20 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
 	return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setShaderSignature(agpu_shader_signature* signature)
+agpu_error GLGraphicsPipelineBuilder::setShaderSignature(const agpu::shader_signature_ref &signature)
 {
     CHECK_POINTER(signature);
-
-    signature->retain();
-    if (shaderSignature)
-        shaderSignature->release();
     shaderSignature = signature;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
+agpu_error GLGraphicsPipelineBuilder::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
 {
     this->blendingEnabled = enabled;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+agpu_error GLGraphicsPipelineBuilder::setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
 {
     this->sourceBlendFactor = sourceFactor;
     this->destBlendFactor = destFactor;
@@ -387,7 +368,7 @@ agpu_error _agpu_pipeline_builder::setBlendFunction(agpu_int renderTargetMask, a
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+agpu_error GLGraphicsPipelineBuilder::setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
 {
     this->redMask = redEnabled;
     this->greenMask = greenEnabled;
@@ -396,19 +377,19 @@ agpu_error _agpu_pipeline_builder::setColorMask(agpu_int renderTargetMask, agpu_
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
+agpu_error GLGraphicsPipelineBuilder::setFrontFace ( agpu_face_winding winding )
 {
     this->frontFaceWinding = winding;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
+agpu_error GLGraphicsPipelineBuilder::setCullMode ( agpu_cull_mode mode )
 {
     this->cullingMode = mode;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+agpu_error GLGraphicsPipelineBuilder::setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
 {
     this->depthBiasEnabled = true;
     this->depthBiasConstantFactor = constant_factor;
@@ -417,7 +398,7 @@ agpu_error _agpu_pipeline_builder::setDepthBias ( agpu_float constant_factor, ag
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
+agpu_error GLGraphicsPipelineBuilder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
 {
     this->depthEnabled = enabled;
     this->depthWriteMask = writeMask;
@@ -425,7 +406,7 @@ agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool 
 	return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
+agpu_error GLGraphicsPipelineBuilder::setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
 {
     this->stencilEnabled = enabled;
     this->stencilWriteMask = writeMask;
@@ -433,7 +414,7 @@ agpu_error _agpu_pipeline_builder::setStencilState ( agpu_bool enabled, agpu_int
 	return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+agpu_error GLGraphicsPipelineBuilder::setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 {
     this->stencilFrontFailOp = stencilFailOperation;
     this->stencilFrontDepthFailOp = depthFailOperation;
@@ -442,7 +423,7 @@ agpu_error _agpu_pipeline_builder::setStencilFrontFace(agpu_stencil_operation st
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+agpu_error GLGraphicsPipelineBuilder::setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 {
     this->stencilBackFailOp = stencilFailOperation;
     this->stencilBackDepthFailOp = depthFailOperation;
@@ -451,13 +432,13 @@ agpu_error _agpu_pipeline_builder::setStencilBackFace(agpu_stencil_operation ste
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setRenderTargetCount(agpu_int count)
+agpu_error GLGraphicsPipelineBuilder::setRenderTargetCount(agpu_int count)
 {
     renderTargetFormats.resize(count, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
+agpu_error GLGraphicsPipelineBuilder::setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
 {
     if (index >= renderTargetFormats.size())
         return AGPU_INVALID_PARAMETER;
@@ -466,183 +447,33 @@ agpu_error _agpu_pipeline_builder::setRenderTargetFormat(agpu_uint index, agpu_t
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setDepthStencilFormat(agpu_texture_format format)
+agpu_error GLGraphicsPipelineBuilder::setDepthStencilFormat(agpu_texture_format format)
 {
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPolygonMode(agpu_polygon_mode mode)
+agpu_error GLGraphicsPipelineBuilder::setPolygonMode(agpu_polygon_mode mode)
 {
     this->polygonMode = mode;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPrimitiveType(agpu_primitive_topology type)
+agpu_error GLGraphicsPipelineBuilder::setPrimitiveType(agpu_primitive_topology type)
 {
     this->primitiveType = type;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setVertexLayout(agpu_vertex_layout* layout)
+agpu_error GLGraphicsPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &layout)
 {
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
+agpu_error GLGraphicsPipelineBuilder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
 {
 	this->sampleCount = sample_count;
 	this->sampleQuality = sample_quality;
     return AGPU_OK;
 }
 
-// C Interface
-AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipeline_builder )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature(agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setShaderSignature(signature);
-}
-
-AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState ( agpu_pipeline_builder* pipeline_builder )
-{
-    if (!pipeline_builder)
-        return nullptr;
-    return pipeline_builder->build();
-}
-
-AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->attachShader(shader);
-}
-
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
-}
-
-AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->getBuildingLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->getBuildingLog(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetBlendState(agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setBlendState(renderTargetMask, enabled);
-}
-
-AGPU_EXPORT agpu_error agpuSetBlendFunction(agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setBlendFunction(renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorMask(agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
-}
-
-AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setFrontFace(winding);
-}
-
-AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setCullMode(mode);
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setDepthBias(constant_factor, clamp, slope_factor);
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->setDepthState(enabled, writeMask, function);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->setStencilState(enabled, writeMask, readMask);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilFrontFace(agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setStencilFrontFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilBackFace(agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
-}
-
-AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count )
-{
-	CHECK_POINTER(pipeline_builder);
-	return pipeline_builder->setRenderTargetCount(count);
-}
-
-AGPU_EXPORT agpu_error agpuSetRenderTargetFormat(agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setRenderTargetFormat(index, format);
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthStencilFormat(agpu_pipeline_builder* pipeline_builder, agpu_texture_format format)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setDepthStencilFormat(format);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveType(agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setPrimitiveType(type);
-}
-
-AGPU_EXPORT agpu_error agpuSetVertexLayout(agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setVertexLayout(layout);
-}
-
-AGPU_EXPORT agpu_error agpuSetSampleDescription(agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setSampleDescription(sample_count, sample_quality);
-}
-
-AGPU_EXPORT agpu_error agpuSetPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setPolygonMode(mode);
-}
+} // End of namespace AgpuGL

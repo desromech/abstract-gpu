@@ -7,6 +7,9 @@
 #if defined(_WIN32)
 #include <GL/wglext.h>
 
+namespace AgpuGL
+{
+
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
 OpenGLContext::OpenGLContext()
@@ -166,7 +169,7 @@ static LRESULT CALLBACK dummyWindowProc(HWND hWnd, UINT message, WPARAM wParam, 
     return DefWindowProc(hWnd, message, wParam, lParam);;
 }
 
-void _agpu_device::setWindowPixelFormat(agpu_pointer window)
+void GLDevice::setWindowPixelFormat(agpu_pointer window)
 {
     auto hwnd = (HWND)window;
     auto dc = GetDC(hwnd);
@@ -216,7 +219,7 @@ void _agpu_device::setWindowPixelFormat(agpu_pointer window)
     }
 }
 
-agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+agpu_device *GLDevice::open(agpu_device_open_info* openInfo)
 {
     // Create the device.
     std::unique_ptr<agpu_device> device(new agpu_device);
@@ -411,5 +414,7 @@ bool agpu_device::makeCurrent()
     return wglMakeCurrent(hDC, context) == TRUE;
 }
 */
+
+} // End of namespace AgpuGL
 
 #endif

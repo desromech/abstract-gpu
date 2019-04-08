@@ -20,6 +20,9 @@
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
+namespace AgpuGL
+{
+
 std::string getStringFromEnvironment(const char *varname)
 {
 #ifdef _WIN32
@@ -97,21 +100,36 @@ bool OpenGLContext::isCurrent() const
 
 void OpenGLContext::finish()
 {
-    auto fence = device->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	auto device = weakDevice.lock();
+    auto fence = deviceForGL->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     glFlush();
 	GLenum waitReturn = GL_UNSIGNALED;
 	while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
-		waitReturn = device->glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
-    device->glDeleteSync(fence);
+		waitReturn = deviceForGL->glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+    deviceForGL->glDeleteSync(fence);
 }
 
-_agpu_device:: _agpu_device()
+GLDevice::GLDevice()
 {
+}
+
+GLDevice::~GLDevice()
+{
+    if(mainContext)
+    {
+        onMainContextBlocking([&]() {
+            mainContext->destroy();
+            delete mainContext;
+            mainContext = nullptr;
+        });
+    }
+
+    mainContextJobQueue.shutdown();
 }
 
 // Helper to check for extension string presence.  Adapted from:
 //   http://www.opengl.org/resources/features/OGLextensions/
-bool _agpu_device::isExtensionSupported(const char *extList, const char *extension)
+bool GLDevice::isExtensionSupported(const char *extList, const char *extension)
 {
     const char *start;
     const char *where, *terminator;
@@ -142,28 +160,12 @@ bool _agpu_device::isExtensionSupported(const char *extList, const char *extensi
     return false;
 }
 
-void _agpu_device::lostReferences()
-{
-    defaultCommandQueue->release();
-
-    if(mainContext)
-    {
-        onMainContextBlocking([&]() {
-            mainContext->destroy();
-            delete mainContext;
-            mainContext = nullptr;
-        });
-    }
-
-    mainContextJobQueue.shutdown();
-}
-
-bool _agpu_device::hasOpenGLExtension(const char *extension)
+bool GLDevice::hasOpenGLExtension(const char *extension)
 {
     return isExtensionSupported(extensions.c_str(), extension);
 }
 
-void _agpu_device::readVersionInformation()
+void GLDevice::readVersionInformation()
 {
     int majorVersion, minorVersion;
     glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
@@ -204,19 +206,19 @@ void _agpu_device::readVersionInformation()
     }
 }
 
-agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
+agpu_int GLDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
 {
     return 1;
 }
 
 
-void _agpu_device::checkEnvironmentVariables()
+void GLDevice::checkEnvironmentVariables()
 {
 	dumpShaders = getBooleanEnvironment("DUMP_SHADERS", false);
 	dumpShadersOnError = getBooleanEnvironment("DUMP_SHADERS_ON_ERROR", false);
 }
 
-void _agpu_device::loadExtensions()
+void GLDevice::loadExtensions()
 {
     isPersistentMemoryMappingSupported_ = false;
     isCoherentMemoryMappingSupported_ = false;
@@ -354,17 +356,109 @@ void _agpu_device::loadExtensions()
 
 }
 
-agpu_bool _agpu_device::hasBottomLeftTextureCoordinates()
+agpu::command_queue_ptr GLDevice::getDefaultCommandQueue()
+{
+	return defaultCommandQueue.disownedNewRef();
+}
+
+agpu::swap_chain_ptr GLDevice::createSwapChain(const agpu::command_queue_ref & commandQueue, agpu_swap_chain_create_info* swapChainInfo)
+{
+	return GLSwapChain::create(refFromThis<agpu::device> (), commandQueue, swapChainInfo).disown();
+}
+
+agpu::buffer_ptr GLDevice::createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
+{
+	if(!description)
+		return agpu::buffer_ptr();
+	return GLBuffer::createBuffer(refFromThis<agpu::device> (), *description, initial_data).disown();
+}
+
+agpu::vertex_layout_ptr GLDevice::createVertexLayout()
+{
+	return GLVertexLayout::createVertexLayout(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::vertex_binding_ptr GLDevice::createVertexBinding(const agpu::vertex_layout_ref & layout)
+{
+	return GLVertexBinding::createVertexBinding(refFromThis<agpu::device> (), layout).disown();
+}
+
+agpu::shader_ptr GLDevice::createShader(agpu_shader_type type)
+{
+	return GLShader::createShader(refFromThis<agpu::device> (), type).disown();
+}
+
+agpu::shader_signature_builder_ptr GLDevice::createShaderSignatureBuilder()
+{
+	return GLShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::pipeline_builder_ptr GLDevice::createPipelineBuilder()
+{
+	return GLGraphicsPipelineBuilder::createBuilder(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::compute_pipeline_builder_ptr GLDevice::createComputePipelineBuilder()
+{
+	return GLComputePipelineBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::command_allocator_ptr GLDevice::createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue)
+{
+	return GLCommandAllocator::create(refFromThis<agpu::device> (), type, queue).disown();
+}
+
+agpu::command_list_ptr GLDevice::createCommandList(agpu_command_list_type type, const agpu::command_allocator_ref & allocator, const agpu::pipeline_state_ref & initial_pipeline_state)
+{
+	return GLCommandList::create(refFromThis<agpu::device> (), type, allocator, initial_pipeline_state).disown();
+}
+
+agpu_shader_language GLDevice::getPreferredShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_GLSL;
+}
+
+agpu_shader_language GLDevice::getPreferredIntermediateShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
+agpu_shader_language GLDevice::getPreferredHighLevelShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_NONE;
+}
+
+agpu::framebuffer_ptr GLDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+{
+	return GLFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
+}
+
+agpu::renderpass_ptr GLDevice::createRenderPass(agpu_renderpass_description* description)
+{
+	return GLRenderPass::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::texture_ptr GLDevice::createTexture(agpu_texture_description* description)
+{
+	return GLTexture::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::fence_ptr GLDevice::createFence()
+{
+	return GLFence::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu_bool GLDevice::hasBottomLeftTextureCoordinates()
 {
     return true;
 }
 
-agpu_bool _agpu_device::hasTopLeftNdcOrigin()
+agpu_bool GLDevice::hasTopLeftNdcOrigin()
 {
     return false;//hasExtension_GL_ARB_clip_control;
 }
 
-void _agpu_device::initializeObjects()
+void GLDevice::initializeObjects()
 {
     readVersionInformation();
 	checkEnvironmentVariables();
@@ -372,12 +466,12 @@ void _agpu_device::initializeObjects()
     createDefaultCommandQueue();
 }
 
-void _agpu_device::createDefaultCommandQueue()
+void GLDevice::createDefaultCommandQueue()
 {
-    defaultCommandQueue = agpu_command_queue::create(this);
+    defaultCommandQueue = GLCommandQueue::create(refFromThis<agpu::device> ());
 }
 
-agpu_bool _agpu_device::isFeatureSupported (agpu_feature feature)
+agpu_bool GLDevice::isFeatureSupported (agpu_feature feature)
 {
     switch(feature)
     {
@@ -390,168 +484,9 @@ agpu_bool _agpu_device::isFeatureSupported (agpu_feature feature)
     }
 }
 
-AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device *device )
+agpu::vr_system_ptr GLDevice::getVRSystem()
 {
-    CHECK_POINTER(device);
-    return device->retain();
+	return nullptr;
 }
 
-AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device *device )
-{
-    CHECK_POINTER(device);
-    return device->release();
-}
-
-AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
-{
-    if (!device)
-        return nullptr;
-    return agpu_buffer::createBuffer(device, *description, initial_data);
-}
-
-AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_vertex_layout::createVertexLayout(device);
-}
-
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout* layout)
-{
-    if (!device)
-        return nullptr;
-    return agpu_vertex_binding::createVertexBinding(device, layout);
-}
-
-AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
-{
-    if (!device)
-        return nullptr;
-    return agpu_shader::createShader(device, type);
-}
-
-AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_shader_signature_builder::create(device);
-}
-
-AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device )
-{
-    if (!device)
-        return nullptr;
-    return agpu_pipeline_builder::createBuilder(device);
-}
-
-AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder(agpu_device* device)
-{
-	if (!device)
-		return nullptr;
-	return agpu_compute_pipeline_builder::create(device);
-}
-
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue *queue)
-{
-    if(!device)
-        return nullptr;
-    return agpu_command_allocator::create(device, type, queue);
-}
-
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
-{
-    if (!device)
-        return nullptr;
-    return agpu_command_list::create(device, type, allocator, initial_pipeline_state);
-}
-
-AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-
-    device->defaultCommandQueue->retain();
-    return device->defaultCommandQueue;
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_GLSL;
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_SPIR_V;
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_NONE;
-}
-
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
-{
-    if(!device)
-        return nullptr;
-    return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews)
-{
-    if(!device)
-        return nullptr;
-
-    return agpu_framebuffer::create(device, width, height, colorCount, colorView, depthStencilViews);
-}
-
-AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_renderpass_description* description)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_renderpass::create(device, description);
-}
-
-AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
-{
-    if(!device)
-        return nullptr;
-
-    return agpu_texture::create(device, description);
-}
-
-AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
-{
-    if(!device)
-        return nullptr;
-
-    return agpu_fence::create(device);
-}
-
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count)
-{
-    if (!device)
-        return 0;
-    return device->getMultiSampleQualityLevels(sample_count);
-}
-
-AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
-{
-    if (!device)
-        return false;
-    return device->hasBottomLeftTextureCoordinates();
-}
-
-AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
-{
-    if(!device)
-        return 0;
-    return device->hasTopLeftNdcOrigin();
-}
-
-AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )
-{
-    if(!device)
-        return false;
-    return device->isFeatureSupported(feature);
-}
+} // End of namespace AgpuGL

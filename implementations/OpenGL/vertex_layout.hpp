@@ -4,27 +4,30 @@
 #include <vector>
 #include "device.hpp"
 
+namespace AgpuGL
+{
+
 /**
 * Vertex binding
 */
-struct _agpu_vertex_layout : public Object<_agpu_vertex_layout>
+struct GLVertexLayout : public agpu::vertex_layout
 {
 public:
-    _agpu_vertex_layout();
+    GLVertexLayout();
+    ~GLVertexLayout();
 
-    void lostReferences();
+    static agpu::vertex_layout_ref createVertexLayout(const agpu::device_ref &device);
 
-    static agpu_vertex_layout *createVertexLayout(agpu_device *device);
-
-    agpu_error addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes);
+    virtual agpu_error addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes) override;
 
 public:
-    agpu_device *device;
-    agpu_vertex_layout *vertexLayout;
+    agpu::device_ref device;
 
     agpu_uint vertexBufferCount;
     std::vector<agpu_vertex_attrib_description> attributes;
     std::vector<agpu_size> strides;
 };
+
+} // End of namespace AgpuGL
 
 #endif //_AGPU_GL_VERTEX_LAYOUT_HPP_

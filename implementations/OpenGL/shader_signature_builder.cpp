@@ -2,34 +2,37 @@
 #include "shader_signature_builder.hpp"
 #include "shader_signature.hpp"
 
-_agpu_shader_signature_builder::_agpu_shader_signature_builder()
+namespace AgpuGL
+{
+
+GLShaderSignatureBuilder::GLShaderSignatureBuilder()
 {
     memset(bindingPointsUsed, 0, sizeof(bindingPointsUsed));
 }
 
-void _agpu_shader_signature_builder::lostReferences()
+GLShaderSignatureBuilder::~GLShaderSignatureBuilder()
 {
 }
 
-_agpu_shader_signature_builder *_agpu_shader_signature_builder::create(agpu_device *device)
+agpu::shader_signature_builder_ref GLShaderSignatureBuilder::create(const agpu::device_ref &device)
 {
-    std::unique_ptr<_agpu_shader_signature_builder> builder(new _agpu_shader_signature_builder());
-    builder->device = device;
-    return builder.release();
+    auto result = agpu::makeObject<GLShaderSignatureBuilder> ();
+    result.as<GLShaderSignatureBuilder> ()->device = device;
+    return result;
 }
 
-agpu_shader_signature* _agpu_shader_signature_builder::build()
+agpu::shader_signature_ptr GLShaderSignatureBuilder::build()
 {
-    return agpu_shader_signature::create(device, this);
+    return GLShaderSignature::create(device, this).disown();
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingConstant (  )
+agpu_error GLShaderSignatureBuilder::addBindingConstant()
 {
     bindingPointsUsed[(int)OpenGLResourceBindingType::UniformVariable] += 1;
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
+agpu_error GLShaderSignatureBuilder::addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
 {
     elements.push_back(ShaderSignatureElement(ShaderSignatureElementType::Element, maxBindings, bindingPointsUsed));
     auto &bank = elements.back();
@@ -41,13 +44,13 @@ agpu_error _agpu_shader_signature_builder::addBindingElement(agpu_shader_binding
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_signature_builder::beginBindingBank ( agpu_uint maxBindings )
+agpu_error GLShaderSignatureBuilder::beginBindingBank(agpu_uint maxBindings)
 {
     elements.push_back(ShaderSignatureElement(ShaderSignatureElementType::Bank, maxBindings, bindingPointsUsed));
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingBankElement ( agpu_shader_binding_type type, agpu_uint bindingPointCount )
+agpu_error GLShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
 {
     if(elements.empty() || elements.back().type != ShaderSignatureElementType::Bank)
         return AGPU_INVALID_OPERATION;
@@ -63,47 +66,4 @@ agpu_error _agpu_shader_signature_builder::addBindingBankElement ( agpu_shader_b
     return AGPU_OK;
 }
 
-// The exported C interface
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder ( agpu_shader_signature_builder* shader_signature_builder )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->release();
-}
-
-AGPU_EXPORT agpu_shader_signature* agpuBuildShaderSignature ( agpu_shader_signature_builder* shader_signature_builder )
-{
-    if(!shader_signature_builder)
-        return nullptr;
-    return shader_signature_builder->build();
-}
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant ( agpu_shader_signature_builder* shader_signature_builder )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingConstant();
-}
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingElement(type, maxBindings);
-}
-
-AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->beginBindingBank(maxBindings);
-}
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingBankElement(type, bindingPointCount);
-}
+} // End of namespace AgpuGL
