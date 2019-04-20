@@ -3,6 +3,9 @@
 
 #include "device.hpp"
 
+namespace AgpuGL
+{
+
 inline GLenum mapFieldType(agpu_field_type type)
 {
 	switch(type)
@@ -12,7 +15,7 @@ inline GLenum mapFieldType(agpu_field_type type)
 	case AGPU_DOUBLE: return GL_DOUBLE;
 	case AGPU_FIXED: return GL_FIXED;
 	case AGPU_BYTE: return GL_BYTE;
-	case AGPU_UNSIGNED_BYTE: return GL_UNSIGNED_BYTE; 
+	case AGPU_UNSIGNED_BYTE: return GL_UNSIGNED_BYTE;
 	case AGPU_SHORT: return GL_SHORT;
 	case AGPU_UNSIGNED_SHORT: return GL_UNSIGNED_SHORT;
 	case AGPU_INT: return GL_INT;
@@ -20,4 +23,7 @@ inline GLenum mapFieldType(agpu_field_type type)
 	default: abort();
 	}
 }
+
+} // End of namespace AgpuGL
+
 #endif //_AGPU_GL_UTILITY_HPP_

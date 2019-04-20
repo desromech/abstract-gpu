@@ -7,10 +7,13 @@
 #if defined(_WIN32)
 #include <GL/wglext.h>
 
+namespace AgpuGL
+{
+
 static thread_local OpenGLContext *currentGLContext = nullptr;
 
 OpenGLContext::OpenGLContext()
-    : device(nullptr), ownsWindow(false), window(0), hDC(0), context(0)
+    : ownsWindow(false), window(0), hDC(0), context(0)
 {
 }
 
@@ -88,11 +91,16 @@ void OpenGLContext::destroy()
     if (!context)
         return;
 
-    device->glBindVertexArray(0);
-    device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    device->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    device->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    device->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	auto device = weakDevice.lock();
+	if (device)
+	{
+		auto glDevice = device.as<GLDevice>();
+		glDevice->glBindVertexArray(0);
+		glDevice->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDevice->glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDevice->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glDevice->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
 
     wglMakeCurrent(wglGetCurrentDC(), 0);
     wglDeleteContext(context);
@@ -166,7 +174,7 @@ static LRESULT CALLBACK dummyWindowProc(HWND hWnd, UINT message, WPARAM wParam, 
     return DefWindowProc(hWnd, message, wParam, lParam);;
 }
 
-void _agpu_device::setWindowPixelFormat(agpu_pointer window)
+void GLDevice::setWindowPixelFormat(agpu_pointer window)
 {
     auto hwnd = (HWND)window;
     auto dc = GetDC(hwnd);
@@ -216,10 +224,11 @@ void _agpu_device::setWindowPixelFormat(agpu_pointer window)
     }
 }
 
-agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+agpu::device_ref GLDevice::open(agpu_device_open_info* openInfo)
 {
     // Create the device.
-    std::unique_ptr<agpu_device> device(new agpu_device);
+	auto result = agpu::makeObject<GLDevice>();
+	auto device = result.as<GLDevice>();
     bool failure = false;
 
     // Perform the main context creation in
@@ -384,19 +393,19 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
         contextWrapper->hDC = contextDC;
         contextWrapper->makeCurrent();
         device->mainContext = contextWrapper.release();
-        device->mainContext->device = device.get();
+        device->mainContext->weakDevice = result;
         device->initializeObjects();
     });
 
     device->mainContextJobQueue.addJob(&contextCreationJob);
     contextCreationJob.wait();
     if (failure)
-        return nullptr;
+        return agpu::device_ref();
 
-    return device.release();
+    return result;
 }
 
-void *agpu_device::getProcAddress(const char *symbolName)
+void *GLDevice::getProcAddress(const char *symbolName)
 {
     return (void*) wglGetProcAddress(symbolName);
 }
@@ -411,5 +420,7 @@ bool agpu_device::makeCurrent()
     return wglMakeCurrent(hDC, context) == TRUE;
 }
 */
+
+} // End of namespace AgpuGL
 
 #endif

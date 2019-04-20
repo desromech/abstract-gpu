@@ -20,6 +20,7 @@ public:
     agpu_error usePipelineState ( agpu_pipeline_state* pipeline );
     agpu_error useVertexBinding ( agpu_vertex_binding* vertex_binding );
     agpu_error useIndexBuffer ( agpu_buffer* index_buffer );
+    agpu_error useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size);
     agpu_error useDrawIndirectBuffer ( agpu_buffer* draw_buffer );
     agpu_error useComputeDispatchIndirectBuffer ( agpu_buffer* dispatch_buffer );
     agpu_error useShaderResources ( agpu_shader_resource_binding* binding );
@@ -57,10 +58,12 @@ public:
     id<MTLRenderCommandEncoder> renderEncoder;
     id<MTLComputeCommandEncoder> computeEncoder;
     agpu_buffer *currentIndexBuffer;
+    agpu_size currentIndexBufferOffset;
+    agpu_size currentIndexBufferStride;
     agpu_buffer *currentIndirectBuffer;
     agpu_buffer *currentComputeDispatchIndirectBuffer;
     agpu_vertex_binding* currentVertexBinding;
-
+    
     agpu_pipeline_state *currentPipeline;
     agpu_shader_signature *currentShaderSignature;
     agpu_uint vertexBufferCount;

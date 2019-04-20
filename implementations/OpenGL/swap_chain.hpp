@@ -4,30 +4,33 @@
 #include "device.hpp"
 #include "framebuffer.hpp"
 
-struct _agpu_swap_chain : public Object<_agpu_swap_chain>
+namespace AgpuGL
+{
+
+struct GLSwapChain : public agpu::swap_chain
 {
 public:
-    _agpu_swap_chain();
+    GLSwapChain();
+    ~GLSwapChain();
 
-    void lostReferences();
+    static agpu::swap_chain_ref create(const agpu::device_ref &device, const agpu::command_queue_ref &commandQueue, agpu_swap_chain_create_info *create_info);
 
-    static agpu_swap_chain *create(agpu_device *device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info *create_info);
-    agpu_framebuffer* getCurrentBackBuffer ();
-    agpu_size getCurrentBackBufferIndex ();
-    agpu_size getFramebufferCount ();
+    virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+    virtual agpu_size getCurrentBackBufferIndex() override;
+    virtual agpu_size getFramebufferCount() override;
 
-    agpu_error swapBuffers();
+    virtual agpu_error swapBuffers() override;
 
 public:
-
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_pointer window;
     agpu_uint width;
     agpu_uint height;
     agpu_uint backBufferIndex;
-    std::vector<agpu_framebuffer*> framebuffers;
-    agpu_command_queue* commandQueue;
+    std::vector<agpu::framebuffer_ref> framebuffers;
+    agpu::command_queue_ref commandQueue;
 };
 
+} // End of namespace AgpuGL
 
 #endif //AGPU_SWAP_CHAIN_HPP

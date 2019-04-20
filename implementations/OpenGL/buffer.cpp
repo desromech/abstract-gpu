@@ -1,5 +1,8 @@
 #include "buffer.hpp"
 
+namespace AgpuGL
+{
+
 inline GLenum mapBinding(agpu_buffer_binding_type binding)
 {
     switch(binding)
@@ -13,41 +16,43 @@ inline GLenum mapBinding(agpu_buffer_binding_type binding)
 	}
 }
 
-_agpu_buffer::_agpu_buffer()
+GLBuffer::GLBuffer()
 {
     mappedPointer = nullptr;
 }
 
-void agpu_buffer::lostReferences()
+
+GLBuffer::~GLBuffer()
 {
-    device->onMainContextBlocking([&]{
+    device.as<GLDevice> ()->onMainContextBlocking([&]{
         // Delete the buffer.
-        device->glDeleteBuffers(1, &handle);
+        device.as<GLDevice> ()->glDeleteBuffers(1, &handle);
     });
 }
 
-agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_description &description, agpu_pointer initialData)
+agpu::buffer_ref GLBuffer::createBuffer(const agpu::device_ref &device, const agpu_buffer_description &description, agpu_pointer initialData)
 {
     // A device is needed.
     if(!device)
-        return nullptr;
+        return agpu::buffer_ref();
 
     GLuint handle;
     auto binding = mapBinding(description.binding);
     auto mappingFlags = mapMappingFlags(description.mapping_flags);
 
-    device->onMainContextBlocking([&]{
+    deviceForGL->onMainContextBlocking([&]{
         // Generate the buffer
-        device->glGenBuffers(1, &handle);
-        device->glBindBuffer(binding, handle);
+        deviceForGL->glGenBuffers(1, &handle);
+        deviceForGL->glBindBuffer(binding, handle);
 
         // Initialize the buffer storage
         //printf("createBuffer %d %p\n", int(description.size), initialData);
-        device->glBufferStorage(binding, description.size, initialData, mappingFlags);
+        deviceForGL->glBufferStorage(binding, description.size, initialData, mappingFlags);
     });
 
     // Create the buffer object.
-    auto buffer = new agpu_buffer();
+    auto result = agpu::makeObject<GLBuffer> ();
+    auto buffer = result.as<GLBuffer> ();
     buffer->device = device;
     buffer->description = description;
     buffer->target = binding;
@@ -62,42 +67,47 @@ agpu_buffer *agpu_buffer::createBuffer(agpu_device *device, const agpu_buffer_de
             buffer->extraMappingFlags |= GL_MAP_FLUSH_EXPLICIT_BIT;
     }
 
-
-    return buffer;
+    return result;
 }
 
 
-agpu_pointer agpu_buffer::mapBuffer(agpu_mapping_access access)
+agpu_pointer GLBuffer::mapBuffer(agpu_mapping_access access)
 {
     if(mappedPointer)
         return mappedPointer;
 
-    device->onMainContextBlocking([&]{
+    deviceForGL->onMainContextBlocking([&]{
         bind();
         if(extraMappingFlags != 0)
-            mappedPointer = device->glMapBufferRange(target, 0, description.size, mapBufferRangeMappingAccess(access) | extraMappingFlags);
+            mappedPointer = deviceForGL->glMapBufferRange(target, 0, description.size, mapBufferRangeMappingAccess(access) | extraMappingFlags);
         else
-            mappedPointer = device->glMapBuffer(target, mapMappingAccess(access));
+            mappedPointer = deviceForGL->glMapBuffer(target, mapMappingAccess(access));
     });
     return mappedPointer;
 }
 
-agpu_error agpu_buffer::unmapBuffer()
+agpu_error GLBuffer::unmapBuffer()
 {
     GLenum result;
-    device->onMainContextBlocking([&]{
+    deviceForGL->onMainContextBlocking([&]{
         bind();
-        result = device->glUnmapBuffer(target);
+        result = deviceForGL->glUnmapBuffer(target);
         mappedPointer = nullptr;
     });
 
     return (result != GL_FALSE) ? AGPU_OK : AGPU_ERROR;
 }
 
-void agpu_buffer::dumpToFile(const char *fileName)
+agpu_error GLBuffer::getDescription(agpu_buffer_description* description)
 {
-    if(!mappedPointer && extraMappingFlags == 0)
-        return;
+    CHECK_POINTER(description);
+    *description = this->description;
+    return AGPU_OK;
+}
+
+void GLBuffer::dumpToFile(const char *fileName)
+{
+    if(!mappedPointer && extraMappingFlags == 0) return;
 
 	FILE *f;
 #ifdef _WIN32
@@ -111,101 +121,45 @@ void agpu_buffer::dumpToFile(const char *fileName)
     fclose(f);
 }
 
-agpu_error agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+agpu_error GLBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
     //printf("uploadBufferData %d %d %p\n", int(offset), int(size), data);
-    device->onMainContextBlocking([&]{
+    deviceForGL->onMainContextBlocking([&]{
         bind();
-        device->glBufferSubData(target, offset, size, data);
+        deviceForGL->glBufferSubData(target, offset, size, data);
     });
     return AGPU_OK;
 }
 
-agpu_error agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+agpu_error GLBuffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
-    device->onMainContextBlocking([&]{
+    deviceForGL->onMainContextBlocking([&]{
         bind();
-        device->glGetBufferSubData(target, offset, size, data);
+        deviceForGL->glGetBufferSubData(target, offset, size, data);
     });
     return AGPU_OK;
 }
 
-agpu_error agpu_buffer::flushWholeBuffer ()
+agpu_error GLBuffer::flushWholeBuffer ()
 {
     if((extraMappingFlags & GL_MAP_FLUSH_EXPLICIT_BIT) == 0)
         return AGPU_OK;
 
-    device->onMainContextBlocking([&]{
+    deviceForGL->onMainContextBlocking([&]{
         bind();
-        device->glFlushMappedBufferRange(target, 0, description.size);
+        deviceForGL->glFlushMappedBufferRange(target, 0, description.size);
     });
     return AGPU_OK;
 }
 
-agpu_error agpu_buffer::invalidateWholeBuffer ()
+agpu_error GLBuffer::invalidateWholeBuffer ()
 {
     return AGPU_OK;
 }
 
-void agpu_buffer::bind()
+void GLBuffer::bind()
 {
-    device->glBindBuffer(target, handle);
+    deviceForGL->glBindBuffer(target, handle);
 }
 
-// C Interface
-
-AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseBuffer ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->release();
-}
-
-AGPU_EXPORT agpu_error agpuGetBufferDescription ( agpu_buffer* buffer, agpu_buffer_description* description )
-{
-    CHECK_POINTER(buffer);
-    CHECK_POINTER(description);
-    *description = buffer->description;
-    return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_pointer agpuMapBuffer ( agpu_buffer* buffer, agpu_mapping_access flags )
-{
-    if(!buffer) return nullptr;
-    return buffer->mapBuffer(flags);
-}
-
-AGPU_EXPORT agpu_error agpuUnmapBuffer ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->unmapBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuUploadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
-{
-    CHECK_POINTER(buffer);
-    return buffer->uploadBufferData(offset, size, data);
-}
-
-AGPU_EXPORT agpu_error agpuReadBufferData ( agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data )
-{
-    CHECK_POINTER(buffer);
-    return buffer->readBufferData(offset, size, data);
-}
-
-AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->flushWholeBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->invalidateWholeBuffer();
-}
+} // End of namespace AgpuGL

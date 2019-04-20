@@ -3,21 +3,24 @@
 
 #include "device.hpp"
 
-struct _agpu_command_allocator : public Object<_agpu_command_allocator>
+namespace AgpuGL
+{
+
+struct GLCommandAllocator : public agpu::command_allocator
 {
 public:
-    _agpu_command_allocator();
+    GLCommandAllocator();
+    ~GLCommandAllocator();
 
-    void lostReferences();
+    static agpu::command_allocator_ref create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_queue_ref &queue);
 
-    static _agpu_command_allocator *create(agpu_device *device, agpu_command_list_type type, agpu_command_queue *queue);
-
-    agpu_error reset();
+    virtual agpu_error reset() override;
 
 public:
-
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_command_list_type type;
 };
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_GL_COMMAND_ALLOCATOR_HPP_

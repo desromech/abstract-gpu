@@ -1,30 +1,35 @@
 #include "renderpass.hpp"
 
-_agpu_renderpass::_agpu_renderpass(agpu_device *device)
-    : device(device)
+namespace AgpuGL
+{
+
+GLRenderPass::GLRenderPass(const agpu::device_ref &cdevice)
+    : device(cdevice)
 {
 }
 
-void _agpu_renderpass::lostReferences()
+GLRenderPass::~GLRenderPass()
 {
 }
 
-agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_description *description)
+agpu::renderpass_ref GLRenderPass::create(const agpu::device_ref &device, agpu_renderpass_description *description)
 {
     if (!description)
-        return nullptr;
+        return agpu::renderpass_ref();
 
-    auto result = new agpu_renderpass(device);
-    result->colorAttachments.resize(description->color_attachment_count);
+    auto result = agpu::makeObject<GLRenderPass> (device);
+    auto renderpass = result.as<GLRenderPass> ();
+
+    renderpass->colorAttachments.resize(description->color_attachment_count);
     for (size_t i = 0; i < description->color_attachment_count; ++i)
-        result->colorAttachments[i] = description->color_attachments[i];
-    result->hasDepthStencil = description->depth_stencil_attachment != nullptr;
-    if (result->hasDepthStencil)
-        result->depthStencilAttachment = *description->depth_stencil_attachment;
+        renderpass->colorAttachments[i] = description->color_attachments[i];
+    renderpass->hasDepthStencil = description->depth_stencil_attachment != nullptr;
+    if (renderpass->hasDepthStencil)
+        renderpass->depthStencilAttachment = *description->depth_stencil_attachment;
     return result;
 }
 
-void _agpu_renderpass::started()
+void GLRenderPass::started()
 {
     GLbitfield buffers = 0;
 
@@ -58,13 +63,13 @@ void _agpu_renderpass::started()
     glClear(buffers);
 }
 
-agpu_error _agpu_renderpass::setDepthStencilClearValue(agpu_depth_stencil_value value)
+agpu_error GLRenderPass::setDepthStencilClearValue(agpu_depth_stencil_value value)
 {
     depthStencilAttachment.clear_value = value;
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
+agpu_error GLRenderPass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
 {
     if (attachment_index >= colorAttachments.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -73,39 +78,10 @@ agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value )
+agpu_error GLRenderPass::setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value )
 {
     CHECK_POINTER(value);
     return setColorClearValue(attachment_index, *value);
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddRenderPassReference(agpu_renderpass* renderpass)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseRenderPass(agpu_renderpass* renderpass)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue(agpu_renderpass* renderpass, agpu_depth_stencil_value value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setDepthStencilClearValue(value);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValue(attachment_index, value);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorClearValueFrom ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value )
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValueFrom(attachment_index, value);
-}
+} // End of namespace AgpuGL

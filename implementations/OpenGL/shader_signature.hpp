@@ -4,23 +4,27 @@
 #include "device.hpp"
 #include "shader_signature_builder.hpp"
 
-struct _agpu_shader_signature: public Object<_agpu_shader_signature>
+namespace AgpuGL
+{
+
+struct GLShaderSignature: public agpu::shader_signature
 {
 public:
-    _agpu_shader_signature();
+    GLShaderSignature();
+    ~GLShaderSignature();
 
-    void lostReferences();
+    static agpu::shader_signature_ref create(const agpu::device_ref &device, const GLShaderSignatureBuilder *builder);
 
-    static _agpu_shader_signature *create(agpu_device *device, agpu_shader_signature_builder *builder);
-
-    agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
+    virtual agpu::shader_resource_binding_ptr createShaderResourceBinding(agpu_uint element) override;
 
     int mapDescriptorSetAndBinding(agpu_shader_binding_type type, unsigned int set, unsigned int binding);
 
-    agpu_device *device;
+    agpu::device_ref device;
     std::vector<ShaderSignatureElement> elements;
     agpu_uint bindingPointsUsed[(int)OpenGLResourceBindingType::Count];
     agpu_uint uniformVariableCount;
 };
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_GL_SHADER_SIGNATURE_HPP

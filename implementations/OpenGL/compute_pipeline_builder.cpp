@@ -1,31 +1,28 @@
 #include "compute_pipeline_builder.hpp"
-#include "pipeline_builder.hpp"
 #include "pipeline_state.hpp"
+#include "pipeline_builder.hpp" // For processTextureWithSamplerCombinations
 #include "shader.hpp"
 #include "shader_signature.hpp"
 #include <algorithm>
 
-_agpu_compute_pipeline_builder::_agpu_compute_pipeline_builder(agpu_device *device)
+namespace AgpuGL
+{
+
+GLComputePipelineBuilder::GLComputePipelineBuilder(const agpu::device_ref &device)
     : device(device)
 {
-    shader = nullptr;
-    shaderSignature = nullptr;
 }
 
-void _agpu_compute_pipeline_builder::lostReferences()
+GLComputePipelineBuilder::~GLComputePipelineBuilder()
 {
-    if(shader)
-        shader->release();
-    if(shaderSignature)
-        shaderSignature->release();
 }
 
-_agpu_compute_pipeline_builder *_agpu_compute_pipeline_builder::create(agpu_device *device)
+agpu::compute_pipeline_builder_ref GLComputePipelineBuilder::create(const agpu::device_ref &device)
 {
-	return new _agpu_compute_pipeline_builder(device);
+	return agpu::makeObject<GLComputePipelineBuilder> (device);
 }
 
-agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
+agpu::pipeline_state_ptr GLComputePipelineBuilder::build ()
 {
 	if (!shaderSignature)
 	{
@@ -40,18 +37,18 @@ agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
 	}
 
 	GLuint program = 0;
-	std::vector<agpu_shader_forSignature*> shaderInstances;
+	std::vector<GLShaderForSignatureRef> shaderInstances;
 	std::vector<MappedTextureWithSamplerCombination> mappedTextureWithSamplerCombinations;
 	TextureWithSamplerCombinationMap textureWithSamplerCombinationMap;
 
 	buildTextureWithSampleCombinationMapInto(textureWithSamplerCombinationMap, mappedTextureWithSamplerCombinations);
 
 	// Instantiate the shaders
-	agpu_shader_forSignature *shaderInstance;
+	GLShaderForSignatureRef shaderInstance;
 	std::string errorMessage;
 
 	// Create the shader instance.
-	auto error = shader->instanceForSignature(shaderSignature, textureWithSamplerCombinationMap, shaderEntryPointName, &shaderInstance, &errorMessage);
+	auto error = shader.as<GLShader> ()->instanceForSignature(shaderSignature, textureWithSamplerCombinationMap, shaderEntryPointName, &shaderInstance, &errorMessage);
 	errorMessages += errorMessage;
 	if (error != AGPU_OK)
 	{
@@ -60,9 +57,9 @@ agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
 	}
 
 	bool succeded = false;
-	device->onMainContextBlocking([&] {
+	deviceForGL->onMainContextBlocking([&] {
 		// Create the progrma
-		program = device->glCreateProgram();
+		program = deviceForGL->glCreateProgram();
 
 		// Attach the shader instance to the program.
 		std::string errorMessage;
@@ -72,11 +69,11 @@ agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
 			return;
 
 		// Link the program.
-		device->glLinkProgram(program);
+		deviceForGL->glLinkProgram(program);
 
 		// Check the link status
 		GLint status;
-		device->glGetProgramiv(program, GL_LINK_STATUS, &status);
+		deviceForGL->glGetProgramiv(program, GL_LINK_STATUS, &status);
 		if (status != GL_TRUE)
 		{
 			// TODO: Get the info log
@@ -87,32 +84,28 @@ agpu_pipeline_state* _agpu_compute_pipeline_builder::build ()
 	});
 
 	if (!succeded)
-	{
-		shaderInstance->release();
 		return nullptr;
-	}
 
 	// Create the pipeline state object
-	auto pipeline = new agpu_pipeline_state();
+    auto result = agpu::makeObject<GLPipelineState> ();
+	auto pipeline = result.as<GLPipelineState> ();
 	pipeline->device = device;
 	pipeline->programHandle = program;
 	pipeline->type = AgpuPipelineStateType::Compute;
 	pipeline->shaderSignature = shaderSignature;
 	pipeline->shaderInstances = shaderInstances;
 	pipeline->mappedTextureWithSamplerCombinations = mappedTextureWithSamplerCombinations;
-	if (shaderSignature)
-		shaderSignature->retain();
 
-	return pipeline;
+	return result.disown();
 }
 
-agpu_error _agpu_compute_pipeline_builder::attachShader ( agpu_shader* newShader )
+agpu_error GLComputePipelineBuilder::attachShader(const agpu::shader_ref &newShader)
 {
     CHECK_POINTER(newShader);
     return attachShaderWithEntryPoint(newShader, AGPU_COMPUTE_SHADER, "main");
 }
 
-agpu_error _agpu_compute_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* newShader, agpu_shader_type type, agpu_cstring entry_point )
+agpu_error GLComputePipelineBuilder::attachShaderWithEntryPoint (const agpu::shader_ref &newShader, agpu_shader_type type, agpu_cstring entry_point )
 {
     CHECK_POINTER(newShader);
     CHECK_POINTER(entry_point);
@@ -120,21 +113,18 @@ agpu_error _agpu_compute_pipeline_builder::attachShaderWithEntryPoint ( agpu_sha
     if(type != AGPU_COMPUTE_SHADER)
         return AGPU_INVALID_PARAMETER;
 
-    newShader->retain();
-    if(shader)
-        shader->release();
     shader = newShader;
     shaderEntryPointName = entry_point;
     return AGPU_OK;
 
 }
 
-agpu_size _agpu_compute_pipeline_builder::getBuildingLogLength (  )
+agpu_size GLComputePipelineBuilder::getBuildingLogLength (  )
 {
 	return (agpu_size)errorMessages.size();
 }
 
-agpu_error _agpu_compute_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+agpu_error GLComputePipelineBuilder::getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
     if(buffer_size == 0)
         return AGPU_OK;
@@ -146,75 +136,22 @@ agpu_error _agpu_compute_pipeline_builder::getBuildingLog ( agpu_size buffer_siz
 	return AGPU_OK;
 }
 
-agpu_error _agpu_compute_pipeline_builder::setShaderSignature ( agpu_shader_signature* newSignature )
+agpu_error GLComputePipelineBuilder::setShaderSignature(const agpu::shader_signature_ref &newSignature)
 {
     CHECK_POINTER(newSignature);
-    newSignature->retain();
-    if (this->shaderSignature)
-        this->shaderSignature->release();
     this->shaderSignature = newSignature;
     return AGPU_OK;
 }
 
-void _agpu_compute_pipeline_builder::buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
+void GLComputePipelineBuilder::buildTextureWithSampleCombinationMapInto(TextureWithSamplerCombinationMap &map, std::vector<MappedTextureWithSamplerCombination> &usedCombinations)
 {
 	std::set<TextureWithSamplerCombination> rawTextureSamplerCombinations;
 
 	// Get all of the combinations.
-	for (auto combination : shader->getTextureWithSamplerCombination(shaderEntryPointName))
+	for (auto combination : shader.as<GLShader>()->getTextureWithSamplerCombination(shaderEntryPointName))
 		rawTextureSamplerCombinations.insert(combination);
 
 	processTextureWithSamplerCombinations(rawTextureSamplerCombinations, shaderSignature, map, usedCombinations);
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddComputePipelineBuilderReference ( agpu_compute_pipeline_builder* compute_pipeline_builder )
-{
-    CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseComputePipelineBuilder ( agpu_compute_pipeline_builder* compute_pipeline_builder )
-{
-    CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->release();
-}
-
-AGPU_EXPORT agpu_pipeline_state* agpuBuildComputePipelineState ( agpu_compute_pipeline_builder* compute_pipeline_builder )
-{
-    if(!compute_pipeline_builder)
-        return nullptr;
-
-    return compute_pipeline_builder->build();
-}
-
-AGPU_EXPORT agpu_error agpuAttachComputeShader ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* shader )
-{
-    CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->attachShader(shader);
-}
-
-AGPU_EXPORT agpu_error agpuAttachComputeShaderWithEntryPoint ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader* newShader, agpu_shader_type type, agpu_cstring entry_point )
-{
-    CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->attachShaderWithEntryPoint(newShader, type, entry_point);
-}
-
-AGPU_EXPORT agpu_size agpuGetComputePipelineBuildingLogLength ( agpu_compute_pipeline_builder* compute_pipeline_builder )
-{
-    if(!compute_pipeline_builder)
-        return 0;
-    return compute_pipeline_builder->getBuildingLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetComputePipelineBuildingLog ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-    CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->getBuildingLog(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetComputePipelineShaderSignature ( agpu_compute_pipeline_builder* compute_pipeline_builder, agpu_shader_signature* signature )
-{
-    CHECK_POINTER(compute_pipeline_builder);
-    return compute_pipeline_builder->setShaderSignature(signature);
-}
+} // End of namespace AgpuGL

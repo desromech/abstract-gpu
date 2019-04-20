@@ -4,6 +4,9 @@
 #include "shader_signature.hpp"
 #include "spirv_glsl.hpp"
 
+namespace AgpuGL
+{
+
 static int shaderDumpCount = 0;
 
 inline GLenum mapShaderType(agpu_shader_type type)
@@ -34,21 +37,28 @@ inline spv::ExecutionModel mapExecutionModel(agpu_shader_type type)
 	}
 }
 
-agpu_shader_forSignature::agpu_shader_forSignature()
+GLShaderForSignature::GLShaderForSignature()
 {
-    device = nullptr;
 	handle = 0;
 	rawSourceLanguage = AGPU_SHADER_LANGUAGE_NONE;
 }
 
-agpu_error agpu_shader_forSignature::compile(std::string *errorMessage)
+GLShaderForSignature::~GLShaderForSignature()
+{
+	deviceForGL->onMainContextBlocking([&]() {
+		if(handle)
+			deviceForGL->glDeleteShader(handle);
+	});
+}
+
+agpu_error GLShaderForSignature::compile(std::string *errorMessage)
 {
 	CHECK_POINTER(errorMessage);
 
 	agpu_error result = AGPU_OK;
-    device->onMainContextBlocking([&]() {
+    deviceForGL->onMainContextBlocking([&]() {
 		// Create the shader
-		handle = device->glCreateShader(mapShaderType(type));
+		handle = deviceForGL->glCreateShader(mapShaderType(type));
 		if(!handle)
 		{
 			result = AGPU_UNSUPPORTED;
@@ -58,25 +68,25 @@ agpu_error agpu_shader_forSignature::compile(std::string *errorMessage)
 		// Set the shader source
 		const GLchar *sourceText = glslSource.data();
 		GLint sourceTextLength = GLint(glslSource.size());
-        device->glShaderSource(handle, 1, &sourceText, &sourceTextLength);
+        deviceForGL->glShaderSource(handle, 1, &sourceText, &sourceTextLength);
 
 		// Compile the shader
-		device->glCompileShader(handle);
+		deviceForGL->glCompileShader(handle);
 
 		// Get the compilation status
 		GLint status;
-		device->glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
+		deviceForGL->glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
 		if(status != GL_TRUE)
 		{
 			result = AGPU_COMPILATION_ERROR;
 
 			GLint infoLogLength;
-			device->glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &infoLogLength);
+			deviceForGL->glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &infoLogLength);
 
 			// Get the info log
 			auto buffer = new char[infoLogLength];
 			GLsizei bufferSize;
-			device->glGetShaderInfoLog(handle, infoLogLength, &bufferSize, buffer);
+			deviceForGL->glGetShaderInfoLog(handle, infoLogLength, &bufferSize, buffer);
 			*errorMessage = "Errors when compiling GLSL shader generated from SpirV:\n";
 			*errorMessage += sourceText;
 			*errorMessage += "\n";
@@ -89,45 +99,35 @@ agpu_error agpu_shader_forSignature::compile(std::string *errorMessage)
 	return result;
 }
 
-agpu_error agpu_shader_forSignature::attachToProgram(GLuint programHandle, std::string *errorMessage)
+agpu_error GLShaderForSignature::attachToProgram(GLuint programHandle, std::string *errorMessage)
 {
-	device->glAttachShader(programHandle, handle);
+	deviceForGL->glAttachShader(programHandle, handle);
 	return AGPU_OK;
 }
 
-void agpu_shader_forSignature::lostReferences()
-{
-	device->onMainContextBlocking([&]() {
-		if(handle)
-			device->glDeleteShader(handle);
-	});
-}
-
-_agpu_shader::_agpu_shader()
+GLShader::GLShader()
 {
 	compiled = false;
-	genericShaderInstance = nullptr;
 }
 
-void _agpu_shader::lostReferences()
+GLShader::~GLShader()
 {
-	if(genericShaderInstance)
-		genericShaderInstance->release();
 }
 
-agpu_shader *_agpu_shader::createShader(agpu_device *device, agpu_shader_type type)
+agpu::shader_ref GLShader::createShader(const agpu::device_ref &device, agpu_shader_type type)
 {
     // A device is needed.
 	if(!device)
-		return nullptr;
+		return agpu::shader_ref();
 
-	auto shader = new agpu_shader();
+	auto result = agpu::makeObject<GLShader> ();
+	auto shader = result.as<GLShader> ();
 	shader->device = device;
 	shader->type = type;
-	return shader;
+	return result;
 }
 
-std::vector<TextureWithSamplerCombination> &_agpu_shader::getTextureWithSamplerCombination(const std::string &entryPointName)
+std::vector<TextureWithSamplerCombination> &GLShader::getTextureWithSamplerCombination(const std::string &entryPointName)
 {
 	auto it = textureWithSamplerCombinations.find(entryPointName);
 	if (it != textureWithSamplerCombinations.end())
@@ -141,12 +141,12 @@ std::vector<TextureWithSamplerCombination> &_agpu_shader::getTextureWithSamplerC
 	return textureWithSamplerCombinations[entryPointName];
 }
 
-void _agpu_shader::extractGenericShaderTextureWithSamplerCombinations(const std::string &entryPointName)
+void GLShader::extractGenericShaderTextureWithSamplerCombinations(const std::string &entryPointName)
 {
 	textureWithSamplerCombinations.insert(std::make_pair(entryPointName, std::vector<TextureWithSamplerCombination> ()));
 }
 
-void _agpu_shader::extractSpirVTextureWithSamplerCombinations(const std::string &entryPointName)
+void GLShader::extractSpirVTextureWithSamplerCombinations(const std::string &entryPointName)
 {
 	uint32_t *rawData = reinterpret_cast<uint32_t *> (&rawShaderSource[0]);
 	size_t rawDataSize = rawShaderSource.size() / 4;
@@ -172,7 +172,7 @@ void _agpu_shader::extractSpirVTextureWithSamplerCombinations(const std::string 
 	}
 }
 
-agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error GLShader::instanceForSignature(const agpu::shader_signature_ref &signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, GLShaderForSignatureRef *result, std::string *errorMessage)
 {
 	CHECK_POINTER(result);
 	CHECK_POINTER(errorMessage);
@@ -184,17 +184,16 @@ agpu_error _agpu_shader::instanceForSignature(agpu_shader_signature *signature, 
 	return AGPU_INVALID_OPERATION;
 }
 
-agpu_error _agpu_shader::getOrCreateGenericShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error GLShader::getOrCreateGenericShaderInstance(const agpu::shader_signature_ref &signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, GLShaderForSignatureRef *result, std::string *errorMessage)
 {
 	if(genericShaderInstance)
 	{
-		genericShaderInstance->retain();
 		*result = genericShaderInstance;
 		return AGPU_OK;
 	}
 
 	// Create the shader instance object
-	auto shaderInstance = new agpu_shader_forSignature();
+	auto shaderInstance = agpu::makeObject<GLShaderForSignature> ();
 	shaderInstance->device = device;
 	shaderInstance->type = type;
 	shaderInstance->glslSource = std::string((const char*)&rawShaderSource[0], (const char*)&rawShaderSource[rawShaderSource.size()]);
@@ -207,25 +206,22 @@ agpu_error _agpu_shader::getOrCreateGenericShaderInstance(agpu_shader_signature 
 		*result = shaderInstance;
 
 		// Keep a copy in the cache
-		shaderInstance->retain();
 		genericShaderInstance = shaderInstance;
 		return AGPU_OK;
 	}
 
-	// Release the shader instace.
-	shaderInstance->release();
 	return error;
 }
 
 static agpu_error mapShaderResources(spirv_cross::CompilerGLSL &compiler,
-	std::vector<spirv_cross::Resource> &resources, agpu_shader_signature *signature, std::string *errorMessage, agpu_shader_binding_type bindingType)
+	std::vector<spirv_cross::Resource> &resources, const agpu::shader_signature_ref &signature, std::string *errorMessage, agpu_shader_binding_type bindingType)
 {
 	for(auto &resource : resources)
 	{
 		unsigned set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
 		unsigned binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 
-		int mappedBinding = signature->mapDescriptorSetAndBinding(bindingType, set, binding);
+		int mappedBinding = signature.as<GLShaderSignature>()->mapDescriptorSetAndBinding(bindingType, set, binding);
 		if(mappedBinding < 0)
 		{
 			char buffer[256];
@@ -244,7 +240,7 @@ static agpu_error mapShaderResources(spirv_cross::CompilerGLSL &compiler,
 	return AGPU_OK;
 }
 
-agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, agpu_shader_forSignature **result, std::string *errorMessage)
+agpu_error GLShader::getOrCreateSpirVShaderInstance(const agpu::shader_signature_ref &signature, const TextureWithSamplerCombinationMap &textureWithSamplerCombinationMap, const std::string &entryPoint, GLShaderForSignatureRef *result, std::string *errorMessage)
 {
 	char buffer[256];
 	uint32_t *rawData = reinterpret_cast<uint32_t *> (&rawShaderSource[0]);
@@ -276,7 +272,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 		TextureWithSamplerCombination combination;
 		combination.textureDescriptorSet = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationDescriptorSet);
 		combination.textureDescriptorBinding = glsl.get_decoration(remap.image_id, spv::Decoration::DecorationBinding);
-		int textureUnit = signature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
+		int textureUnit = signature.as<GLShaderSignature>()->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, combination.textureDescriptorSet, combination.textureDescriptorBinding);
 		if(textureUnit < 0)
 		{
 			*errorMessage = "Invalid sampled image descriptor set and binding.";
@@ -285,7 +281,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 
 		combination.samplerDescriptorSet = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationDescriptorSet);
 		combination.samplerDescriptorBinding = glsl.get_decoration(remap.sampler_id, spv::Decoration::DecorationBinding);
-		int sampler = signature->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
+		int sampler = signature.as<GLShaderSignature>()->mapDescriptorSetAndBinding(AGPU_SHADER_BINDING_TYPE_SAMPLER, combination.samplerDescriptorSet, combination.samplerDescriptorBinding);
 		if(sampler < 0)
 		{
 			*errorMessage = "Invalid sampled image descriptor set and binding.";
@@ -310,7 +306,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 
 	// Set some options.
 	spirv_cross::CompilerGLSL::Options options;
-	options.version = device->glslVersionNumber;
+	options.version = deviceForGL->glslVersionNumber;
 	glsl.set_common_options(options);
 
 	// Compile the shader.
@@ -328,7 +324,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	//printf("Compiled shader:\n%s\n", compiled.c_str());
 
 	// Create the shader instance object
-	auto shaderInstance = new agpu_shader_forSignature();
+	auto shaderInstance = agpu::makeObject<GLShaderForSignature>();
 	shaderInstance->device = device;
 	shaderInstance->type = type;
 	shaderInstance->glslSource = compiled;
@@ -336,8 +332,8 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	// Compile the shader instance object.
 	error = shaderInstance->compile(errorMessage);
 
-	if(device->dumpShaders ||
-		(error != AGPU_OK && device->dumpShadersOnError))
+	if(deviceForGL->dumpShaders ||
+		(error != AGPU_OK && deviceForGL->dumpShadersOnError))
 	{
 		snprintf(buffer, sizeof(buffer), "dump%d.spv", shaderDumpCount);
 
@@ -374,11 +370,10 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstance(agpu_shader_signature *s
 	}
 
 	// Release the shader instance.
-	shaderInstance->release();
 	return error;
 }
 
-agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
+agpu_error GLShader::setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
 {
 	CHECK_POINTER(sourceText);
 
@@ -394,18 +389,18 @@ agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_str
 	return AGPU_OK;
 }
 
-agpu_error _agpu_shader::compileShader(agpu_cstring options)
+agpu_error GLShader::compileShader(agpu_cstring options)
 {
 	compiled = true;
 	return AGPU_OK;
 }
 
-agpu_size _agpu_shader::getShaderCompilationLogLength()
+agpu_size GLShader::getCompilationLogLength()
 {
 	return 1;
 }
 
-agpu_error _agpu_shader::getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
+agpu_error GLShader::getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
 	CHECK_POINTER(buffer);
 	if(buffer_size == 0)
@@ -415,39 +410,4 @@ agpu_error _agpu_shader::getShaderCompilationLog(agpu_size buffer_size, agpu_str
 	return AGPU_OK;
 }
 
-// C Interface
-AGPU_EXPORT agpu_error agpuAddShaderReference ( agpu_shader* shader )
-{
-	CHECK_POINTER(shader);
-	return shader->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShader ( agpu_shader* shader )
-{
-	CHECK_POINTER(shader);
-	return shader->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetShaderSource ( agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength )
-{
-	CHECK_POINTER(shader);
-	return shader->setShaderSource(language, sourceText, sourceTextLength);
-}
-
-AGPU_EXPORT agpu_error agpuCompileShader ( agpu_shader* shader, agpu_cstring options )
-{
-	CHECK_POINTER(shader);
-	return shader->compileShader(options);
-}
-
-AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength ( agpu_shader* shader )
-{
-	CHECK_POINTER(shader);
-	return shader->getShaderCompilationLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-	CHECK_POINTER(shader);
-	return shader->getShaderCompilationLog(buffer_size, buffer);
-}
+} // End of namespace AgpuGL

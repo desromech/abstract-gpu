@@ -841,6 +841,14 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agp
 	return (*dispatchTable)->agpuUseIndexBuffer ( command_list, index_buffer );
 }
 
+AGPU_EXPORT agpu_error agpuUseIndexBufferAt ( agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuUseIndexBufferAt ( command_list, index_buffer, offset, index_size );
+}
+
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer )
 {
 	if (command_list == nullptr)

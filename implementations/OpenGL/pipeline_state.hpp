@@ -4,8 +4,12 @@
 #include "device.hpp"
 #include "shader.hpp"
 
+namespace AgpuGL
+{
+
 struct CommandListExecutionContext;
-struct agpu_shader_forSignature;
+struct GLShaderForSignature;
+typedef agpu::ref<GLShaderForSignature> GLShaderForSignatureRef;
 
 enum class AgpuPipelineStateType
 {
@@ -41,7 +45,7 @@ public:
 		return primitiveTopology;
 	}
 
-	agpu_device *device;
+	agpu::device_ref device;
 
 	// States
 	agpu_bool depthEnabled;
@@ -97,22 +101,21 @@ public:
 	GLint baseInstanceUniformIndex;
 };
 
-struct _agpu_pipeline_state: public Object<_agpu_pipeline_state>
+struct GLPipelineState: public agpu::pipeline_state
 {
 public:
-    _agpu_pipeline_state();
-
-    void lostReferences();
+    GLPipelineState();
+	~GLPipelineState();
 
     agpu_int getUniformLocation ( agpu_cstring name );
-    void activateShaderResourcesOn(CommandListExecutionContext *context, agpu_shader_resource_binding **shaderResources);
+    void activateShaderResourcesOn(CommandListExecutionContext *context, agpu::shader_resource_binding_ref *shaderResources);
 	void uploadPushConstants(const uint8_t *pushConstantBuffer, size_t pushConstantBufferSize);
 	void setBaseInstance(agpu_uint base_instance);
 
 public:
-    agpu_device *device;
-    agpu_shader_signature *shaderSignature;
-    std::vector<agpu_shader_forSignature*> shaderInstances;
+    agpu::device_ref device;
+    agpu::shader_signature_ref shaderSignature;
+    std::vector<GLShaderForSignatureRef> shaderInstances;
     std::vector<MappedTextureWithSamplerCombination> mappedTextureWithSamplerCombinations;
     GLuint programHandle;
 
@@ -124,5 +127,6 @@ public:
     void updateStencilReference(int reference);
 };
 
+} // End of namespace AgpuGL
 
 #endif //AGPU_PIPELINE_STATE_HPP_

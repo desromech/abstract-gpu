@@ -61,6 +61,13 @@ AGPUCommandList >> useIndexBuffer: index_buffer [
 ]
 
 { #category : #'wrappers' }
+AGPUCommandList >> useIndexBufferAt: index_buffer offset: offset index_size: index_size [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useIndexBufferAt_command_list: (self validHandle) index_buffer: (self validHandleOf: index_buffer) offset: offset index_size: index_size.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUCommandList >> useDrawIndirectBuffer: draw_buffer [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance useDrawIndirectBuffer_command_list: (self validHandle) draw_buffer: (self validHandleOf: draw_buffer).

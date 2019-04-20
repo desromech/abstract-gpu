@@ -1,10 +1,76 @@
-#include "platform.hpp"
 #include "device.hpp"
 
-_agpu_platform theGLPlatform = {&agpu_gl_icd_dispatch};
+namespace AgpuGL
+{
+
+class GLPlatform : public agpu::platform
+{
+public:
+    GLPlatform();
+    ~GLPlatform();
+
+    virtual agpu::device_ptr openDevice(agpu_device_open_info* openInfo) override;
+	virtual agpu_cstring getName() override;
+	virtual agpu_int getVersion() override;
+	virtual agpu_int getImplementationVersion() override;
+	virtual agpu_bool hasRealMultithreading() override;
+	virtual agpu_bool isNative() override;
+	virtual agpu_bool isCrossPlatform() override;
+};
+
+static agpu::platform_ref theGLPlatform;
+
+GLPlatform::GLPlatform()
+{
+}
+
+GLPlatform::~GLPlatform()
+{
+}
+
+agpu::device_ptr GLPlatform::openDevice(agpu_device_open_info* openInfo)
+{
+    return GLDevice::open(openInfo).disown();
+}
+
+agpu_cstring GLPlatform::getName()
+{
+    return "OpenGL 4.x Core";
+}
+
+agpu_int GLPlatform::getVersion()
+{
+    return 100;
+}
+
+agpu_int GLPlatform::getImplementationVersion()
+{
+    return 1;
+}
+
+agpu_bool GLPlatform::hasRealMultithreading()
+{
+    return false;
+}
+
+agpu_bool GLPlatform::isNative()
+{
+    return false;
+}
+
+agpu_bool GLPlatform::isCrossPlatform()
+{
+    return true;
+}
+
+} // End of namespace AgpuGL
 
 AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms )
 {
+    using namespace AgpuGL;
+    if(!theGLPlatform)
+        theGLPlatform = agpu::makeObject<GLPlatform> ();
+
     if (!platforms && numplatforms == 0)
     {
         CHECK_POINTER(ret_numplatforms);
@@ -14,53 +80,6 @@ AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform*
 
     if(ret_numplatforms)
         *ret_numplatforms = 1;
-    platforms[0] = &theGLPlatform;
+    platforms[0] = reinterpret_cast<agpu_platform*> (theGLPlatform.asPtrWithoutNewRef());
     return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_open_info* openInfo )
-{
-    if(platform != &theGLPlatform)
-        return nullptr;
-
-    return agpu_device::open(openInfo);
-}
-
-AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* platform)
-{
-    if (platform != &theGLPlatform)
-        return nullptr;
-
-    return "OpenGL 4.x Core";
-}
-
-AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* platform)
-{
-    if (platform != &theGLPlatform)
-        return -1;
-
-    return 100;
-}
-
-AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platform)
-{
-    if (platform != &theGLPlatform)
-        return -1;
-
-    return 1;
-}
-
-AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform)
-{
-    return false;
-}
-
-AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform)
-{
-    return false;
-}
-
-AGPU_EXPORT agpu_bool agpuIsCrossPlatform(agpu_platform* platform)
-{
-    return platform == &theGLPlatform;
 }

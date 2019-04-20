@@ -4,13 +4,16 @@
 #include "device.hpp"
 #include <vector>
 
-struct _agpu_renderpass : public Object<agpu_renderpass>
+namespace AgpuGL
+{
+
+struct GLRenderPass : public agpu::renderpass
 {
 public:
-    _agpu_renderpass(agpu_device *device);
-    void lostReferences();
+    GLRenderPass(const agpu::device_ref &device);
+    ~GLRenderPass();
 
-    static agpu_renderpass *create(agpu_device *device, agpu_renderpass_description *description);
+    static agpu::renderpass_ref create(const agpu::device_ref &device, agpu_renderpass_description *description);
 
     agpu_error setDepthStencilClearValue(agpu_depth_stencil_value value);
     agpu_error setColorClearValue(agpu_uint attachment_index, agpu_color4f value);
@@ -18,10 +21,12 @@ public:
 
     void started();
 
-    agpu_device *device;
+    agpu::device_ref device;
     std::vector<agpu_renderpass_color_attachment_description> colorAttachments;
     agpu_renderpass_depth_stencil_description depthStencilAttachment;
     bool hasDepthStencil;
 };
+
+} // End of namespace AgpuGL
 
 #endif // AGPU_OPENGL_RENDERPASS_HPP

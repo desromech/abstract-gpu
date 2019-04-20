@@ -124,39 +124,39 @@ private:
 	_agpu_platform() {}
 
 public:
-	inline agpu_device* openDevice ( agpu_device_open_info* openInfo )
+	inline agpu_device* openDevice(agpu_device_open_info* openInfo)
 	{
-		return agpuOpenDevice( this, openInfo );
+		return agpuOpenDevice(this, openInfo);
 	}
 
-	inline agpu_cstring getName (  )
+	inline agpu_cstring getName()
 	{
-		return agpuGetPlatformName( this );
+		return agpuGetPlatformName(this);
 	}
 
-	inline agpu_int getVersion (  )
+	inline agpu_int getVersion()
 	{
-		return agpuGetPlatformVersion( this );
+		return agpuGetPlatformVersion(this);
 	}
 
-	inline agpu_int getImplementationVersion (  )
+	inline agpu_int getImplementationVersion()
 	{
-		return agpuGetPlatformImplementationVersion( this );
+		return agpuGetPlatformImplementationVersion(this);
 	}
 
-	inline agpu_bool hasRealMultithreading (  )
+	inline agpu_bool hasRealMultithreading()
 	{
-		return agpuPlatformHasRealMultithreading( this );
+		return agpuPlatformHasRealMultithreading(this);
 	}
 
-	inline agpu_bool isNative (  )
+	inline agpu_bool isNative()
 	{
-		return agpuIsNativePlatform( this );
+		return agpuIsNativePlatform(this);
 	}
 
-	inline agpu_bool isCrossPlatform (  )
+	inline agpu_bool isCrossPlatform()
 	{
-		return agpuIsCrossPlatform( this );
+		return agpuIsCrossPlatform(this);
 	}
 
 };
@@ -170,129 +170,129 @@ private:
 	_agpu_device() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddDeviceReference( this ));
+		agpuThrowIfFailed(agpuAddDeviceReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseDevice( this ));
+		agpuThrowIfFailed(agpuReleaseDevice(this));
 	}
 
-	inline agpu_command_queue* getDefaultCommandQueue (  )
+	inline agpu_command_queue* getDefaultCommandQueue()
 	{
-		return agpuGetDefaultCommandQueue( this );
+		return agpuGetDefaultCommandQueue(this);
 	}
 
-	inline agpu_swap_chain* createSwapChain ( agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
+	inline agpu_swap_chain* createSwapChain(agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo)
 	{
-		return agpuCreateSwapChain( this, commandQueue, swapChainInfo );
+		return agpuCreateSwapChain(this, commandQueue, swapChainInfo);
 	}
 
-	inline agpu_buffer* createBuffer ( agpu_buffer_description* description, agpu_pointer initial_data )
+	inline agpu_buffer* createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
 	{
-		return agpuCreateBuffer( this, description, initial_data );
+		return agpuCreateBuffer(this, description, initial_data);
 	}
 
-	inline agpu_vertex_layout* createVertexLayout (  )
+	inline agpu_vertex_layout* createVertexLayout()
 	{
-		return agpuCreateVertexLayout( this );
+		return agpuCreateVertexLayout(this);
 	}
 
-	inline agpu_vertex_binding* createVertexBinding ( agpu_vertex_layout* layout )
+	inline agpu_vertex_binding* createVertexBinding(agpu_vertex_layout* layout)
 	{
-		return agpuCreateVertexBinding( this, layout );
+		return agpuCreateVertexBinding(this, layout);
 	}
 
-	inline agpu_shader* createShader ( agpu_shader_type type )
+	inline agpu_shader* createShader(agpu_shader_type type)
 	{
-		return agpuCreateShader( this, type );
+		return agpuCreateShader(this, type);
 	}
 
-	inline agpu_shader_signature_builder* createShaderSignatureBuilder (  )
+	inline agpu_shader_signature_builder* createShaderSignatureBuilder()
 	{
-		return agpuCreateShaderSignatureBuilder( this );
+		return agpuCreateShaderSignatureBuilder(this);
 	}
 
-	inline agpu_pipeline_builder* createPipelineBuilder (  )
+	inline agpu_pipeline_builder* createPipelineBuilder()
 	{
-		return agpuCreatePipelineBuilder( this );
+		return agpuCreatePipelineBuilder(this);
 	}
 
-	inline agpu_compute_pipeline_builder* createComputePipelineBuilder (  )
+	inline agpu_compute_pipeline_builder* createComputePipelineBuilder()
 	{
-		return agpuCreateComputePipelineBuilder( this );
+		return agpuCreateComputePipelineBuilder(this);
 	}
 
-	inline agpu_command_allocator* createCommandAllocator ( agpu_command_list_type type, agpu_command_queue* queue )
+	inline agpu_command_allocator* createCommandAllocator(agpu_command_list_type type, agpu_command_queue* queue)
 	{
-		return agpuCreateCommandAllocator( this, type, queue );
+		return agpuCreateCommandAllocator(this, type, queue);
 	}
 
-	inline agpu_command_list* createCommandList ( agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+	inline agpu_command_list* createCommandList(agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 	{
-		return agpuCreateCommandList( this, type, allocator, initial_pipeline_state );
+		return agpuCreateCommandList(this, type, allocator, initial_pipeline_state);
 	}
 
-	inline agpu_shader_language getPreferredShaderLanguage (  )
+	inline agpu_shader_language getPreferredShaderLanguage()
 	{
-		return agpuGetPreferredShaderLanguage( this );
+		return agpuGetPreferredShaderLanguage(this);
 	}
 
-	inline agpu_shader_language getPreferredIntermediateShaderLanguage (  )
+	inline agpu_shader_language getPreferredIntermediateShaderLanguage()
 	{
-		return agpuGetPreferredIntermediateShaderLanguage( this );
+		return agpuGetPreferredIntermediateShaderLanguage(this);
 	}
 
-	inline agpu_shader_language getPreferredHighLevelShaderLanguage (  )
+	inline agpu_shader_language getPreferredHighLevelShaderLanguage()
 	{
-		return agpuGetPreferredHighLevelShaderLanguage( this );
+		return agpuGetPreferredHighLevelShaderLanguage(this);
 	}
 
-	inline agpu_framebuffer* createFrameBuffer ( agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
+	inline agpu_framebuffer* createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 	{
-		return agpuCreateFrameBuffer( this, width, height, colorCount, colorViews, depthStencilView );
+		return agpuCreateFrameBuffer(this, width, height, colorCount, colorViews, depthStencilView);
 	}
 
-	inline agpu_renderpass* createRenderPass ( agpu_renderpass_description* description )
+	inline agpu_renderpass* createRenderPass(agpu_renderpass_description* description)
 	{
-		return agpuCreateRenderPass( this, description );
+		return agpuCreateRenderPass(this, description);
 	}
 
-	inline agpu_texture* createTexture ( agpu_texture_description* description )
+	inline agpu_texture* createTexture(agpu_texture_description* description)
 	{
-		return agpuCreateTexture( this, description );
+		return agpuCreateTexture(this, description);
 	}
 
-	inline agpu_fence* createFence (  )
+	inline agpu_fence* createFence()
 	{
-		return agpuCreateFence( this );
+		return agpuCreateFence(this);
 	}
 
-	inline agpu_int getMultiSampleQualityLevels ( agpu_uint sample_count )
+	inline agpu_int getMultiSampleQualityLevels(agpu_uint sample_count)
 	{
-		return agpuGetMultiSampleQualityLevels( this, sample_count );
+		return agpuGetMultiSampleQualityLevels(this, sample_count);
 	}
 
-	inline agpu_bool hasTopLeftNdcOrigin (  )
+	inline agpu_bool hasTopLeftNdcOrigin()
 	{
-		return agpuHasTopLeftNdcOrigin( this );
+		return agpuHasTopLeftNdcOrigin(this);
 	}
 
-	inline agpu_bool hasBottomLeftTextureCoordinates (  )
+	inline agpu_bool hasBottomLeftTextureCoordinates()
 	{
-		return agpuHasBottomLeftTextureCoordinates( this );
+		return agpuHasBottomLeftTextureCoordinates(this);
 	}
 
-	inline agpu_bool isFeatureSupported ( agpu_feature feature )
+	inline agpu_bool isFeatureSupported(agpu_feature feature)
 	{
-		return agpuIsFeatureSupportedOnDevice( this, feature );
+		return agpuIsFeatureSupportedOnDevice(this, feature);
 	}
 
-	inline agpu_vr_system* getVRSystem (  )
+	inline agpu_vr_system* getVRSystem()
 	{
-		return agpuGetVRSystem( this );
+		return agpuGetVRSystem(this);
 	}
 
 };
@@ -306,79 +306,79 @@ private:
 	_agpu_vr_system() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddVRSystemReference( this ));
+		agpuThrowIfFailed(agpuAddVRSystemReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseVRSystem( this ));
+		agpuThrowIfFailed(agpuReleaseVRSystem(this));
 	}
 
-	inline agpu_cstring getVRSystemName (  )
+	inline agpu_cstring getVRSystemName()
 	{
-		return agpuGetVRSystemName( this );
+		return agpuGetVRSystemName(this);
 	}
 
-	inline agpu_pointer getNativeHandle (  )
+	inline agpu_pointer getNativeHandle()
 	{
-		return agpuGetVRSystemNativeHandle( this );
+		return agpuGetVRSystemNativeHandle(this);
 	}
 
-	inline void getRecommendedRenderTargetSize ( agpu_size2d* size )
+	inline void getRecommendedRenderTargetSize(agpu_size2d* size)
 	{
-		agpuThrowIfFailed(agpuGetVRRecommendedRenderTargetSize( this, size ));
+		agpuThrowIfFailed(agpuGetVRRecommendedRenderTargetSize(this, size));
 	}
 
-	inline void getEyeToHeadTransform ( agpu_vr_eye eye, agpu_matrix4x4f* transform )
+	inline void getEyeToHeadTransform(agpu_vr_eye eye, agpu_matrix4x4f* transform)
 	{
-		agpuThrowIfFailed(agpuGetVREyeToHeadTransformInto( this, eye, transform ));
+		agpuThrowIfFailed(agpuGetVREyeToHeadTransformInto(this, eye, transform));
 	}
 
-	inline void getProjectionMatrix ( agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
+	inline void getProjectionMatrix(agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix)
 	{
-		agpuThrowIfFailed(agpuGetVRProjectionMatrix( this, eye, near_distance, far_distance, projection_matrix ));
+		agpuThrowIfFailed(agpuGetVRProjectionMatrix(this, eye, near_distance, far_distance, projection_matrix));
 	}
 
-	inline void getProjectionFrustumTangents ( agpu_vr_eye eye, agpu_frustum_tangents* frustum )
+	inline void getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum)
 	{
-		agpuThrowIfFailed(agpuGetVRProjectionFrustumTangents( this, eye, frustum ));
+		agpuThrowIfFailed(agpuGetVRProjectionFrustumTangents(this, eye, frustum));
 	}
 
-	inline void submitEyeRenderTargets ( agpu_texture* left_eye, agpu_texture* right_eye )
+	inline void submitEyeRenderTargets(agpu_texture* left_eye, agpu_texture* right_eye)
 	{
-		agpuThrowIfFailed(agpuSubmitVREyeRenderTargets( this, left_eye, right_eye ));
+		agpuThrowIfFailed(agpuSubmitVREyeRenderTargets(this, left_eye, right_eye));
 	}
 
-	inline void waitAndFetchPoses (  )
+	inline void waitAndFetchPoses()
 	{
-		agpuThrowIfFailed(agpuWaitAndFetchVRPoses( this ));
+		agpuThrowIfFailed(agpuWaitAndFetchVRPoses(this));
 	}
 
-	inline agpu_size getValidTrackedDevicePoseCount (  )
+	inline agpu_size getValidTrackedDevicePoseCount()
 	{
-		return agpuGetValidVRTrackedDevicePoseCount( this );
+		return agpuGetValidVRTrackedDevicePoseCount(this);
 	}
 
-	inline void getValidTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+	inline void getValidTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest)
 	{
-		agpuThrowIfFailed(agpuGetValidVRTrackedDevicePoseInto( this, index, dest ));
+		agpuThrowIfFailed(agpuGetValidVRTrackedDevicePoseInto(this, index, dest));
 	}
 
-	inline agpu_size getValidRenderTrackedDevicePoseCount (  )
+	inline agpu_size getValidRenderTrackedDevicePoseCount()
 	{
-		return agpuGetValidVRRenderTrackedDevicePoseCount( this );
+		return agpuGetValidVRRenderTrackedDevicePoseCount(this);
 	}
 
-	inline void getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+	inline void getValidRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest)
 	{
-		agpuThrowIfFailed(agpuGetValidVRRenderTrackedDevicePoseInto( this, index, dest ));
+		agpuThrowIfFailed(agpuGetValidVRRenderTrackedDevicePoseInto(this, index, dest));
 	}
 
-	inline agpu_bool pollEvent ( agpu_vr_event* event )
+	inline agpu_bool pollEvent(agpu_vr_event* event)
 	{
-		return agpuPollVREvent( this, event );
+		return agpuPollVREvent(this, event);
 	}
 
 };
@@ -392,34 +392,34 @@ private:
 	_agpu_swap_chain() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddSwapChainReference( this ));
+		agpuThrowIfFailed(agpuAddSwapChainReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseSwapChain( this ));
+		agpuThrowIfFailed(agpuReleaseSwapChain(this));
 	}
 
-	inline void swapBuffers (  )
+	inline void swapBuffers()
 	{
-		agpuThrowIfFailed(agpuSwapBuffers( this ));
+		agpuThrowIfFailed(agpuSwapBuffers(this));
 	}
 
-	inline agpu_framebuffer* getCurrentBackBuffer (  )
+	inline agpu_framebuffer* getCurrentBackBuffer()
 	{
-		return agpuGetCurrentBackBuffer( this );
+		return agpuGetCurrentBackBuffer(this);
 	}
 
-	inline agpu_size getCurrentBackBufferIndex (  )
+	inline agpu_size getCurrentBackBufferIndex()
 	{
-		return agpuGetCurrentBackBufferIndex( this );
+		return agpuGetCurrentBackBufferIndex(this);
 	}
 
-	inline agpu_size getFramebufferCount (  )
+	inline agpu_size getFramebufferCount()
 	{
-		return agpuGetFramebufferCount( this );
+		return agpuGetFramebufferCount(this);
 	}
 
 };
@@ -433,44 +433,44 @@ private:
 	_agpu_compute_pipeline_builder() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddComputePipelineBuilderReference( this ));
+		agpuThrowIfFailed(agpuAddComputePipelineBuilderReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseComputePipelineBuilder( this ));
+		agpuThrowIfFailed(agpuReleaseComputePipelineBuilder(this));
 	}
 
-	inline agpu_pipeline_state* build (  )
+	inline agpu_pipeline_state* build()
 	{
-		return agpuBuildComputePipelineState( this );
+		return agpuBuildComputePipelineState(this);
 	}
 
-	inline void attachShader ( agpu_shader* shader )
+	inline void attachShader(agpu_shader* shader)
 	{
-		agpuThrowIfFailed(agpuAttachComputeShader( this, shader ));
+		agpuThrowIfFailed(agpuAttachComputeShader(this, shader));
 	}
 
-	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
+	inline void attachShaderWithEntryPoint(agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point)
 	{
-		agpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint( this, shader, type, entry_point ));
+		agpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint(this, shader, type, entry_point));
 	}
 
-	inline agpu_size getBuildingLogLength (  )
+	inline agpu_size getBuildingLogLength()
 	{
-		return agpuGetComputePipelineBuildingLogLength( this );
+		return agpuGetComputePipelineBuildingLogLength(this);
 	}
 
-	inline void getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+	inline void getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 	{
-		agpuThrowIfFailed(agpuGetComputePipelineBuildingLog( this, buffer_size, buffer ));
+		agpuThrowIfFailed(agpuGetComputePipelineBuildingLog(this, buffer_size, buffer));
 	}
 
-	inline void setShaderSignature ( agpu_shader_signature* signature )
+	inline void setShaderSignature(agpu_shader_signature* signature)
 	{
-		agpuThrowIfFailed(agpuSetComputePipelineShaderSignature( this, signature ));
+		agpuThrowIfFailed(agpuSetComputePipelineShaderSignature(this, signature));
 	}
 
 };
@@ -484,129 +484,129 @@ private:
 	_agpu_pipeline_builder() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddPipelineBuilderReference( this ));
+		agpuThrowIfFailed(agpuAddPipelineBuilderReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleasePipelineBuilder( this ));
+		agpuThrowIfFailed(agpuReleasePipelineBuilder(this));
 	}
 
-	inline agpu_pipeline_state* build (  )
+	inline agpu_pipeline_state* build()
 	{
-		return agpuBuildPipelineState( this );
+		return agpuBuildPipelineState(this);
 	}
 
-	inline void attachShader ( agpu_shader* shader )
+	inline void attachShader(agpu_shader* shader)
 	{
-		agpuThrowIfFailed(agpuAttachShader( this, shader ));
+		agpuThrowIfFailed(agpuAttachShader(this, shader));
 	}
 
-	inline void attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
+	inline void attachShaderWithEntryPoint(agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point)
 	{
-		agpuThrowIfFailed(agpuAttachShaderWithEntryPoint( this, shader, type, entry_point ));
+		agpuThrowIfFailed(agpuAttachShaderWithEntryPoint(this, shader, type, entry_point));
 	}
 
-	inline agpu_size getBuildingLogLength (  )
+	inline agpu_size getBuildingLogLength()
 	{
-		return agpuGetPipelineBuildingLogLength( this );
+		return agpuGetPipelineBuildingLogLength(this);
 	}
 
-	inline void getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+	inline void getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 	{
-		agpuThrowIfFailed(agpuGetPipelineBuildingLog( this, buffer_size, buffer ));
+		agpuThrowIfFailed(agpuGetPipelineBuildingLog(this, buffer_size, buffer));
 	}
 
-	inline void setBlendState ( agpu_int renderTargetMask, agpu_bool enabled )
+	inline void setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
 	{
-		agpuThrowIfFailed(agpuSetBlendState( this, renderTargetMask, enabled ));
+		agpuThrowIfFailed(agpuSetBlendState(this, renderTargetMask, enabled));
 	}
 
-	inline void setBlendFunction ( agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
+	inline void setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
 	{
-		agpuThrowIfFailed(agpuSetBlendFunction( this, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation ));
+		agpuThrowIfFailed(agpuSetBlendFunction(this, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation));
 	}
 
-	inline void setColorMask ( agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
+	inline void setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
 	{
-		agpuThrowIfFailed(agpuSetColorMask( this, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled ));
+		agpuThrowIfFailed(agpuSetColorMask(this, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled));
 	}
 
-	inline void setFrontFace ( agpu_face_winding winding )
+	inline void setFrontFace(agpu_face_winding winding)
 	{
-		agpuThrowIfFailed(agpuSetFrontFace( this, winding ));
+		agpuThrowIfFailed(agpuSetFrontFace(this, winding));
 	}
 
-	inline void setCullMode ( agpu_cull_mode mode )
+	inline void setCullMode(agpu_cull_mode mode)
 	{
-		agpuThrowIfFailed(agpuSetCullMode( this, mode ));
+		agpuThrowIfFailed(agpuSetCullMode(this, mode));
 	}
 
-	inline void setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+	inline void setDepthBias(agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
 	{
-		agpuThrowIfFailed(agpuSetDepthBias( this, constant_factor, clamp, slope_factor ));
+		agpuThrowIfFailed(agpuSetDepthBias(this, constant_factor, clamp, slope_factor));
 	}
 
-	inline void setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
+	inline void setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 	{
-		agpuThrowIfFailed(agpuSetDepthState( this, enabled, writeMask, function ));
+		agpuThrowIfFailed(agpuSetDepthState(this, enabled, writeMask, function));
 	}
 
-	inline void setPolygonMode ( agpu_polygon_mode mode )
+	inline void setPolygonMode(agpu_polygon_mode mode)
 	{
-		agpuThrowIfFailed(agpuSetPolygonMode( this, mode ));
+		agpuThrowIfFailed(agpuSetPolygonMode(this, mode));
 	}
 
-	inline void setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
+	inline void setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
 	{
-		agpuThrowIfFailed(agpuSetStencilState( this, enabled, writeMask, readMask ));
+		agpuThrowIfFailed(agpuSetStencilState(this, enabled, writeMask, readMask));
 	}
 
-	inline void setStencilFrontFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+	inline void setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 	{
-		agpuThrowIfFailed(agpuSetStencilFrontFace( this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction ));
+		agpuThrowIfFailed(agpuSetStencilFrontFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
 	}
 
-	inline void setStencilBackFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+	inline void setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 	{
-		agpuThrowIfFailed(agpuSetStencilBackFace( this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction ));
+		agpuThrowIfFailed(agpuSetStencilBackFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
 	}
 
-	inline void setRenderTargetCount ( agpu_int count )
+	inline void setRenderTargetCount(agpu_int count)
 	{
-		agpuThrowIfFailed(agpuSetRenderTargetCount( this, count ));
+		agpuThrowIfFailed(agpuSetRenderTargetCount(this, count));
 	}
 
-	inline void setRenderTargetFormat ( agpu_uint index, agpu_texture_format format )
+	inline void setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
 	{
-		agpuThrowIfFailed(agpuSetRenderTargetFormat( this, index, format ));
+		agpuThrowIfFailed(agpuSetRenderTargetFormat(this, index, format));
 	}
 
-	inline void setDepthStencilFormat ( agpu_texture_format format )
+	inline void setDepthStencilFormat(agpu_texture_format format)
 	{
-		agpuThrowIfFailed(agpuSetDepthStencilFormat( this, format ));
+		agpuThrowIfFailed(agpuSetDepthStencilFormat(this, format));
 	}
 
-	inline void setPrimitiveType ( agpu_primitive_topology type )
+	inline void setPrimitiveType(agpu_primitive_topology type)
 	{
-		agpuThrowIfFailed(agpuSetPrimitiveType( this, type ));
+		agpuThrowIfFailed(agpuSetPrimitiveType(this, type));
 	}
 
-	inline void setVertexLayout ( agpu_vertex_layout* layout )
+	inline void setVertexLayout(agpu_vertex_layout* layout)
 	{
-		agpuThrowIfFailed(agpuSetVertexLayout( this, layout ));
+		agpuThrowIfFailed(agpuSetVertexLayout(this, layout));
 	}
 
-	inline void setShaderSignature ( agpu_shader_signature* signature )
+	inline void setShaderSignature(agpu_shader_signature* signature)
 	{
-		agpuThrowIfFailed(agpuSetPipelineShaderSignature( this, signature ));
+		agpuThrowIfFailed(agpuSetPipelineShaderSignature(this, signature));
 	}
 
-	inline void setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality )
+	inline void setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
 	{
-		agpuThrowIfFailed(agpuSetSampleDescription( this, sample_count, sample_quality ));
+		agpuThrowIfFailed(agpuSetSampleDescription(this, sample_count, sample_quality));
 	}
 
 };
@@ -620,14 +620,14 @@ private:
 	_agpu_pipeline_state() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddPipelineStateReference( this ));
+		agpuThrowIfFailed(agpuAddPipelineStateReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleasePipelineState( this ));
+		agpuThrowIfFailed(agpuReleasePipelineState(this));
 	}
 
 };
@@ -641,34 +641,34 @@ private:
 	_agpu_command_queue() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddCommandQueueReference( this ));
+		agpuThrowIfFailed(agpuAddCommandQueueReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseCommandQueue( this ));
+		agpuThrowIfFailed(agpuReleaseCommandQueue(this));
 	}
 
-	inline void addCommandList ( agpu_command_list* command_list )
+	inline void addCommandList(agpu_command_list* command_list)
 	{
-		agpuThrowIfFailed(agpuAddCommandList( this, command_list ));
+		agpuThrowIfFailed(agpuAddCommandList(this, command_list));
 	}
 
-	inline void finishExecution (  )
+	inline void finishExecution()
 	{
-		agpuThrowIfFailed(agpuFinishQueueExecution( this ));
+		agpuThrowIfFailed(agpuFinishQueueExecution(this));
 	}
 
-	inline void signalFence ( agpu_fence* fence )
+	inline void signalFence(agpu_fence* fence)
 	{
-		agpuThrowIfFailed(agpuSignalFence( this, fence ));
+		agpuThrowIfFailed(agpuSignalFence(this, fence));
 	}
 
-	inline void waitFence ( agpu_fence* fence )
+	inline void waitFence(agpu_fence* fence)
 	{
-		agpuThrowIfFailed(agpuWaitFence( this, fence ));
+		agpuThrowIfFailed(agpuWaitFence(this, fence));
 	}
 
 };
@@ -682,19 +682,19 @@ private:
 	_agpu_command_allocator() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddCommandAllocatorReference( this ));
+		agpuThrowIfFailed(agpuAddCommandAllocatorReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseCommandAllocator( this ));
+		agpuThrowIfFailed(agpuReleaseCommandAllocator(this));
 	}
 
-	inline void reset (  )
+	inline void reset()
 	{
-		agpuThrowIfFailed(agpuResetCommandAllocator( this ));
+		agpuThrowIfFailed(agpuResetCommandAllocator(this));
 	}
 
 };
@@ -708,144 +708,149 @@ private:
 	_agpu_command_list() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddCommandListReference( this ));
+		agpuThrowIfFailed(agpuAddCommandListReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseCommandList( this ));
+		agpuThrowIfFailed(agpuReleaseCommandList(this));
 	}
 
-	inline void setShaderSignature ( agpu_shader_signature* signature )
+	inline void setShaderSignature(agpu_shader_signature* signature)
 	{
-		agpuThrowIfFailed(agpuSetShaderSignature( this, signature ));
+		agpuThrowIfFailed(agpuSetShaderSignature(this, signature));
 	}
 
-	inline void setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+	inline void setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 	{
-		agpuThrowIfFailed(agpuSetViewport( this, x, y, w, h ));
+		agpuThrowIfFailed(agpuSetViewport(this, x, y, w, h));
 	}
 
-	inline void setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+	inline void setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 	{
-		agpuThrowIfFailed(agpuSetScissor( this, x, y, w, h ));
+		agpuThrowIfFailed(agpuSetScissor(this, x, y, w, h));
 	}
 
-	inline void usePipelineState ( agpu_pipeline_state* pipeline )
+	inline void usePipelineState(agpu_pipeline_state* pipeline)
 	{
-		agpuThrowIfFailed(agpuUsePipelineState( this, pipeline ));
+		agpuThrowIfFailed(agpuUsePipelineState(this, pipeline));
 	}
 
-	inline void useVertexBinding ( agpu_vertex_binding* vertex_binding )
+	inline void useVertexBinding(agpu_vertex_binding* vertex_binding)
 	{
-		agpuThrowIfFailed(agpuUseVertexBinding( this, vertex_binding ));
+		agpuThrowIfFailed(agpuUseVertexBinding(this, vertex_binding));
 	}
 
-	inline void useIndexBuffer ( agpu_buffer* index_buffer )
+	inline void useIndexBuffer(agpu_buffer* index_buffer)
 	{
-		agpuThrowIfFailed(agpuUseIndexBuffer( this, index_buffer ));
+		agpuThrowIfFailed(agpuUseIndexBuffer(this, index_buffer));
 	}
 
-	inline void useDrawIndirectBuffer ( agpu_buffer* draw_buffer )
+	inline void useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
 	{
-		agpuThrowIfFailed(agpuUseDrawIndirectBuffer( this, draw_buffer ));
+		agpuThrowIfFailed(agpuUseIndexBufferAt(this, index_buffer, offset, index_size));
 	}
 
-	inline void useComputeDispatchIndirectBuffer ( agpu_buffer* buffer )
+	inline void useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 	{
-		agpuThrowIfFailed(agpuUseComputeDispatchIndirectBuffer( this, buffer ));
+		agpuThrowIfFailed(agpuUseDrawIndirectBuffer(this, draw_buffer));
 	}
 
-	inline void useShaderResources ( agpu_shader_resource_binding* binding )
+	inline void useComputeDispatchIndirectBuffer(agpu_buffer* buffer)
 	{
-		agpuThrowIfFailed(agpuUseShaderResources( this, binding ));
+		agpuThrowIfFailed(agpuUseComputeDispatchIndirectBuffer(this, buffer));
 	}
 
-	inline void useComputeShaderResources ( agpu_shader_resource_binding* binding )
+	inline void useShaderResources(agpu_shader_resource_binding* binding)
 	{
-		agpuThrowIfFailed(agpuUseComputeShaderResources( this, binding ));
+		agpuThrowIfFailed(agpuUseShaderResources(this, binding));
 	}
 
-	inline void drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
+	inline void useComputeShaderResources(agpu_shader_resource_binding* binding)
 	{
-		agpuThrowIfFailed(agpuDrawArrays( this, vertex_count, instance_count, first_vertex, base_instance ));
+		agpuThrowIfFailed(agpuUseComputeShaderResources(this, binding));
 	}
 
-	inline void drawArraysIndirect ( agpu_size offset, agpu_size drawcount )
+	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
 	{
-		agpuThrowIfFailed(agpuDrawArraysIndirect( this, offset, drawcount ));
+		agpuThrowIfFailed(agpuDrawArrays(this, vertex_count, instance_count, first_vertex, base_instance));
 	}
 
-	inline void drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
+	inline void drawArraysIndirect(agpu_size offset, agpu_size drawcount)
 	{
-		agpuThrowIfFailed(agpuDrawElements( this, index_count, instance_count, first_index, base_vertex, base_instance ));
+		agpuThrowIfFailed(agpuDrawArraysIndirect(this, offset, drawcount));
 	}
 
-	inline void drawElementsIndirect ( agpu_size offset, agpu_size drawcount )
+	inline void drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 	{
-		agpuThrowIfFailed(agpuDrawElementsIndirect( this, offset, drawcount ));
+		agpuThrowIfFailed(agpuDrawElements(this, index_count, instance_count, first_index, base_vertex, base_instance));
 	}
 
-	inline void dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
+	inline void drawElementsIndirect(agpu_size offset, agpu_size drawcount)
 	{
-		agpuThrowIfFailed(agpuDispatchCompute( this, group_count_x, group_count_y, group_count_z ));
+		agpuThrowIfFailed(agpuDrawElementsIndirect(this, offset, drawcount));
 	}
 
-	inline void dispatchComputeIndirect ( agpu_size offset )
+	inline void dispatchCompute(agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z)
 	{
-		agpuThrowIfFailed(agpuDispatchComputeIndirect( this, offset ));
+		agpuThrowIfFailed(agpuDispatchCompute(this, group_count_x, group_count_y, group_count_z));
 	}
 
-	inline void setStencilReference ( agpu_uint reference )
+	inline void dispatchComputeIndirect(agpu_size offset)
 	{
-		agpuThrowIfFailed(agpuSetStencilReference( this, reference ));
+		agpuThrowIfFailed(agpuDispatchComputeIndirect(this, offset));
 	}
 
-	inline void executeBundle ( agpu_command_list* bundle )
+	inline void setStencilReference(agpu_uint reference)
 	{
-		agpuThrowIfFailed(agpuExecuteBundle( this, bundle ));
+		agpuThrowIfFailed(agpuSetStencilReference(this, reference));
 	}
 
-	inline void close (  )
+	inline void executeBundle(agpu_command_list* bundle)
 	{
-		agpuThrowIfFailed(agpuCloseCommandList( this ));
+		agpuThrowIfFailed(agpuExecuteBundle(this, bundle));
 	}
 
-	inline void reset ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+	inline void close()
 	{
-		agpuThrowIfFailed(agpuResetCommandList( this, allocator, initial_pipeline_state ));
+		agpuThrowIfFailed(agpuCloseCommandList(this));
 	}
 
-	inline void resetBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+	inline void reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
 	{
-		agpuThrowIfFailed(agpuResetBundleCommandList( this, allocator, initial_pipeline_state, inheritance_info ));
+		agpuThrowIfFailed(agpuResetCommandList(this, allocator, initial_pipeline_state));
 	}
 
-	inline void beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+	inline void resetBundle(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info)
 	{
-		agpuThrowIfFailed(agpuBeginRenderPass( this, renderpass, framebuffer, bundle_content ));
+		agpuThrowIfFailed(agpuResetBundleCommandList(this, allocator, initial_pipeline_state, inheritance_info));
 	}
 
-	inline void endRenderPass (  )
+	inline void beginRenderPass(agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
 	{
-		agpuThrowIfFailed(agpuEndRenderPass( this ));
+		agpuThrowIfFailed(agpuBeginRenderPass(this, renderpass, framebuffer, bundle_content));
 	}
 
-	inline void resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
+	inline void endRenderPass()
 	{
-		agpuThrowIfFailed(agpuResolveFramebuffer( this, destFramebuffer, sourceFramebuffer ));
+		agpuThrowIfFailed(agpuEndRenderPass(this));
 	}
 
-	inline void resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+	inline void resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
 	{
-		agpuThrowIfFailed(agpuResolveTexture( this, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect ));
+		agpuThrowIfFailed(agpuResolveFramebuffer(this, destFramebuffer, sourceFramebuffer));
 	}
 
-	inline void pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
+	inline void resolveTexture(agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
 	{
-		agpuThrowIfFailed(agpuPushConstants( this, offset, size, values ));
+		agpuThrowIfFailed(agpuResolveTexture(this, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect));
+	}
+
+	inline void pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
+	{
+		agpuThrowIfFailed(agpuPushConstants(this, offset, size, values));
 	}
 
 };
@@ -859,59 +864,59 @@ private:
 	_agpu_texture() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddTextureReference( this ));
+		agpuThrowIfFailed(agpuAddTextureReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseTexture( this ));
+		agpuThrowIfFailed(agpuReleaseTexture(this));
 	}
 
-	inline void getDescription ( agpu_texture_description* description )
+	inline void getDescription(agpu_texture_description* description)
 	{
-		agpuThrowIfFailed(agpuGetTextureDescription( this, description ));
+		agpuThrowIfFailed(agpuGetTextureDescription(this, description));
 	}
 
-	inline agpu_pointer mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region )
+	inline agpu_pointer mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region)
 	{
-		return agpuMapTextureLevel( this, level, arrayIndex, flags, region );
+		return agpuMapTextureLevel(this, level, arrayIndex, flags, region);
 	}
 
-	inline void unmapLevel (  )
+	inline void unmapLevel()
 	{
-		agpuThrowIfFailed(agpuUnmapTextureLevel( this ));
+		agpuThrowIfFailed(agpuUnmapTextureLevel(this));
 	}
 
-	inline void readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
+	inline void readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 	{
-		agpuThrowIfFailed(agpuReadTextureData( this, level, arrayIndex, pitch, slicePitch, buffer ));
+		agpuThrowIfFailed(agpuReadTextureData(this, level, arrayIndex, pitch, slicePitch, buffer));
 	}
 
-	inline void uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+	inline void uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 	{
-		agpuThrowIfFailed(agpuUploadTextureData( this, level, arrayIndex, pitch, slicePitch, data ));
+		agpuThrowIfFailed(agpuUploadTextureData(this, level, arrayIndex, pitch, slicePitch, data));
 	}
 
-	inline void uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+	inline void uploadTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data)
 	{
-		agpuThrowIfFailed(agpuUploadTextureSubData( this, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data ));
+		agpuThrowIfFailed(agpuUploadTextureSubData(this, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data));
 	}
 
-	inline void discardUploadBuffer (  )
+	inline void discardUploadBuffer()
 	{
-		agpuThrowIfFailed(agpuDiscardTextureUploadBuffer( this ));
+		agpuThrowIfFailed(agpuDiscardTextureUploadBuffer(this));
 	}
 
-	inline void discardReadbackBuffer (  )
+	inline void discardReadbackBuffer()
 	{
-		agpuThrowIfFailed(agpuDiscardTextureReadbackBuffer( this ));
+		agpuThrowIfFailed(agpuDiscardTextureReadbackBuffer(this));
 	}
 
-	inline void getFullViewDescription ( agpu_texture_view_description* result )
+	inline void getFullViewDescription(agpu_texture_view_description* result)
 	{
-		agpuThrowIfFailed(agpuGetTextureFullViewDescription( this, result ));
+		agpuThrowIfFailed(agpuGetTextureFullViewDescription(this, result));
 	}
 
 };
@@ -925,49 +930,49 @@ private:
 	_agpu_buffer() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddBufferReference( this ));
+		agpuThrowIfFailed(agpuAddBufferReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseBuffer( this ));
+		agpuThrowIfFailed(agpuReleaseBuffer(this));
 	}
 
-	inline agpu_pointer mapBuffer ( agpu_mapping_access flags )
+	inline agpu_pointer mapBuffer(agpu_mapping_access flags)
 	{
-		return agpuMapBuffer( this, flags );
+		return agpuMapBuffer(this, flags);
 	}
 
-	inline void unmapBuffer (  )
+	inline void unmapBuffer()
 	{
-		agpuThrowIfFailed(agpuUnmapBuffer( this ));
+		agpuThrowIfFailed(agpuUnmapBuffer(this));
 	}
 
-	inline void getDescription ( agpu_buffer_description* description )
+	inline void getDescription(agpu_buffer_description* description)
 	{
-		agpuThrowIfFailed(agpuGetBufferDescription( this, description ));
+		agpuThrowIfFailed(agpuGetBufferDescription(this, description));
 	}
 
-	inline void uploadBufferData ( agpu_size offset, agpu_size size, agpu_pointer data )
+	inline void uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 	{
-		agpuThrowIfFailed(agpuUploadBufferData( this, offset, size, data ));
+		agpuThrowIfFailed(agpuUploadBufferData(this, offset, size, data));
 	}
 
-	inline void readBufferData ( agpu_size offset, agpu_size size, agpu_pointer data )
+	inline void readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 	{
-		agpuThrowIfFailed(agpuReadBufferData( this, offset, size, data ));
+		agpuThrowIfFailed(agpuReadBufferData(this, offset, size, data));
 	}
 
-	inline void flushWholeBuffer (  )
+	inline void flushWholeBuffer()
 	{
-		agpuThrowIfFailed(agpuFlushWholeBuffer( this ));
+		agpuThrowIfFailed(agpuFlushWholeBuffer(this));
 	}
 
-	inline void invalidateWholeBuffer (  )
+	inline void invalidateWholeBuffer()
 	{
-		agpuThrowIfFailed(agpuInvalidateWholeBuffer( this ));
+		agpuThrowIfFailed(agpuInvalidateWholeBuffer(this));
 	}
 
 };
@@ -981,24 +986,24 @@ private:
 	_agpu_vertex_binding() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddVertexBindingReference( this ));
+		agpuThrowIfFailed(agpuAddVertexBindingReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseVertexBinding( this ));
+		agpuThrowIfFailed(agpuReleaseVertexBinding(this));
 	}
 
-	inline void bindVertexBuffers ( agpu_uint count, agpu_buffer** vertex_buffers )
+	inline void bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
 	{
-		agpuThrowIfFailed(agpuBindVertexBuffers( this, count, vertex_buffers ));
+		agpuThrowIfFailed(agpuBindVertexBuffers(this, count, vertex_buffers));
 	}
 
-	inline void bindVertexBuffersWithOffsets ( agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets )
+	inline void bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets)
 	{
-		agpuThrowIfFailed(agpuBindVertexBuffersWithOffsets( this, count, vertex_buffers, offsets ));
+		agpuThrowIfFailed(agpuBindVertexBuffersWithOffsets(this, count, vertex_buffers, offsets));
 	}
 
 };
@@ -1012,19 +1017,19 @@ private:
 	_agpu_vertex_layout() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddVertexLayoutReference( this ));
+		agpuThrowIfFailed(agpuAddVertexLayoutReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseVertexLayout( this ));
+		agpuThrowIfFailed(agpuReleaseVertexLayout(this));
 	}
 
-	inline void addVertexAttributeBindings ( agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes )
+	inline void addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes)
 	{
-		agpuThrowIfFailed(agpuAddVertexAttributeBindings( this, vertex_buffer_count, vertex_strides, attribute_count, attributes ));
+		agpuThrowIfFailed(agpuAddVertexAttributeBindings(this, vertex_buffer_count, vertex_strides, attribute_count, attributes));
 	}
 
 };
@@ -1038,34 +1043,34 @@ private:
 	_agpu_shader() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddShaderReference( this ));
+		agpuThrowIfFailed(agpuAddShaderReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseShader( this ));
+		agpuThrowIfFailed(agpuReleaseShader(this));
 	}
 
-	inline void setShaderSource ( agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength )
+	inline void setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
 	{
-		agpuThrowIfFailed(agpuSetShaderSource( this, language, sourceText, sourceTextLength ));
+		agpuThrowIfFailed(agpuSetShaderSource(this, language, sourceText, sourceTextLength));
 	}
 
-	inline void compileShader ( agpu_cstring options )
+	inline void compileShader(agpu_cstring options)
 	{
-		agpuThrowIfFailed(agpuCompileShader( this, options ));
+		agpuThrowIfFailed(agpuCompileShader(this, options));
 	}
 
-	inline agpu_size getCompilationLogLength (  )
+	inline agpu_size getCompilationLogLength()
 	{
-		return agpuGetShaderCompilationLogLength( this );
+		return agpuGetShaderCompilationLogLength(this);
 	}
 
-	inline void getCompilationLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+	inline void getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 	{
-		agpuThrowIfFailed(agpuGetShaderCompilationLog( this, buffer_size, buffer ));
+		agpuThrowIfFailed(agpuGetShaderCompilationLog(this, buffer_size, buffer));
 	}
 
 };
@@ -1079,14 +1084,14 @@ private:
 	_agpu_framebuffer() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddFramebufferReference( this ));
+		agpuThrowIfFailed(agpuAddFramebufferReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseFramebuffer( this ));
+		agpuThrowIfFailed(agpuReleaseFramebuffer(this));
 	}
 
 };
@@ -1100,29 +1105,29 @@ private:
 	_agpu_renderpass() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddRenderPassReference( this ));
+		agpuThrowIfFailed(agpuAddRenderPassReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseRenderPass( this ));
+		agpuThrowIfFailed(agpuReleaseRenderPass(this));
 	}
 
-	inline void setDepthStencilClearValue ( agpu_depth_stencil_value value )
+	inline void setDepthStencilClearValue(agpu_depth_stencil_value value)
 	{
-		agpuThrowIfFailed(agpuSetDepthStencilClearValue( this, value ));
+		agpuThrowIfFailed(agpuSetDepthStencilClearValue(this, value));
 	}
 
-	inline void setColorClearValue ( agpu_uint attachment_index, agpu_color4f value )
+	inline void setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
 	{
-		agpuThrowIfFailed(agpuSetColorClearValue( this, attachment_index, value ));
+		agpuThrowIfFailed(agpuSetColorClearValue(this, attachment_index, value));
 	}
 
-	inline void setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value )
+	inline void setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value)
 	{
-		agpuThrowIfFailed(agpuSetColorClearValueFrom( this, attachment_index, value ));
+		agpuThrowIfFailed(agpuSetColorClearValueFrom(this, attachment_index, value));
 	}
 
 };
@@ -1136,39 +1141,39 @@ private:
 	_agpu_shader_signature_builder() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBuilderReference( this ));
+		agpuThrowIfFailed(agpuAddShaderSignatureBuilderReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseShaderSignatureBuilder( this ));
+		agpuThrowIfFailed(agpuReleaseShaderSignatureBuilder(this));
 	}
 
-	inline agpu_shader_signature* build (  )
+	inline agpu_shader_signature* build()
 	{
-		return agpuBuildShaderSignature( this );
+		return agpuBuildShaderSignature(this);
 	}
 
-	inline void addBindingConstant (  )
+	inline void addBindingConstant()
 	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBindingConstant( this ));
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingConstant(this));
 	}
 
-	inline void addBindingElement ( agpu_shader_binding_type type, agpu_uint maxBindings )
+	inline void addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
 	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBindingElement( this, type, maxBindings ));
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingElement(this, type, maxBindings));
 	}
 
-	inline void beginBindingBank ( agpu_uint maxBindings )
+	inline void beginBindingBank(agpu_uint maxBindings)
 	{
-		agpuThrowIfFailed(agpuBeginShaderSignatureBindingBank( this, maxBindings ));
+		agpuThrowIfFailed(agpuBeginShaderSignatureBindingBank(this, maxBindings));
 	}
 
-	inline void addBindingBankElement ( agpu_shader_binding_type type, agpu_uint bindingPointCount )
+	inline void addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
 	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement( this, type, bindingPointCount ));
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement(this, type, bindingPointCount));
 	}
 
 };
@@ -1182,19 +1187,19 @@ private:
 	_agpu_shader_signature() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddShaderSignature( this ));
+		agpuThrowIfFailed(agpuAddShaderSignature(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseShaderSignature( this ));
+		agpuThrowIfFailed(agpuReleaseShaderSignature(this));
 	}
 
-	inline agpu_shader_resource_binding* createShaderResourceBinding ( agpu_uint element )
+	inline agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element)
 	{
-		return agpuCreateShaderResourceBinding( this, element );
+		return agpuCreateShaderResourceBinding(this, element);
 	}
 
 };
@@ -1208,54 +1213,54 @@ private:
 	_agpu_shader_resource_binding() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddShaderResourceBindingReference( this ));
+		agpuThrowIfFailed(agpuAddShaderResourceBindingReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseShaderResourceBinding( this ));
+		agpuThrowIfFailed(agpuReleaseShaderResourceBinding(this));
 	}
 
-	inline void bindUniformBuffer ( agpu_int location, agpu_buffer* uniform_buffer )
+	inline void bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
 	{
-		agpuThrowIfFailed(agpuBindUniformBuffer( this, location, uniform_buffer ));
+		agpuThrowIfFailed(agpuBindUniformBuffer(this, location, uniform_buffer));
 	}
 
-	inline void bindUniformBufferRange ( agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size )
+	inline void bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
 	{
-		agpuThrowIfFailed(agpuBindUniformBufferRange( this, location, uniform_buffer, offset, size ));
+		agpuThrowIfFailed(agpuBindUniformBufferRange(this, location, uniform_buffer, offset, size));
 	}
 
-	inline void bindStorageBuffer ( agpu_int location, agpu_buffer* storage_buffer )
+	inline void bindStorageBuffer(agpu_int location, agpu_buffer* storage_buffer)
 	{
-		agpuThrowIfFailed(agpuBindStorageBuffer( this, location, storage_buffer ));
+		agpuThrowIfFailed(agpuBindStorageBuffer(this, location, storage_buffer));
 	}
 
-	inline void bindStorageBufferRange ( agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size )
+	inline void bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
 	{
-		agpuThrowIfFailed(agpuBindStorageBufferRange( this, location, storage_buffer, offset, size ));
+		agpuThrowIfFailed(agpuBindStorageBufferRange(this, location, storage_buffer, offset, size));
 	}
 
-	inline void bindTexture ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )
+	inline void bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
 	{
-		agpuThrowIfFailed(agpuBindTexture( this, location, texture, startMiplevel, miplevels, lodclamp ));
+		agpuThrowIfFailed(agpuBindTexture(this, location, texture, startMiplevel, miplevels, lodclamp));
 	}
 
-	inline void bindTextureArrayRange ( agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp )
+	inline void bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
 	{
-		agpuThrowIfFailed(agpuBindTextureArrayRange( this, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp ));
+		agpuThrowIfFailed(agpuBindTextureArrayRange(this, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp));
 	}
 
-	inline void bindImage ( agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
+	inline void bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
 	{
-		agpuThrowIfFailed(agpuBindImage( this, location, texture, level, layer, access, format ));
+		agpuThrowIfFailed(agpuBindImage(this, location, texture, level, layer, access, format));
 	}
 
-	inline void createSampler ( agpu_int location, agpu_sampler_description* description )
+	inline void createSampler(agpu_int location, agpu_sampler_description* description)
 	{
-		agpuThrowIfFailed(agpuCreateSampler( this, location, description ));
+		agpuThrowIfFailed(agpuCreateSampler(this, location, description));
 	}
 
 };
@@ -1269,19 +1274,19 @@ private:
 	_agpu_fence() {}
 
 public:
-	inline void addReference (  )
+	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddFenceReference( this ));
+		agpuThrowIfFailed(agpuAddFenceReference(this));
 	}
 
-	inline void release (  )
+	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseFenceReference( this ));
+		agpuThrowIfFailed(agpuReleaseFenceReference(this));
 	}
 
-	inline void waitOnClient (  )
+	inline void waitOnClient()
 	{
-		agpuThrowIfFailed(agpuWaitOnClient( this ));
+		agpuThrowIfFailed(agpuWaitOnClient(this));
 	}
 
 };

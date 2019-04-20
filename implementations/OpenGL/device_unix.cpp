@@ -7,6 +7,9 @@
 
 #if defined(__linux__)
 
+namespace AgpuGL
+{
+
 //------------------------------------------------------------------------------
 // GLX context creation code adapted from: https://www.opengl.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_%28GLX%29 (April 2015)
 
@@ -43,7 +46,7 @@ private:
 
 
 OpenGLContext::OpenGLContext()
-    : device(nullptr), ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0)
+    : ownsWindow(false), ownsDisplay(false), display(nullptr), window(0), context(0)
 {
 }
 
@@ -93,11 +96,16 @@ void OpenGLContext::destroy()
     if(!context)
         return;
 
-    device->glBindVertexArray(0);
-    device->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    device->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    device->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    device->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    auto device = weakDevice.lock();
+    if(device)
+    {
+        auto glDevice = device.as<GLDevice> ();
+        glDevice->glBindVertexArray(0);
+        glDevice->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDevice->glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDevice->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glDevice->glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
 
     glXMakeCurrent(display, None, 0);
     glXDestroyContext(display, context);
@@ -213,18 +221,20 @@ static bool findFramebufferConfig(Display *display, int *visualAttributes, GLXFB
     return true;
 }
 
-void _agpu_device::setWindowPixelFormat(agpu_pointer window)
+void GLDevice::setWindowPixelFormat(agpu_pointer window)
 {
     // Do nothing here.
 }
 
-agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+agpu::device_ref GLDevice::open(agpu_device_open_info* openInfo)
 {
     // Ensure X11 threads are initialized
     XInitThreads();
 
     // Create the device.
-    std::unique_ptr<agpu_device> device(new agpu_device);
+    auto result = agpu::makeObject<GLDevice> ();
+    auto device = result.as<GLDevice> ();
+
     bool failure = false;
 
     // Perform the main context creation in
@@ -317,7 +327,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 
         // Check for the GLX_ARB_create_context extension string and the function.
         // If either is not present, use GLX 1.3 context creation method.
-        if ( !agpu_device::isExtensionSupported( glxExts, "GLX_ARB_create_context" ) ||
+        if ( !GLDevice::isExtensionSupported( glxExts, "GLX_ARB_create_context" ) ||
            !glXCreateContextAttribsARB )
         {
             printError("glXCreateContextAttribsARB() not found... using old-style GLX context\n" );
@@ -403,7 +413,7 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
 
         // Initialize the device objects.
         device->mainContext = contextWrapper.release();
-        device->mainContext->device = device.get();
+        device->mainContext->weakDevice = result;
         device->initializeObjects();
 
     });
@@ -411,13 +421,15 @@ agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
     device->mainContextJobQueue.addJob(&contextCreationJob);
     contextCreationJob.wait();
     if(failure)
-        return nullptr;
-    return device.release();
+        return agpu::device_ref();
+    return result;
 }
 
-void *agpu_device::getProcAddress(const char *symbolName)
+void *GLDevice::getProcAddress(const char *symbolName)
 {
     return (void*)glXGetProcAddress((const GLubyte*)symbolName);
 }
+
+} // End of namespace AgpuGL
 
 #endif

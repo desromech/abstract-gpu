@@ -3,6 +3,9 @@
 
 #include "device.hpp"
 
+namespace AgpuGL
+{
+
 inline GLenum mapCompareFunction(agpu_compare_function function)
 {
     switch (function)
@@ -100,5 +103,7 @@ inline GLenum mapCullingMode(agpu_cull_mode cullingMode)
         abort();
     }
 }
+
+} // End of namespace AgpuGL
 
 #endif //AGPU_CONSTANTS_HPP_

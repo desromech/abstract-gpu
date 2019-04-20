@@ -5,25 +5,22 @@
 #include "texture.hpp"
 #include "texture_formats.hpp"
 
-_agpu_swap_chain::_agpu_swap_chain()
+namespace AgpuGL
+{
+
+GLSwapChain::GLSwapChain()
     : backBufferIndex(0)
 {
 }
 
-void _agpu_swap_chain::lostReferences()
+GLSwapChain::~GLSwapChain()
 {
-    for(auto fb : framebuffers)
-    {
-        if(fb)
-			fb->release();
-    }
-    commandQueue->release();
 }
 
-agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info *create_info)
+agpu::swap_chain_ref GLSwapChain::create(const agpu::device_ref &device, const agpu::command_queue_ref &commandQueue, agpu_swap_chain_create_info *create_info)
 {
     // Create the framebuffer objects.
-    std::vector<agpu_framebuffer*> framebuffers(create_info->buffer_count);
+    std::vector<agpu::framebuffer_ref> framebuffers(create_info->buffer_count);
     bool failure = false;
     bool hasDepth = hasDepthComponent(create_info->depth_stencil_format);
     bool hasStencil = hasStencilComponent(create_info->depth_stencil_format);
@@ -35,8 +32,8 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
 
     for(size_t i = 0; i < framebuffers.size(); ++i)
     {
-        agpu_texture *colorBuffer = nullptr;
-        agpu_texture *depthStencilBuffer = nullptr;
+        agpu::texture_ref colorBuffer;
+        agpu::texture_ref depthStencilBuffer;
 
         // Create the color buffer.
         {
@@ -49,7 +46,7 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
             desc.format = create_info->colorbuffer_format;
             desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
             desc.miplevels = 1;
-            colorBuffer = agpu_texture::create(device, &desc);
+            colorBuffer = GLTexture::create(device, &desc);
             if (!colorBuffer)
             {
                 printError("Failed to create swap chain color buffer.\n");
@@ -74,81 +71,63 @@ agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queu
             if (hasStencil)
                 desc.flags = agpu_texture_flags(desc.flags | AGPU_TEXTURE_FLAG_STENCIL);
             desc.miplevels = 1;
-            depthStencilBuffer = agpu_texture::create(device, &desc);
+            depthStencilBuffer = GLTexture::create(device, &desc);
             if (!depthStencilBuffer)
             {
                 printError("Failed to create swap chain depth stencil buffer buffer.\n");
-                if (colorBuffer)
-                    colorBuffer->release();
                 failure = true;
                 break;
             }
 
             depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
         }
-        auto fb = agpu_framebuffer::create(device, create_info->width, create_info->height, 1, &colorViewDesc, depthStencilViewDescPointer);
+
+        auto fb = GLFramebuffer::create(device, create_info->width, create_info->height, 1, &colorViewDesc, depthStencilViewDescPointer);
         if(!fb)
         {
             printError("Failed to create swap chain framebuffer.\n");
-            if (colorBuffer)
-                colorBuffer->release();
-            if (depthStencilBuffer)
-                depthStencilBuffer->release();
             failure = true;
             break;
         }
 
         // Store the framebuffer.
         framebuffers[i] = fb;
-
-        if (colorBuffer)
-            colorBuffer->release();
-        if (depthStencilBuffer)
-            depthStencilBuffer->release();
-
     }
 
     // Check the failure
     if(failure)
-    {
-        for(auto fb : framebuffers)
-        {
-            if(fb)
-                fb->release();
-        }
+        return agpu::swap_chain_ref();
 
-        return nullptr;
-    }
-
-    auto chain = new agpu_swap_chain();
+    auto result = agpu::makeObject<GLSwapChain> ();
+    auto chain = result.as<GLSwapChain> ();
     chain->device = device;
     chain->window = create_info->window;
     chain->width = create_info->width;
     chain->height = create_info->height;
     chain->commandQueue = commandQueue;
-    commandQueue->retain();
 
     // Set the window pixel format.
-    device->setWindowPixelFormat(chain->window);
+    deviceForGL->setWindowPixelFormat(chain->window);
 
     // Store the framebuffers.
 	chain->framebuffers = framebuffers;
-    return chain;
+    return result;
 }
 
-agpu_error _agpu_swap_chain::swapBuffers()
+agpu_error GLSwapChain::swapBuffers()
 {
-    device->onMainContextBlocking([this](){
+    auto glDevice = device.as<GLDevice> ();
+    glDevice->onMainContextBlocking([&](){
         auto currentContext = OpenGLContext::getCurrent();
         auto res = currentContext->makeCurrentWithWindow(window);
         if(!res)
             return;
 
         // Blit the framebuffer.
-        auto backBuffer = getCurrentBackBuffer();
+        auto backBuffer = framebuffers[backBufferIndex].as<GLFramebuffer> ();
         backBuffer->bind(GL_READ_FRAMEBUFFER);
-        device->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		device->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glDevice->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glDevice->glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         // Swap the window buffers.
         currentContext->swapBuffersOfWindow(window);
@@ -158,60 +137,19 @@ agpu_error _agpu_swap_chain::swapBuffers()
     return AGPU_OK;
 }
 
-agpu_framebuffer* _agpu_swap_chain::getCurrentBackBuffer ()
+agpu::framebuffer_ptr GLSwapChain::getCurrentBackBuffer ()
 {
-    auto fb = framebuffers[backBufferIndex];
-    fb->retain();
-    return fb;
+    return framebuffers[backBufferIndex].disownedNewRef();
 }
 
-agpu_size _agpu_swap_chain::getCurrentBackBufferIndex ()
+agpu_size GLSwapChain::getCurrentBackBufferIndex ()
 {
     return backBufferIndex;
 }
 
-agpu_size _agpu_swap_chain::getFramebufferCount ()
+agpu_size GLSwapChain::getFramebufferCount ()
 {
     return (agpu_size)framebuffers.size();
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )
-{
-    CHECK_POINTER(swap_chain);
-    return swap_chain->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseSwapChain ( agpu_swap_chain* swap_chain )
-{
-    CHECK_POINTER(swap_chain);
-    return swap_chain->release();
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_chain )
-{
-    if(!swap_chain)
-        return nullptr;
-    return swap_chain->getCurrentBackBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuSwapBuffers ( agpu_swap_chain* swap_chain )
-{
-    CHECK_POINTER(swap_chain);
-    return swap_chain->swapBuffers();
-}
-
-
-agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain )
-{
-    if(!swap_chain)
-        return 0;
-    return swap_chain->getCurrentBackBufferIndex();
-}
-
-agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain )
-{
-    if(!swap_chain)
-        return 0;
-    return swap_chain->getFramebufferCount();
-}
+} // End of namespace AgpuGL

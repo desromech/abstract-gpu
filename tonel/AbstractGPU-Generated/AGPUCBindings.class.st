@@ -534,6 +534,11 @@ AGPUCBindings >> useIndexBuffer_command_list: command_list index_buffer: index_b
 ]
 
 { #category : #'command_list' }
+AGPUCBindings >> useIndexBufferAt_command_list: command_list index_buffer: index_buffer offset: offset index_size: index_size [
+	^ self ffiCall: #(agpu_error agpuUseIndexBufferAt (agpu_command_list* command_list , agpu_buffer* index_buffer , agpu_size offset , agpu_size index_size) )
+]
+
+{ #category : #'command_list' }
 AGPUCBindings >> useDrawIndirectBuffer_command_list: command_list draw_buffer: draw_buffer [
 	^ self ffiCall: #(agpu_error agpuUseDrawIndirectBuffer (agpu_command_list* command_list , agpu_buffer* draw_buffer) )
 ]

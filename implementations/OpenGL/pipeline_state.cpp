@@ -6,6 +6,9 @@
 #include "texture.hpp"
 #include <algorithm>
 
+namespace AgpuGL
+{
+
 void AgpuGraphicsPipelineStateData::activate()
 {
 	// Activate the srgb framebuffer if we have a srgb render target attached.
@@ -32,10 +35,10 @@ void AgpuGraphicsPipelineStateData::activate()
 	glDepthFunc(depthFunction);
 
 	// Set the depth range mapping to [0.0, 1.0]. This is the same depth range used by Direct3D.
-	if (device->hasExtension_GL_ARB_clip_control)
-		device->glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
-	else if (device->hasExtension_GL_NV_depth_buffer_float)
-		device->glDepthRangedNV(-1, 1);
+	if (deviceForGL->hasExtension_GL_ARB_clip_control)
+		deviceForGL->glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+	else if (deviceForGL->hasExtension_GL_NV_depth_buffer_float)
+		deviceForGL->glDepthRangedNV(-1, 1);
 	else
 		glDepthRange(-1, 1);
 
@@ -44,8 +47,8 @@ void AgpuGraphicsPipelineStateData::activate()
 	enableState(blendingEnabled, GL_BLEND);
 	if (blendingEnabled)
 	{
-		device->glBlendEquationSeparate(blendOperation, blendOperationAlpha);
-		device->glBlendFuncSeparate(sourceBlendFactor, destBlendFactor, sourceBlendFactorAlpha, destBlendFactorAlpha);
+		deviceForGL->glBlendEquationSeparate(blendOperation, blendOperationAlpha);
+		deviceForGL->glBlendFuncSeparate(sourceBlendFactor, destBlendFactor, sourceBlendFactorAlpha, destBlendFactorAlpha);
 	}
 
 	// Stencil
@@ -55,8 +58,8 @@ void AgpuGraphicsPipelineStateData::activate()
 	{
 		glStencilMask(stencilWriteMask);
 		updateStencilReference(0);
-		device->glStencilOpSeparate(GL_FRONT, stencilFrontFailOp, stencilFrontDepthFailOp, stencilFrontDepthPassOp);
-		device->glStencilOpSeparate(GL_BACK, stencilBackFailOp, stencilBackDepthFailOp, stencilBackDepthPassOp);
+		deviceForGL->glStencilOpSeparate(GL_FRONT, stencilFrontFailOp, stencilFrontDepthFailOp, stencilFrontDepthPassOp);
+		deviceForGL->glStencilOpSeparate(GL_BACK, stencilBackFailOp, stencilBackDepthFailOp, stencilBackDepthPassOp);
 	}
 
 	// Multisampling
@@ -68,13 +71,13 @@ void AgpuGraphicsPipelineStateData::updateStencilReference(int reference)
 	if (!stencilEnabled)
 		return;
 
-	device->glStencilFuncSeparate(GL_FRONT, stencilFrontFunc, reference, stencilReadMask);
-	device->glStencilFuncSeparate(GL_BACK, stencilBackFunc, reference, stencilReadMask);
+	deviceForGL->glStencilFuncSeparate(GL_FRONT, stencilFrontFunc, reference, stencilReadMask);
+	deviceForGL->glStencilFuncSeparate(GL_BACK, stencilBackFunc, reference, stencilReadMask);
 }
 
 void AgpuGraphicsPipelineStateData::setBaseInstance(agpu_uint base_instance)
 {
-	device->glUniform1i(baseInstanceUniformIndex, base_instance);
+	deviceForGL->glUniform1i(baseInstanceUniformIndex, base_instance);
 }
 
 void AgpuGraphicsPipelineStateData::enableState(bool enabled, GLenum state)
@@ -85,47 +88,40 @@ void AgpuGraphicsPipelineStateData::enableState(bool enabled, GLenum state)
 		glDisable(state);
 }
 
-_agpu_pipeline_state::_agpu_pipeline_state()
+GLPipelineState::GLPipelineState()
 {
-    shaderSignature = nullptr;
 	extraStateData = nullptr;
 }
 
-void _agpu_pipeline_state::lostReferences()
+GLPipelineState::~GLPipelineState()
 {
-    if (shaderSignature)
-        shaderSignature->release();
-    device->onMainContextBlocking([&] {
-        device->glDeleteProgram(programHandle);
+    deviceForGL->onMainContextBlocking([&] {
+        deviceForGL->glDeleteProgram(programHandle);
     });
-
-    for(auto shaderInstance : shaderInstances)
-        shaderInstance->release();
 
 	delete extraStateData;
 }
 
-agpu_int _agpu_pipeline_state::getUniformLocation ( agpu_cstring name )
+agpu_int GLPipelineState::getUniformLocation ( agpu_cstring name )
 {
-	return device->glGetUniformLocation(programHandle, name);
+	return deviceForGL->glGetUniformLocation(programHandle, name);
 }
 
-void _agpu_pipeline_state::activate()
+void GLPipelineState::activate()
 {
 	// Use the program.
-	device->glUseProgram(programHandle);
+	deviceForGL->glUseProgram(programHandle);
 	if (extraStateData)
 		extraStateData->activate();
-
 }
 
-void _agpu_pipeline_state::activateShaderResourcesOn(CommandListExecutionContext *context, agpu_shader_resource_binding **shaderResourceBindings)
+void GLPipelineState::activateShaderResourcesOn(CommandListExecutionContext *context, agpu::shader_resource_binding_ref *shaderResourceBindings)
 {
     for(size_t i = 0; i < CommandListExecutionContext::MaxNumberOfShaderResourceBindings; ++i)
     {
-        auto shaderResource = shaderResourceBindings[i];
+        const auto &shaderResource = shaderResourceBindings[i];
         if(shaderResource)
-            shaderResource->activate();
+            shaderResource.as<GLShaderResourceBinding> ()->activate();
     }
 
     for(auto &combination : mappedTextureWithSamplerCombinations)
@@ -133,12 +129,12 @@ void _agpu_pipeline_state::activateShaderResourcesOn(CommandListExecutionContext
         if(combination.combination.textureDescriptorSet >= CommandListExecutionContext::MaxNumberOfShaderResourceBindings)
             continue;
 
-        auto textureShaderResource = shaderResourceBindings[combination.combination.textureDescriptorSet];
+        const auto &textureShaderResource = shaderResourceBindings[combination.combination.textureDescriptorSet];
         if(!textureShaderResource)
             continue;
 
         // Get the texture binding.
-        auto textureBinding = textureShaderResource->getTextureBindingAt(combination.combination.textureDescriptorBinding);
+        const auto &textureBinding = textureShaderResource.as<GLShaderResourceBinding> ()->getTextureBindingAt(combination.combination.textureDescriptorBinding);
         if(!textureBinding)
             continue;
 
@@ -146,33 +142,33 @@ void _agpu_pipeline_state::activateShaderResourcesOn(CommandListExecutionContext
             !shaderResourceBindings[combination.combination.samplerDescriptorSet])
             continue;
 
-        auto samplerShaderResource = shaderResourceBindings[combination.combination.samplerDescriptorSet];
+        const auto &samplerShaderResource = shaderResourceBindings[combination.combination.samplerDescriptorSet];
         if(!samplerShaderResource)
             continue;
 
         // Get the sampler
-        auto samplerBinding = samplerShaderResource->getSamplerAt(combination.combination.samplerDescriptorBinding);
+        auto samplerBinding = samplerShaderResource.as<GLShaderResourceBinding> ()->getSamplerAt(combination.combination.samplerDescriptorBinding);
 
         // Activate the texture.
-        device->glActiveTexture(GL_TEXTURE0 + combination.mappedTextureUnit);
-        glBindTexture(textureBinding->texture->target, textureBinding->texture->handle);
+        deviceForGL->glActiveTexture(GL_TEXTURE0 + combination.mappedTextureUnit);
+        glBindTexture(textureBinding->texture.as<GLTexture>()->target, textureBinding->texture.as<GLTexture>()->handle);
 
         // Activate the sampler.
-        device->glBindSampler(combination.mappedTextureUnit, samplerBinding);
+        deviceForGL->glBindSampler(combination.mappedTextureUnit, samplerBinding);
     }
 }
 
-void _agpu_pipeline_state::setBaseInstance(agpu_uint base_instance)
+void GLPipelineState::setBaseInstance(agpu_uint base_instance)
 {
 	extraStateData->setBaseInstance(base_instance);
 }
 
-void _agpu_pipeline_state::uploadPushConstants(const uint8_t *pushConstantBuffer, size_t pushConstantBufferSize)
+void GLPipelineState::uploadPushConstants(const uint8_t *pushConstantBuffer, size_t pushConstantBufferSize)
 {
 	if(!shaderSignature)
 		return;
 
-	auto uniformVariableCount = shaderSignature->bindingPointsUsed[int(OpenGLResourceBindingType::UniformVariable)];
+	auto uniformVariableCount = shaderSignature.as<GLShaderSignature> ()->bindingPointsUsed[int(OpenGLResourceBindingType::UniformVariable)];
 	if(uniformVariableCount == 0)
 		return;
 
@@ -182,33 +178,14 @@ void _agpu_pipeline_state::uploadPushConstants(const uint8_t *pushConstantBuffer
 	for(size_t i = 0; i < usedUniformCount; ++i)
 	{
 		// TODO: Support more types than int.
-		device->glUniform1i(i, sourceData[i]);
+		deviceForGL->glUniform1i(i, sourceData[i]);
 	}
 }
 
-void _agpu_pipeline_state::updateStencilReference(int reference)
+void GLPipelineState::updateStencilReference(int reference)
 {
 	if (extraStateData)
 		extraStateData->updateStencilReference(reference);
 }
 
-// C functions
-AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state )
-{
-	CHECK_POINTER(pipeline_state);
-	pipeline_state->retain();
-	return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_error agpuReleasePipelineState ( agpu_pipeline_state* pipeline_state )
-{
-	CHECK_POINTER(pipeline_state);
-	pipeline_state->release();
-	return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_state, agpu_cstring name )
-{
-	CHECK_POINTER(pipeline_state);
-	return pipeline_state->getUniformLocation(name);
-}
+} // End of namespace AgpuGL
