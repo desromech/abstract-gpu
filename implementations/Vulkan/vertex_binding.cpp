@@ -28,7 +28,7 @@ agpu_error _agpu_vertex_binding::bindVertexBuffersWithOffsets(agpu_uint count, a
     for (size_t i = 0; i < count; ++i)
     {
         CHECK_POINTER(vertex_buffers[i]);
-        if (vertex_buffers[i]->description.binding != AGPU_ARRAY_BUFFER)
+        if ((vertex_buffers[i]->description.binding & AGPU_ARRAY_BUFFER) == 0)
             return AGPU_INVALID_PARAMETER;
     }
 
