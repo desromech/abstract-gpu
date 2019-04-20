@@ -163,12 +163,22 @@ agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_bi
 
 agpu_error _agpu_command_list::useIndexBuffer ( agpu_buffer* index_buffer )
 {
+    CHECK_POINTER(index_buffer);
+    return useIndexBufferAt(index_buffer, 0, index_buffer->description.stride);
+}
+
+
+agpu_error _agpu_command_list::useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+    CHECK_POINTER(index_buffer);
     if(index_buffer)
         index_buffer->retain();
     if(currentIndexBuffer)
         currentIndexBuffer->release();
     currentIndexBuffer = index_buffer;
-    return AGPU_OK;
+    currentIndexBufferOffset = offset;
+    currentIndexBufferStride = index_size;
+    return AGPU_OK;    
 }
 
 agpu_error _agpu_command_list::useDrawIndirectBuffer ( agpu_buffer* draw_buffer )
@@ -328,9 +338,9 @@ agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint i
     updateRenderState();
     [renderEncoder drawIndexedPrimitives: currentPipeline->getCommandState().primitiveType
                    indexCount: index_count
-                    indexType: mapIndexType(currentIndexBuffer->description.stride)
+                    indexType: mapIndexType(currentIndexBufferStride)
                   indexBuffer: currentIndexBuffer->handle
-            indexBufferOffset: first_index*currentIndexBuffer->description.stride
+            indexBufferOffset: currentIndexBufferOffset + first_index*currentIndexBuffer->description.stride
                 instanceCount: instance_count
                    baseVertex: base_vertex
                  baseInstance: base_instance];
@@ -599,6 +609,12 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agp
 {
     CHECK_POINTER(command_list);
     return command_list->useIndexBuffer(index_buffer);
+}
+
+AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+    CHECK_POINTER(command_list);
+    return command_list->useIndexBufferAt(index_buffer, offset, index_size);
 }
 
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer )
