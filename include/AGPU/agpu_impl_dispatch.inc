@@ -637,6 +637,12 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* self, agpu_buffer* 
 	return asRef(agpu::command_list, self)->useIndexBuffer(asRef(agpu::buffer, index_buffer));
 }
 
+AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* self, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->useIndexBufferAt(asRef(agpu::buffer, index_buffer), offset, index_size);
+}
+
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* self, agpu_buffer* draw_buffer)
 {
 	if(!self) return AGPU_NULL_POINTER;

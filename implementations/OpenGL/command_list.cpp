@@ -254,8 +254,16 @@ agpu_error GLCommandList::useVertexBinding(const agpu::vertex_binding_ref &verte
 
 agpu_error GLCommandList::useIndexBuffer(const agpu::buffer_ref &index_buffer)
 {
+    return useIndexBufferAt(index_buffer, 0, index_buffer ? index_buffer.as<GLBuffer> ()->description.stride : 0);
+}
+
+
+agpu_error GLCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size)
+{
     return addCommand([=] {
-        this->currentIndexBuffer= index_buffer;
+        this->currentIndexBuffer = index_buffer;
+        this->currentIndexBufferOffset = offset;
+        this->currentIndexBufferIndexSize = index_size;
     });
 }
 
@@ -345,8 +353,8 @@ agpu_error GLCommandList::drawElements(agpu_uint index_count, agpu_uint instance
         executionContext.validateBeforeDrawCall();
         executionContext.setBaseInstance(base_instance);
 
-        size_t stride = currentIndexBuffer.as<GLBuffer> ()->description.stride;
-        size_t offset = stride*first_index;
+        size_t stride = currentIndexBufferIndexSize;
+        size_t offset = currentIndexBufferOffset + stride*first_index;
         deviceForGL->glDrawElementsInstancedBaseVertexBaseInstance(executionContext.primitiveMode, index_count,
             mapIndexType(stride), reinterpret_cast<void*> (offset),
             instance_count, base_vertex, base_instance);

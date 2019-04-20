@@ -17,6 +17,7 @@ public:
     agpu_error usePipelineState(agpu_pipeline_state* pipeline);
     agpu_error useVertexBinding(agpu_vertex_binding* vertex_binding);
     agpu_error useIndexBuffer(agpu_buffer* index_buffer);
+    agpu_error useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size);
     agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
     agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
     agpu_error useComputeDispatchIndirectBuffer(agpu_buffer* draw_buffer);
@@ -40,7 +41,7 @@ public:
     agpu_error endRenderPass();
     agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
     agpu_error resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect );
-    
+
     agpu_device *device;
     agpu_command_allocator* allocator;
     agpu_command_list_type type;

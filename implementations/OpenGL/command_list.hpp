@@ -60,6 +60,7 @@ public:
     virtual agpu_error usePipelineState(const agpu::pipeline_state_ref &pipeline) override;
     virtual agpu_error useVertexBinding(const agpu::vertex_binding_ref &vertex_binding) override;
     virtual agpu_error useIndexBuffer(const agpu::buffer_ref &index_buffer) override;
+    virtual agpu_error useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size) override;
     virtual agpu_error useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer) override;
     virtual agpu_error useComputeDispatchIndirectBuffer(const agpu::buffer_ref &draw_buffer) override;
     virtual agpu_error useShaderResources (const agpu::shader_resource_binding_ref &binding) override;
@@ -88,6 +89,9 @@ public:
 
     agpu::vertex_binding_ref currentVertexBinding;
     agpu::buffer_ref currentIndexBuffer;
+    agpu_size currentIndexBufferOffset;
+    agpu_size currentIndexBufferIndexSize;
+
     agpu::buffer_ref currentDrawBuffer;
     agpu::buffer_ref currentComputeDispatchBuffer;
     agpu_command_list_type type;

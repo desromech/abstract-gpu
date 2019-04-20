@@ -9,6 +9,16 @@
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 
+inline VkIndexType indexTypeForStride(agpu_size stride)
+{
+    switch (stride)
+    {
+    default:
+    case 2: return VK_INDEX_TYPE_UINT16;
+    case 4: return VK_INDEX_TYPE_UINT32;
+    }
+}
+
 _agpu_command_list::_agpu_command_list(agpu_device *device)
     : device(device)
 {
@@ -238,10 +248,16 @@ agpu_error _agpu_command_list::useVertexBinding(agpu_vertex_binding* vertex_bind
 agpu_error _agpu_command_list::useIndexBuffer(agpu_buffer* index_buffer)
 {
     CHECK_POINTER(index_buffer);
-    if (index_buffer->description.binding != AGPU_ELEMENT_ARRAY_BUFFER)
+    return useIndexBufferAt(index_buffer, 0, index_buffer->description.stride);
+}
+
+agpu_error _agpu_command_list::useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+    CHECK_POINTER(index_buffer);
+    if ((index_buffer->description.binding & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
-    vkCmdBindIndexBuffer(commandBuffer, index_buffer->getDrawBuffer(), 0, index_buffer->getIndexType());
+    vkCmdBindIndexBuffer(commandBuffer, index_buffer->getDrawBuffer(), offset, indexTypeForStride(index_size));
     return AGPU_OK;
 }
 
@@ -254,7 +270,7 @@ agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topo
 agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 {
     CHECK_POINTER(draw_buffer);
-    if (draw_buffer->description.binding != AGPU_DRAW_INDIRECT_BUFFER)
+    if ((draw_buffer->description.binding & AGPU_DRAW_INDIRECT_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
     draw_buffer->retain();
@@ -267,7 +283,7 @@ agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 agpu_error _agpu_command_list::useComputeDispatchIndirectBuffer(agpu_buffer* dispatch_buffer)
 {
     CHECK_POINTER(dispatch_buffer);
-    if (dispatch_buffer->description.binding != AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
+    if ((dispatch_buffer->description.binding & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
     dispatch_buffer->retain();
@@ -636,6 +652,12 @@ AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_
 {
     CHECK_POINTER(command_list);
     return command_list->useIndexBuffer(index_buffer);
+}
+
+AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+    CHECK_POINTER(command_list);
+    return command_list->useIndexBufferAt(index_buffer, offset, index_size);
 }
 
 AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)

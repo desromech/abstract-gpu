@@ -431,14 +431,14 @@
 
 		<enum name="buffer_binding_type">
             <constant name="GenericDataBuffer" value="0" />
-			<constant name="ArrayBuffer" value="1" />
-			<constant name="ElementArrayBuffer" value="2" />
-			<constant name="UniformBuffer" value="3" />
-			<constant name="DrawIndirectBuffer" value="4" />
-			<constant name="StorageBuffer" value="5" />
-            <constant name="UniformTexelBuffer" value="6" />
-            <constant name="StorageTexelBuffer" value="7" />
-            <constant name="ComputeDispatchIndirectBuffer" value="8" />
+			<constant name="ArrayBuffer" value="2" />
+			<constant name="ElementArrayBuffer" value="4" />
+			<constant name="UniformBuffer" value="8" />
+			<constant name="DrawIndirectBuffer" value="16" />
+			<constant name="StorageBuffer" value="32" />
+            <constant name="UniformTexelBuffer" value="64" />
+            <constant name="StorageTexelBuffer" value="128" />
+            <constant name="ComputeDispatchIndirectBuffer" value="256" />
 		</enum>
 
 		<enum name="buffer_mapping_flags">
@@ -1265,6 +1265,12 @@
 
             <method name="useIndexBuffer" cname="UseIndexBuffer" returnType="error">
                 <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="useIndexBufferAt" cname="UseIndexBufferAt" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="index_size" type="size" />
             </method>
 
             <method name="useDrawIndirectBuffer" cname="UseDrawIndirectBuffer" returnType="error">

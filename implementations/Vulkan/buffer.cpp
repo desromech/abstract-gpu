@@ -52,35 +52,27 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     bufferDescription.size = description->size;
     bufferDescription.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-    switch (description->binding)
-    {
-    case AGPU_GENERIC_DATA_BUFFER:
-        // For copying data
-        break;
-    case AGPU_ARRAY_BUFFER:
+    if(description->binding & AGPU_ARRAY_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        break;
-    case AGPU_ELEMENT_ARRAY_BUFFER:
+    if(description->binding & AGPU_ELEMENT_ARRAY_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        break;
-    case AGPU_UNIFORM_BUFFER:
+    if(description->binding & AGPU_UNIFORM_TEXEL_BUFFER)
+        bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    if(description->binding & AGPU_STORAGE_TEXEL_BUFFER)
+        bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    if(description->binding & AGPU_DRAW_INDIRECT_BUFFER)
+        bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    if(description->binding & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
+        bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    if(description->binding & AGPU_UNIFORM_BUFFER)
+    {
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
-        break;
-    case AGPU_STORAGE_BUFFER:
+    }
+    if(description->binding & AGPU_STORAGE_BUFFER)
+    {
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
-        break;
-    case AGPU_UNIFORM_TEXEL_BUFFER:
-        bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-        break;
-    case AGPU_STORAGE_TEXEL_BUFFER:
-        bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-        break;
-    case AGPU_DRAW_INDIRECT_BUFFER:
-    case AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER:
-        bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-        break;
     }
 
     VkBuffer mainBuffer = VK_NULL_HANDLE;

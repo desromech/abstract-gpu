@@ -183,14 +183,14 @@ typedef enum {
 
 typedef enum {
 	AGPU_GENERIC_DATA_BUFFER = 0,
-	AGPU_ARRAY_BUFFER = 1,
-	AGPU_ELEMENT_ARRAY_BUFFER = 2,
-	AGPU_UNIFORM_BUFFER = 3,
-	AGPU_DRAW_INDIRECT_BUFFER = 4,
-	AGPU_STORAGE_BUFFER = 5,
-	AGPU_UNIFORM_TEXEL_BUFFER = 6,
-	AGPU_STORAGE_TEXEL_BUFFER = 7,
-	AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER = 8,
+	AGPU_ARRAY_BUFFER = 2,
+	AGPU_ELEMENT_ARRAY_BUFFER = 4,
+	AGPU_UNIFORM_BUFFER = 8,
+	AGPU_DRAW_INDIRECT_BUFFER = 16,
+	AGPU_STORAGE_BUFFER = 32,
+	AGPU_UNIFORM_TEXEL_BUFFER = 64,
+	AGPU_STORAGE_TEXEL_BUFFER = 128,
+	AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER = 256,
 } agpu_buffer_binding_type;
 
 typedef enum {
@@ -1058,6 +1058,7 @@ typedef agpu_error (*agpuSetScissor_FUN) (agpu_command_list* command_list, agpu_
 typedef agpu_error (*agpuUsePipelineState_FUN) (agpu_command_list* command_list, agpu_pipeline_state* pipeline);
 typedef agpu_error (*agpuUseVertexBinding_FUN) (agpu_command_list* command_list, agpu_vertex_binding* vertex_binding);
 typedef agpu_error (*agpuUseIndexBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* index_buffer);
+typedef agpu_error (*agpuUseIndexBufferAt_FUN) (agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size);
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* draw_buffer);
 typedef agpu_error (*agpuUseComputeDispatchIndirectBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* buffer);
 typedef agpu_error (*agpuUseShaderResources_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding);
@@ -1087,6 +1088,7 @@ AGPU_EXPORT agpu_error agpuSetScissor(agpu_command_list* command_list, agpu_int 
 AGPU_EXPORT agpu_error agpuUsePipelineState(agpu_command_list* command_list, agpu_pipeline_state* pipeline);
 AGPU_EXPORT agpu_error agpuUseVertexBinding(agpu_command_list* command_list, agpu_vertex_binding* vertex_binding);
 AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_buffer* index_buffer);
+AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size);
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer);
 AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer(agpu_command_list* command_list, agpu_buffer* buffer);
 AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding);
@@ -1376,6 +1378,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuUsePipelineState_FUN agpuUsePipelineState;
 	agpuUseVertexBinding_FUN agpuUseVertexBinding;
 	agpuUseIndexBuffer_FUN agpuUseIndexBuffer;
+	agpuUseIndexBufferAt_FUN agpuUseIndexBufferAt;
 	agpuUseDrawIndirectBuffer_FUN agpuUseDrawIndirectBuffer;
 	agpuUseComputeDispatchIndirectBuffer_FUN agpuUseComputeDispatchIndirectBuffer;
 	agpuUseShaderResources_FUN agpuUseShaderResources;

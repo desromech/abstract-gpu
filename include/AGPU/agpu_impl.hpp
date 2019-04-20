@@ -629,6 +629,7 @@ public:
 	virtual agpu_error usePipelineState(const pipeline_state_ref & pipeline) = 0;
 	virtual agpu_error useVertexBinding(const vertex_binding_ref & vertex_binding) = 0;
 	virtual agpu_error useIndexBuffer(const buffer_ref & index_buffer) = 0;
+	virtual agpu_error useIndexBufferAt(const buffer_ref & index_buffer, agpu_size offset, agpu_size index_size) = 0;
 	virtual agpu_error useDrawIndirectBuffer(const buffer_ref & draw_buffer) = 0;
 	virtual agpu_error useComputeDispatchIndirectBuffer(const buffer_ref & buffer) = 0;
 	virtual agpu_error useShaderResources(const shader_resource_binding_ref & binding) = 0;

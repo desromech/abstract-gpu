@@ -748,6 +748,11 @@ public:
 		agpuThrowIfFailed(agpuUseIndexBuffer(this, index_buffer));
 	}
 
+	inline void useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+	{
+		agpuThrowIfFailed(agpuUseIndexBufferAt(this, index_buffer, offset, index_size));
+	}
+
 	inline void useDrawIndirectBuffer(agpu_buffer* draw_buffer)
 	{
 		agpuThrowIfFailed(agpuUseDrawIndirectBuffer(this, draw_buffer));
