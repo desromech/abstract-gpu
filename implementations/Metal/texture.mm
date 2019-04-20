@@ -1,5 +1,6 @@
 #include "texture.hpp"
 #include "texture_format.hpp"
+#include "command_queue.hpp"
 
 _agpu_texture::_agpu_texture(agpu_device *device)
     : device(device)
@@ -103,6 +104,15 @@ agpu_error _agpu_texture::unmapLevel (  )
 agpu_error _agpu_texture::readData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
 {
     CHECK_POINTER(buffer);
+
+    // Synchronize this with the GPU
+    id<MTLCommandBuffer> commandBuffer = [device->getDefaultCommandQueue()->handle commandBuffer];
+    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+    [blitEncoder synchronizeResource: handle];
+    [blitEncoder endEncoding];
+    [commandBuffer commit];
+    [commandBuffer waitUntilCompleted];
+    [commandBuffer release];
 
     MTLRegion region = getLevelRegion(level);
     [handle getBytes: buffer
