@@ -1,6 +1,9 @@
 #include "renderpass.hpp"
 #include "texture_format.hpp"
 
+namespace AgpuVulkan
+{
+
 inline enum VkAttachmentLoadOp mapLoadOp(agpu_renderpass_attachment_action action)
 {
     switch (action)
@@ -23,22 +26,22 @@ inline enum VkAttachmentStoreOp mapStoreOp(agpu_renderpass_attachment_action act
     }
 }
 
-_agpu_renderpass::_agpu_renderpass(agpu_device *device)
+AVkRenderPass::AVkRenderPass(const agpu::device_ref &device)
     : device(device)
 {
     handle = VK_NULL_HANDLE;
 }
 
-void _agpu_renderpass::lostReferences()
+AVkRenderPass::~AVkRenderPass()
 {
     if (handle)
-        vkDestroyRenderPass(device->device, handle, nullptr);
+        vkDestroyRenderPass(deviceForVk->device, handle, nullptr);
 }
 
-agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_description *description)
+agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_renderpass_description *description)
 {
     if (!description)
-        return nullptr;
+        return agpu::renderpass_ref();
 
     // Attachments
     auto colorCount = description->color_attachment_count;
@@ -129,18 +132,19 @@ agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_d
     renderPassCreateInfo.pSubpasses = &subpass;
 
     VkRenderPass renderPass;
-    auto error = vkCreateRenderPass(device->device, &renderPassCreateInfo, nullptr, &renderPass);
+    auto error = vkCreateRenderPass(deviceForVk->device, &renderPassCreateInfo, nullptr, &renderPass);
     if (error)
-        return nullptr;
+        return agpu::renderpass_ref();
 
-    auto result = new agpu_renderpass(device);
-    result->handle = renderPass;
-    result->clearValues = clearValues;
-    result->hasDepthStencil = description->depth_stencil_attachment != nullptr;
+    auto result = agpu::makeObject<AVkRenderPass> (device);
+    auto avkRenderpass = result.as<AVkRenderPass> ();
+    avkRenderpass->handle = renderPass;
+    avkRenderpass->clearValues = clearValues;
+    avkRenderpass->hasDepthStencil = description->depth_stencil_attachment != nullptr;
     return result;
 }
 
-agpu_error _agpu_renderpass::setDepthStencilClearValue(agpu_depth_stencil_value value)
+agpu_error AVkRenderPass::setDepthStencilClearValue(agpu_depth_stencil_value value)
 {
     if (hasDepthStencil)
     {
@@ -152,7 +156,7 @@ agpu_error _agpu_renderpass::setDepthStencilClearValue(agpu_depth_stencil_value 
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
+agpu_error AVkRenderPass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
 {
     auto colorCount = clearValues.size();
     if (hasDepthStencil)
@@ -168,39 +172,10 @@ agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value)
+agpu_error AVkRenderPass::setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value)
 {
     CHECK_POINTER(value);
     return setColorClearValue(attachment_index, *value);
 }
 
-// The exported C Interface
-AGPU_EXPORT agpu_error agpuAddRenderPassReference(agpu_renderpass* renderpass)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseRenderPass(agpu_renderpass* renderpass)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue(agpu_renderpass* renderpass, agpu_depth_stencil_value value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setDepthStencilClearValue(value);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValue(attachment_index, value);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f *value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValueFrom(attachment_index, value);
-}
+} // End of namespace AgpuVulkan

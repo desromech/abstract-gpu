@@ -3,17 +3,23 @@
 
 #include "device.hpp"
 
-struct _agpu_pipeline_state : public Object<_agpu_pipeline_state>
+namespace AgpuVulkan
 {
-    _agpu_pipeline_state(agpu_device *device);
-    void lostReferences();
+
+class AVkPipelineState : public agpu::pipeline_state
+{
+public:
+    AVkPipelineState(const agpu::device_ref &device);
+    ~AVkPipelineState();
 
     agpu_int getUniformLocation(agpu_cstring name);
 
-    agpu_device *device;
+    agpu::device_ref device;
     VkPipeline pipeline;
     VkRenderPass renderPass;
 	VkPipelineBindPoint bindPoint;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_PIPELINE_STATE_HPP

@@ -3,14 +3,18 @@
 
 #include "device.hpp"
 
-struct _agpu_framebuffer : public Object<_agpu_framebuffer>
+namespace AgpuVulkan
 {
-    _agpu_framebuffer(agpu_device *device);
-    void lostReferences();
 
-    static agpu_framebuffer *create(agpu_device *device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView);
+class AVkFramebuffer : public agpu::framebuffer
+{
+public:
+    AVkFramebuffer(const agpu::device_ref &device);
+    ~AVkFramebuffer();
 
-    agpu_device *device;
+    static agpu::framebuffer_ref create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView);
+
+    agpu::device_ref device;
 
     agpu_bool swapChainFramebuffer;
     agpu_uint colorCount;
@@ -19,9 +23,12 @@ struct _agpu_framebuffer : public Object<_agpu_framebuffer>
     agpu_uint height;
     VkRenderPass renderPass;
     VkFramebuffer framebuffer;
-    std::vector<agpu_texture*> attachmentTextures;
+    std::vector<agpu::texture_ref> attachmentTextures;
     std::vector<VkImageView> attachmentViews;
     std::vector<agpu_texture_view_description> attachmentDescriptions;
 
 };
+
+} // End of namespace AgpuVulkan
+
 #endif //AGPU_VULKAN_FRAMEBUFFER_HPP

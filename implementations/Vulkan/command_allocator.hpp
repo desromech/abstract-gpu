@@ -3,20 +3,25 @@
 
 #include "device.hpp"
 
-struct _agpu_command_allocator : public Object<_agpu_command_allocator>
+namespace AgpuVulkan
+{
+
+class AVkCommandAllocator : public agpu::command_allocator
 {
 public:
-    _agpu_command_allocator(agpu_device *device);
-    void lostReferences();
+    AVkCommandAllocator(const agpu::device_ref &device);
+    ~AVkCommandAllocator();
 
-    static agpu_command_allocator* create(agpu_device* device, agpu_command_list_type type, agpu_command_queue *commandQueue);
+    static agpu::command_allocator_ref create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_queue_ref &commandQueue);
 
-    agpu_error reset();
+    virtual agpu_error reset() override;
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_command_list_type type;
     agpu_uint queueFamilyIndex;
     VkCommandPool commandPool;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_COMMAND_ALLOCATOR_HPP

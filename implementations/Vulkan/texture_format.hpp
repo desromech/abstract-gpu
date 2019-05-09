@@ -2,6 +2,9 @@
 #include "../Common/texture_formats_common.hpp"
 #include <algorithm>
 
+namespace AgpuVulkan
+{
+
 inline VkFormat mapTextureFormat(agpu_texture_format format)
 {
     switch (format)
@@ -103,3 +106,5 @@ inline VkSampleCountFlagBits mapSampleCount(agpu_uint sampleCount)
 {
     return VkSampleCountFlagBits(1 << (std::max(1u, sampleCount) - 1));
 }
+
+} // End of namespace AgpuVulkan

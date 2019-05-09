@@ -1,51 +1,64 @@
 #ifndef AGPU_VULKAN_DEVICE_HPP
 #define AGPU_VULKAN_DEVICE_HPP
 
-#if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#define VK_USE_PLATFORM_WIN32_KHR
-#elif defined(__unix__)
-#define VK_USE_PLATFORM_XCB_KHR
-#else
-#error unsupported platform
-#endif
-
-#include "object.hpp"
+#include "common.hpp"
+#include "include_vulkan.h"
 #include <string.h>
 #include <memory>
 #include <mutex>
 #include <vector>
-#include <vulkan/vulkan.h>
 #include <openvr.h>
 
 #define DECLARE_VK_EXTENSION_FP(name) PFN_vk ## name fp ## name
 
+namespace AgpuVulkan
+{
+class VulkanPlatform;
+
 /**
 * Agpu vulkan device
 */
-struct _agpu_device : public Object<_agpu_device>
+class AVkDevice : public agpu::device
 {
 public:
-    _agpu_device();
+    AVkDevice();
+    ~AVkDevice();
 
-    void lostReferences();
-
-    static bool checkVulkanImplementation();
+    static bool checkVulkanImplementation(VulkanPlatform *platform);
 
     static bool getInstanceExtensionsRequiredForVR(std::vector<std::string> &requiredInstanceExtensions);
     static bool getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDevice, std::vector<std::string> &requiredDeviceExtensions);
 
-    static agpu_device *open(agpu_device_open_info* openInfo);
+    static agpu::device_ref open(agpu_device_open_info* openInfo);
     bool initialize(agpu_device_open_info* openInfo);
 
-	agpu_bool isFeatureSupported(agpu_feature feature);
+    virtual agpu::command_queue_ptr getDefaultCommandQueue() override;
+    virtual agpu::command_queue_ptr getGraphicsCommandQueue(agpu_uint index);
+    virtual agpu::command_queue_ptr getComputeCommandQueue(agpu_uint index);
+    virtual agpu::command_queue_ptr getTransferCommandQueue(agpu_uint index);
 
-    agpu_command_queue* getDefaultCommandQueue();
-    agpu_command_queue* getGraphicsCommandQueue(agpu_uint index);
-    agpu_command_queue* getComputeCommandQueue(agpu_uint index);
-    agpu_command_queue* getTransferCommandQueue(agpu_uint index);
-    agpu_int getMultiSampleQualityLevels(agpu_uint sample_count);
+	virtual agpu::swap_chain_ptr createSwapChain(const agpu::command_queue_ref & commandQueue, agpu_swap_chain_create_info* swapChainInfo) override;
+	virtual agpu::buffer_ptr createBuffer(agpu_buffer_description* description, agpu_pointer initial_data) override;
+	virtual agpu::vertex_layout_ptr createVertexLayout() override;
+	virtual agpu::vertex_binding_ptr createVertexBinding(const agpu::vertex_layout_ref & layout) override;
+	virtual agpu::shader_ptr createShader(agpu_shader_type type) override;
+	virtual agpu::shader_signature_builder_ptr createShaderSignatureBuilder() override;
+	virtual agpu::pipeline_builder_ptr createPipelineBuilder() override;
+	virtual agpu::compute_pipeline_builder_ptr createComputePipelineBuilder() override;
+	virtual agpu::command_allocator_ptr createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue) override;
+	virtual agpu::command_list_ptr createCommandList(agpu_command_list_type type, const agpu::command_allocator_ref & allocator, const agpu::pipeline_state_ref & initial_pipeline_state) override;
+	virtual agpu_shader_language getPreferredShaderLanguage() override;
+	virtual agpu_shader_language getPreferredIntermediateShaderLanguage() override;
+	virtual agpu_shader_language getPreferredHighLevelShaderLanguage() override;
+	virtual agpu::framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView) override;
+	virtual agpu::renderpass_ptr createRenderPass(agpu_renderpass_description* description) override;
+	virtual agpu::texture_ptr createTexture(agpu_texture_description* description) override;
+	virtual agpu::fence_ptr createFence() override;
+	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) override;
+	virtual agpu_bool hasTopLeftNdcOrigin() override;
+	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
+	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
+	virtual agpu::vr_system_ptr getVRSystem() override;
 
 public:
     std::vector<VkPhysicalDevice> physicalDevices;
@@ -87,12 +100,12 @@ public:
     bool isVRInputDevicesSupported;
 
     vr::IVRSystem *vrSystem;
-    agpu_vr_system *vrSystemWrapper;
+    agpu::vr_system_ref vrSystemWrapper;
 
     // Queues
-    std::vector<agpu_command_queue*> graphicsCommandQueues;
-    std::vector<agpu_command_queue*> computeCommandQueues;
-    std::vector<agpu_command_queue*> transferCommandQueues;
+    std::vector<agpu::command_queue_ref> graphicsCommandQueues;
+    std::vector<agpu::command_queue_ref> computeCommandQueues;
+    std::vector<agpu::command_queue_ref> transferCommandQueues;
 
 public:
     bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)
@@ -132,7 +145,9 @@ private:
     std::mutex setupMutex;
     VkCommandPool setupCommandPool;
     VkCommandBuffer setupCommandBuffer;
-    agpu_command_queue *setupQueue;
+    agpu::command_queue_ref setupQueue;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_DEVICE_HPP

@@ -68,8 +68,10 @@ agpu_bool GLPlatform::isCrossPlatform()
 AGPU_EXPORT agpu_error agpuGetPlatforms ( agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms )
 {
     using namespace AgpuGL;
-    if(!theGLPlatform)
+    static std::once_flag platformCreatedFlag;
+    std::call_once(platformCreatedFlag, []{
         theGLPlatform = agpu::makeObject<GLPlatform> ();
+    });
 
     if (!platforms && numplatforms == 0)
     {

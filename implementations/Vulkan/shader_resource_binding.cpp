@@ -4,28 +4,30 @@
 #include "texture.hpp"
 #include "constants.hpp"
 
-_agpu_shader_resource_binding::_agpu_shader_resource_binding(agpu_device *device)
+namespace AgpuVulkan
+{
+
+AVkShaderResourceBinding::AVkShaderResourceBinding(const agpu::device_ref &device)
     : device(device)
 {
 }
 
-void _agpu_shader_resource_binding::lostReferences()
+AVkShaderResourceBinding::~AVkShaderResourceBinding()
 {
-    signature->release();
 }
 
-_agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_device *device, agpu_shader_signature *signature, agpu_uint elementIndex, VkDescriptorSet descriptorSet, const ShaderSignatureElementDescription &elementDescription)
+agpu::shader_resource_binding_ref AVkShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex, VkDescriptorSet descriptorSet, const ShaderSignatureElementDescription &elementDescription)
 {
-    auto result = new _agpu_shader_resource_binding(device);
-    result->elementIndex = elementIndex;
-    result->signature = signature;
-    signature->retain();
-    result->descriptorSet = descriptorSet;
-    result->bindingDescription = &elementDescription;
+    auto result = agpu::makeObject<AVkShaderResourceBinding> (device);
+    auto resourceBinding = result.as<AVkShaderResourceBinding> ();
+    resourceBinding->elementIndex = elementIndex;
+    resourceBinding->signature = signature;
+    resourceBinding->descriptorSet = descriptorSet;
+    resourceBinding->bindingDescription = &elementDescription;
     return result;
 }
 
-agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
+agpu_error AVkShaderResourceBinding::bindUniformBuffer(agpu_int location, const agpu::buffer_ref &uniform_buffer)
 {
     CHECK_POINTER(uniform_buffer);
     if (location < 0 || location >= (int)bindingDescription->types.size())
@@ -34,14 +36,14 @@ agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, a
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
         return AGPU_INVALID_OPERATION;
 
-    return bindUniformBufferRange(location, uniform_buffer, 0, uniform_buffer->description.size);
+    return bindUniformBufferRange(location, uniform_buffer, 0, uniform_buffer.as<AVkBuffer> ()->description.size);
 }
 
-agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
+agpu_error AVkShaderResourceBinding::bindUniformBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size)
 {
     CHECK_POINTER(uniform_buffer);
 
-    if ((uniform_buffer->description.binding & AGPU_UNIFORM_BUFFER) == 0)
+    if ((uniform_buffer.as<AVkBuffer> ()->description.binding & AGPU_UNIFORM_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -50,7 +52,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
 
     // Align the size to 256 Kb
     VkDescriptorBufferInfo bufferInfo;
-    bufferInfo.buffer = uniform_buffer->getDrawBuffer();
+    bufferInfo.buffer = uniform_buffer.as<AVkBuffer> ()->getDrawBuffer();
     bufferInfo.offset = offset;
     bufferInfo.range = (size + 255) & (~255);
 
@@ -63,12 +65,12 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
     write.dstBinding = location;
     write.pBufferInfo = &bufferInfo;
 
-    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_resource_binding::bindStorageBuffer(agpu_int location, agpu_buffer* storage_buffer)
+agpu_error AVkShaderResourceBinding::bindStorageBuffer(agpu_int location, const agpu::buffer_ref &storage_buffer)
 {
     CHECK_POINTER(storage_buffer);
     if (location < 0 || location >= (int)bindingDescription->types.size())
@@ -77,14 +79,14 @@ agpu_error _agpu_shader_resource_binding::bindStorageBuffer(agpu_int location, a
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
         return AGPU_INVALID_OPERATION;
 
-    return bindStorageBufferRange(location, storage_buffer, 0, storage_buffer->description.size);
+    return bindStorageBufferRange(location, storage_buffer, 0, storage_buffer.as<AVkBuffer> ()->description.size);
 }
 
-agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
+agpu_error AVkShaderResourceBinding::bindStorageBufferRange(agpu_int location, const agpu::buffer_ref &storage_buffer, agpu_size offset, agpu_size size)
 {
     CHECK_POINTER(storage_buffer);
 
-    if ((storage_buffer->description.binding & AGPU_STORAGE_BUFFER) == 0)
+    if ((storage_buffer.as<AVkBuffer> ()->description.binding & AGPU_STORAGE_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -93,7 +95,7 @@ agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int locati
 
     // Align the size to 256 Kb
     VkDescriptorBufferInfo bufferInfo;
-    bufferInfo.buffer = storage_buffer->getDrawBuffer();
+    bufferInfo.buffer = storage_buffer.as<AVkBuffer> ()->getDrawBuffer();
     bufferInfo.offset = offset;
     bufferInfo.range = (size + 255) & (~255);
 
@@ -106,12 +108,12 @@ agpu_error _agpu_shader_resource_binding::bindStorageBufferRange(agpu_int locati
     write.dstBinding = location;
     write.pBufferInfo = &bufferInfo;
 
-    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+agpu_error AVkShaderResourceBinding::bindTexture(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
 {
     CHECK_POINTER(texture);
     if (location < 0 || location >= (int)bindingDescription->types.size())
@@ -129,12 +131,12 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
     if(miplevels >= 0)
         viewDesc.subresource_range.level_count = miplevels;
 
-    auto view = agpu_texture::createImageView(device, &viewDesc);
+    auto view = AVkTexture::createImageView(device, &viewDesc);
     if (!view)
         return AGPU_ERROR;
 
     VkDescriptorImageInfo imageInfo;
-    imageInfo.imageLayout = texture->initialLayout;
+    imageInfo.imageLayout = texture.as<AVkTexture> ()->initialLayout;
     imageInfo.imageView = view;
     imageInfo.sampler = VK_NULL_HANDLE;
 
@@ -147,12 +149,12 @@ agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_te
     write.dstBinding = location;
     write.pImageInfo = &imageInfo;
 
-    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+agpu_error AVkShaderResourceBinding::bindTextureArrayRange(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
 {
     CHECK_POINTER(texture);
     if (location < 0 || location >= (int)bindingDescription->types.size())
@@ -163,7 +165,7 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int locatio
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_shader_resource_binding::bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
+agpu_error AVkShaderResourceBinding::bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
 {
     CHECK_POINTER(texture);
     if (location < 0 || location >= (int)bindingDescription->types.size())
@@ -185,12 +187,12 @@ agpu_error _agpu_shader_resource_binding::bindImage(agpu_int location, agpu_text
         viewDesc.subresource_range.layer_count = 0;
     }
 
-    auto view = agpu_texture::createImageView(device, &viewDesc);
+    auto view = AVkTexture::createImageView(device, &viewDesc);
     if (!view)
         return AGPU_ERROR;
 
     VkDescriptorImageInfo imageInfo;
-    imageInfo.imageLayout = texture->initialLayout;
+    imageInfo.imageLayout = texture.as<AVkTexture> ()->initialLayout;
     imageInfo.imageView = view;
     imageInfo.sampler = VK_NULL_HANDLE;
 
@@ -203,11 +205,11 @@ agpu_error _agpu_shader_resource_binding::bindImage(agpu_int location, agpu_text
     write.dstBinding = location;
     write.pImageInfo = &imageInfo;
 
-    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
+agpu_error AVkShaderResourceBinding::createSampler(agpu_int location, agpu_sampler_description* description)
 {
     CHECK_POINTER(description);
     if (location < 0 || location >= (int)bindingDescription->types.size())
@@ -238,7 +240,7 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
     */
 
     VkSampler sampler;
-    auto error = vkCreateSampler(device->device, &info, nullptr, &sampler);
+    auto error = vkCreateSampler(deviceForVk->device, &info, nullptr, &sampler);
     CONVERT_VULKAN_ERROR(error);
 
     VkDescriptorImageInfo imageInfo;
@@ -255,67 +257,8 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
     write.dstBinding = location;
     write.pImageInfo = &imageInfo;
 
-    vkUpdateDescriptorSets(device->device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference(agpu_shader_resource_binding* shader_resource_binding)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShaderResourceBinding(agpu_shader_resource_binding* shader_resource_binding)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->release();
-}
-
-AGPU_EXPORT agpu_error agpuBindUniformBuffer(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindUniformBuffer(location, uniform_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuBindUniformBufferRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindUniformBufferRange(location, uniform_buffer, offset, size);
-}
-
-AGPU_EXPORT agpu_error agpuBindStorageBuffer(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindStorageBuffer(location, storage_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuBindStorageBufferRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindStorageBufferRange(location, storage_buffer, offset, size);
-}
-
-AGPU_EXPORT agpu_error agpuBindTexture(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindTexture(location, texture, startMiplevel, miplevels, lodclamp);
-}
-
-AGPU_EXPORT agpu_error agpuBindTextureArrayRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindTextureArrayRange(location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
-}
-
-AGPU_EXPORT agpu_error agpuBindImage ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format )
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindImage(location, texture, level, layer, access, format);
-}
-
-AGPU_EXPORT agpu_error agpuCreateSampler(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->createSampler(location, description);
-}
+} // End of namespace AgpuVulkan

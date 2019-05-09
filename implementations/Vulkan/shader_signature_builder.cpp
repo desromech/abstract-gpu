@@ -1,6 +1,9 @@
 #include "shader_signature_builder.hpp"
 #include "shader_signature.hpp"
 
+namespace AgpuVulkan
+{
+
 inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
 {
     switch (type)
@@ -16,28 +19,27 @@ inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
     }
 }
 
-_agpu_shader_signature_builder::_agpu_shader_signature_builder(agpu_device *device)
+AVkShaderSignatureBuilder::AVkShaderSignatureBuilder(const agpu::device_ref &device)
     : device(device)
 {
     currentElementSet = nullptr;
 }
 
-void _agpu_shader_signature_builder::lostReferences()
+AVkShaderSignatureBuilder::~AVkShaderSignatureBuilder()
 {
     for(auto &element : elementDescription)
     {
         if(element.descriptorSetLayout != VK_NULL_HANDLE)
-            vkDestroyDescriptorSetLayout(device->device, element.descriptorSetLayout, nullptr);
+            vkDestroyDescriptorSetLayout(deviceForVk->device, element.descriptorSetLayout, nullptr);
     }
 }
 
-_agpu_shader_signature_builder *_agpu_shader_signature_builder::create(agpu_device *device)
+agpu::shader_signature_builder_ref AVkShaderSignatureBuilder::create(const agpu::device_ref &device)
 {
-    std::unique_ptr<_agpu_shader_signature_builder> result(new _agpu_shader_signature_builder(device));
-    return result.release();
+    return agpu::makeObject<AVkShaderSignatureBuilder> (device);
 }
 
-agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
+agpu::shader_signature_ptr AVkShaderSignatureBuilder::build()
 {
     // Finish the last binding bank.
     finishBindingBank();
@@ -65,17 +67,17 @@ agpu_shader_signature* _agpu_shader_signature_builder::buildShaderSignature()
     }
 
     VkPipelineLayout layout;
-    auto error = vkCreatePipelineLayout(device->device, &layoutInfo, nullptr, &layout);
+    auto error = vkCreatePipelineLayout(deviceForVk->device, &layoutInfo, nullptr, &layout);
     if (error)
         return nullptr;
 
-    auto result = agpu_shader_signature::create(device, this, layout);
+    auto result = AVkShaderSignature::create(device, this, layout);
     if (!result)
-        vkDestroyPipelineLayout(device->device, layout, nullptr);
-    return result;
+        vkDestroyPipelineLayout(deviceForVk->device, layout, nullptr);
+    return result.disown();
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingConstant()
+agpu_error AVkShaderSignatureBuilder::addBindingConstant()
 {
     if(pushConstantRanges.empty())
     {
@@ -90,12 +92,12 @@ agpu_error _agpu_shader_signature_builder::addBindingConstant()
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
+agpu_error AVkShaderSignatureBuilder::addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
 {
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_shader_signature_builder::finishBindingBank()
+agpu_error AVkShaderSignatureBuilder::finishBindingBank()
 {
     if(currentElementSet)
     {
@@ -105,7 +107,7 @@ agpu_error _agpu_shader_signature_builder::finishBindingBank()
         setLayoutInfo.bindingCount = (uint32_t)currentElementSet->bindings.size();
         setLayoutInfo.pBindings = &currentElementSet->bindings[0];
 
-        auto error = vkCreateDescriptorSetLayout(device->device, &setLayoutInfo, nullptr, &currentElementSet->descriptorSetLayout);
+        auto error = vkCreateDescriptorSetLayout(deviceForVk->device, &setLayoutInfo, nullptr, &currentElementSet->descriptorSetLayout);
         CONVERT_VULKAN_ERROR(error);
     }
 
@@ -113,7 +115,7 @@ agpu_error _agpu_shader_signature_builder::finishBindingBank()
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_signature_builder::beginBindingBank ( agpu_uint maxBindings )
+agpu_error AVkShaderSignatureBuilder::beginBindingBank ( agpu_uint maxBindings )
 {
     auto error = finishBindingBank();
     if(error != AGPU_OK)
@@ -124,7 +126,7 @@ agpu_error _agpu_shader_signature_builder::beginBindingBank ( agpu_uint maxBindi
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader_signature_builder::addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
+agpu_error AVkShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
 {
     if(!currentElementSet)
         return AGPU_INVALID_OPERATION;
@@ -145,46 +147,4 @@ agpu_error _agpu_shader_signature_builder::addBindingBankElement(agpu_shader_bin
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference(agpu_shader_signature_builder* shader_signature_builder)
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder(agpu_shader_signature_builder* shader_signature_builder)
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->release();
-}
-
-AGPU_EXPORT agpu_shader_signature* agpuBuildShaderSignature(agpu_shader_signature_builder* shader_signature_builder)
-{
-    if(!shader_signature_builder)
-        return nullptr;
-    return shader_signature_builder->buildShaderSignature();
-}
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant(agpu_shader_signature_builder* shader_signature_builder)
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingConstant();
-}
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings)
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingElement(type, maxBindings);
-}
-
-AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank ( agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->beginBindingBank(maxBindings);
-}
-
-AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount )
-{
-    CHECK_POINTER(shader_signature_builder);
-    return shader_signature_builder->addBindingBankElement(type, bindingPointCount);
-}
+} // End of namespace AgpuVulkan

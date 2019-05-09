@@ -4,20 +4,26 @@
 #include "device.hpp"
 #include "shader_signature_builder.hpp"
 
-struct _agpu_shader_signature : public Object<_agpu_shader_signature>
+namespace AgpuVulkan
 {
-    _agpu_shader_signature(agpu_device *device);
-    void lostReferences();
 
-    static agpu_shader_signature *create(agpu_device *device, agpu_shader_signature_builder *builder, VkPipelineLayout layout);
+struct AVkShaderSignature : public agpu::shader_signature
+{
+public:
+    AVkShaderSignature(const agpu::device_ref &device);
+    ~AVkShaderSignature();
 
-    agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
+    static agpu::shader_signature_ref create(const agpu::device_ref &device, AVkShaderSignatureBuilder *builder, VkPipelineLayout layout);
 
-    agpu_device *device;
+    virtual agpu::shader_resource_binding_ptr createShaderResourceBinding(agpu_uint element) override;
+
+    agpu::device_ref device;
     VkPipelineLayout layout;
 
     std::vector<ShaderSignatureElementDescription> elementDescription;
     std::vector<VkDescriptorPool> elementPools;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_SHADER_SIGNATURE_HPP

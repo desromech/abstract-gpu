@@ -1,41 +1,45 @@
 #include "fence.hpp"
 
-_agpu_fence::_agpu_fence(agpu_device *device)
+namespace AgpuVulkan
+{
+
+AVkFence::AVkFence(const agpu::device_ref &device)
     : device(device)
 {
 }
 
-void _agpu_fence::lostReferences()
+AVkFence::~AVkFence()
 {
-    vkDestroyFence(device->device, fence, nullptr);
+    vkDestroyFence(deviceForVk->device, fence, nullptr);
 }
 
-agpu_fence *_agpu_fence::create(agpu_device *device)
+agpu::fence_ref AVkFence::create(const agpu::device_ref &device)
 {
     VkFenceCreateInfo info;
     memset(&info, 0, sizeof(info));
     info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 
     VkFence fence;
-    auto error = vkCreateFence(device->device, &info, nullptr, &fence);
+    auto error = vkCreateFence(deviceForVk->device, &info, nullptr, &fence);
     if (error)
-        return nullptr;
+        return agpu::fence_ref();
 
-    auto result = new agpu_fence(device);
-    result->fence = fence;
+    auto result = agpu::makeObject<AVkFence> (device);
+    auto avkFence = result.as<AVkFence> ();
+    avkFence->fence = fence;
     return result;
 }
 
-agpu_error _agpu_fence::waitOnClient()
+agpu_error AVkFence::waitOnClient()
 {
-    auto result = vkGetFenceStatus(device->device, fence);
+    auto result = vkGetFenceStatus(deviceForVk->device, fence);
     if (result == VK_SUCCESS)
     {
         // Do nothing
     }
     else if (result == VK_NOT_READY)
     {
-        auto error = vkWaitForFences(device->device, 1, &fence, VK_TRUE, UINT64_MAX);
+        auto error = vkWaitForFences(deviceForVk->device, 1, &fence, VK_TRUE, UINT64_MAX);
         CONVERT_VULKAN_ERROR(error);
     }
     else
@@ -45,27 +49,10 @@ agpu_error _agpu_fence::waitOnClient()
     }
 
     // Reset the fence.
-    auto error = vkResetFences(device->device, 1, &fence);
+    auto error = vkResetFences(deviceForVk->device, 1, &fence);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
 
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddFenceReference(agpu_fence* fence)
-{
-    CHECK_POINTER(fence);
-    return fence->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseFenceReference(agpu_fence* fence)
-{
-    CHECK_POINTER(fence);
-    return fence->release();
-}
-
-AGPU_EXPORT agpu_error agpuWaitOnClient(agpu_fence* fence)
-{
-    CHECK_POINTER(fence);
-    return fence->waitOnClient();
-}
+} // End of namespace AgpuVulkan

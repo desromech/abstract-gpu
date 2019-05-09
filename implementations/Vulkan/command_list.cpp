@@ -9,6 +9,9 @@
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 
+namespace AgpuVulkan
+{
+
 inline VkIndexType indexTypeForStride(agpu_size stride)
 {
     switch (stride)
@@ -19,44 +22,36 @@ inline VkIndexType indexTypeForStride(agpu_size stride)
     }
 }
 
-_agpu_command_list::_agpu_command_list(agpu_device *device)
+AVkCommandList::AVkCommandList(const agpu::device_ref &device)
     : device(device)
 {
-    currentFramebuffer = nullptr;
-    drawIndirectBuffer = nullptr;
-    computeDispatchIndirectBuffer = nullptr;
-    shaderSignature = nullptr;
     isClosed = false;
     isSecondaryContent = false;
 }
 
-void _agpu_command_list::lostReferences()
+AVkCommandList::~AVkCommandList()
 {
-    vkFreeCommandBuffers(device->device, allocator->commandPool, 1, &commandBuffer);
-    if (allocator)
-        allocator->release();
-    if (currentFramebuffer)
-        currentFramebuffer->release();
+    vkFreeCommandBuffers(deviceForVk->device, allocator.as<AVkCommandAllocator> ()->commandPool, 1, &commandBuffer);
 }
 
-_agpu_command_list* _agpu_command_list::create(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+agpu::command_list_ref AVkCommandList::create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state)
 {
     if (!allocator)
-        return nullptr;
+        return agpu::command_list_ref();
 
     VkCommandBufferAllocateInfo info;
     memset(&info, 0, sizeof(info));
     info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     info.commandBufferCount = 1;
-    info.commandPool = allocator->commandPool;
+    info.commandPool = allocator.as<AVkCommandAllocator> ()->commandPool;
     info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     if(type == AGPU_COMMAND_LIST_TYPE_BUNDLE)
         info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
     VkCommandBuffer commandBuffer;
-    auto error = vkAllocateCommandBuffers(device->device, &info, &commandBuffer);
+    auto error = vkAllocateCommandBuffers(deviceForVk->device, &info, &commandBuffer);
     if (error)
-        return nullptr;
+        return agpu::command_list_ref();
 
     VkCommandBufferInheritanceInfo commandBufferInheritance;
     memset(&commandBufferInheritance, 0, sizeof(commandBufferInheritance));
@@ -70,30 +65,30 @@ _agpu_command_list* _agpu_command_list::create(agpu_device* device, agpu_command
     error = vkBeginCommandBuffer(commandBuffer, &bufferBeginInfo);
     if (error)
     {
-        vkFreeCommandBuffers(device->device, allocator->commandPool, 1, &commandBuffer);
-        return nullptr;
+        vkFreeCommandBuffers(deviceForVk->device, allocator.as<AVkCommandAllocator> ()->commandPool, 1, &commandBuffer);
+        return agpu::command_list_ref();
     }
 
     if (initial_pipeline_state)
-        vkCmdBindPipeline(commandBuffer, initial_pipeline_state->bindPoint, initial_pipeline_state->pipeline);
+        vkCmdBindPipeline(commandBuffer, initial_pipeline_state.as<AVkPipelineState> ()->bindPoint, initial_pipeline_state.as<AVkPipelineState> ()->pipeline);
 
-    auto result = new _agpu_command_list(device);
-    result->commandBuffer = commandBuffer;
-    result->allocator = allocator;
-    result->queueFamilyIndex = allocator->queueFamilyIndex;
-    result->resetState();
-    allocator->retain();
+    auto result = agpu::makeObject<AVkCommandList> (device);
+    auto avkCommandList = result.as<AVkCommandList> ();
+    avkCommandList->commandBuffer = commandBuffer;
+    avkCommandList->allocator = allocator;
+    avkCommandList->queueFamilyIndex = allocator.as<AVkCommandAllocator> ()->queueFamilyIndex;
+    avkCommandList->resetState();
     return result;
 }
 
-agpu_error _agpu_command_list::close()
+agpu_error AVkCommandList::close()
 {
     auto error = vkEndCommandBuffer(commandBuffer);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::reset(agpu_command_allocator* newAllocator, agpu_pipeline_state* initial_pipeline_state)
+agpu_error AVkCommandList::reset(const agpu::command_allocator_ref &newAllocator, const agpu::pipeline_state_ref &initial_pipeline_state)
 {
     CHECK_POINTER(newAllocator);
     if (newAllocator != allocator)
@@ -118,13 +113,13 @@ agpu_error _agpu_command_list::reset(agpu_command_allocator* newAllocator, agpu_
     CONVERT_VULKAN_ERROR(error);
 
     if (initial_pipeline_state)
-        vkCmdBindPipeline(commandBuffer, initial_pipeline_state->bindPoint, initial_pipeline_state->pipeline);
+        vkCmdBindPipeline(commandBuffer, initial_pipeline_state.as<AVkPipelineState> ()->bindPoint, initial_pipeline_state.as<AVkPipelineState> ()->pipeline);
 
     resetState();
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::resetBundle (agpu_command_allocator* newAllocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+agpu_error AVkCommandList::resetBundle (const agpu::command_allocator_ref &newAllocator, const agpu::pipeline_state_ref &initial_pipeline_state, agpu_inheritance_info* inheritance_info )
 {
     CHECK_POINTER(newAllocator);
     if (newAllocator != allocator)
@@ -150,7 +145,7 @@ agpu_error _agpu_command_list::resetBundle (agpu_command_allocator* newAllocator
     {
         if(inheritance_info->renderpass)
         {
-            commandBufferInheritance.renderPass = inheritance_info->renderpass->handle;
+            commandBufferInheritance.renderPass = agpu::renderpass_ref::import(inheritance_info->renderpass).as<AVkRenderPass> ()->handle;
             bufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
         }
     }
@@ -159,54 +154,32 @@ agpu_error _agpu_command_list::resetBundle (agpu_command_allocator* newAllocator
     CONVERT_VULKAN_ERROR(error);
 
     if (initial_pipeline_state)
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state->pipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, initial_pipeline_state.as<AVkPipelineState> ()->pipeline);
 
     resetState();
     return AGPU_OK;
 }
 
-void _agpu_command_list::resetState()
+void AVkCommandList::resetState()
 {
-    if (currentFramebuffer)
-    {
-        currentFramebuffer->release();
-        currentFramebuffer = nullptr;
-    }
-
-    if (drawIndirectBuffer)
-    {
-        drawIndirectBuffer->release();
-        drawIndirectBuffer = nullptr;
-    }
-
-    if (computeDispatchIndirectBuffer)
-    {
-        computeDispatchIndirectBuffer->release();
-        computeDispatchIndirectBuffer = nullptr;
-    }
-
-    if (shaderSignature)
-    {
-        shaderSignature->release();
-        shaderSignature = nullptr;
-    }
+    currentFramebuffer.reset();
+    drawIndirectBuffer.reset();
+    computeDispatchIndirectBuffer.reset();
+    shaderSignature.reset();
 
     isSecondaryContent = false;
 
     vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, 0);
 }
 
-agpu_error _agpu_command_list::setShaderSignature(agpu_shader_signature* signature)
+agpu_error AVkCommandList::setShaderSignature(const agpu::shader_signature_ref &signature)
 {
     CHECK_POINTER(signature);
-    signature->retain();
-    if (shaderSignature)
-        shaderSignature->release();
     shaderSignature = signature;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+agpu_error AVkCommandList::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
     VkViewport viewport;
     viewport.width = float(w);
@@ -220,7 +193,7 @@ agpu_error _agpu_command_list::setViewport(agpu_int x, agpu_int y, agpu_int w, a
 
 }
 
-agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+agpu_error AVkCommandList::setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
     VkRect2D rect;
     rect.extent.width = w;
@@ -231,198 +204,197 @@ agpu_error _agpu_command_list::setScissor(agpu_int x, agpu_int y, agpu_int w, ag
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::usePipelineState(agpu_pipeline_state* pipeline)
+agpu_error AVkCommandList::usePipelineState(const agpu::pipeline_state_ref &pipeline)
 {
     CHECK_POINTER(pipeline);
-    vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
+    auto state = pipeline.as<AVkPipelineState> ();
+    vkCmdBindPipeline(commandBuffer, state->bindPoint, state->pipeline);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useVertexBinding(agpu_vertex_binding* vertex_binding)
+agpu_error AVkCommandList::useVertexBinding(const agpu::vertex_binding_ref &vertex_binding)
 {
     CHECK_POINTER(vertex_binding);
-    vkCmdBindVertexBuffers(commandBuffer, 0, (uint32_t)vertex_binding->vulkanBuffers.size(), &vertex_binding->vulkanBuffers[0], &vertex_binding->offsets[0]);
+    auto bindings = vertex_binding.as<AVkVertexBinding> ();
+    vkCmdBindVertexBuffers(commandBuffer, 0, (uint32_t)bindings->vulkanBuffers.size(), &bindings->vulkanBuffers[0], &bindings->offsets[0]);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useIndexBuffer(agpu_buffer* index_buffer)
+agpu_error AVkCommandList::useIndexBuffer(const agpu::buffer_ref &index_buffer)
 {
     CHECK_POINTER(index_buffer);
-    return useIndexBufferAt(index_buffer, 0, index_buffer->description.stride);
+    return useIndexBufferAt(index_buffer, 0, index_buffer.as<AVkBuffer> ()->description.stride);
 }
 
-agpu_error _agpu_command_list::useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+agpu_error AVkCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size)
 {
     CHECK_POINTER(index_buffer);
-    if ((index_buffer->description.binding & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
+    if ((index_buffer.as<AVkBuffer> ()->description.binding & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
-    vkCmdBindIndexBuffer(commandBuffer, index_buffer->getDrawBuffer(), offset, indexTypeForStride(index_size));
+    vkCmdBindIndexBuffer(commandBuffer, index_buffer.as<AVkBuffer> ()->getDrawBuffer(), offset, indexTypeForStride(index_size));
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setPrimitiveTopology(agpu_primitive_topology topology)
-{
-    // Nothing to do here.
-    return AGPU_OK;
-}
-
-agpu_error _agpu_command_list::useDrawIndirectBuffer(agpu_buffer* draw_buffer)
+agpu_error AVkCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer)
 {
     CHECK_POINTER(draw_buffer);
-    if ((draw_buffer->description.binding & AGPU_DRAW_INDIRECT_BUFFER) == 0)
+    if ((draw_buffer.as<AVkBuffer> ()->description.binding & AGPU_DRAW_INDIRECT_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
-    draw_buffer->retain();
-    if (drawIndirectBuffer)
-        drawIndirectBuffer->release();
     drawIndirectBuffer = draw_buffer;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useComputeDispatchIndirectBuffer(agpu_buffer* dispatch_buffer)
+agpu_error AVkCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_ref &dispatch_buffer)
 {
     CHECK_POINTER(dispatch_buffer);
-    if ((dispatch_buffer->description.binding & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER) == 0)
+    if ((dispatch_buffer.as<AVkBuffer> ()->description.binding & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
-    dispatch_buffer->retain();
-    if (computeDispatchIndirectBuffer)
-        computeDispatchIndirectBuffer->release();
     computeDispatchIndirectBuffer = dispatch_buffer;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useShaderResources(agpu_shader_resource_binding* binding)
+agpu_error AVkCommandList::useShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
     if (!shaderSignature)
         return AGPU_INVALID_OPERATION;
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderSignature->layout, binding->elementIndex, 1, &binding->descriptorSet, 0, nullptr);
+
+    auto avkBindings = binding.as<AVkShaderResourceBinding> ();
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            shaderSignature.as<AVkShaderSignature> ()->layout,
+            avkBindings->elementIndex, 1, &avkBindings->descriptorSet, 0, nullptr);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useComputeShaderResources(agpu_shader_resource_binding* binding)
+agpu_error AVkCommandList::useComputeShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
     if (!shaderSignature)
         return AGPU_INVALID_OPERATION;
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, shaderSignature->layout, binding->elementIndex, 1, &binding->descriptorSet, 0, nullptr);
+
+    auto avkBindings = binding.as<AVkShaderResourceBinding> ();
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+            shaderSignature.as<AVkShaderSignature> ()->layout,
+            avkBindings->elementIndex, 1, &avkBindings->descriptorSet, 0, nullptr);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
+agpu_error AVkCommandList::pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
 {
     CHECK_POINTER(values);
-    vkCmdPushConstants(commandBuffer, shaderSignature->layout, VK_SHADER_STAGE_ALL, offset, size, values);
+    vkCmdPushConstants(commandBuffer, shaderSignature.as<AVkShaderSignature> ()->layout, VK_SHADER_STAGE_ALL, offset, size, values);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+agpu_error AVkCommandList::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
 {
     vkCmdDraw(commandBuffer, vertex_count, instance_count, first_vertex, base_instance);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawArraysIndirect(agpu_size offset, agpu_size drawcount)
+agpu_error AVkCommandList::drawArraysIndirect(agpu_size offset, agpu_size drawcount)
 {
     if (!drawIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    vkCmdDrawIndirect(commandBuffer, drawIndirectBuffer->getDrawBuffer(), offset, drawcount, drawIndirectBuffer->description.stride);
+    vkCmdDrawIndirect(commandBuffer, drawIndirectBuffer.as<AVkBuffer> ()->getDrawBuffer(), offset, drawcount, drawIndirectBuffer.as<AVkBuffer> ()->description.stride);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+agpu_error AVkCommandList::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 {
     vkCmdDrawIndexed(commandBuffer, index_count, instance_count, first_index, base_vertex, base_instance);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawElementsIndirect(agpu_size offset, agpu_size drawcount)
+agpu_error AVkCommandList::drawElementsIndirect(agpu_size offset, agpu_size drawcount)
 {
     if (!drawIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer->getDrawBuffer(), offset, drawcount, drawIndirectBuffer->description.stride);
+    vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer.as<AVkBuffer> ()->getDrawBuffer(), offset, drawcount, drawIndirectBuffer.as<AVkBuffer> ()->description.stride);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
+agpu_error AVkCommandList::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
     vkCmdDispatch(commandBuffer, group_count_x, group_count_y, group_count_z);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
+agpu_error AVkCommandList::dispatchComputeIndirect ( agpu_size offset )
 {
     if (!computeDispatchIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    vkCmdDispatchIndirect(commandBuffer, computeDispatchIndirectBuffer->getDrawBuffer(), offset);
+    vkCmdDispatchIndirect(commandBuffer, computeDispatchIndirectBuffer.as<AVkBuffer> ()->getDrawBuffer(), offset);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setStencilReference(agpu_uint reference)
+agpu_error AVkCommandList::setStencilReference(agpu_uint reference)
 {
     vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, reference);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::executeBundle(agpu_command_list* bundle)
+agpu_error AVkCommandList::executeBundle(const agpu::command_list_ref &bundle)
 {
     CHECK_POINTER(bundle);
-    if (!bundle->isClosed || !bundle->isSecondaryContent)
+    auto avkBundle = bundle.as<AVkCommandList> ();
+    if (!avkBundle->isClosed || !avkBundle->isSecondaryContent)
         return AGPU_INVALID_PARAMETER;
 
-    vkCmdExecuteCommands(commandBuffer, 1, &bundle->commandBuffer);
+    vkCmdExecuteCommands(commandBuffer, 1, &avkBundle->commandBuffer);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
+agpu_error AVkCommandList::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
 {
     VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    auto barrier = device->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
+    auto barrier = deviceForVk->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
 
     vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
+agpu_error AVkCommandList::beginRenderPass(const agpu::renderpass_ref &renderpass, const agpu::framebuffer_ref &framebuffer, agpu_bool secondaryContent)
 {
     CHECK_POINTER(renderpass);
     CHECK_POINTER(framebuffer);
 
     // Store the framebuffer
-    framebuffer->retain();
-    if (currentFramebuffer)
-        currentFramebuffer->release();
     currentFramebuffer = framebuffer;
     isSecondaryContent = secondaryContent;
 
+    auto avkCurrentFramebuffer = currentFramebuffer.as<AVkFramebuffer> ();
+
     // Transition the color attachments.
     auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
+    for (agpu_uint i = 0; i < avkCurrentFramebuffer->colorCount; ++i)
     {
         VkImageSubresourceRange range;
         memset(&range, 0, sizeof(range));
 
-        auto &desc = currentFramebuffer->attachmentDescriptions[i];
+        auto &desc = avkCurrentFramebuffer->attachmentDescriptions[i];
         range.baseArrayLayer = desc.subresource_range.base_arraylayer;
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, currentFramebuffer->attachmentTextures[i]->initialLayout, destLayout, currentFramebuffer->attachmentTextures[i]->initialLayoutAccessBits);
+        auto attachmentTexture = avkCurrentFramebuffer->attachmentTextures[i].as<AVkTexture> ();
+        setImageLayout(attachmentTexture->image, range, VK_IMAGE_ASPECT_COLOR_BIT, attachmentTexture->initialLayout, destLayout, attachmentTexture->initialLayoutAccessBits);
     }
 
     // Transition the depth stencil attachment, if needed.
-    if(currentFramebuffer->hasDepthStencil)
+    if(avkCurrentFramebuffer->hasDepthStencil)
     {
-        auto depthStencilAttachment = currentFramebuffer->attachmentTextures.back();
+        auto depthStencilAttachment = avkCurrentFramebuffer->attachmentTextures.back().as<AVkTexture> ();
         if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
-            auto &desc = currentFramebuffer->attachmentDescriptions.back();
+            auto &desc = avkCurrentFramebuffer->attachmentDescriptions.back();
             VkImageSubresourceRange range;
             memset(&range, 0, sizeof(range));
             range.baseArrayLayer = desc.subresource_range.base_arraylayer;
@@ -438,54 +410,59 @@ agpu_error _agpu_command_list::beginRenderPass(agpu_renderpass *renderpass, agpu
     }
 
     // Begin the render pass.
+    auto avkRenderPass = renderpass.as<AVkRenderPass> ();
     VkRenderPassBeginInfo passBeginInfo;
     memset(&passBeginInfo, 0, sizeof(passBeginInfo));
     passBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    passBeginInfo.renderPass = renderpass->handle;
-    passBeginInfo.framebuffer = framebuffer->framebuffer;
-    passBeginInfo.renderArea.extent.width = framebuffer->width;
-    passBeginInfo.renderArea.extent.height = framebuffer->height;
+    passBeginInfo.renderPass = avkRenderPass->handle;
+    passBeginInfo.framebuffer = avkCurrentFramebuffer->framebuffer;
+    passBeginInfo.renderArea.extent.width = avkCurrentFramebuffer->width;
+    passBeginInfo.renderArea.extent.height = avkCurrentFramebuffer->height;
 
     // Set the clear values.
-    if (!renderpass->clearValues.empty())
+    if (!avkRenderPass->clearValues.empty())
     {
-        passBeginInfo.clearValueCount = (uint32_t)renderpass->clearValues.size();
-        passBeginInfo.pClearValues = &renderpass->clearValues[0];
+        passBeginInfo.clearValueCount = (uint32_t)avkRenderPass->clearValues.size();
+        passBeginInfo.pClearValues = &avkRenderPass->clearValues[0];
     }
 
     vkCmdBeginRenderPass(commandBuffer, &passBeginInfo, secondaryContent ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::endRenderPass()
+agpu_error AVkCommandList::endRenderPass()
 {
     if (!currentFramebuffer)
         return AGPU_INVALID_OPERATION;
 
     vkCmdEndRenderPass(commandBuffer);
 
+    auto avkCurrentFramebuffer = currentFramebuffer.as<AVkFramebuffer> ();
+
     // Transition the color attachments.
     auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    for (agpu_uint i = 0; i < currentFramebuffer->colorCount; ++i)
+    for (agpu_uint i = 0; i < avkCurrentFramebuffer->colorCount; ++i)
     {
-        auto &desc = currentFramebuffer->attachmentDescriptions.back();
+        auto &desc = avkCurrentFramebuffer->attachmentDescriptions.back();
         VkImageSubresourceRange range;
         memset(&range, 0, sizeof(range));
         range.baseArrayLayer = desc.subresource_range.base_arraylayer;
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
-        auto destLayout = currentFramebuffer->attachmentTextures[i]->initialLayout;
-        setImageLayout(currentFramebuffer->attachmentTextures[i]->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+
+        auto attachmentTexture = avkCurrentFramebuffer->attachmentTextures[i].as<AVkTexture> ();
+        auto destLayout = attachmentTexture->initialLayout;
+        setImageLayout(attachmentTexture->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
     }
 
     // Transition the depth stencil attachment if needed
-    if(currentFramebuffer->hasDepthStencil)
+    if(avkCurrentFramebuffer->hasDepthStencil)
     {
-        auto depthStencilAttachment = currentFramebuffer->attachmentTextures.back();
+        auto depthStencilAttachment = avkCurrentFramebuffer->attachmentTextures.back().as<AVkTexture> ();
         if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
-            auto &desc = currentFramebuffer->attachmentDescriptions.back();
+            auto &desc = avkCurrentFramebuffer->attachmentDescriptions.back();
             VkImageSubresourceRange range;
             memset(&range, 0, sizeof(range));
             range.baseArrayLayer = desc.subresource_range.base_arraylayer;
@@ -501,37 +478,40 @@ agpu_error _agpu_command_list::endRenderPass()
     }
 
     // Unset the current framebuffer
-    currentFramebuffer->release();
-    currentFramebuffer = nullptr;
+    currentFramebuffer.reset();
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+agpu_error AVkCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destFramebuffer, const agpu::framebuffer_ref &sourceFramebuffer)
 {
     CHECK_POINTER(destFramebuffer);
     CHECK_POINTER(sourceFramebuffer);
 
-    if(sourceFramebuffer->colorCount < 1 || destFramebuffer->colorCount < 1)
+    auto avkSourceFramebuffer = sourceFramebuffer.as<AVkFramebuffer> ();
+    auto avkDestFramebuffer = destFramebuffer.as<AVkFramebuffer> ();
+    if(avkSourceFramebuffer->colorCount < 1 || avkDestFramebuffer->colorCount < 1)
         return AGPU_INVALID_PARAMETER;
 
-    if(sourceFramebuffer->width != destFramebuffer->width ||
-        sourceFramebuffer->height != destFramebuffer->height)
+    if(avkSourceFramebuffer->width != avkDestFramebuffer->width ||
+        avkSourceFramebuffer->height != avkDestFramebuffer->height)
         return AGPU_INVALID_PARAMETER;
 
-    return resolveTexture(sourceFramebuffer->attachmentTextures[0], 0, 0,
-            destFramebuffer->attachmentTextures[0], 0, 0,
+    return resolveTexture(avkSourceFramebuffer->attachmentTextures[0], 0, 0,
+            avkDestFramebuffer->attachmentTextures[0], 0, 0,
             1, 1, AGPU_TEXTURE_ASPECT_COLOR);
 }
 
-agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref &destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
 {
     CHECK_POINTER(destTexture);
     CHECK_POINTER(sourceTexture);
-    if(sourceTexture->description.width != destTexture->description.width ||
-        sourceTexture->description.height != destTexture->description.height)
+    auto avkSourceTexture = sourceTexture.as<AVkTexture> ();
+    auto avkDestTexture = destTexture.as<AVkTexture> ();
+    if(avkSourceTexture->description.width != avkDestTexture->description.width ||
+        avkSourceTexture->description.height != avkDestTexture->description.height)
         return AGPU_INVALID_PARAMETER;
 
-    VkImageAspectFlags resolveAspects = sourceTexture->imageAspect & destTexture->imageAspect;
+    VkImageAspectFlags resolveAspects = avkSourceTexture->imageAspect & avkDestTexture->imageAspect;
     if(resolveAspects == 0)
         return AGPU_INVALID_PARAMETER;
 
@@ -541,36 +521,36 @@ agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agp
     range.levelCount = 1;
 
     // Transition the source color attachment.
-    auto sourceInitialLayout = sourceTexture->initialLayout;
+    auto sourceInitialLayout = avkSourceTexture->initialLayout;
     auto sourceResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     if(sourceInitialLayout != sourceResolveLayout)
-        setImageLayout(sourceTexture->image, range, sourceTexture->imageAspect, sourceInitialLayout, sourceResolveLayout, sourceTexture->initialLayoutAccessBits);
+        setImageLayout(avkSourceTexture->image, range, avkSourceTexture->imageAspect, sourceInitialLayout, sourceResolveLayout, avkSourceTexture->initialLayoutAccessBits);
 
     // Transition the dest color attachments.
-    auto destInitialLayout = destTexture->initialLayout;
+    auto destInitialLayout = avkDestTexture->initialLayout;
     auto destResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     if(destInitialLayout != destResolveLayout)
-        setImageLayout(destTexture->image, range, destTexture->imageAspect, destInitialLayout, destResolveLayout, destTexture->initialLayoutAccessBits);
+        setImageLayout(avkDestTexture->image, range, avkDestTexture->imageAspect, destInitialLayout, destResolveLayout, avkDestTexture->initialLayoutAccessBits);
 
-    if(sourceTexture->description.sample_count == 1 && destTexture->description.sample_count == 1)
+    if(avkSourceTexture->description.sample_count == 1 && avkDestTexture->description.sample_count == 1)
     {
         VkImageBlit blitRegion;
         memset(&blitRegion, 0, sizeof(blitRegion));
         blitRegion.srcSubresource.aspectMask = resolveAspects;
         blitRegion.srcSubresource.baseArrayLayer = sourceLayer;
         blitRegion.srcSubresource.layerCount = layerCount;
-        blitRegion.srcOffsets[1].x = sourceTexture->description.width;
-        blitRegion.srcOffsets[1].y = sourceTexture->description.height;
+        blitRegion.srcOffsets[1].x = avkSourceTexture->description.width;
+        blitRegion.srcOffsets[1].y = avkSourceTexture->description.height;
         blitRegion.srcOffsets[1].z = 1;
 
         blitRegion.dstSubresource.aspectMask = resolveAspects;
         blitRegion.srcSubresource.baseArrayLayer = destLayer;
         blitRegion.dstSubresource.layerCount = layerCount;
-        blitRegion.dstOffsets[1].x = destTexture->description.width;
-        blitRegion.dstOffsets[1].y = destTexture->description.height;
+        blitRegion.dstOffsets[1].x = avkDestTexture->description.width;
+        blitRegion.dstOffsets[1].y = avkDestTexture->description.height;
         blitRegion.dstOffsets[1].z = 1;
 
-        vkCmdBlitImage(commandBuffer, sourceTexture->image, sourceResolveLayout, destTexture->image, destResolveLayout, 1, &blitRegion, VK_FILTER_NEAREST);
+        vkCmdBlitImage(commandBuffer, avkSourceTexture->image, sourceResolveLayout, avkDestTexture->image, destResolveLayout, 1, &blitRegion, VK_FILTER_NEAREST);
     }
     else
     {
@@ -586,203 +566,23 @@ agpu_error _agpu_command_list::resolveTexture ( agpu_texture* sourceTexture, agp
         region.srcSubresource.layerCount = layerCount;
         region.srcSubresource.mipLevel = sourceLevel;
 
-        region.extent.width = sourceTexture->description.width;
-        region.extent.height = sourceTexture->description.height;
+        region.extent.width = avkSourceTexture->description.width;
+        region.extent.height = avkSourceTexture->description.height;
         region.extent.depth = 1;
 
         vkCmdResolveImage(commandBuffer,
-            sourceTexture->image, sourceResolveLayout,
-            destTexture->image, destResolveLayout,
+            avkSourceTexture->image, sourceResolveLayout,
+            avkDestTexture->image, destResolveLayout,
             1, &region);
     }
 
     // Transition the destination back to its original layout
     if(destInitialLayout != destResolveLayout)
-        setImageLayout(destTexture->image, range, destTexture->imageAspect, destResolveLayout, destInitialLayout, VkAccessFlagBits(0));
+        setImageLayout(avkDestTexture->image, range, avkDestTexture->imageAspect, destResolveLayout, destInitialLayout, VkAccessFlagBits(0));
     if(sourceInitialLayout != sourceResolveLayout)
-        setImageLayout(sourceTexture->image, range, sourceTexture->imageAspect, sourceResolveLayout, sourceInitialLayout, VkAccessFlagBits(0));
+        setImageLayout(avkSourceTexture->image, range, avkSourceTexture->imageAspect, sourceResolveLayout, sourceInitialLayout, VkAccessFlagBits(0));
 
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddCommandListReference(agpu_command_list* command_list)
-{
-    CHECK_POINTER(command_list);
-    return command_list->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseCommandList(agpu_command_list* command_list)
-{
-    CHECK_POINTER(command_list);
-    return command_list->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetShaderSignature(agpu_command_list* command_list, agpu_shader_signature* signature)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setShaderSignature(signature);
-}
-
-AGPU_EXPORT agpu_error agpuSetViewport(agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setViewport(x, y, w, h);
-}
-
-AGPU_EXPORT agpu_error agpuSetScissor(agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setScissor(x, y, w, h);
-}
-
-AGPU_EXPORT agpu_error agpuUsePipelineState(agpu_command_list* command_list, agpu_pipeline_state* pipeline)
-{
-    CHECK_POINTER(command_list);
-    return command_list->usePipelineState(pipeline);
-}
-
-AGPU_EXPORT agpu_error agpuUseVertexBinding(agpu_command_list* command_list, agpu_vertex_binding* vertex_binding)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useVertexBinding(vertex_binding);
-}
-
-AGPU_EXPORT agpu_error agpuUseIndexBuffer(agpu_command_list* command_list, agpu_buffer* index_buffer)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useIndexBuffer(index_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useIndexBufferAt(index_buffer, offset, index_size);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveTopology(agpu_command_list* command_list, agpu_primitive_topology topology)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setPrimitiveTopology(topology);
-}
-
-AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useDrawIndirectBuffer(draw_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* buffer )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useComputeDispatchIndirectBuffer(buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useShaderResources(binding);
-}
-
-AGPU_EXPORT agpu_error agpuUseComputeShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useComputeShaderResources(binding);
-}
-
-AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
-{
-    CHECK_POINTER(command_list);
-    return command_list->pushConstants(offset, size, values);
-}
-
-AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
-}
-
-AGPU_EXPORT agpu_error agpuDrawArraysIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawArraysIndirect(offset, drawcount);
-}
-
-AGPU_EXPORT agpu_error agpuDrawElements(agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
-}
-
-AGPU_EXPORT agpu_error agpuDrawElementsIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount)
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawElementsIndirect(offset, drawcount);
-}
-
-AGPU_EXPORT agpu_error agpuDispatchCompute ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
-{
-    CHECK_POINTER(command_list);
-    return command_list->dispatchCompute(group_count_x, group_count_y, group_count_z);
-}
-
-AGPU_EXPORT agpu_error agpuDispatchComputeIndirect ( agpu_command_list* command_list, agpu_size offset )
-{
-    CHECK_POINTER(command_list);
-    return command_list->dispatchComputeIndirect(offset);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilReference(agpu_command_list* command_list, agpu_uint reference)
-{
-    CHECK_POINTER(command_list);
-    return command_list->setStencilReference(reference);
-}
-
-AGPU_EXPORT agpu_error agpuExecuteBundle(agpu_command_list* command_list, agpu_command_list* bundle)
-{
-    CHECK_POINTER(command_list);
-    return command_list->executeBundle(bundle);
-}
-
-AGPU_EXPORT agpu_error agpuCloseCommandList(agpu_command_list* command_list)
-{
-    CHECK_POINTER(command_list);
-    return command_list->close();
-}
-
-AGPU_EXPORT agpu_error agpuResetCommandList(agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
-{
-    CHECK_POINTER(command_list);
-    return command_list->reset(allocator, initial_pipeline_state);
-}
-
-
-AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
-{
-    CHECK_POINTER(command_list);
-    return command_list->resetBundle(allocator, initial_pipeline_state, inheritance_info);
-}
-
-AGPU_EXPORT agpu_error agpuBeginRenderPass(agpu_command_list* command_list, agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent)
-{
-    CHECK_POINTER(command_list);
-    return command_list->beginRenderPass(renderpass, framebuffer, secondaryContent);
-}
-
-AGPU_EXPORT agpu_error agpuEndRenderPass(agpu_command_list* command_list)
-{
-    CHECK_POINTER(command_list);
-    return command_list->endRenderPass();
-}
-
-AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
-{
-    CHECK_POINTER(command_list);
-    return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
-}
-
-AGPU_EXPORT agpu_error agpuResolveTexture ( agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
-{
-    CHECK_POINTER(command_list);
-    return command_list->resolveTexture(sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect );
-}
+} // End of namespace AgpuVulkan

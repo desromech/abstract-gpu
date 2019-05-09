@@ -3,6 +3,9 @@
 
 #include "device.hpp"
 
+namespace AgpuVulkan
+{
+
 struct ShaderSignatureElementDescription
 {
     ShaderSignatureElementDescription() {}
@@ -16,29 +19,31 @@ struct ShaderSignatureElementDescription
 
     std::vector<agpu_shader_binding_type> types;
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-
 };
 
-struct _agpu_shader_signature_builder : public Object<_agpu_shader_signature_builder>
+class AVkShaderSignatureBuilder : public agpu::shader_signature_builder
 {
-    _agpu_shader_signature_builder(agpu_device *device);
-    void lostReferences();
+public:
+    AVkShaderSignatureBuilder(const agpu::device_ref &device);
+    ~AVkShaderSignatureBuilder();
 
-    static _agpu_shader_signature_builder *create(agpu_device *device);
+    static agpu::shader_signature_builder_ref create(const agpu::device_ref &device);
 
-    agpu_shader_signature* buildShaderSignature();
-    agpu_error addBindingConstant();
-    agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings);
-    agpu_error beginBindingBank ( agpu_uint maxBindings );
-    agpu_error addBindingBankElement ( agpu_shader_binding_type type, agpu_uint bindingPointCount );
+    virtual agpu::shader_signature_ptr build() override;
+    virtual agpu_error addBindingConstant() override;
+    virtual agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings) override;
+    virtual agpu_error beginBindingBank(agpu_uint maxBindings) override;
+    virtual agpu_error addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount) override;
 
     agpu_error finishBindingBank();
 
-    agpu_device *device;
+    agpu::device_ref device;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
     std::vector<ShaderSignatureElementDescription> elementDescription;
     ShaderSignatureElementDescription *currentElementSet;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_SHADER_SIGNATURE_BUILDER_HPP

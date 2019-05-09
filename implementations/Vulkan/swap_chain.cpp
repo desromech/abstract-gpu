@@ -9,84 +9,74 @@
 #include <X11/Xlib-xcb.h>
 #endif
 
-_agpu_swap_chain::_agpu_swap_chain(agpu_device *device)
+namespace AgpuVulkan
+{
+
+AVkSwapChain::AVkSwapChain(const agpu::device_ref &device)
     : device(device)
 {
     surface = VK_NULL_HANDLE;
-    graphicsQueue = nullptr;
-    presentationQueue = nullptr;
     handle = VK_NULL_HANDLE;
     currentBackBufferIndex = 0;
 }
 
-void _agpu_swap_chain::lostReferences()
+AVkSwapChain::~AVkSwapChain()
 {
-    if (graphicsQueue)
-        graphicsQueue->release();
-    if (presentationQueue)
-        presentationQueue->release();
-
-    for (auto fb : framebuffers)
-    {
-        if(fb)
-            fb->release();
-    }
-
     for(auto semaphore : semaphores)
     {
         if(semaphore)
-            vkDestroySemaphore(device->device, semaphore, nullptr);
+            vkDestroySemaphore(deviceForVk->device, semaphore, nullptr);
     }
 
     if (handle)
-        vkDestroySwapchainKHR(device->device, handle, nullptr);
+        vkDestroySwapchainKHR(deviceForVk->device, handle, nullptr);
     if(surface)
-        vkDestroySurfaceKHR(device->vulkanInstance, surface, nullptr);
+        vkDestroySurfaceKHR(deviceForVk->vulkanInstance, surface, nullptr);
 }
 
-static VkResult createXlibSurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createXlibSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
 {
 #ifdef __unix__
-    if(!device->displayHandle)
-        device->displayHandle = XOpenDisplay(nullptr);
+    if(!deviceForVk->displayHandle)
+        deviceForVk->displayHandle = XOpenDisplay(nullptr);
 
-    if (!device->displayHandle || !createInfo->window)
+    if (!deviceForVk->displayHandle || !createInfo->window)
         return VK_INCOMPLETE;
 
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
     memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.connection = XGetXCBConnection((Display*)device->displayHandle);
+    surfaceCreateInfo.connection = XGetXCBConnection((Display*)deviceForVk->displayHandle);
     surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
 
-    return vkCreateXcbSurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
+    return vkCreateXcbSurfaceKHR(deviceForVk->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
 #else
     return VK_INCOMPLETE;
 #endif
 }
 
-static VkResult createXcbSurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createXcbSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
 {
 #ifdef __unix__
-    if(!device->displayHandle)
-        device->displayHandle = xcb_connect(nullptr, nullptr);
+    if(!deviceForVk->displayHandle)
+        deviceForVk->displayHandle = xcb_connect(nullptr, nullptr);
 
-    if (!device->displayHandle || !createInfo->window)
+    if (!deviceForVk->displayHandle || !createInfo->window)
         return VK_INCOMPLETE;
 
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
     memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.connection = XGetXCBConnection((Display*)device->displayHandle);
+    surfaceCreateInfo.connection = XGetXCBConnection((Display*)deviceForVk->displayHandle);
     surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
 
-    return vkCreateXcbSurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
+    return vkCreateXcbSurfaceKHR(deviceForVk->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
 #else
     return VK_INCOMPLETE;
 #endif
 }
 
-static VkResult createWin32Surface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createWin32Surface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
 {
 #ifdef _WIN32
     if (!createInfo->window)
@@ -97,18 +87,18 @@ static VkResult createWin32Surface(agpu_device *device, agpu_command_queue* grap
     surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
     surfaceCreateInfo.hwnd = (HWND)createInfo->window;
 
-    return vkCreateWin32SurfaceKHR(device->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
+    return vkCreateWin32SurfaceKHR(deviceForVk->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
 #else
     return VK_INCOMPLETE;
 #endif
 }
 
-static VkResult createDisplaySurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createDisplaySurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
 {
     return VK_INCOMPLETE;
 }
 
-static VkResult createDefaultSurface(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createDefaultSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
 {
 #if defined(_WIN32)
     return createWin32Surface(device, graphicsCommandQueue, createInfo, surface);
@@ -119,11 +109,11 @@ static VkResult createDefaultSurface(agpu_device *device, agpu_command_queue* gr
 #endif
 }
 
-_agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo)
+agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo)
 {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     if (!graphicsCommandQueue || !createInfo)
-        return nullptr;
+        return agpu::swap_chain_ref();
 
     VkResult error = VK_ERROR_FEATURE_NOT_PRESENT;
     if(!createInfo->window_system_name)
@@ -140,41 +130,40 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     if(error || surface == VK_NULL_HANDLE)
     {
         printError("Failed to create the swap chain surface\n");
-        return nullptr;
+        return agpu::swap_chain_ref();
     }
 
-    agpu_command_queue *presentationQueue = graphicsCommandQueue;
-    if (!graphicsCommandQueue->supportsPresentingSurface(surface))
+    auto presentationQueue = graphicsCommandQueue;
+    if (!graphicsCommandQueue.as<AVkCommandQueue> ()->supportsPresentingSurface(surface))
     {
         // TODO: Find a presentation queue.
-        vkDestroySurfaceKHR(device->vulkanInstance, surface, nullptr);
+        vkDestroySurfaceKHR(deviceForVk->vulkanInstance, surface, nullptr);
         printError("Surface presentation in different queue is not yet supported.\n");
-        return nullptr;
+        return agpu::swap_chain_ref();
     }
 
     uint32_t formatCount = 0;
-    error = device->fpGetPhysicalDeviceSurfaceFormatsKHR(device->physicalDevice, surface, &formatCount, nullptr);
+    error = deviceForVk->fpGetPhysicalDeviceSurfaceFormatsKHR(deviceForVk->physicalDevice, surface, &formatCount, nullptr);
     if (error)
     {
-        vkDestroySurfaceKHR(device->vulkanInstance, surface, nullptr);
-        return nullptr;
+        vkDestroySurfaceKHR(deviceForVk->vulkanInstance, surface, nullptr);
+        return agpu::swap_chain_ref();
     }
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
-    error = device->fpGetPhysicalDeviceSurfaceFormatsKHR(device->physicalDevice, surface, &formatCount, &surfaceFormats[0]);
+    error = deviceForVk->fpGetPhysicalDeviceSurfaceFormatsKHR(deviceForVk->physicalDevice, surface, &formatCount, &surfaceFormats[0]);
     if (error)
     {
-        vkDestroySurfaceKHR(device->vulkanInstance, surface, nullptr);
-        return nullptr;
+        vkDestroySurfaceKHR(deviceForVk->vulkanInstance, surface, nullptr);
+        return agpu::swap_chain_ref();
     }
 
     // Create the swap chain object.
-    auto swapChain = new agpu_swap_chain(device);
+    auto result = agpu::makeObject<AVkSwapChain> (device);
+    auto swapChain = result.as<AVkSwapChain> ();
     swapChain->surface = surface;
     swapChain->graphicsQueue = graphicsCommandQueue;
     swapChain->presentationQueue = presentationQueue;
-    graphicsCommandQueue->retain();
-    presentationQueue->retain();
 
     // Set the format.
     agpu_texture_format actualFormat = createInfo->colorbuffer_format;
@@ -218,31 +207,28 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
 
     // Initialize the rest of the swap chain.
     if (!swapChain->initialize(createInfo))
-    {
-        swapChain->release();
-        return nullptr;
-    }
+        return agpu::swap_chain_ref();
 
-    return swapChain;
+    return result;
 }
 
-bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
+bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
 {
     swapChainWidth = createInfo->width;
     swapChainHeight = createInfo->height;
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    auto error = device->fpGetPhysicalDeviceSurfaceCapabilitiesKHR(device->physicalDevice, surface, &surfaceCapabilities);
+    auto error = deviceForVk->fpGetPhysicalDeviceSurfaceCapabilitiesKHR(deviceForVk->physicalDevice, surface, &surfaceCapabilities);
     if (error)
         return false;
 
     uint32_t presentModeCount;
-    error = device->fpGetPhysicalDeviceSurfacePresentModesKHR(device->physicalDevice, surface, &presentModeCount, nullptr);
+    error = deviceForVk->fpGetPhysicalDeviceSurfacePresentModesKHR(deviceForVk->physicalDevice, surface, &presentModeCount, nullptr);
     if (error)
         return false;
 
     std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    error = device->fpGetPhysicalDeviceSurfacePresentModesKHR(device->physicalDevice, surface, &presentModeCount, &presentModes[0]);
+    error = deviceForVk->fpGetPhysicalDeviceSurfacePresentModesKHR(deviceForVk->physicalDevice, surface, &presentModeCount, &presentModes[0]);
     if (error)
         return false;
 
@@ -299,16 +285,16 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     swapchainInfo.presentMode = swapchainPresentMode;
     swapchainInfo.oldSwapchain = handle;
 
-    error = device->fpCreateSwapchainKHR(device->device, &swapchainInfo, nullptr, &handle);
+    error = deviceForVk->fpCreateSwapchainKHR(deviceForVk->device, &swapchainInfo, nullptr, &handle);
     if (error)
         return false;
 
-    error = device->fpGetSwapchainImagesKHR(device->device, handle, &imageCount, nullptr);
+    error = deviceForVk->fpGetSwapchainImagesKHR(deviceForVk->device, handle, &imageCount, nullptr);
     if (error)
         return false;
 
     std::vector<VkImage> swapChainImages(imageCount);
-    error = device->fpGetSwapchainImagesKHR(device->device, handle, &imageCount, &swapChainImages[0]);
+    error = deviceForVk->fpGetSwapchainImagesKHR(deviceForVk->device, handle, &imageCount, &swapChainImages[0]);
     if (error)
         return false;
 
@@ -356,17 +342,17 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     currentSemaphoreIndex = 0;
     for (size_t i = 0; i < imageCount; ++i)
     {
-        error = vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphores[i]);
+        error = vkCreateSemaphore(deviceForVk->device, &semaphoreInfo, nullptr, &semaphores[i]);
         if(error)
             return false;
     }
 
     // Since the depth stencil buffer is used exclusively on the GPU, there is
     // no need to use triple buffering on it.
-    agpu_texture *depthStencilBuffer = nullptr;
+    agpu::texture_ref depthStencilBuffer;
     if(hasDepth || hasStencil)
     {
-        depthStencilBuffer = agpu_texture::create(device, &depthStencilDesc);
+        depthStencilBuffer = AVkTexture::create(device, &depthStencilDesc);
         if (!depthStencilBuffer)
             return false;
 
@@ -384,45 +370,33 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
         memset(&range, 0, sizeof(range));
         range.layerCount = 1;
         range.levelCount = 1;
-        if (!device->clearImageWithColor(colorImage, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor))
+        if (!deviceForVk->clearImageWithColor(colorImage, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor))
             return false;
 
-        agpu_texture *colorBuffer = nullptr;
+        agpu::texture_ref colorBuffer;
 
         {
-            colorBuffer = agpu_texture::createFromImage(device, &colorDesc, colorImage);
+            colorBuffer = AVkTexture::createFromImage(device, &colorDesc, colorImage);
             if (!colorBuffer)
-            {
-                if(depthStencilBuffer)
-                    depthStencilBuffer->release();
                 return false;
-            }
 
-            colorBuffer->initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            colorBuffer->initialLayoutAccessBits = VK_ACCESS_MEMORY_READ_BIT;
-            colorBuffer->imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+            auto avkColorBuffer = colorBuffer.as<AVkTexture> ();
+            avkColorBuffer->initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            avkColorBuffer->initialLayoutAccessBits = VK_ACCESS_MEMORY_READ_BIT;
+            avkColorBuffer->imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 
             // Get the color buffer view description.
             colorBuffer->getFullViewDescription(&colorViewDesc);
         }
 
-        auto framebuffer = agpu_framebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorViewDesc, depthStencilViewPointer);
-        framebuffer->swapChainFramebuffer = true;
+        auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorViewDesc, depthStencilViewPointer);
+        framebuffer.as<AVkFramebuffer> ()->swapChainFramebuffer = true;
         framebuffers[i] = framebuffer;
 
         // Release the references to the buffers.
-        colorBuffer->release();
         if (!framebuffer)
-        {
-            if(depthStencilBuffer)
-                depthStencilBuffer->release();
             return false;
-        }
     }
-
-    // Release the reference to the depth stencil buffer.
-    if(depthStencilBuffer)
-        depthStencilBuffer->release();
 
     if (!getNextBackBufferIndex())
         return false;
@@ -430,11 +404,11 @@ bool _agpu_swap_chain::initialize(agpu_swap_chain_create_info *createInfo)
     return true;
 }
 
-bool _agpu_swap_chain::getNextBackBufferIndex()
+bool AVkSwapChain::getNextBackBufferIndex()
 {
     auto semaphore = semaphores[currentSemaphoreIndex];
     currentSemaphoreIndex = (currentSemaphoreIndex + 1) % semaphores.size();
-    auto error = device->fpAcquireNextImageKHR(device->device, handle, UINT64_MAX, semaphore, VK_NULL_HANDLE, &currentBackBufferIndex);
+    auto error = deviceForVk->fpAcquireNextImageKHR(deviceForVk->device, handle, UINT64_MAX, semaphore, VK_NULL_HANDLE, &currentBackBufferIndex);
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
         // TODO: Recreate the swap chain.
@@ -459,13 +433,13 @@ bool _agpu_swap_chain::getNextBackBufferIndex()
         VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         submit.pWaitDstStageMask = &waitDstStageMask;
 
-        vkQueueSubmit(graphicsQueue->queue, 1, &submit, VK_NULL_HANDLE);
+        vkQueueSubmit(graphicsQueue.as<AVkCommandQueue> ()->queue, 1, &submit, VK_NULL_HANDLE);
     }
 
     return true;
 }
 
-agpu_error _agpu_swap_chain::swapBuffers()
+agpu_error AVkSwapChain::swapBuffers()
 {
     // Present.
     VkPresentInfoKHR presentInfo;
@@ -474,7 +448,7 @@ agpu_error _agpu_swap_chain::swapBuffers()
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &handle;
     presentInfo.pImageIndices = &currentBackBufferIndex;
-    auto error = device->fpQueuePresentKHR(presentationQueue->queue, &presentInfo);
+    auto error = deviceForVk->fpQueuePresentKHR(presentationQueue.as<AVkCommandQueue> ()->queue, &presentInfo);
 
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
@@ -496,59 +470,19 @@ agpu_error _agpu_swap_chain::swapBuffers()
     return AGPU_OK;
 }
 
-agpu_framebuffer *_agpu_swap_chain::getCurrentBackBuffer()
+agpu::framebuffer_ptr AVkSwapChain::getCurrentBackBuffer()
 {
-    auto result = framebuffers[currentBackBufferIndex];
-    result->retain();
-    return result;
+    return framebuffers[currentBackBufferIndex].disownedNewRef();
 }
 
-agpu_size _agpu_swap_chain::getCurrentBackBufferIndex ( )
+agpu_size AVkSwapChain::getCurrentBackBufferIndex ( )
 {
     return currentBackBufferIndex;
 }
 
-agpu_size _agpu_swap_chain::getFramebufferCount ( )
+agpu_size AVkSwapChain::getFramebufferCount ( )
 {
     return (agpu_size)framebuffers.size();
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddSwapChainReference(agpu_swap_chain* swap_chain)
-{
-    CHECK_POINTER(swap_chain);
-    return swap_chain->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseSwapChain(agpu_swap_chain* swap_chain)
-{
-    CHECK_POINTER(swap_chain);
-    return swap_chain->release();
-}
-
-AGPU_EXPORT agpu_error agpuSwapBuffers(agpu_swap_chain* swap_chain)
-{
-    CHECK_POINTER(swap_chain);
-    return swap_chain->swapBuffers();
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer(agpu_swap_chain* swap_chain)
-{
-    if (!swap_chain)
-        return nullptr;
-    return swap_chain->getCurrentBackBuffer();
-}
-
-AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain )
-{
-    if (!swap_chain)
-        return 0;
-    return swap_chain->getCurrentBackBufferIndex();
-}
-
-AGPU_EXPORT agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain )
-{
-    if (!swap_chain)
-        return 0;
-    return swap_chain->getFramebufferCount();
-}
+} // End of namespace AgpuVulkan

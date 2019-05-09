@@ -1,6 +1,12 @@
 #ifndef AGPU_VULKAN_CONSTANTS_HPP
 #define AGPU_VULKAN_CONSTANTS_HPP
 
+#include "common.hpp"
+#include "include_vulkan.h"
+
+namespace AgpuVulkan
+{
+
 inline VkShaderStageFlagBits mapShaderType(agpu_shader_type type)
 {
     switch (type)
@@ -199,5 +205,7 @@ inline VkSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
     case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     }
 }
+
+} // End of namespace AgpuVulkan
 
 #endif // AGPU_VULKAN_CONSTANTS_HPP

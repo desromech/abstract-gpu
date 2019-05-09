@@ -1,23 +1,30 @@
 #ifndef AGPU_VULKAN_PLATFORM_HPP
 #define AGPU_VULKAN_PLATFORM_HPP
 
-#include "object.hpp"
+#include "common.hpp"
 #include <mutex>
 
-struct _agpu_platform
+namespace AgpuVulkan
 {
-    _agpu_platform();
 
-    void ensureInitialized();
+class VulkanPlatform : public agpu::platform
+{
+public:
+    VulkanPlatform();
+    ~VulkanPlatform();
 
-    agpu_icd_dispatch *dispatch;
+    virtual agpu::device_ptr openDevice(agpu_device_open_info* openInfo) override;
+	virtual agpu_cstring getName() override;
+	virtual agpu_int getVersion() override;
+	virtual agpu_int getImplementationVersion() override;
+	virtual agpu_bool hasRealMultithreading() override;
+	virtual agpu_bool isNative() override;
+	virtual agpu_bool isCrossPlatform() override;
 
-    std::mutex initializationMutex;
-    bool isInitialized;
     bool isSupported;
     uint32_t gpuCount;
 };
 
-extern _agpu_platform theVulkanPlatform;
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_PLATFORM_HPP
