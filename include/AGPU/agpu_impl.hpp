@@ -184,12 +184,12 @@ public:
 
     T *get() const
     {
-        return counter->object; 
+        return counter ? counter->object : nullptr;
     }
 
     T *operator->() const
     {
-        return get();
+        return counter->object;
     }
 
     operator bool() const
