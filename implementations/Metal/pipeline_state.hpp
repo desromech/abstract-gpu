@@ -4,6 +4,12 @@
 #include "device.hpp"
 #include "pipeline_command_state.hpp"
 
+namespace AgpuMetal
+{
+    
+class AMtlComputePipelineBuilder;
+class AMtlGraphicsPipelineBuilder;
+
 class AGPUMTLPipelineStateExtra
 {
 public:
@@ -81,14 +87,14 @@ public:
     MTLSize localSize;
 };
 
-struct _agpu_pipeline_state : public Object<_agpu_pipeline_state>
+struct AMtlPipelineState : public agpu::pipeline_state
 {
 public:
-    _agpu_pipeline_state(agpu_device *device);
-    void lostReferences();
+    AMtlPipelineState(const agpu::device_ref &device);
+    ~AMtlPipelineState();
 
-    static agpu_pipeline_state *createRender(agpu_device *device, agpu_pipeline_builder *builder, id<MTLRenderPipelineState> handle);
-    static agpu_pipeline_state *createCompute(agpu_device *device, agpu_compute_pipeline_builder *builder, id<MTLComputePipelineState> handle);
+    static agpu::pipeline_state_ref createRender(const agpu::device_ref &device, AMtlGraphicsPipelineBuilder *builder, id<MTLRenderPipelineState> handle);
+    static agpu::pipeline_state_ref createCompute(const agpu::device_ref &device, AMtlComputePipelineBuilder *builder, id<MTLComputePipelineState> handle);
 
     void applyRenderCommands(id<MTLRenderCommandEncoder> renderEncoder);
     void applyComputeCommands(id<MTLComputeCommandEncoder> renderEncoder);
@@ -98,8 +104,10 @@ public:
         return *extraState->getCommandState();
     }
 
-    agpu_device *device;
-    AGPUMTLPipelineStateExtra *extraState;
+    agpu::device_ref device;
+    std::unique_ptr<AGPUMTLPipelineStateExtra> extraState;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_PIPELINE_STATE_HPP

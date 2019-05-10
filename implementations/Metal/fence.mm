@@ -1,12 +1,15 @@
 #include "fence.hpp"
 
-_agpu_fence::_agpu_fence(agpu_device *device)
-    : device(device)
+namespace AgpuMetal
+{
+    
+AMtlFence::AMtlFence(const agpu::device_ref &device)
+    : weakDevice(device)
 {
     fenceCommand = nil;
 }
 
-void _agpu_fence::lostReferences()
+AMtlFence::~AMtlFence()
 {
     if(fenceCommand)
     {
@@ -15,12 +18,12 @@ void _agpu_fence::lostReferences()
     }
 }
 
-agpu_fence *_agpu_fence::create(agpu_device *device)
+agpu::fence_ref AMtlFence::create(const agpu::device_ref &device)
 {
-    return new agpu_fence(device);
+    return agpu::makeObject<AMtlFence> (device);
 }
 
-agpu_error _agpu_fence::waitOnClient()
+agpu_error AMtlFence::waitOnClient()
 {
     std::unique_lock<std::mutex> l(mutex);
     if(fenceCommand)
@@ -33,7 +36,7 @@ agpu_error _agpu_fence::waitOnClient()
     return AGPU_OK;
 }
 
-agpu_error _agpu_fence::signalOnQueue(id<MTLCommandQueue> queue)
+agpu_error AMtlFence::signalOnQueue(id<MTLCommandQueue> queue)
 {
     std::unique_lock<std::mutex> l(mutex);
     if(fenceCommand)
@@ -44,21 +47,4 @@ agpu_error _agpu_fence::signalOnQueue(id<MTLCommandQueue> queue)
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddFenceReference ( agpu_fence* fence )
-{
-    CHECK_POINTER(fence);
-    return fence->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseFenceReference ( agpu_fence* fence )
-{
-    CHECK_POINTER(fence);
-    return fence->release();
-}
-
-AGPU_EXPORT agpu_error agpuWaitOnClient ( agpu_fence* fence )
-{
-    CHECK_POINTER(fence);
-    return fence->waitOnClient();
-}
+} // End of namespace AgpuMetal

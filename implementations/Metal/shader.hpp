@@ -5,18 +5,22 @@
 #include <string>
 #include <vector>
 
-struct agpu_shader_forSignature: public Object<agpu_shader_forSignature>
+namespace AgpuMetal
+{
+    
+class AMtlShaderForSignature: public agpu::base_interface
 {
 public:
-    agpu_shader_forSignature();
-
-    void lostReferences();
+	typedef AMtlShaderForSignature main_interface;
+    
+    AMtlShaderForSignature();
+    ~AMtlShaderForSignature();
 
     agpu_error compile(std::string *errorMessage, agpu_cstring options);
     agpu_error compileMetalSource ( std::string *errorMessage, agpu_cstring options );
     agpu_error compileMetalBlob ( std::string *errorMessage, agpu_cstring options );
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_shader_type type;
     agpu_shader_language language;
 
@@ -27,29 +31,33 @@ public:
     MTLSize localSize; // Only used by compute
 };
 
-struct _agpu_shader : public Object<_agpu_shader>
+typedef agpu::ref<AMtlShaderForSignature> AMtlShaderForSignatureRef;
+
+class AMtlShader : public agpu::shader
 {
 public:
-    _agpu_shader(agpu_device *device);
-    void lostReferences();
+    AMtlShader(const agpu::device_ref &device);
+    ~AMtlShader();
 
-    static agpu_shader *create(agpu_device* device, agpu_shader_type type);
+    static agpu::shader_ref create(const agpu::device_ref &device, agpu_shader_type type);
     
-    agpu_error getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, agpu_shader_forSignature **result);
-    agpu_error getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, agpu_shader_forSignature **result);
+    agpu_error getOrCreateShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result);
+    agpu_error getOrCreateSpirVShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result);
 
-    agpu_error setSource ( agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength );
-    agpu_error compile ( agpu_cstring options );
-    agpu_size getCompilationLogLength (  );
-    agpu_error getCompilationLog ( agpu_size buffer_size, agpu_string_buffer buffer );
+    virtual agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength) override;
+    virtual agpu_error compileShader(agpu_cstring options) override;
+    virtual agpu_size getCompilationLogLength() override;
+    virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_shader_type type;
     agpu_shader_language language;
     std::string compilationLog;
     std::vector<uint8_t> source;
     
-    agpu_shader_forSignature *genericShaderInstance;
+    AMtlShaderForSignatureRef genericShaderInstance;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_SHADER_HPP

@@ -1,29 +1,32 @@
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 
-_agpu_shader_signature::_agpu_shader_signature(agpu_device *device)
+namespace AgpuMetal
+{
+    
+AMtlShaderSignature::AMtlShaderSignature(const agpu::device_ref &device)
     : device(device)
 {
 
 }
 
-void _agpu_shader_signature::lostReferences()
+AMtlShaderSignature::~AMtlShaderSignature()
 {
 
 }
 
-agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, agpu_shader_signature_builder *builder)
+agpu::shader_signature_ref AMtlShaderSignature::create(const agpu::device_ref &device, AMtlShaderSignatureBuilder *builder)
 {
-    auto result = new agpu_shader_signature(device);
-    result->elements = builder->elements;
-    result->pushConstantBufferSize = builder->bindingPointsUsed[(int)MetalResourceBindingType::Bytes]*4;
-    result->pushConstantBufferIndex = builder->bindingPointsUsed[(int)MetalResourceBindingType::Buffer];
-    result->buildMSLMapping();
-    
+    auto result = agpu::makeObject<AMtlShaderSignature> (device);
+    auto shaderSignature = result.as<AMtlShaderSignature> ();
+    shaderSignature->elements = builder->elements;
+    shaderSignature->pushConstantBufferSize = builder->bindingPointsUsed[(int)MetalResourceBindingType::Bytes]*4;
+    shaderSignature->pushConstantBufferIndex = builder->bindingPointsUsed[(int)MetalResourceBindingType::Buffer];
+    shaderSignature->buildMSLMapping();
     return result;
 }
 
-void _agpu_shader_signature::buildMSLMapping()
+void AMtlShaderSignature::buildMSLMapping()
 {
     for(size_t descriptorSet = 0; descriptorSet < elements.size(); ++descriptorSet)
     {
@@ -69,15 +72,15 @@ void _agpu_shader_signature::buildMSLMapping()
     }
 }
 
-agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding ( agpu_uint element )
+agpu::shader_resource_binding_ptr AMtlShaderSignature::createShaderResourceBinding ( agpu_uint element )
 {
     if(element >= elements.size())
         return nullptr;
 
-    return agpu_shader_resource_binding::create(device, this, element);
+    return AMtlShaderResourceBinding::create(device, refFromThis<agpu::shader_signature> (), element).disown();
 }
 
-int _agpu_shader_signature::mapDescriptorSetAndBinding(agpu_shader_binding_type type, unsigned int set, unsigned int binding)
+int AMtlShaderSignature::mapDescriptorSetAndBinding(agpu_shader_binding_type type, unsigned int set, unsigned int binding)
 {
     if(set >= elements.size())
         return -1;
@@ -93,22 +96,4 @@ int _agpu_shader_signature::mapDescriptorSetAndBinding(agpu_shader_binding_type 
     return element.startIndex;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderSignature ( agpu_shader_signature* shader_signature )
-{
-    CHECK_POINTER(shader_signature);
-    return shader_signature->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShaderSignature ( agpu_shader_signature* shader_signature )
-{
-    CHECK_POINTER(shader_signature);
-    return shader_signature->release();
-}
-
-AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding ( agpu_shader_signature* shader_signature, agpu_uint element )
-{
-    if(!shader_signature)
-        return nullptr;
-    return shader_signature->createShaderResourceBinding(element);
-}
+} // End of namespace AgpuMetal

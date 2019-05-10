@@ -4,6 +4,9 @@
 #include "device.hpp"
 #include <vector>
 
+namespace AgpuMetal
+{
+    
 enum class MetalResourceBindingType
 {
     Buffer,
@@ -72,24 +75,26 @@ struct ShaderSignatureElement
     std::vector<ShaderSignatureBankElement> elements;
 };
 
-struct _agpu_shader_signature_builder: public Object<_agpu_shader_signature_builder>
+struct AMtlShaderSignatureBuilder: public agpu::shader_signature_builder
 {
 public:
-    _agpu_shader_signature_builder(agpu_device *device);
-    void lostReferences();
+    AMtlShaderSignatureBuilder(const agpu::device_ref &device);
+    ~AMtlShaderSignatureBuilder();
 
-    static _agpu_shader_signature_builder *create(agpu_device *device);
+    static agpu::shader_signature_builder_ref create(const agpu::device_ref &device);
 
-    agpu_shader_signature* build (  );
-    agpu_error addBindingConstant (  );
-    agpu_error addBindingElement ( agpu_shader_binding_type type, agpu_uint maxBindings );
+    virtual agpu::shader_signature_ptr build() override;
+    virtual agpu_error addBindingConstant() override;
+    virtual agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings) override;
 
-    agpu_error beginBindingBank ( agpu_uint maxBindings );
-    agpu_error addBindingBankElement ( agpu_shader_binding_type type, agpu_uint bindingPointCount );
+    virtual agpu_error beginBindingBank(agpu_uint maxBindings) override;
+    virtual agpu_error addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount) override;
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_uint bindingPointsUsed[(int)MetalResourceBindingType::Count];
     std::vector<ShaderSignatureElement> elements;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_SHADER_SIGNATURE_BUILDER_HPP

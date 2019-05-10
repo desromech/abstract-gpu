@@ -4,29 +4,35 @@
 #include "device.hpp"
 #include <string>
 
-struct _agpu_compute_pipeline_builder : public Object<_agpu_compute_pipeline_builder>
+namespace AgpuMetal
 {
-    _agpu_compute_pipeline_builder(agpu_device *device);
-    void lostReferences();
+    
+class AMtlComputePipelineBuilder : public agpu::compute_pipeline_builder
+{
+public:
+    AMtlComputePipelineBuilder(const agpu::device_ref &device);
+    ~AMtlComputePipelineBuilder();
 
-    static _agpu_compute_pipeline_builder *create(agpu_device *device);
+    static agpu::compute_pipeline_builder_ref create(const agpu::device_ref &device);
 
-    agpu_pipeline_state* build ();
-    agpu_error attachShader ( agpu_shader* shader );
-    agpu_error attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point );
-    agpu_size getPipelineBuildingLogLength ( );
-    agpu_error getPipelineBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer );
-    agpu_error setShaderSignature ( agpu_shader_signature* newSignature );
+    virtual agpu::pipeline_state_ptr build() override;
+    virtual agpu_error attachShader(const agpu::shader_ref &shader) override;
+    virtual agpu_error attachShaderWithEntryPoint(const agpu::shader_ref &shader, agpu_shader_type type, agpu_cstring entry_point) override;
+    virtual agpu_size getBuildingLogLength() override;
+    virtual agpu_error getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
+    virtual agpu_error setShaderSignature(const agpu::shader_signature_ref &newSignature) override;
 
-    agpu_device *device;
+    agpu::device_ref device;
 
-    agpu_shader* shader;
+    agpu::shader_ref shader;
     std::string shaderEntryPoint;
-    agpu_shader_signature* shaderSignature;
+    agpu::shader_signature_ref shaderSignature;
 
     std::string buildingLog;
 
     MTLSize localSize;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_COMPUTE_PIPELINE_BUILDER_HPP

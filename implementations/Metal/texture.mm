@@ -2,22 +2,25 @@
 #include "texture_format.hpp"
 #include "command_queue.hpp"
 
-_agpu_texture::_agpu_texture(agpu_device *device)
+namespace AgpuMetal
+{
+    
+AMtlTexture::AMtlTexture(const agpu::device_ref &device)
     : device(device)
 {
     handle = nil;
 }
 
-void _agpu_texture::lostReferences()
+AMtlTexture::~AMtlTexture()
 {
     if(handle)
         [handle release];
 }
 
-agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_description* description)
+agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_texture_description* description)
 {
     if(!description)
-        return nullptr;
+        return agpu::texture_ref();
 
     auto descriptor = [MTLTextureDescriptor new];
     bool isArray = description->depthOrArraySize > 1;
@@ -41,7 +44,7 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         descriptor.depth = description->depthOrArraySize;
         break;
     default:
-        return nullptr;
+        return agpu::texture_ref();
     }
 
     descriptor.pixelFormat = mapTextureFormat(description->format);
@@ -72,41 +75,43 @@ agpu_texture *_agpu_texture::create(agpu_device *device, agpu_texture_descriptio
         descriptor.usage = MTLTextureUsageShaderRead;
     }
 
-    auto handle = [device->device newTextureWithDescriptor: descriptor];
+    auto handle = [deviceForMetal->device newTextureWithDescriptor: descriptor];
     [descriptor release];
     if(!handle)
-        return nullptr;
+        return agpu::texture_ref();
 
-    auto result = new agpu_texture(device);
-    result->description = *description;
-    result->handle = handle;
+    auto result = agpu::makeObject<AMtlTexture> (device);
+    auto amtlTexture = result.as<AMtlTexture> ();
+    amtlTexture->description = *description;
+    amtlTexture->handle = handle;
     return result;
 }
 
-agpu_error _agpu_texture::getDescription ( agpu_texture_description* description )
+agpu_error AMtlTexture::getDescription(agpu_texture_description* description)
 {
     CHECK_POINTER(description);
     *description = this->description;
     return AGPU_OK;
 }
 
-agpu_pointer _agpu_texture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
+agpu_pointer AMtlTexture::mapLevel ( agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
 {
     // TODO: Implement this, if possible
     return nullptr;
 }
 
-agpu_error _agpu_texture::unmapLevel (  )
+agpu_error AMtlTexture::unmapLevel (  )
 {
     return AGPU_UNSUPPORTED;
 }
 
-agpu_error _agpu_texture::readData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
+agpu_error AMtlTexture::readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
 {
     CHECK_POINTER(buffer);
 
     // Synchronize this with the GPU
-    id<MTLCommandBuffer> commandBuffer = [device->getDefaultCommandQueue()->handle commandBuffer];
+    // TODO: Avoid this when is not needed.
+    id<MTLCommandBuffer> commandBuffer = [deviceForMetal->getDefaultCommandQueueHandle() commandBuffer];
     id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
     [blitEncoder synchronizeResource: handle];
     [blitEncoder endEncoding];
@@ -124,7 +129,7 @@ agpu_error _agpu_texture::readData ( agpu_int level, agpu_int arrayIndex, agpu_i
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::uploadData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
+agpu_error AMtlTexture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
     CHECK_POINTER(data);
 
@@ -139,7 +144,7 @@ agpu_error _agpu_texture::uploadData ( agpu_int level, agpu_int arrayIndex, agpu
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::uploadSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
+agpu_error AMtlTexture::uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
 {
     CHECK_POINTER(data);
 
@@ -155,22 +160,22 @@ agpu_error _agpu_texture::uploadSubData ( agpu_int level, agpu_int arrayIndex, a
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::discardUploadBuffer (  )
+agpu_error AMtlTexture::discardUploadBuffer (  )
 {
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::discardReadbackBuffer (  )
+agpu_error AMtlTexture::discardReadbackBuffer (  )
 {
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description* viewDescription )
+agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* viewDescription )
 {
     CHECK_POINTER(viewDescription);
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
-    viewDescription->texture = this;
+    viewDescription->texture = reinterpret_cast<agpu_texture*> (refFromThis().asPtrWithoutNewRef());
     viewDescription->format = description.format;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
@@ -187,70 +192,4 @@ agpu_error _agpu_texture::getFullViewDescription ( agpu_texture_view_description
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseTexture ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->release();
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureDescription ( agpu_texture* texture, agpu_texture_description* description )
-{
-    CHECK_POINTER(texture);
-    return texture->getDescription(description);
-}
-
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region )
-{
-    if(!texture)
-        return nullptr;
-    return texture->mapLevel(level, arrayIndex, flags, region);
-}
-
-AGPU_EXPORT agpu_error agpuUnmapTextureLevel ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->unmapLevel();
-}
-
-AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
-{
-    CHECK_POINTER(texture);
-    return texture->readData(level, arrayIndex, pitch, slicePitch, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
-{
-    CHECK_POINTER(texture);
-    return texture->uploadData(level, arrayIndex, pitch, slicePitch, data);
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
-{
-    CHECK_POINTER(texture);
-    return texture->uploadSubData ( level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data );
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->discardUploadBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture )
-{
-    CHECK_POINTER(texture);
-    return texture->discardReadbackBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription ( agpu_texture* texture, agpu_texture_view_description* result )
-{
-    CHECK_POINTER(texture);
-    return texture->getFullViewDescription(result);
-}
+} // End of namespace AgpuMetal

@@ -1,10 +1,64 @@
 #include "platform.hpp"
 #include "device.hpp"
 
-_agpu_platform theMetalPlatform = { &agpu_metal_icd_dispatch };
+namespace AgpuMetal
+{
+
+static agpu::platform_ref theMetalPlatform;
+
+MetalPlatform::MetalPlatform()
+{
+}
+
+MetalPlatform::~MetalPlatform()
+{
+}
+
+agpu::device_ptr MetalPlatform::openDevice(agpu_device_open_info* openInfo)
+{
+    return AMtlDevice::open(openInfo).disown();
+}
+
+agpu_cstring MetalPlatform::getName()
+{
+    return "Metal";
+}
+
+agpu_int MetalPlatform::getVersion()
+{
+    return 10;
+}
+
+agpu_int MetalPlatform::getImplementationVersion()
+{
+    return 120;
+}
+
+agpu_bool MetalPlatform::hasRealMultithreading()
+{
+    return true;
+}
+
+agpu_bool MetalPlatform::isNative()
+{
+    return true;
+}
+
+agpu_bool MetalPlatform::isCrossPlatform()
+{
+    return false;
+}
+
+} // End of namespace AgpuMetal
 
 AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms)
 {
+    using namespace AgpuMetal;
+    static std::once_flag platformCreatedFlag;
+    std::call_once(platformCreatedFlag, []{
+        theMetalPlatform = agpu::makeObject<MetalPlatform> ();
+    });
+
     if (!platforms && numplatforms == 0)
     {
         CHECK_POINTER(ret_numplatforms);
@@ -12,51 +66,9 @@ AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** 
         return AGPU_OK;
     }
 
-    if (ret_numplatforms)
+    if(ret_numplatforms)
         *ret_numplatforms = 1;
-    platforms[0] = &theMetalPlatform;
+    platforms[0] = reinterpret_cast<agpu_platform*> (theMetalPlatform.asPtrWithoutNewRef());
     return AGPU_OK;
-}
 
-AGPU_EXPORT agpu_device* agpuOpenDevice ( agpu_platform* platform, agpu_device_open_info* openInfo )
-{
-    if(platform != &theMetalPlatform)
-        return nullptr;
-    return agpu_device::open(openInfo);
-}
-
-AGPU_EXPORT agpu_cstring agpuGetPlatformName ( agpu_platform* platform )
-{
-    if(platform != &theMetalPlatform)
-        return nullptr;
-    return "Metal";
-}
-
-AGPU_EXPORT agpu_int agpuGetPlatformVersion ( agpu_platform* platform )
-{
-    if(platform != &theMetalPlatform)
-        return 0;
-    return 10;
-}
-
-AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion ( agpu_platform* platform )
-{
-    if(platform != &theMetalPlatform)
-        return 0;
-    return 1;
-}
-
-AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading ( agpu_platform* platform )
-{
-    return true;
-}
-
-AGPU_EXPORT agpu_bool agpuIsNativePlatform ( agpu_platform* platform )
-{
-    return true;
-}
-
-AGPU_EXPORT agpu_bool agpuIsCrossPlatform ( agpu_platform* platform )
-{
-    return false;
 }

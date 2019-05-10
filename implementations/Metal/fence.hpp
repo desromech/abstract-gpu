@@ -4,20 +4,25 @@
 #include "device.hpp"
 #include <mutex>
 
-struct _agpu_fence : public Object<_agpu_fence>
+namespace AgpuMetal
+{
+    
+class AMtlFence : public agpu::fence
 {
 public:
-    _agpu_fence(agpu_device *device);
-    void lostReferences();
+    AMtlFence(const agpu::device_ref &device);
+    ~AMtlFence();
 
-    static agpu_fence *create(agpu_device *device);
+    static agpu::fence_ref create(const agpu::device_ref &device);
 
-    agpu_error waitOnClient();
+    virtual agpu_error waitOnClient() override;
     agpu_error signalOnQueue(id<MTLCommandQueue> queue);
 
-    agpu_device *device;
+    agpu::device_weakref weakDevice;
     id<MTLCommandBuffer> fenceCommand;
     std::mutex mutex;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_FENCE_HPP
