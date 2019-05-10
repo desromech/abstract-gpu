@@ -2,6 +2,9 @@
 #include "framebuffer.hpp"
 #include "texture.hpp"
 
+namespace AgpuMetal
+{
+    
 inline MTLLoadAction mapLoadAction(agpu_renderpass_attachment_action action)
 {
     switch(action)
@@ -24,56 +27,58 @@ inline MTLStoreAction mapStoreAction(agpu_renderpass_attachment_action action)
     }
 }
 
-_agpu_renderpass::_agpu_renderpass(agpu_device *device)
+AMtlRenderPass::AMtlRenderPass(const agpu::device_ref &device)
     : device(device)
 {
     hasDepthStencil = false;
     hasStencil = false;
 }
 
-void _agpu_renderpass::lostReferences()
+AMtlRenderPass::~AMtlRenderPass()
 {
 }
 
-agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_description *description)
+agpu::renderpass_ref AMtlRenderPass::create(const agpu::device_ref &device, agpu_renderpass_description *description)
 {
     if(!description)
-        return nullptr;
+        return agpu::renderpass_ref();
     if(description->color_attachment_count > 0 && !description->color_attachments)
-        return nullptr;
+        return agpu::renderpass_ref();
 
-    auto result = new agpu_renderpass(device);
+    auto result = agpu::makeObject<AMtlRenderPass> (device);
+    auto renderpass = result.as<AMtlRenderPass> ();
 
     // Store the color attachments.
-    result->colorAttachments.reserve(description->color_attachment_count);
+    renderpass->colorAttachments.reserve(description->color_attachment_count);
     for(int i = 0; i < description->color_attachment_count; ++i)
-        result->colorAttachments.push_back(description->color_attachments[i]);
+        renderpass->colorAttachments.push_back(description->color_attachments[i]);
 
-    result->hasDepthStencil = description->depth_stencil_attachment != nullptr;
-    if(result->hasDepthStencil)
+    renderpass->hasDepthStencil = description->depth_stencil_attachment != nullptr;
+    if(renderpass->hasDepthStencil)
     {
-        result->depthStencil = *description->depth_stencil_attachment;
-        auto depthStencilFormat = result->depthStencil.format;
-        result->hasStencil = depthStencilFormat == AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ||
+        renderpass->depthStencil = *description->depth_stencil_attachment;
+        auto depthStencilFormat = renderpass->depthStencil.format;
+        renderpass->hasStencil = depthStencilFormat == AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ||
             depthStencilFormat == AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
     }
     return result;
 }
 
-MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *framebuffer)
+MTLRenderPassDescriptor *AMtlRenderPass::createDescriptor(const agpu::framebuffer_ref &framebuffer)
 {
     if(!framebuffer)
         return nullptr;
 
     // Validate the color attachments from the framebuffer.
-    if(framebuffer->ownedBySwapChain)
+    auto amtlFramebuffer = framebuffer.as<AMtlFramebuffer> ();
+    if(amtlFramebuffer->ownedBySwapChain)
     {
         if(colorAttachments.size() != 1)
             return nullptr;
     }
     else
     {
-        if(framebuffer->colorBuffers.size() != colorAttachments.size())
+        if(amtlFramebuffer->colorBuffers.size() != colorAttachments.size())
             return nullptr;
     }
 
@@ -85,13 +90,13 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
 
         auto &source = colorAttachments[i];
         auto &color = source.clear_value;
-        dest.texture = framebuffer->getColorTexture(i);
+        dest.texture = amtlFramebuffer->getColorTexture(i);
         dest.clearColor = MTLClearColorMake(color.r, color.g, color.b, color.a);
         dest.loadAction = mapLoadAction(source.begin_action);
         dest.storeAction = mapStoreAction(source.end_action);
-        if(!framebuffer->ownedBySwapChain)
+        if(!amtlFramebuffer->ownedBySwapChain)
         {
-            auto &view = framebuffer->colorBufferDescriptions[i];
+            auto &view = amtlFramebuffer->colorBufferDescriptions[i];
             dest.level = view.subresource_range.base_miplevel;
             dest.slice = view.subresource_range.base_arraylayer;            
         }
@@ -99,10 +104,11 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
 
     if(hasDepthStencil)
     {
-        auto &view = framebuffer->depthStencilBufferDescription;
+        auto &view = amtlFramebuffer->depthStencilBufferDescription;
 
         auto depthAttachment = descriptor.depthAttachment;
-        depthAttachment.texture = framebuffer->depthStencilBuffer->handle;
+        auto depthStencilBufferHandle = amtlFramebuffer->depthStencilBuffer.as<AMtlTexture> ()->handle;
+        depthAttachment.texture = depthStencilBufferHandle;
         depthAttachment.level = view.subresource_range.base_miplevel;
         depthAttachment.slice = view.subresource_range.base_arraylayer;
         depthAttachment.clearDepth = depthStencil.clear_value.depth;
@@ -112,7 +118,7 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
         if(hasStencil)
         {
             auto stencilAttachment = descriptor.stencilAttachment;
-            stencilAttachment.texture = framebuffer->depthStencilBuffer->handle;
+            stencilAttachment.texture = depthStencilBufferHandle;
             stencilAttachment.level = view.subresource_range.base_miplevel;
             stencilAttachment.slice = view.subresource_range.base_arraylayer;
             stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
@@ -124,13 +130,13 @@ MTLRenderPassDescriptor *_agpu_renderpass::createDescriptor(agpu_framebuffer *fr
     return descriptor;
 }
 
-agpu_error _agpu_renderpass::setDepthStencilClearValue ( agpu_depth_stencil_value value )
+agpu_error AMtlRenderPass::setDepthStencilClearValue ( agpu_depth_stencil_value value )
 {
     depthStencil.clear_value = value;
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValue ( agpu_uint attachment_index, agpu_color4f value )
+agpu_error AMtlRenderPass::setColorClearValue ( agpu_uint attachment_index, agpu_color4f value )
 {
     if(attachment_index >= colorAttachments.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -139,39 +145,10 @@ agpu_error _agpu_renderpass::setColorClearValue ( agpu_uint attachment_index, ag
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value)
+agpu_error AMtlRenderPass::setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value)
 {
     CHECK_POINTER(value);
     return setColorClearValue(attachment_index, *value);
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass )
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseRenderPass ( agpu_renderpass* renderpass )
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue ( agpu_renderpass* renderpass, agpu_depth_stencil_value value )
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setDepthStencilClearValue(value);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorClearValue ( agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value )
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValue(attachment_index, value);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f *value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValueFrom(attachment_index, value);
-}
+} // End of namespace AgpuMetal

@@ -1,6 +1,12 @@
 #ifndef _AGPU_METAL_CONSTANTS_HPP
 #define _AGPU_METAL_CONSTANTS_HPP
 
+#include "common.hpp"
+#import <Metal/Metal.h>
+
+namespace AgpuMetal
+{
+    
 inline MTLBlendFactor mapBlendFactor(agpu_blending_factor factor, bool alpha)
 {
     switch(factor)
@@ -71,5 +77,7 @@ inline MTLStencilOperation mapStencilOperation(agpu_stencil_operation operation)
     default: abort();
     }
 }
+
+} // End of namespace AgpuMetal
 
 #endif //_AGPU_METAL_CONSTANTS_HPP

@@ -6,37 +6,47 @@
 #import <QuartzCore/CAMetalLayer.h>
 #import <AppKit/AppKit.h>
 
+namespace AgpuMetal
+{
+class AMtlSwapChain;
+};
+
 @interface AGPUSwapChainView : NSView
 {
-    _agpu_swap_chain *swapChain;
+    AgpuMetal::AMtlSwapChain *swapChain;
 }
--(AGPUSwapChainView*) initWithSwapChain: (agpu_swap_chain*)swapChain;
+-(AGPUSwapChainView*) initWithSwapChain: (AgpuMetal::AMtlSwapChain*)swapChain;
 
 @end
 
-struct _agpu_swap_chain : public Object<_agpu_swap_chain>
+namespace AgpuMetal
+{
+    
+class AMtlSwapChain : public agpu::swap_chain
 {
 public:
-    _agpu_swap_chain(agpu_device *device);
-    void lostReferences();
+    AMtlSwapChain(const agpu::device_ref &device);
+    ~AMtlSwapChain();
 
-    static agpu_swap_chain *create(agpu_device *device, agpu_command_queue *presentQueue, agpu_swap_chain_create_info *createInfo);
+    static agpu::swap_chain_ref create(const agpu::device_ref &device, const agpu::command_queue_ref &presentQueue, agpu_swap_chain_create_info *createInfo);
 
-    agpu_error swapBuffers (  );
-    agpu_framebuffer* getCurrentBackBuffer (  );
-    agpu_size getCurrentBackBufferIndex ( );
-    agpu_size getFramebufferCount ( );
+    virtual agpu_error swapBuffers() override;
+    virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+    virtual agpu_size getCurrentBackBufferIndex() override;
+    virtual agpu_size getFramebufferCount() override;
 
-    agpu_device *device;
+    agpu::device_ref device;
     NSWindow *window;
     CAMetalLayer *metalLayer;
     AGPUSwapChainView *view;
-    agpu_command_queue *presentQueue;
+    agpu::command_queue_ref presentQueue;
     agpu_swap_chain_create_info swapChainInfo;
-    std::vector<agpu_framebuffer*> framebuffers;
+    std::vector<agpu::framebuffer_ref> framebuffers;
     std::vector<id<MTLCommandBuffer> > presentCommands;
 
     size_t currentFramebufferIndex;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_SWAP_CHAIN_HPP

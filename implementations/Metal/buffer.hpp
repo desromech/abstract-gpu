@@ -3,25 +3,30 @@
 
 #include "device.hpp"
 
-struct _agpu_buffer : public Object<_agpu_buffer>
+namespace AgpuMetal
+{
+
+struct AMtlBuffer : public agpu::buffer
 {
 public:
-    _agpu_buffer(agpu_device *device);
-    void lostReferences();
+    AMtlBuffer(const agpu::device_ref &device);
+    ~AMtlBuffer();
 
-    static agpu_buffer* create ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data );
+    static agpu::buffer_ref create ( const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data );
 
-    agpu_pointer map ( agpu_mapping_access flags );
-    agpu_error unmap (  );
-    agpu_error getDescription ( agpu_buffer_description* description );
-    agpu_error uploadData ( agpu_size offset, agpu_size size, agpu_pointer data );
-    agpu_error readData ( agpu_size offset, agpu_size size, agpu_pointer data );
-    agpu_error flushWhole (  );
-    agpu_error invalidateWhole (  );
+    virtual agpu_pointer mapBuffer(agpu_mapping_access flags) override;
+    virtual agpu_error unmapBuffer() override;
+    virtual agpu_error getDescription(agpu_buffer_description* description) override;
+    virtual agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+    virtual agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+    virtual agpu_error flushWholeBuffer() override;
+    virtual agpu_error invalidateWholeBuffer() override;
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_buffer_description description;
     id<MTLBuffer> handle;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_BUFFER_HPP

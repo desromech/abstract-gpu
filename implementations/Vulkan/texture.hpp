@@ -3,25 +3,30 @@
 
 #include "device.hpp"
 
-struct _agpu_texture : public Object<_agpu_texture>
+namespace AgpuVulkan
 {
-    _agpu_texture(agpu_device *device);
-    void lostReferences();
 
-    static agpu_texture *create(agpu_device *device, agpu_texture_description *description);
-    static agpu_texture *createFromImage(agpu_device *device, agpu_texture_description *description, VkImage image);
-    static VkImageView createImageView(agpu_device *device, agpu_texture_view_description *viewDescription);
+class AVkTexture : public agpu::texture
+{
+public:
+    AVkTexture(const agpu::device_ref &device);
+    ~AVkTexture();
 
-    agpu_error getFullViewDescription(agpu_texture_view_description *viewDescription);
-    agpu_pointer mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region);
-    agpu_error unmapLevel();
-    agpu_error readData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer);
-    agpu_error uploadData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data);
-    agpu_error uploadSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data );
-    agpu_error discardUploadBuffer();
-    agpu_error discardReadbackBuffer();
+    static agpu::texture_ref create(const agpu::device_ref &device, agpu_texture_description *description);
+    static agpu::texture_ref createFromImage(const agpu::device_ref &device, agpu_texture_description *description, VkImage image);
+    static VkImageView createImageView(const agpu::device_ref &device, agpu_texture_view_description *viewDescription);
 
-    agpu_device *device;
+    virtual agpu_error getDescription(agpu_texture_description* description) override;
+    virtual agpu_error getFullViewDescription(agpu_texture_view_description *viewDescription) override;
+    virtual agpu_pointer mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region) override;
+    virtual agpu_error unmapLevel() override;
+    virtual agpu_error readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer) override;
+    virtual agpu_error uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
+    virtual agpu_error uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data ) override;
+    virtual agpu_error discardUploadBuffer() override;
+    virtual agpu_error discardReadbackBuffer() override;
+
+    agpu::device_ref device;
     agpu_texture_description description;
     VkImage image;
     VkImageLayout initialLayout;
@@ -29,11 +34,13 @@ struct _agpu_texture : public Object<_agpu_texture>
     VkImageAspectFlags imageAspect;
     VkDeviceMemory memory;
     bool owned;
-    agpu_buffer *uploadBuffer;
-    agpu_buffer *readbackBuffer;
+    agpu::buffer_ref uploadBuffer;
+    agpu::buffer_ref readbackBuffer;
 
     VkExtent3D getLevelExtent(int level);
     void computeBufferImageTransferLayout(int level, VkSubresourceLayout *layout, VkBufferImageCopy *copy);
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_TEXTURE_HPP

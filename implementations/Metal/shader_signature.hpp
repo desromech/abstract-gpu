@@ -5,19 +5,23 @@
 #include "shader_signature_builder.hpp"
 #include "spirv_msl.hpp"
 
-struct _agpu_shader_signature : public Object<_agpu_shader_signature>
+namespace AgpuMetal
+{
+    
+struct AMtlShaderSignature : public agpu::shader_signature
 {
 public:
-    _agpu_shader_signature(agpu_device *device);
-    void lostReferences();
+    AMtlShaderSignature(const agpu::device_ref &device);
+    ~AMtlShaderSignature();
 
-    static agpu_shader_signature *create(agpu_device *device, agpu_shader_signature_builder *builder);
+    static agpu::shader_signature_ref create(const agpu::device_ref &device, AMtlShaderSignatureBuilder *builder);
 
-    agpu_shader_resource_binding* createShaderResourceBinding ( agpu_uint element );
+    virtual agpu::shader_resource_binding_ptr createShaderResourceBinding(agpu_uint element) override;
+    
     int mapDescriptorSetAndBinding(agpu_shader_binding_type type, unsigned int set, unsigned int binding);
     void buildMSLMapping();
 
-    agpu_device *device;
+    agpu::device_ref device;
     std::vector<ShaderSignatureElement> elements;
 
     agpu_size pushConstantBufferSize;
@@ -25,5 +29,7 @@ public:
     
     std::vector<spirv_cross::MSLResourceBinding> resourceBindings;
 };
+
+} // End of namespace AgpuMetal
 
 #endif // AGPU_METAL_SHADER_SIGNATURE_HPP

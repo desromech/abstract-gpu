@@ -3,21 +3,24 @@
 
 #include "device.hpp"
 
+namespace AgpuVulkan
+{
+
 class AgpuVkVRSystemSubmissionCommandBuffer
 {
 public:
     AgpuVkVRSystemSubmissionCommandBuffer();
-    void lostReferences();
+    ~AgpuVkVRSystemSubmissionCommandBuffer();
 
-    bool initialize(agpu_device *device);
-    agpu_error submitVREyeRenderTargets ( agpu_texture* left_eye, agpu_texture* right_eye );
-    agpu_error doSubmissionOfEyeTextures ( agpu_texture* left_eye, agpu_texture* right_eye );
-    agpu_error submitEyeTexture ( vr::Hmd_Eye eye, agpu_texture* texture);
+    bool initialize(const agpu::device_ref &device);
+    agpu_error submitVREyeRenderTargets(const agpu::texture_ref &left_eye, const agpu::texture_ref &right_eye);
+    agpu_error doSubmissionOfEyeTextures(const agpu::texture_ref &left_eye, const agpu::texture_ref &right_eye);
+    agpu_error submitEyeTexture(vr::Hmd_Eye eye, const agpu::texture_ref &texture);
 
     agpu_error beginCommandBuffer(VkCommandBuffer commandBuffer);
     agpu_error waitFence();
 
-    agpu_device *device;
+    agpu::device_weakref weakDevice;
 
     VkFence fence;
     bool isFenceActive;
@@ -26,36 +29,37 @@ public:
     VkCommandBuffer beforeSubmissionCommandList;
     VkCommandBuffer afterSubmissionCommandList;
 
-    agpu_texture* leftEyeTexture;
-    agpu_texture* rightEyeTexture;
+    agpu::texture_ref leftEyeTexture;
+    agpu::texture_ref rightEyeTexture;
 };
 
-struct _agpu_vr_system : public Object<_agpu_vr_system>
+class AVkVrSystem : public agpu::vr_system
 {
+public:
     static constexpr size_t FramebufferingSize = 3;
 
-    _agpu_vr_system(agpu_device *device);
-    void lostReferences();
+    AVkVrSystem(const agpu::device_ref &device);
+    ~AVkVrSystem();
 
     bool initialize();
 
-    agpu_cstring getSystemName();
-    agpu_pointer getSystemNativeHandle();
-    agpu_error getRecommendedRenderTargetSize(agpu_size2d* size );
-    agpu_error getEyeToHeadTransformInto(agpu_vr_eye eye, agpu_matrix4x4f* transform);
-    agpu_error getProjectionMatrix ( agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix );
-    agpu_error getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum);
-    agpu_error submitVREyeRenderTargets ( agpu_texture* left_eye, agpu_texture* right_eye );
+    virtual agpu_cstring getVRSystemName() override;
+    virtual agpu_pointer getNativeHandle() override;
+    virtual agpu_error getRecommendedRenderTargetSize(agpu_size2d* size ) override;
+    virtual agpu_error getEyeToHeadTransform(agpu_vr_eye eye, agpu_matrix4x4f* transform) override;
+    virtual agpu_error getProjectionMatrix( agpu_vr_eye eye, agpu_float near, agpu_float far, agpu_matrix4x4f* projection_matrix ) override;
+    virtual agpu_error getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum) override;
+    virtual agpu_error submitEyeRenderTargets(const agpu::texture_ref & left_eye, const agpu::texture_ref & right_eye) override;
 
-    agpu_error waitAndFetchVRPoses ();
-    agpu_size getValidTrackedDevicePoseCount ();
-    agpu_error getValidTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest );
-    agpu_size getValidRenderTrackedDevicePoseCount ();
-    agpu_error getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest );
+    virtual agpu_error waitAndFetchPoses() override;
+    virtual agpu_size getValidTrackedDevicePoseCount() override;
+    virtual agpu_error getValidTrackedDevicePoseInto( agpu_size index, agpu_vr_tracked_device_pose* dest) override;
+    virtual agpu_size getValidRenderTrackedDevicePoseCount() override;
+    virtual agpu_error getValidRenderTrackedDevicePoseInto( agpu_size index, agpu_vr_tracked_device_pose* dest) override;
 
-    agpu_bool pollEvent ( agpu_vr_event* event );
+    virtual agpu_bool pollEvent ( agpu_vr_event* event ) override;
 
-    agpu_device *device;
+    agpu::device_weakref weakDevice;
 
 private:
     agpu_vr_tracked_device_pose convertTrackedDevicePose(agpu_uint deviceId, const vr::TrackedDevicePose_t &devicePose);
@@ -71,5 +75,7 @@ private:
     size_t submissionCommandBufferIndex;
 
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_VR_SYSTEM_HPP

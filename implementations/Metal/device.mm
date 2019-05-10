@@ -15,43 +15,41 @@
 #include "vertex_binding.hpp"
 #include "texture.hpp"
 
-_agpu_device::_agpu_device()
+namespace AgpuMetal
 {
-    mainCommandQueue = nullptr;
+    
+AMtlDevice::AMtlDevice()
+{
 }
 
-void _agpu_device::lostReferences()
+AMtlDevice::~AMtlDevice()
 {
-    if(mainCommandQueue)
-    {
-        mainCommandQueue->release();
-        mainCommandQueue = nullptr;
-    }
-
+    mainCommandQueue.reset();
     if(device)
         [device release];
 }
 
-agpu_device *_agpu_device::open(agpu_device_open_info *openInfo)
+agpu::device_ref AMtlDevice::open(agpu_device_open_info *openInfo)
 {
     id<MTLDevice> mtlDevice = MTLCreateSystemDefaultDevice();
     if(!mtlDevice)
-        return nullptr;
+        return agpu::device_ref();
 
     id<MTLCommandQueue> mainCommandQueue = [mtlDevice newCommandQueue];
     if(!mainCommandQueue)
     {
         [mtlDevice release];
-        return nullptr;
+        return agpu::device_ref();
     }
 
-    auto result = new agpu_device();
-    result->device = mtlDevice;
-    result->mainCommandQueue = agpu_command_queue::create(result, mainCommandQueue);
+    auto result = agpu::makeObject<AMtlDevice> ();
+    auto device = result.as<AMtlDevice> ();
+    device->device = mtlDevice;
+    device->mainCommandQueue = AMtlCommandQueue::create(result, mainCommandQueue);
     return result;
 }
 
-agpu_bool _agpu_device::isFeatureSupportedOnDevice ( agpu_feature feature )
+agpu_bool AMtlDevice::isFeatureSupported(agpu_feature feature)
 {
     switch(feature)
     {
@@ -69,162 +67,120 @@ agpu_bool _agpu_device::isFeatureSupportedOnDevice ( agpu_feature feature )
     }
 }
 
-agpu_command_queue* _agpu_device::getDefaultCommandQueue()
+agpu::command_queue_ptr AMtlDevice::getDefaultCommandQueue()
 {
-    mainCommandQueue->retain();
-    return mainCommandQueue;
+    return mainCommandQueue.disownedNewRef();
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device )
+id<MTLCommandQueue> AMtlDevice::getDefaultCommandQueueHandle()
 {
-    CHECK_POINTER(device);
-    return device->retain();
+    return mainCommandQueue.as<AMtlCommandQueue> ()->handle;
 }
 
-AGPU_EXPORT agpu_error agpuReleaseDevice ( agpu_device* device )
+agpu::swap_chain_ptr AMtlDevice::createSwapChain(const agpu::command_queue_ref &commandQueue, agpu_swap_chain_create_info* swapChainInfo)
 {
-    CHECK_POINTER(device);
-    return device->release();
+    return AMtlSwapChain::create(refFromThis<agpu::device> (), commandQueue, swapChainInfo).disown();
 }
 
-AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue ( agpu_device* device )
+agpu::buffer_ptr AMtlDevice::createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
 {
-    if(!device)
-        return nullptr;
-    return device->getDefaultCommandQueue();
+    return AMtlBuffer::create(refFromThis<agpu::device> (), description, initial_data).disown();
 }
 
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain ( agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo )
+agpu::vertex_layout_ptr AMtlDevice::createVertexLayout()
 {
-    if(!device)
-        return nullptr;
-    return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
+    return AMtlVertexLayout::create(refFromThis<agpu::device> ()).disown();
 }
 
-AGPU_EXPORT agpu_buffer* agpuCreateBuffer ( agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data )
+agpu::vertex_binding_ptr AMtlDevice::createVertexBinding(const agpu::vertex_layout_ref &layout)
 {
-    if(!device)
-        return nullptr;
-    return agpu_buffer::create(device, description, initial_data);
+    return AMtlVertexBinding::create(refFromThis<agpu::device> (), layout).disown();
 }
 
-AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout ( agpu_device* device )
+agpu::shader_ptr AMtlDevice::createShader(agpu_shader_type type)
 {
-    if(!device)
-        return nullptr;
-    return agpu_vertex_layout::create(device);
+    return AMtlShader::create(refFromThis<agpu::device> (), type).disown();
 }
 
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding ( agpu_device* device, agpu_vertex_layout* layout )
+agpu::shader_signature_builder_ptr AMtlDevice::createShaderSignatureBuilder()
 {
-    if(!device)
-        return nullptr;
-    return agpu_vertex_binding::create(device, layout);
+    return AMtlShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
 }
 
-AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_type type )
+agpu::pipeline_builder_ptr AMtlDevice::createPipelineBuilder()
 {
-    if(!device)
-        return nullptr;
-    return agpu_shader::create(device, type);
+    return AMtlGraphicsPipelineBuilder::create(refFromThis<agpu::device> ()).disown();
 }
 
-AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device )
+agpu::compute_pipeline_builder_ptr AMtlDevice::createComputePipelineBuilder()
 {
-    if(!device)
-        return nullptr;
-    return agpu_shader_signature_builder::create(device);
+    return AMtlComputePipelineBuilder::create(refFromThis<agpu::device> ()).disown();
 }
 
-AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder ( agpu_device* device )
+agpu::command_allocator_ptr AMtlDevice::createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref &queue)
 {
-    if(!device)
-        return nullptr;
-    return agpu_pipeline_builder::create(device);
+    return AMtlCommandAllocator::create(refFromThis<agpu::device> (), type, queue).disown();
 }
 
-AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder ( agpu_device* device )
+agpu::command_list_ptr AMtlDevice::createCommandList(agpu_command_list_type type, const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state)
 {
-    if(!device)
-        return nullptr;
-    return agpu_compute_pipeline_builder::create(device);
+    return AMtlCommandList::create(refFromThis<agpu::device> (), type, allocator, initial_pipeline_state).disown();
 }
 
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue )
-{
-    if(!device)
-        return nullptr;
-    return agpu_command_allocator::create(device, type, queue);
-}
-
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
-{
-    if(!device)
-        return nullptr;
-    return agpu_command_list::create(device, type, allocator, initial_pipeline_state);
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage ( agpu_device* device )
+agpu_shader_language AMtlDevice::getPreferredShaderLanguage()
 {
     return AGPU_SHADER_LANGUAGE_METAL_AIR;
 }
 
-AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
+agpu_shader_language AMtlDevice::getPreferredIntermediateShaderLanguage()
 {
     return AGPU_SHADER_LANGUAGE_SPIR_V;
     //return AGPU_SHADER_LANGUAGE_NONE;
 }
 
-AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_device* device )
+agpu_shader_language AMtlDevice::getPreferredHighLevelShaderLanguage()
 {
     return AGPU_SHADER_LANGUAGE_METAL;
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
+agpu::framebuffer_ptr AMtlDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 {
-    if(!device)
-        return nullptr;
-    return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
+    return AMtlFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
 }
 
-AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass ( agpu_device* device, agpu_renderpass_description* description )
+agpu::renderpass_ptr AMtlDevice::createRenderPass(agpu_renderpass_description* description)
 {
-    if(!device)
-        return nullptr;
-    return agpu_renderpass::create(device, description);
+    return AMtlRenderPass::create(refFromThis<agpu::device> (), description).disown();
 }
 
-AGPU_EXPORT agpu_texture* agpuCreateTexture ( agpu_device* device, agpu_texture_description* description )
+agpu::texture_ptr AMtlDevice::createTexture(agpu_texture_description* description)
 {
-    if(!device)
-        return nullptr;
-    return agpu_texture::create(device, description);
+    return AMtlTexture::create(refFromThis<agpu::device> (), description).disown();
 }
 
-AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
+agpu::fence_ptr AMtlDevice::createFence()
 {
-    if(!device)
-        return nullptr;
-    return agpu_fence::create(device);
+    return AMtlFence::create(refFromThis<agpu::device> ()).disown();
 }
 
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_uint sample_count )
+agpu_int AMtlDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
 {
     return sample_count == 1 ? 1 : 0;
 }
 
-AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
+agpu_bool AMtlDevice::hasTopLeftNdcOrigin()
 {
     return false;
 }
 
-AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device )
+agpu_bool AMtlDevice::hasBottomLeftTextureCoordinates()
 {
     return false;
 }
 
-AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )
+agpu::vr_system_ptr AMtlDevice::getVRSystem()
 {
-    return device->isFeatureSupportedOnDevice(feature);
+    return nullptr;
 }
+
+} // End of namespace AgpuMetal

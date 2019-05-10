@@ -1,26 +1,30 @@
 #include "shader.hpp"
 
-_agpu_shader::_agpu_shader(agpu_device *device)
+namespace AgpuVulkan
+{
+
+AVkShader::AVkShader(const agpu::device_ref &device)
     : device(device)
 {
     sourceSize = 0;
     shaderModule = VK_NULL_HANDLE;
 }
 
-void _agpu_shader::lostReferences()
+AVkShader::~AVkShader()
 {
     if (shaderModule)
-        vkDestroyShaderModule(device->device, shaderModule, nullptr);
+        vkDestroyShaderModule(deviceForVk->device, shaderModule, nullptr);
 }
 
-agpu_shader *_agpu_shader::create(agpu_device *device, agpu_shader_type type)
+agpu::shader_ref AVkShader::create(const agpu::device_ref &device, agpu_shader_type type)
 {
-    std::unique_ptr<agpu_shader> result(new agpu_shader(device));
-    result->type = type;
-    return result.release();
+    auto result = agpu::makeObject<AVkShader> (device);
+    auto shader = result.as<AVkShader> ();
+    shader->type = type;
+    return result;
 }
 
-agpu_error _agpu_shader::setSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
+agpu_error AVkShader::setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
 {
     CHECK_POINTER(sourceText);
     if (language != AGPU_SHADER_LANGUAGE_SPIR_V || sourceTextLength < 0)
@@ -35,7 +39,7 @@ agpu_error _agpu_shader::setSource(agpu_shader_language language, agpu_string so
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::compile(agpu_cstring options)
+agpu_error AVkShader::compileShader(agpu_cstring options)
 {
     VkShaderModuleCreateInfo createInfo;
     memset(&createInfo, 0, sizeof(VkShaderModuleCreateInfo));
@@ -43,54 +47,20 @@ agpu_error _agpu_shader::compile(agpu_cstring options)
     createInfo.pCode = reinterpret_cast<uint32_t*> (source.get());
     createInfo.codeSize = sourceSize;
 
-    auto error = vkCreateShaderModule(device->device, &createInfo, nullptr, &shaderModule);
+    auto error = vkCreateShaderModule(deviceForVk->device, &createInfo, nullptr, &shaderModule);
     CONVERT_VULKAN_ERROR(error);
 
     return AGPU_OK;
 }
 
-agpu_size _agpu_shader::getCompilationLogLength()
+agpu_size AVkShader::getCompilationLogLength()
 {
     return 0;
 }
 
-agpu_error _agpu_shader::getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
+agpu_error AVkShader::getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderReference(agpu_shader* shader)
-{
-    CHECK_POINTER(shader);
-    return shader->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShader(agpu_shader* shader)
-{
-    CHECK_POINTER(shader);
-    return shader->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetShaderSource(agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
-{
-    CHECK_POINTER(shader);
-    return shader->setSource(language, sourceText, sourceTextLength);
-}
-
-AGPU_EXPORT agpu_error agpuCompileShader(agpu_shader* shader, agpu_cstring options)
-{
-    CHECK_POINTER(shader);
-    return shader->compile(options);
-}
-
-AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength(agpu_shader* shader)
-{
-    return shader->getCompilationLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetShaderCompilationLog(agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer)
-{
-    CHECK_POINTER(shader);
-    return shader->getCompilationLog(buffer_size, buffer);
-}
+} // End of namespace AgpuVulkan

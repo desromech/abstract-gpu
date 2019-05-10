@@ -3,8 +3,12 @@
 
 #include "device.hpp"
 
-struct _agpu_vertex_layout : public Object<_agpu_vertex_layout>
+namespace AgpuVulkan
 {
+
+class AVkVertexLayout : public agpu::vertex_layout
+{
+public:
     struct VertexStructureDimensions
     {
         VertexStructureDimensions(agpu_uint size = 0, agpu_uint divisor = 0)
@@ -14,17 +18,19 @@ struct _agpu_vertex_layout : public Object<_agpu_vertex_layout>
         agpu_uint divisor;
     };
 
-    _agpu_vertex_layout(agpu_device *device);
-    void lostReferences();
+    AVkVertexLayout(const agpu::device_ref &device);
+    ~AVkVertexLayout();
 
-    static _agpu_vertex_layout *create(agpu_device *device);
+    static agpu::vertex_layout_ref create(const agpu::device_ref &device);
 
     agpu_error addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size *vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes);
 
-    agpu_device *device;
+    agpu::device_ref device;
 
     std::vector<VertexStructureDimensions> bufferDimensions;
     std::vector<agpu_vertex_attrib_description> allAttributes;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VERTEX_LAYOUT_HPP

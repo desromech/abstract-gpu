@@ -1,39 +1,25 @@
 #include "pipeline_state.hpp"
 
-_agpu_pipeline_state::_agpu_pipeline_state(agpu_device *device)
+namespace AgpuVulkan
+{
+
+AVkPipelineState::AVkPipelineState(const agpu::device_ref &device)
     : device(device)
 {
     pipeline = VK_NULL_HANDLE;
 	renderPass = VK_NULL_HANDLE;
 }
 
-void _agpu_pipeline_state::lostReferences()
+AVkPipelineState::~AVkPipelineState()
 {
-    vkDestroyPipeline(device->device, pipeline, nullptr);
+    vkDestroyPipeline(deviceForVk->device, pipeline, nullptr);
 	if(renderPass != VK_NULL_HANDLE)
-		vkDestroyRenderPass(device->device, renderPass, nullptr);
+		vkDestroyRenderPass(deviceForVk->device, renderPass, nullptr);
 }
 
-agpu_int _agpu_pipeline_state::getUniformLocation(agpu_cstring name)
+agpu_int AVkPipelineState::getUniformLocation(agpu_cstring name)
 {
     return -1;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddPipelineStateReference(agpu_pipeline_state* pipeline_state)
-{
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleasePipelineState(agpu_pipeline_state* pipeline_state)
-{
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->release();
-}
-
-AGPU_EXPORT agpu_int agpuGetUniformLocation(agpu_pipeline_state* pipeline_state, agpu_cstring name)
-{
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->getUniformLocation(name);
-}
+} // End of namespace AgpuVulkan

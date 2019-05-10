@@ -3,21 +3,25 @@
 
 #include "device.hpp"
 
-struct _agpu_buffer : public Object<_agpu_buffer>
+namespace AgpuVulkan
 {
-    _agpu_buffer(agpu_device *device);
-    void lostReferences();
 
-    static agpu_buffer* create(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data);
+class AVkBuffer : public agpu::buffer
+{
+public:
+    AVkBuffer(const agpu::device_ref &device);
+    ~AVkBuffer();
 
-    agpu_pointer map(agpu_mapping_access flags);
-    agpu_error unmap();
-    agpu_error getBufferDescription(agpu_buffer_description* description);
-    agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
-    agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
+    static agpu::buffer_ref create(const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data);
 
-    agpu_error flushWholeBuffer();
-    agpu_error invalidateWholeBuffer();
+    virtual agpu_pointer mapBuffer(agpu_mapping_access flags) override;
+    virtual agpu_error unmapBuffer() override;
+    virtual agpu_error getDescription(agpu_buffer_description* description) override;
+    virtual agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+    virtual agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+
+    virtual agpu_error flushWholeBuffer() override;
+    virtual agpu_error invalidateWholeBuffer() override;
 
     VkBuffer getDrawBuffer()
     {
@@ -26,7 +30,7 @@ struct _agpu_buffer : public Object<_agpu_buffer>
         return uploadBuffer;
     }
 
-    agpu_device *device;
+    agpu::device_weakref weakDevice;
     agpu_buffer_description description;
 
     VkBuffer uploadBuffer;
@@ -38,4 +42,7 @@ struct _agpu_buffer : public Object<_agpu_buffer>
     void *mappedPointer;
     int mapCount;
 };
+
+} // End of namespace AgpuVulkan
+
 #endif //AGPU_VULKAN_BUFFER_HPP

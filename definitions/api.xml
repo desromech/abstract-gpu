@@ -23,6 +23,12 @@
         <property key="namespacePrefix" value="AGPU" />
         <property key="package" value="AbstractGPU-Generated" />
     </language>
+
+    <language name="Squeak">
+        <property key="externalStructureSuperClass" value="AGPUExternalStructure" />
+        <property key="externalUnionSuperClass" value="AGPUExternalUnion" />
+    </language>
+
 </bindings>
 
 <version name="1.0">

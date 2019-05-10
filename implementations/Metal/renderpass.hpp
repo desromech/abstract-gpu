@@ -4,24 +4,29 @@
 #include "device.hpp"
 #include <vector>
 
-struct _agpu_renderpass : public Object<agpu_renderpass>
+namespace AgpuMetal
+{
+    
+class AMtlRenderPass : public agpu::renderpass
 {
 public:
-    _agpu_renderpass(agpu_device *device);
-    void lostReferences();
+    AMtlRenderPass(const agpu::device_ref &device);
+    ~AMtlRenderPass();
 
-    static agpu_renderpass *create(agpu_device *device, agpu_renderpass_description *description);
+    static agpu::renderpass_ref create(const agpu::device_ref &device, agpu_renderpass_description *description);
 
-    MTLRenderPassDescriptor *createDescriptor(agpu_framebuffer *framebuffer);
-    agpu_error setDepthStencilClearValue ( agpu_depth_stencil_value value );
-    agpu_error setColorClearValue ( agpu_uint attachment_index, agpu_color4f value );
+    MTLRenderPassDescriptor *createDescriptor(const agpu::framebuffer_ref &framebuffer);
+    agpu_error setDepthStencilClearValue(agpu_depth_stencil_value value);
+    agpu_error setColorClearValue(agpu_uint attachment_index, agpu_color4f value);
     agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value);
 
-    agpu_device *device;
+    agpu::device_ref device;
     bool hasDepthStencil;
     bool hasStencil;
     agpu_renderpass_depth_stencil_description depthStencil;
     std::vector<agpu_renderpass_color_attachment_description> colorAttachments;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_RENDERPASS_HPP

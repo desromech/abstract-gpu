@@ -4,6 +4,9 @@
 #include "device.hpp"
 #include "../Common/texture_formats_common.hpp"
 
+namespace AgpuMetal
+{
+    
 inline MTLPixelFormat mapTextureFormat(agpu_texture_format format)
 {
     switch(format)
@@ -211,5 +214,7 @@ inline MTLVertexFormat mapVertexFormat(agpu_texture_format format)
     default: return MTLVertexFormatInvalid;
     }
 }
+
+} // End of namespace AgpuMetal
 
 #endif //case AGPU_METAL_TEXTURE_FORMAT_HPP

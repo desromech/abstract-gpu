@@ -1,6 +1,9 @@
 #include "shader.hpp"
 #include "shader_signature.hpp"
 
+namespace AgpuMetal
+{
+    
 static int shaderDumpCount = 0;
 
 static spv::ExecutionModel mapShaderTypeIntoExecutionModel(agpu_shader_type type)
@@ -22,13 +25,13 @@ static inline bool isEntryPointNameBlacklisted(const std::string &entryPointName
         entryPointName == "compute";
 }
 
-agpu_shader_forSignature::agpu_shader_forSignature()
+AMtlShaderForSignature::AMtlShaderForSignature()
 {
     library = nil;
     function = nil;
 }
 
-void agpu_shader_forSignature::lostReferences()
+AMtlShaderForSignature::~AMtlShaderForSignature()
 {
     if(function)
         [function release];
@@ -36,7 +39,7 @@ void agpu_shader_forSignature::lostReferences()
         [library release];
 }
 
-agpu_error agpu_shader_forSignature::compile(std::string *errorMessage, agpu_cstring options)
+agpu_error AMtlShaderForSignature::compile(std::string *errorMessage, agpu_cstring options)
 {
     if(language == AGPU_SHADER_LANGUAGE_METAL)
         return compileMetalSource(errorMessage, options);
@@ -49,7 +52,7 @@ agpu_error agpu_shader_forSignature::compile(std::string *errorMessage, agpu_cst
     }
 }
 
-agpu_error agpu_shader_forSignature::compileMetalSource ( std::string *errorMessage, agpu_cstring options )
+agpu_error AMtlShaderForSignature::compileMetalSource ( std::string *errorMessage, agpu_cstring options )
 {
     auto sourceString = [[NSString alloc] initWithBytes: &source[0] length: source.size() encoding: NSUTF8StringEncoding];
     if(!sourceString)
@@ -60,7 +63,7 @@ agpu_error agpu_shader_forSignature::compileMetalSource ( std::string *errorMess
 
     NSError *error = nil;
     auto compileOptions = [[MTLCompileOptions alloc] init];
-    library = [device->device newLibraryWithSource: sourceString options: compileOptions error: &error];
+    library = [deviceForMetal->device newLibraryWithSource: sourceString options: compileOptions error: &error];
     [sourceString release];
     
     // Always read the error, if there is one.
@@ -93,42 +96,39 @@ agpu_error agpu_shader_forSignature::compileMetalSource ( std::string *errorMess
     return AGPU_OK;
 }
 
-agpu_error agpu_shader_forSignature::compileMetalBlob ( std::string *errorMessage, agpu_cstring options )
+agpu_error AMtlShaderForSignature::compileMetalBlob ( std::string *errorMessage, agpu_cstring options )
 {
     return AGPU_UNSUPPORTED;
 }
 
-_agpu_shader::_agpu_shader(agpu_device *device)
+AMtlShader::AMtlShader(const agpu::device_ref &device)
     : device(device)
 {
-    genericShaderInstance = nullptr;
 }
 
-void _agpu_shader::lostReferences()
+AMtlShader::~AMtlShader()
 {
-    if(genericShaderInstance)
-        genericShaderInstance->release();
 }
 
-agpu_shader *_agpu_shader::create(agpu_device* device, agpu_shader_type type)
+agpu::shader_ref AMtlShader::create(const agpu::device_ref &device, agpu_shader_type type)
 {
     switch(type)
     {
     case AGPU_GEOMETRY_SHADER:
     case AGPU_TESSELLATION_CONTROL_SHADER:
     case AGPU_TESSELLATION_EVALUATION_SHADER:
-        return nullptr;
+        return agpu::shader_ref();
     default:
         // Ignore, they are supported.
         break;
     }
 
-    auto result = new agpu_shader(device);
-    result->type = type;
+    auto result = agpu::makeObject<AMtlShader> (device);
+    result.as<AMtlShader> ()->type = type;
     return result;
 }
 
-agpu_error _agpu_shader::setSource ( agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength )
+agpu_error AMtlShader::setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
 {
     CHECK_POINTER(sourceText);
     if(language != AGPU_SHADER_LANGUAGE_METAL &&
@@ -148,13 +148,13 @@ agpu_error _agpu_shader::setSource ( agpu_shader_language language, agpu_string 
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::compile ( agpu_cstring options )
+agpu_error AMtlShader::compileShader(agpu_cstring options)
 {
     if(source.empty())
         return AGPU_INVALID_OPERATION;
     if(language == AGPU_SHADER_LANGUAGE_METAL || language == AGPU_SHADER_LANGUAGE_METAL_AIR)
     {
-        auto result = new agpu_shader_forSignature();
+        auto result = agpu::makeObject<AMtlShaderForSignature> ();
         result->device = device;
         result->type = type;
         result->language = language;
@@ -162,13 +162,8 @@ agpu_error _agpu_shader::compile ( agpu_cstring options )
         
         auto error = result->compile(&compilationLog, options);
         if(error)
-        {
-            result->release();
             return error;
-        }
         
-        if(genericShaderInstance)
-            genericShaderInstance->release();
         genericShaderInstance = result;
         return AGPU_OK;
     }
@@ -178,23 +173,22 @@ agpu_error _agpu_shader::compile ( agpu_cstring options )
     }
 }
 
-agpu_size _agpu_shader::getCompilationLogLength (  )
+agpu_size AMtlShader::getCompilationLogLength (  )
 {
     return compilationLog.size();
 }
 
-agpu_error _agpu_shader::getCompilationLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+agpu_error AMtlShader::getCompilationLog ( agpu_size buffer_size, agpu_string_buffer buffer )
 {
     CHECK_POINTER(buffer);
     memcpy(buffer, compilationLog.data(), std::min((size_t)buffer_size, compilationLog.size()));
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type expectedEntryPointName, std::string *errorMessage, agpu_shader_forSignature **result)
+agpu_error AMtlShader::getOrCreateShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type expectedEntryPointName, std::string *errorMessage, AMtlShaderForSignatureRef *result)
 {
     if(language == AGPU_SHADER_LANGUAGE_METAL || language == AGPU_SHADER_LANGUAGE_METAL_AIR)
     {
-        genericShaderInstance->retain();
         *result = genericShaderInstance;
         return AGPU_OK;
     }
@@ -204,13 +198,13 @@ agpu_error _agpu_shader::getOrCreateShaderInstanceForSignature(agpu_shader_signa
         return AGPU_UNSUPPORTED;
 }
 
-agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_signature *signature, agpu_uint vertexBufferCount, const std::string &expectedEntryPointName, agpu_shader_type expectedEntryPointStage, std::string *errorMessage, agpu_shader_forSignature **result)
+agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &expectedEntryPointName, agpu_shader_type expectedEntryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result)
 {
     char buffer[256];
     uint32_t *rawData = reinterpret_cast<uint32_t *> (&source[0]);
 	size_t rawDataSize = source.size() / 4;
 
-    auto resourceBindings = signature->resourceBindings;
+    auto resourceBindings = signature.as<AMtlShaderSignature> ()->resourceBindings;
     auto expectedExecutionModel = mapShaderTypeIntoExecutionModel(expectedEntryPointStage);
     for(auto &binding : resourceBindings)
     {
@@ -278,7 +272,7 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_
     //printf("Converted shader into Metal:\n%s\n", compiled.c_str());
 
     // Create the shader instance object
-	auto shaderInstance = new agpu_shader_forSignature();
+	auto shaderInstance = agpu::makeObject<AMtlShaderForSignature> ();
 	shaderInstance->device = device;
 	shaderInstance->type = type;
     shaderInstance->language = AGPU_SHADER_LANGUAGE_METAL;
@@ -317,49 +311,10 @@ agpu_error _agpu_shader::getOrCreateSpirVShaderInstanceForSignature(agpu_shader_
 	}
     
     if(error)
-    {
-        shaderInstance->release();
         return error;
-    }
     
     *result = shaderInstance;
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderReference ( agpu_shader* shader )
-{
-    CHECK_POINTER(shader);
-    return shader->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShader ( agpu_shader* shader )
-{
-    CHECK_POINTER(shader);
-    return shader->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetShaderSource ( agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength )
-{
-    CHECK_POINTER(shader);
-    return shader->setSource(language, sourceText, sourceTextLength);
-}
-
-AGPU_EXPORT agpu_error agpuCompileShader ( agpu_shader* shader, agpu_cstring options )
-{
-    CHECK_POINTER(shader);
-    return shader->compile(options);
-}
-
-AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength ( agpu_shader* shader )
-{
-    if(!shader)
-        return 0;
-    return shader->getCompilationLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-    CHECK_POINTER(shader);
-    return shader->getCompilationLog(buffer_size, buffer);
-}
+} // End of namespace AgpuMetal

@@ -2,6 +2,9 @@
 #include "pipeline_builder.hpp"
 #include "compute_pipeline_builder.hpp"
 
+namespace AgpuMetal
+{
+    
 AGPUMTLRenderPipelineState::AGPUMTLRenderPipelineState()
 {
     depthStencilState = nil;
@@ -44,23 +47,22 @@ void AGPUMTLComputePipelineState::applyComputeCommands(id<MTLComputeCommandEncod
     [computeEncoder setComputePipelineState: handle];
 }
 
-_agpu_pipeline_state::_agpu_pipeline_state(agpu_device *device)
+AMtlPipelineState::AMtlPipelineState(const agpu::device_ref &device)
     : device(device)
 {
-    extraState = nullptr;
 }
 
-void _agpu_pipeline_state::lostReferences()
+AMtlPipelineState::~AMtlPipelineState()
 {
-    delete extraState;
 }
 
-agpu_pipeline_state *_agpu_pipeline_state::createRender(agpu_device *device, agpu_pipeline_builder *builder, id<MTLRenderPipelineState> handle)
+agpu::pipeline_state_ref AMtlPipelineState::createRender(const agpu::device_ref &device, AMtlGraphicsPipelineBuilder *builder, id<MTLRenderPipelineState> handle)
 {
-    auto result = new agpu_pipeline_state(device);
+    auto result = agpu::makeObject<AMtlPipelineState> (device);
+    auto pipeline = result.as<AMtlPipelineState> ();
     
     auto renderExtraState = new AGPUMTLRenderPipelineState;
-    result->extraState = renderExtraState;
+    pipeline->extraState.reset(renderExtraState);
     
     renderExtraState->handle = handle;
     renderExtraState->commandState = builder->commandState;
@@ -71,46 +73,31 @@ agpu_pipeline_state *_agpu_pipeline_state::createRender(agpu_device *device, agp
         renderExtraState->depthBiasClamp = builder->depthBiasClamp;        
     }
     
-    renderExtraState->depthStencilState = [device->device newDepthStencilStateWithDescriptor: builder->depthStencilDescriptor];
+    renderExtraState->depthStencilState = [deviceForMetal->device newDepthStencilStateWithDescriptor: builder->depthStencilDescriptor];
     return result;
 }
 
-agpu_pipeline_state *_agpu_pipeline_state::createCompute(agpu_device *device, agpu_compute_pipeline_builder *builder, id<MTLComputePipelineState> handle)
+agpu::pipeline_state_ref AMtlPipelineState::createCompute(const agpu::device_ref &device, AMtlComputePipelineBuilder *builder, id<MTLComputePipelineState> handle)
 {
-    auto result = new agpu_pipeline_state(device);
+    auto result = agpu::makeObject<AMtlPipelineState> (device);
+    auto pipeline = result.as<AMtlPipelineState> ();
     
     auto renderExtraState = new AGPUMTLComputePipelineState;
-    result->extraState = renderExtraState;
+    pipeline->extraState.reset(renderExtraState);
     
     renderExtraState->handle = handle;
     renderExtraState->localSize = builder->localSize;
     return result;
 }
 
-void _agpu_pipeline_state::applyRenderCommands(id<MTLRenderCommandEncoder> renderEncoder)
+void AMtlPipelineState::applyRenderCommands(id<MTLRenderCommandEncoder> renderEncoder)
 {
     extraState->applyRenderCommands(renderEncoder);
 }
 
-void _agpu_pipeline_state::applyComputeCommands(id<MTLComputeCommandEncoder> computeEncoder)
+void AMtlPipelineState::applyComputeCommands(id<MTLComputeCommandEncoder> computeEncoder)
 {
     extraState->applyComputeCommands(computeEncoder);
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddPipelineStateReference ( agpu_pipeline_state* pipeline_state )
-{
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleasePipelineState ( agpu_pipeline_state* pipeline_state )
-{
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->release();
-}
-
-AGPU_EXPORT agpu_int agpuGetUniformLocation ( agpu_pipeline_state* pipeline_state, agpu_cstring name )
-{
-    return AGPU_UNIMPLEMENTED;
-}
+} // End of namespace AgpuMetal

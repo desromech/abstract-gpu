@@ -9,6 +9,9 @@
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 
+namespace AgpuMetal
+{
+    
 inline MTLIndexType mapIndexType(agpu_size stride)
 {
     switch(stride)
@@ -19,16 +22,9 @@ inline MTLIndexType mapIndexType(agpu_size stride)
     }
 }
 
-_agpu_command_list::_agpu_command_list(agpu_device *device)
+AMtlCommandList::AMtlCommandList(const agpu::device_ref &device)
     : device(device)
 {
-    allocator = nullptr;
-    currentIndexBuffer = nullptr;
-    currentIndirectBuffer = nullptr;
-    currentComputeDispatchIndirectBuffer = nullptr;
-    currentVertexBinding = nullptr;
-    currentPipeline = nullptr;
-    currentShaderSignature = nullptr;
     vertexBufferCount = 0;
     buffer = nil;
     blitEncoder = nil;
@@ -36,73 +32,53 @@ _agpu_command_list::_agpu_command_list(agpu_device *device)
     computeEncoder = nil;
     used = false;
     pushConstantsModified = true;
-    memset(activeShaderResourceBindings, 0, sizeof(activeShaderResourceBindings));
-    memset(activeComputeShaderResourceBindings, 0, sizeof(activeComputeShaderResourceBindings));
     memset(pushConstantsBuffer, 0, sizeof(pushConstantsBuffer));
 }
 
-void _agpu_command_list::lostReferences()
+AMtlCommandList::~AMtlCommandList()
 {
     if(buffer)
         [buffer release];
-    if(allocator)
-        allocator->release();
 }
 
-agpu_command_list* _agpu_command_list::create ( agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+agpu::command_list_ref AMtlCommandList::create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state)
 {
     if(!allocator)
-        return nullptr;
+        return agpu::command_list_ref();
 
-    auto result = new agpu_command_list(device);
-    result->type = type;
-    auto error = result->reset(allocator, initial_pipeline_state);
+    auto result = agpu::makeObject<AMtlCommandList> (device);
+    auto commandList = result.as<AMtlCommandList> ();
+    commandList->type = type;
+    auto error = commandList->reset(allocator, initial_pipeline_state);
     if(error != AGPU_OK)
-    {
-        result->release();
-        return nullptr;
-    }
+        return agpu::command_list_ref();
 
     if(initial_pipeline_state)
-        result->usePipelineState(initial_pipeline_state);
+        commandList->usePipelineState(initial_pipeline_state);
 
     return result;
 }
 
-agpu_error _agpu_command_list::setShaderSignature ( agpu_shader_signature* signature )
+agpu_error AMtlCommandList::setShaderSignature(const agpu::shader_signature_ref &signature)
 {
-    if(signature)
-        signature->retain();
-    if(currentShaderSignature)
-        currentShaderSignature->release();
     currentShaderSignature = signature;
 
-    if(currentVertexBinding)
-    {
-        currentVertexBinding->release();
-        currentVertexBinding = nullptr;
-    }
-
-    if(currentPipeline)
-    {
-        currentPipeline->release();
-        currentPipeline = nullptr;
-    }
+    currentVertexBinding.reset();
+    auto oldPipeline = currentPipeline;
+    currentPipeline.reset();
 
     for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
-    {
-        auto activeBinding = activeShaderResourceBindings[i];
-        if(activeBinding)
-        {
-            activeBinding->release();
-            activeShaderResourceBindings[i] = nullptr;
-        }
-    }
+        activeShaderResourceBindings[i].reset();
+    for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
+        activeComputeShaderResourceBindings[i].reset();
+        
+    if(oldPipeline)
+        usePipelineState(oldPipeline);
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+agpu_error AMtlCommandList::setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
     MTLViewport viewport;
     viewport.originX = x;
@@ -116,7 +92,7 @@ agpu_error _agpu_command_list::setViewport ( agpu_int x, agpu_int y, agpu_int w,
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+agpu_error AMtlCommandList::setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
     MTLScissorRect scissor;
     scissor.x = x;
@@ -128,31 +104,28 @@ agpu_error _agpu_command_list::setScissor ( agpu_int x, agpu_int y, agpu_int w, 
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::usePipelineState ( agpu_pipeline_state* pipeline )
+agpu_error AMtlCommandList::usePipelineState(const agpu::pipeline_state_ref &pipeline)
 {
     CHECK_POINTER(pipeline);
 
-    pipeline->retain();
-    if(currentPipeline)
-        currentPipeline->release();
-
     currentPipeline = pipeline;
-    if(renderEncoder)
-        currentPipeline->applyRenderCommands(renderEncoder);
-    if(computeEncoder)
-        currentPipeline->applyComputeCommands(computeEncoder);
+
+    if(currentShaderSignature)
+    {
+        auto amtlPipeline = currentPipeline.as<AMtlPipelineState> ();
+        if(renderEncoder)
+            amtlPipeline->applyRenderCommands(renderEncoder);
+        if(computeEncoder)
+            amtlPipeline->applyComputeCommands(computeEncoder);        
+    }
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_binding )
+agpu_error AMtlCommandList::useVertexBinding(const agpu::vertex_binding_ref &vertex_binding)
 {
-    if(vertex_binding)
-        vertex_binding->retain();
-    if(currentVertexBinding)
-        currentVertexBinding->release();
     currentVertexBinding = vertex_binding;
-    for(auto buffer : currentVertexBinding->buffers)
+    for(auto &buffer : currentVertexBinding.as<AMtlVertexBinding> ()->buffers)
     {
         if(!buffer)
             return AGPU_INVALID_PARAMETER;
@@ -161,80 +134,64 @@ agpu_error _agpu_command_list::useVertexBinding ( agpu_vertex_binding* vertex_bi
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useIndexBuffer ( agpu_buffer* index_buffer )
+agpu_error AMtlCommandList::useIndexBuffer(const agpu::buffer_ref &index_buffer)
 {
     CHECK_POINTER(index_buffer);
-    return useIndexBufferAt(index_buffer, 0, index_buffer->description.stride);
+    return useIndexBufferAt(index_buffer, 0, index_buffer.as<AMtlBuffer> ()->description.stride);
 }
 
 
-agpu_error _agpu_command_list::useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+agpu_error AMtlCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size)
 {
     CHECK_POINTER(index_buffer);
-    if(index_buffer)
-        index_buffer->retain();
-    if(currentIndexBuffer)
-        currentIndexBuffer->release();
     currentIndexBuffer = index_buffer;
     currentIndexBufferOffset = offset;
     currentIndexBufferStride = index_size;
     return AGPU_OK;    
 }
 
-agpu_error _agpu_command_list::useDrawIndirectBuffer ( agpu_buffer* draw_buffer )
+agpu_error AMtlCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer)
 {
-    if(draw_buffer)
-        draw_buffer->retain();
-    if(currentIndirectBuffer)
-        currentIndirectBuffer->release();
     currentIndirectBuffer = draw_buffer;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useComputeDispatchIndirectBuffer ( agpu_buffer* dispatch_buffer )
+agpu_error AMtlCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_ref &dispatch_buffer)
 {
-    if(dispatch_buffer)
-        dispatch_buffer->retain();
-    if(currentComputeDispatchIndirectBuffer)
-        currentComputeDispatchIndirectBuffer->release();
     currentComputeDispatchIndirectBuffer = dispatch_buffer;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useShaderResources ( agpu_shader_resource_binding* binding )
+agpu_error AMtlCommandList::useShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
-    if(binding->elementIndex >= MaxActiveResourceBindings)
+    auto bindingPoint = binding.as<AMtlShaderResourceBinding> ()->elementIndex;
+    if(bindingPoint >= MaxActiveResourceBindings)
         return AGPU_UNSUPPORTED;
 
-    binding->retain();
-    if(activeShaderResourceBindings[binding->elementIndex])
-        activeShaderResourceBindings[binding->elementIndex]->release();
-    activeShaderResourceBindings[binding->elementIndex] = binding;
+    activeShaderResourceBindings[bindingPoint] = binding;
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::useComputeShaderResources ( agpu_shader_resource_binding* binding )
+agpu_error AMtlCommandList::useComputeShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
-    if(binding->elementIndex >= MaxActiveResourceBindings)
+    auto bindingPoint = binding.as<AMtlShaderResourceBinding> ()->elementIndex;
+    if(bindingPoint >= MaxActiveResourceBindings)
         return AGPU_UNSUPPORTED;
 
-    binding->retain();
-    if(activeComputeShaderResourceBindings[binding->elementIndex])
-        activeComputeShaderResourceBindings[binding->elementIndex]->release();
-    activeComputeShaderResourceBindings[binding->elementIndex] = binding;
+    activeComputeShaderResourceBindings[bindingPoint] = binding;
     return AGPU_OK;
 }
 
-void _agpu_command_list::updateRenderState()
+void AMtlCommandList::updateRenderState()
 {
     activateVertexBinding();
     activateShaderResourceBindings();
     uploadPushConstants();
 }
 
-void _agpu_command_list::activateVertexBinding ( )
+void AMtlCommandList::activateVertexBinding ( )
 {
     if(!currentVertexBinding)
     {
@@ -242,8 +199,9 @@ void _agpu_command_list::activateVertexBinding ( )
         return;
     }
 
-    auto &buffers = currentVertexBinding->buffers;
-    auto &offsets = currentVertexBinding->offsets;
+    auto amtlVertexBinding = currentVertexBinding.as<AMtlVertexBinding> ();
+    auto &buffers = amtlVertexBinding->buffers;
+    auto &offsets = amtlVertexBinding->offsets;
     vertexBufferCount = buffers.size();
     for(size_t i = 0; i < vertexBufferCount; ++i)
     {
@@ -251,71 +209,76 @@ void _agpu_command_list::activateVertexBinding ( )
         if(!buffer)
             return;
 
-        [renderEncoder setVertexBuffer: buffer->handle offset: offsets[i] atIndex: i];
+        auto handle = buffer.as<AMtlBuffer> ()->handle;
+        [renderEncoder setVertexBuffer: handle offset: offsets[i] atIndex: i];
     }
 }
 
 
-void _agpu_command_list::activateShaderResourceBindings()
+void AMtlCommandList::activateShaderResourceBindings()
 {
     for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
     {
         auto activeBinding = activeShaderResourceBindings[i];
         if(!activeBinding)
             continue;
-        activeBinding->activateOn(vertexBufferCount, renderEncoder);
+            
+        activeBinding.as<AMtlShaderResourceBinding> ()->activateOn(vertexBufferCount, renderEncoder);
     }
 }
 
-void _agpu_command_list::uploadPushConstants()
+void AMtlCommandList::uploadPushConstants()
 {
-    if(/*!pushConstantsModified || */currentShaderSignature->pushConstantBufferSize == 0)
+    auto signature = currentShaderSignature.as<AMtlShaderSignature> ();
+    if(/*!pushConstantsModified || */signature->pushConstantBufferSize == 0)
         return;
 
-    [renderEncoder setVertexBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: vertexBufferCount + currentShaderSignature->pushConstantBufferIndex];
-    [renderEncoder setFragmentBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: currentShaderSignature->pushConstantBufferIndex];
+    [renderEncoder setVertexBytes: pushConstantsBuffer length: signature->pushConstantBufferSize atIndex: vertexBufferCount + signature->pushConstantBufferIndex];
+    [renderEncoder setFragmentBytes: pushConstantsBuffer length: signature->pushConstantBufferSize atIndex: signature->pushConstantBufferIndex];
     pushConstantsModified = false;
 }
 
-void _agpu_command_list::updateComputeState()
+void AMtlCommandList::updateComputeState()
 {
     if(!computeEncoder)
     {
         computeEncoder = [buffer computeCommandEncoder];
-        currentPipeline->applyComputeCommands(computeEncoder);
+        currentPipeline.as<AMtlPipelineState> ()->applyComputeCommands(computeEncoder);
     }
 
     activateComputeShaderResourceBindings();
     uploadComputePushConstants();
 }
 
-void _agpu_command_list::activateComputeShaderResourceBindings()
+void AMtlCommandList::activateComputeShaderResourceBindings()
 {
     for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
     {
         auto activeBinding = activeComputeShaderResourceBindings[i];
         if(!activeBinding)
             continue;
-        activeBinding->activateComputeOn(computeEncoder);
+            
+        activeBinding.as<AMtlShaderResourceBinding> ()->activateComputeOn(computeEncoder);
     }
 }
 
-void _agpu_command_list::uploadComputePushConstants()
+void AMtlCommandList::uploadComputePushConstants()
 {
-    if(/*!pushConstantsModified || */currentShaderSignature->pushConstantBufferSize == 0)
+    auto signature = currentShaderSignature.as<AMtlShaderSignature> ();
+    if(/*!pushConstantsModified || */signature->pushConstantBufferSize == 0)
         return;
 
-    [computeEncoder setBytes: pushConstantsBuffer length: currentShaderSignature->pushConstantBufferSize atIndex: currentShaderSignature->pushConstantBufferIndex];
+    [computeEncoder setBytes: pushConstantsBuffer length: signature->pushConstantBufferSize atIndex: signature->pushConstantBufferIndex];
     pushConstantsModified = false;
 }
 
-agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
+agpu_error AMtlCommandList::drawArrays ( agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
 {
     if(!currentPipeline)
         return AGPU_INVALID_OPERATION;
 
     updateRenderState();
-    [renderEncoder drawPrimitives: currentPipeline->getCommandState().primitiveType
+    [renderEncoder drawPrimitives: currentPipeline.as<AMtlPipelineState> ()->getCommandState().primitiveType
                        vertexStart: first_vertex
                         vertexCount: vertex_count
                     instanceCount: instance_count
@@ -323,40 +286,45 @@ agpu_error _agpu_command_list::drawArrays ( agpu_uint vertex_count, agpu_uint in
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawArraysIndirect ( agpu_size offset, agpu_size drawcount )
+agpu_error AMtlCommandList::drawArraysIndirect ( agpu_size offset, agpu_size drawcount )
 {
     if(!currentIndexBuffer || !currentIndirectBuffer || !currentPipeline)
         return AGPU_INVALID_OPERATION;
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
+agpu_error AMtlCommandList::drawElements ( agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
 {
     if(!currentIndexBuffer || !currentPipeline)
         return AGPU_INVALID_OPERATION;
 
     updateRenderState();
-    [renderEncoder drawIndexedPrimitives: currentPipeline->getCommandState().primitiveType
+    auto indexBuffer = currentIndexBuffer.as<AMtlBuffer> ();
+    [renderEncoder drawIndexedPrimitives: currentPipeline.as<AMtlPipelineState> ()->getCommandState().primitiveType
                    indexCount: index_count
                     indexType: mapIndexType(currentIndexBufferStride)
-                  indexBuffer: currentIndexBuffer->handle
-            indexBufferOffset: currentIndexBufferOffset + first_index*currentIndexBuffer->description.stride
+                  indexBuffer: indexBuffer->handle
+            indexBufferOffset: currentIndexBufferOffset + first_index*indexBuffer->description.stride
                 instanceCount: instance_count
                    baseVertex: base_vertex
                  baseInstance: base_instance];
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::drawElementsIndirect ( agpu_size offset, agpu_size drawcount )
+agpu_error AMtlCommandList::drawElementsIndirect ( agpu_size offset, agpu_size drawcount )
 {
     if(!currentIndexBuffer || !currentIndirectBuffer || !currentPipeline)
         return AGPU_INVALID_OPERATION;
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
+agpu_error AMtlCommandList::dispatchCompute ( agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
 {
-    if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
+    if(!currentPipeline)
+        return AGPU_INVALID_OPERATION;
+
+    auto pipeline = currentPipeline.as<AMtlPipelineState> ();
+    if(!pipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
 
     updateComputeState();
@@ -364,31 +332,35 @@ agpu_error _agpu_command_list::dispatchCompute ( agpu_uint group_count_x, agpu_u
     threadgroups.width = group_count_x;
     threadgroups.height = group_count_y;
     threadgroups.depth = group_count_z;
-    [computeEncoder dispatchThreadgroups: threadgroups threadsPerThreadgroup: currentPipeline->extraState->getLocalSize()];
+    [computeEncoder dispatchThreadgroups: threadgroups threadsPerThreadgroup: pipeline->extraState->getLocalSize()];
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::dispatchComputeIndirect ( agpu_size offset )
+agpu_error AMtlCommandList::dispatchComputeIndirect ( agpu_size offset )
 {
-    if(!currentPipeline || !currentPipeline->extraState->isCompute() || renderEncoder)
+    if(!currentPipeline)
+        return AGPU_INVALID_OPERATION;
+
+    auto pipeline = currentPipeline.as<AMtlPipelineState> ();
+    if(!pipeline->extraState->isCompute() || renderEncoder)
         return AGPU_INVALID_OPERATION;
 
     updateComputeState();
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::setStencilReference ( agpu_uint reference )
+agpu_error AMtlCommandList::setStencilReference(agpu_uint reference)
 {
     [renderEncoder setStencilReferenceValue: reference];
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::executeBundle ( agpu_command_list* bundle )
+agpu_error AMtlCommandList::executeBundle(const agpu::command_list_ref &bundle)
 {
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_command_list::close (  )
+agpu_error AMtlCommandList::close()
 {
     if(computeEncoder)
     {
@@ -399,58 +371,33 @@ agpu_error _agpu_command_list::close (  )
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
+agpu_error AMtlCommandList::reset(const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state)
 {
     CHECK_POINTER(allocator);
 
     // Store the new allocator.
-    allocator->retain();
-    if(this->allocator)
-        this->allocator->release();
     this->allocator = allocator;
 
     // Create the buffer.
     if(buffer)
         [buffer release];
-    buffer = [allocator->queue->handle commandBuffer];
+    auto commandQueueHandle = allocator.as<AMtlCommandAllocator> ()->queue.as<AMtlCommandQueue> ()->handle;
+    buffer = [commandQueueHandle commandBuffer];
     used = false;
 
-    if(currentIndirectBuffer)
-        currentIndirectBuffer->release();
-    currentIndirectBuffer = nullptr;
-
-    if(currentComputeDispatchIndirectBuffer)
-        currentComputeDispatchIndirectBuffer->release();
-    currentComputeDispatchIndirectBuffer = nullptr;
-
-    if(currentIndexBuffer)
-        currentIndexBuffer->release();
-    currentIndexBuffer = nullptr;
-
-    if(currentVertexBinding)
-        currentVertexBinding->release();
-    currentVertexBinding = nullptr;
+    currentIndirectBuffer.reset();
+    currentComputeDispatchIndirectBuffer.reset();
+    currentIndexBuffer.reset();
+    currentVertexBinding.reset();
 
     for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
     {
-        if(activeShaderResourceBindings[i])
-            activeShaderResourceBindings[i]->release();
-        activeShaderResourceBindings[i] = nullptr;
-
-        if(activeComputeShaderResourceBindings[i])
-            activeComputeShaderResourceBindings[i]->release();
-        activeComputeShaderResourceBindings[i] = nullptr;
+        activeShaderResourceBindings[i].reset();
+        activeComputeShaderResourceBindings[i].reset();
     }
 
-    if(initial_pipeline_state)
-        initial_pipeline_state->retain();
-    if(currentPipeline)
-        currentPipeline->release();
     currentPipeline = initial_pipeline_state;
-
-    if(currentShaderSignature)
-        currentShaderSignature->release();
-    currentShaderSignature = nullptr;
+    currentShaderSignature.reset();
 
     vertexBufferCount = 0;
     pushConstantsModified = true;
@@ -459,12 +406,12 @@ agpu_error _agpu_command_list::reset ( agpu_command_allocator* allocator, agpu_p
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::resetBundle ( agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
+agpu_error AMtlCommandList::resetBundle(const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state, agpu_inheritance_info* inheritance_info)
 {
     return reset(allocator, initial_pipeline_state);
 }
 
-agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpass, const agpu::framebuffer_ref &framebuffer, agpu_bool bundle_content)
 {
     CHECK_POINTER(renderpass);
     CHECK_POINTER(framebuffer);
@@ -475,19 +422,19 @@ agpu_error _agpu_command_list::beginRenderPass ( agpu_renderpass* renderpass, ag
         computeEncoder = nil;
     }
 
-    auto descriptor = renderpass->createDescriptor(framebuffer);
+    auto descriptor = renderpass.as<AMtlRenderPass> ()->createDescriptor(framebuffer);
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
-    if(currentPipeline)
-    {
-        currentPipeline->release();
-        currentPipeline = nullptr;
-    }
+    
+    auto oldPipeline = currentPipeline;
+    currentPipeline.reset();
+    if(oldPipeline)
+        usePipelineState(oldPipeline);
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::endRenderPass (  )
+agpu_error AMtlCommandList::endRenderPass (  )
 {
     if(!renderEncoder)
         return AGPU_INVALID_OPERATION;
@@ -497,13 +444,16 @@ agpu_error _agpu_command_list::endRenderPass (  )
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
+agpu_error AMtlCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destFramebuffer, const agpu::framebuffer_ref &sourceFramebuffer)
 {
     CHECK_POINTER(destFramebuffer);
     CHECK_POINTER(sourceFramebuffer);
     
-    auto sourceTexture = sourceFramebuffer->getColorTexture(0);
-    auto destTexture = destFramebuffer->getColorTexture(0);
+    auto amtlSourceFramebuffer = sourceFramebuffer.as<AMtlFramebuffer> ();
+    auto amtlDestFramebuffer = destFramebuffer.as<AMtlFramebuffer> ();
+    
+    auto sourceTexture = amtlSourceFramebuffer->getColorTexture(0);
+    auto destTexture = amtlDestFramebuffer->getColorTexture(0);
     if(sourceTexture.sampleCount == destTexture.sampleCount)
     {
         MTLOrigin copyOrigin = {};
@@ -529,18 +479,18 @@ agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFrameb
     passAttachment.loadAction = MTLLoadActionLoad;
     passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
 
-    if(!sourceFramebuffer->ownedBySwapChain)
+    if(!amtlSourceFramebuffer->ownedBySwapChain)
     {
-        auto &view = sourceFramebuffer->colorBufferDescriptions[0];
+        auto &view = amtlSourceFramebuffer->colorBufferDescriptions[0];
         passAttachment.level = view.subresource_range.base_miplevel;
         passAttachment.slice = view.subresource_range.base_arraylayer;
     }
 
     // Set the resolve attachment
     passAttachment.resolveTexture = destTexture;
-    if(!destFramebuffer->ownedBySwapChain)
+    if(!amtlDestFramebuffer->ownedBySwapChain)
     {
-        auto &view = sourceFramebuffer->colorBufferDescriptions[0];
+        auto &view = amtlDestFramebuffer->colorBufferDescriptions[0];
         passAttachment.resolveLevel = view.subresource_range.base_miplevel;
         passAttachment.resolveSlice = view.subresource_range.base_arraylayer;
     }
@@ -552,7 +502,12 @@ agpu_error _agpu_command_list::resolveFramebuffer ( agpu_framebuffer* destFrameb
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
+agpu_error AMtlCommandList::resolveTexture(const agpu::texture_ref &sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref &destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
 {
     if(size + offset > MaxPushConstantBufferSize)
         return AGPU_OUT_OF_BOUNDS;
@@ -562,177 +517,4 @@ agpu_error _agpu_command_list::pushConstants ( agpu_uint offset, agpu_uint size,
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddCommandListReference ( agpu_command_list* command_list )
-{
-    CHECK_POINTER(command_list);
-    return command_list->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseCommandList ( agpu_command_list* command_list )
-{
-    CHECK_POINTER(command_list);
-    return command_list->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetShaderSignature ( agpu_command_list* command_list, agpu_shader_signature* signature )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setShaderSignature(signature);
-}
-
-AGPU_EXPORT agpu_error agpuSetViewport ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setViewport(x, y, w, h);
-}
-
-AGPU_EXPORT agpu_error agpuSetScissor ( agpu_command_list* command_list, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setScissor(x, y, w, h);
-}
-
-AGPU_EXPORT agpu_error agpuUsePipelineState ( agpu_command_list* command_list, agpu_pipeline_state* pipeline )
-{
-    CHECK_POINTER(command_list);
-    return command_list->usePipelineState(pipeline);
-}
-
-AGPU_EXPORT agpu_error agpuUseVertexBinding ( agpu_command_list* command_list, agpu_vertex_binding* vertex_binding )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useVertexBinding(vertex_binding);
-}
-
-AGPU_EXPORT agpu_error agpuUseIndexBuffer ( agpu_command_list* command_list, agpu_buffer* index_buffer )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useIndexBuffer(index_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
-{
-    CHECK_POINTER(command_list);
-    return command_list->useIndexBufferAt(index_buffer, offset, index_size);
-}
-
-AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* draw_buffer )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useDrawIndirectBuffer(draw_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer ( agpu_command_list* command_list, agpu_buffer* dispatch_buffer )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useComputeDispatchIndirectBuffer(dispatch_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useShaderResources(binding);
-}
-
-AGPU_EXPORT agpu_error agpuUseComputeShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
-{
-    CHECK_POINTER(command_list);
-    return command_list->useComputeShaderResources(binding);
-}
-
-AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
-}
-
-AGPU_EXPORT agpu_error agpuDrawArraysIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawArraysIndirect(offset, drawcount);
-}
-
-AGPU_EXPORT agpu_error agpuDrawElements ( agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
-}
-
-AGPU_EXPORT agpu_error agpuDrawElementsIndirect ( agpu_command_list* command_list, agpu_size offset, agpu_size drawcount )
-{
-    CHECK_POINTER(command_list);
-    return command_list->drawElementsIndirect(offset, drawcount);
-}
-
-AGPU_EXPORT agpu_error agpuDispatchCompute ( agpu_command_list* command_list, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
-{
-    CHECK_POINTER(command_list);
-    return command_list->dispatchCompute(group_count_x, group_count_y, group_count_z);
-}
-
-AGPU_EXPORT agpu_error agpuDispatchComputeIndirect ( agpu_command_list* command_list, agpu_size offset )
-{
-    CHECK_POINTER(command_list);
-    return command_list->dispatchComputeIndirect(offset);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilReference ( agpu_command_list* command_list, agpu_uint reference )
-{
-    CHECK_POINTER(command_list);
-    return command_list->setStencilReference(reference);
-}
-
-AGPU_EXPORT agpu_error agpuExecuteBundle ( agpu_command_list* command_list, agpu_command_list* bundle )
-{
-    CHECK_POINTER(command_list);
-    return command_list->executeBundle(bundle);
-}
-
-AGPU_EXPORT agpu_error agpuCloseCommandList ( agpu_command_list* command_list )
-{
-    CHECK_POINTER(command_list);
-    return command_list->close();
-}
-
-AGPU_EXPORT agpu_error agpuResetCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state )
-{
-    CHECK_POINTER(command_list);
-    return command_list->reset(allocator, initial_pipeline_state);
-}
-
-AGPU_EXPORT agpu_error agpuResetBundleCommandList ( agpu_command_list* command_list, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info )
-{
-    CHECK_POINTER(command_list);
-    return command_list->resetBundle(allocator, initial_pipeline_state, inheritance_info);
-}
-
-AGPU_EXPORT agpu_error agpuBeginRenderPass ( agpu_command_list* command_list, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
-{
-    CHECK_POINTER(command_list);
-    return command_list->beginRenderPass(renderpass, framebuffer, bundle_content);
-}
-
-AGPU_EXPORT agpu_error agpuEndRenderPass ( agpu_command_list* command_list )
-{
-    CHECK_POINTER(command_list);
-    return command_list->endRenderPass();
-}
-
-AGPU_EXPORT agpu_error agpuResolveFramebuffer ( agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
-{
-    CHECK_POINTER(command_list);
-    return command_list->resolveFramebuffer(destFramebuffer, sourceFramebuffer);
-}
-
-AGPU_EXPORT agpu_error agpuResolveTexture ( agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
-{
-    CHECK_POINTER(command_list);
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values )
-{
-    CHECK_POINTER(command_list);
-    return command_list->pushConstants(offset, size, values);
-}
+} // End of namespace AgpuMetal

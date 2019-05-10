@@ -1,7 +1,10 @@
 #include "buffer.hpp"
 
-_agpu_buffer::_agpu_buffer(agpu_device *device)
-    : device(device)
+namespace AgpuVulkan
+{
+
+AVkBuffer::AVkBuffer(const agpu::device_ref &device)
+    : weakDevice(device)
 {
     uploadBuffer = VK_NULL_HANDLE;
     uploadBufferMemory = VK_NULL_HANDLE;
@@ -10,23 +13,26 @@ _agpu_buffer::_agpu_buffer(agpu_device *device)
     mapCount = 0;
 }
 
-void _agpu_buffer::lostReferences()
+AVkBuffer::~AVkBuffer()
 {
-    if (uploadBuffer)
-        vkDestroyBuffer(device->device, uploadBuffer, nullptr);
-    if (uploadBufferMemory)
-        vkFreeMemory(device->device, uploadBufferMemory, nullptr);
-    if (gpuBuffer)
-        vkDestroyBuffer(device->device, gpuBuffer, nullptr);
-    if (gpuBufferMemory)
-        vkFreeMemory(device->device, gpuBufferMemory, nullptr);
+    auto device = weakDevice.lock();
+    if(device)
+    {
+        if (uploadBuffer)
+            vkDestroyBuffer(deviceForVk->device, uploadBuffer, nullptr);
+        if (uploadBufferMemory)
+            vkFreeMemory(deviceForVk->device, uploadBufferMemory, nullptr);
+        if (gpuBuffer)
+            vkDestroyBuffer(deviceForVk->device, gpuBuffer, nullptr);
+        if (gpuBufferMemory)
+            vkFreeMemory(deviceForVk->device, gpuBufferMemory, nullptr);
+    }
 }
 
-agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
+agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data)
 {
-    agpu_buffer *result = nullptr;
     if (!description)
-        return nullptr;
+        return agpu::buffer_ref();
 
     // Try to determine whan kind of buffer is needed.
     bool streaming = description->usage == AGPU_STREAM;
@@ -76,9 +82,9 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     }
 
     VkBuffer mainBuffer = VK_NULL_HANDLE;
-    auto error = vkCreateBuffer(device->device, &bufferDescription, nullptr, &mainBuffer);
+    auto error = vkCreateBuffer(deviceForVk->device, &bufferDescription, nullptr, &mainBuffer);
     if (error)
-        return nullptr;
+        return agpu::buffer_ref();
 
     VkBuffer uploadBuffer = VK_NULL_HANDLE;
     VkDeviceMemory uploadBufferMemory = VK_NULL_HANDLE;
@@ -91,20 +97,20 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         mainBuffer = VK_NULL_HANDLE;
 
         VkMemoryRequirements memoryRequirements;
-        vkGetBufferMemoryRequirements(device->device, uploadBuffer, &memoryRequirements);
+        vkGetBufferMemoryRequirements(deviceForVk->device, uploadBuffer, &memoryRequirements);
 
         VkMemoryAllocateInfo allocateInfo;
         memset(&allocateInfo, 0, sizeof(allocateInfo));
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.allocationSize = memoryRequirements.size;
-        if (!device->findMemoryType(memoryRequirements.memoryTypeBits, uploadMemoryTypeRequirements, &allocateInfo.memoryTypeIndex))
+        if (!deviceForVk->findMemoryType(memoryRequirements.memoryTypeBits, uploadMemoryTypeRequirements, &allocateInfo.memoryTypeIndex))
             goto failure;
 
-        error = vkAllocateMemory(device->device, &allocateInfo, nullptr, &uploadBufferMemory);
+        error = vkAllocateMemory(deviceForVk->device, &allocateInfo, nullptr, &uploadBufferMemory);
         if (error)
             goto failure;
 
-        error = vkBindBufferMemory(device->device, uploadBuffer, uploadBufferMemory, 0);
+        error = vkBindBufferMemory(deviceForVk->device, uploadBuffer, uploadBufferMemory, 0);
         if (error)
             goto failure;
 
@@ -112,11 +118,11 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         if (initial_data)
         {
             void *mappedBuffer;
-            error = vkMapMemory(device->device, uploadBufferMemory, 0, description->size, 0, &mappedBuffer);
+            error = vkMapMemory(deviceForVk->device, uploadBufferMemory, 0, description->size, 0, &mappedBuffer);
             if (error)
                 goto failure;
             memcpy(mappedBuffer, initial_data, description->size);
-            vkUnmapMemory(device->device, uploadBufferMemory);
+            vkUnmapMemory(deviceForVk->device, uploadBufferMemory);
         }
     }
 
@@ -131,28 +137,28 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         }
         else
         {
-            auto error = vkCreateBuffer(device->device, &bufferDescription, nullptr, &defaultBuffer);
+            auto error = vkCreateBuffer(deviceForVk->device, &bufferDescription, nullptr, &defaultBuffer);
             if (error)
                 goto failure;
         }
 
         // Default buffer requirements
         VkMemoryRequirements memoryRequirements;
-        vkGetBufferMemoryRequirements(device->device, defaultBuffer, &memoryRequirements);
+        vkGetBufferMemoryRequirements(deviceForVk->device, defaultBuffer, &memoryRequirements);
 
         // Allocate the memory for the default buffer.
         VkMemoryAllocateInfo allocateInfo;
         memset(&allocateInfo, 0, sizeof(allocateInfo));
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.allocationSize = memoryRequirements.size;
-        if (!device->findMemoryType(memoryRequirements.memoryTypeBits, defaultMemoryTypeRequirements, &allocateInfo.memoryTypeIndex))
+        if (!deviceForVk->findMemoryType(memoryRequirements.memoryTypeBits, defaultMemoryTypeRequirements, &allocateInfo.memoryTypeIndex))
             goto failure;
 
-        error = vkAllocateMemory(device->device, &allocateInfo, nullptr, &defaultBufferMemory);
+        error = vkAllocateMemory(deviceForVk->device, &allocateInfo, nullptr, &defaultBufferMemory);
         if (error)
             goto failure;
 
-        error = vkBindBufferMemory(device->device, defaultBuffer, defaultBufferMemory, 0);
+        error = vkBindBufferMemory(deviceForVk->device, defaultBuffer, defaultBufferMemory, 0);
         if (error)
             goto failure;
     }
@@ -163,7 +169,7 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         VkBufferCopy copyRegion;
         copyRegion.size = description->size;
         copyRegion.dstOffset = copyRegion.srcOffset = 0;
-        if (!device->copyBuffer(uploadBuffer, defaultBuffer, 1, &copyRegion))
+        if (!deviceForVk->copyBuffer(uploadBuffer, defaultBuffer, 1, &copyRegion))
             goto failure;
     }
 
@@ -171,46 +177,53 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
     if (!keepUploadBuffer && uploadBuffer != VK_NULL_HANDLE)
     {
         if (uploadBuffer)
-            vkDestroyBuffer(device->device, uploadBuffer, nullptr);
+            vkDestroyBuffer(deviceForVk->device, uploadBuffer, nullptr);
         if (uploadBufferMemory)
-            vkFreeMemory(device->device, uploadBufferMemory, nullptr);
+            vkFreeMemory(deviceForVk->device, uploadBufferMemory, nullptr);
         uploadBuffer = VK_NULL_HANDLE;
         uploadBufferMemory = VK_NULL_HANDLE;
     }
 
-    result = new agpu_buffer(device);
-    result->description = *description;
-    result->gpuBuffer = defaultBuffer;
-    result->gpuBufferMemory = defaultBufferMemory;
-    result->uploadBuffer = uploadBuffer;
-    result->uploadBufferMemory = uploadBufferMemory;
-    return result;
+    {
+        auto result = agpu::makeObject<AVkBuffer> (device);
+        auto buffer = result.as<AVkBuffer> ();
+        buffer->description = *description;
+        buffer->gpuBuffer = defaultBuffer;
+        buffer->gpuBufferMemory = defaultBufferMemory;
+        buffer->uploadBuffer = uploadBuffer;
+        buffer->uploadBufferMemory = uploadBufferMemory;
+        return result;
+    }
 
 failure:
     if(mainBuffer)
-        vkDestroyBuffer(device->device, mainBuffer, nullptr);
+        vkDestroyBuffer(deviceForVk->device, mainBuffer, nullptr);
     if(uploadBuffer)
-        vkDestroyBuffer(device->device, uploadBuffer, nullptr);
+        vkDestroyBuffer(deviceForVk->device, uploadBuffer, nullptr);
     if(uploadBufferMemory)
-        vkFreeMemory(device->device, uploadBufferMemory, nullptr);
+        vkFreeMemory(deviceForVk->device, uploadBufferMemory, nullptr);
     if (defaultBuffer)
-        vkDestroyBuffer(device->device, defaultBuffer, nullptr);
+        vkDestroyBuffer(deviceForVk->device, defaultBuffer, nullptr);
     if (defaultBufferMemory)
-        vkFreeMemory(device->device, defaultBufferMemory, nullptr);
-    return nullptr;
+        vkFreeMemory(deviceForVk->device, defaultBufferMemory, nullptr);
+    return agpu::buffer_ref();
 }
 
-agpu_pointer _agpu_buffer::map(agpu_mapping_access flags)
+agpu_pointer AVkBuffer::mapBuffer(agpu_mapping_access flags)
 {
     // The upload buffer must be available.
     if (!uploadBufferMemory)
+        return nullptr;
+
+    auto device = weakDevice.lock();
+    if(!device)
         return nullptr;
 
     std::unique_lock<std::mutex> l(mapMutex);
 
     if (mapCount == 0)
     {
-        auto error = vkMapMemory(device->device, uploadBufferMemory, 0, VK_WHOLE_SIZE, 0, &mappedPointer);
+        auto error = vkMapMemory(deviceForVk->device, uploadBufferMemory, 0, VK_WHOLE_SIZE, 0, &mappedPointer);
         if (error)
         {
             return nullptr;
@@ -220,31 +233,35 @@ agpu_pointer _agpu_buffer::map(agpu_mapping_access flags)
     return mappedPointer;
 }
 
-agpu_error _agpu_buffer::unmap()
+agpu_error AVkBuffer::unmapBuffer()
 {
     // The upload buffer must be available.
     if (!uploadBufferMemory)
+        return AGPU_INVALID_OPERATION;
+
+    auto device = weakDevice.lock();
+    if(!device)
         return AGPU_INVALID_OPERATION;
 
     std::unique_lock<std::mutex> l(mapMutex);
     --mapCount;
     if (mapCount == 0)
     {
-        vkUnmapMemory(device->device, uploadBufferMemory);
+        vkUnmapMemory(deviceForVk->device, uploadBufferMemory);
         mappedPointer = nullptr;
     }
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_buffer::getBufferDescription(agpu_buffer_description* description)
+agpu_error AVkBuffer::getDescription(agpu_buffer_description* description)
 {
     CHECK_POINTER(description);
     *description = this->description;
     return AGPU_OK;
 }
 
-agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+agpu_error AVkBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
     bool canBeSubUpdated = (description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
     if (!canBeSubUpdated)
@@ -254,17 +271,21 @@ agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu
     if (offset + size > description.size)
         return AGPU_ERROR;
 
+    auto device = weakDevice.lock();
+    if(!device)
+        return AGPU_INVALID_OPERATION;
+
     // Check the data.
     CHECK_POINTER(data);
 
     // Map the upload buffer.
     void *mappedBuffer;
-    auto error = vkMapMemory(device->device, uploadBufferMemory, offset, size, 0, &mappedBuffer);
+    auto error = vkMapMemory(deviceForVk->device, uploadBufferMemory, offset, size, 0, &mappedBuffer);
     CONVERT_VULKAN_ERROR(error);
 
     // Copy and unmap
     memcpy(mappedBuffer, data, size);
-    vkUnmapMemory(device->device, uploadBufferMemory);
+    vkUnmapMemory(deviceForVk->device, uploadBufferMemory);
 
     // Transfer the data to the gpu buffer.
     if (!gpuBuffer)
@@ -274,99 +295,53 @@ agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu
     region.srcOffset = region.dstOffset = offset;
     region.size = size;
 
-    if (!device->copyBuffer(uploadBuffer, gpuBuffer, 1, &region))
+    if (!deviceForVk->copyBuffer(uploadBuffer, gpuBuffer, 1, &region))
         return AGPU_ERROR;
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+agpu_error AVkBuffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error _agpu_buffer::flushWholeBuffer()
+agpu_error AVkBuffer::flushWholeBuffer()
 {
     if(!uploadBufferMemory)
         return AGPU_OK;
+
+    auto device = weakDevice.lock();
+    if(!device)
+        return AGPU_INVALID_OPERATION;
 
     VkMappedMemoryRange range;
     memset(&range, 0, sizeof(range));
     range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     range.memory = uploadBufferMemory;
     range.size = VK_WHOLE_SIZE;
-    auto error = vkFlushMappedMemoryRanges(device->device, 1, &range);
+    auto error = vkFlushMappedMemoryRanges(deviceForVk->device, 1, &range);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
 }
 
-agpu_error _agpu_buffer::invalidateWholeBuffer()
+agpu_error AVkBuffer::invalidateWholeBuffer()
 {
     if(!uploadBufferMemory)
         return AGPU_OK;
+
+    auto device = weakDevice.lock();
+    if(!device)
+        return AGPU_INVALID_OPERATION;
 
     VkMappedMemoryRange range;
     memset(&range, 0, sizeof(range));
     range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     range.memory = uploadBufferMemory;
     range.size = VK_WHOLE_SIZE;
-    auto error = vkInvalidateMappedMemoryRanges(device->device, 1, &range);
+    auto error = vkInvalidateMappedMemoryRanges(deviceForVk->device, 1, &range);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddBufferReference(agpu_buffer* buffer)
-{
-    CHECK_POINTER(buffer);
-    return buffer->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseBuffer(agpu_buffer* buffer)
-{
-    CHECK_POINTER(buffer);
-    return buffer->release();
-}
-
-AGPU_EXPORT agpu_pointer agpuMapBuffer(agpu_buffer* buffer, agpu_mapping_access flags)
-{
-    if (!buffer)
-        return nullptr;
-    return buffer->map(flags);
-}
-
-AGPU_EXPORT agpu_error agpuUnmapBuffer(agpu_buffer* buffer)
-{
-    CHECK_POINTER(buffer);
-    return buffer->unmap();
-}
-
-AGPU_EXPORT agpu_error agpuGetBufferDescription(agpu_buffer* buffer, agpu_buffer_description* description)
-{
-    CHECK_POINTER(buffer);
-    return buffer->getBufferDescription(description);
-}
-
-AGPU_EXPORT agpu_error agpuUploadBufferData(agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data)
-{
-    CHECK_POINTER(buffer);
-    return buffer->uploadBufferData(offset, size,data);
-}
-
-AGPU_EXPORT agpu_error agpuReadBufferData(agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data)
-{
-    CHECK_POINTER(buffer);
-    return buffer->readBufferData(offset, size, data);
-}
-
-AGPU_EXPORT agpu_error agpuFlushWholeBuffer ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->flushWholeBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuInvalidateWholeBuffer ( agpu_buffer* buffer )
-{
-    CHECK_POINTER(buffer);
-    return buffer->invalidateWholeBuffer();
-}
+} // End of namespace AgpuVulkan

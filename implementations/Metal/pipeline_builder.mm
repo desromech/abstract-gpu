@@ -6,7 +6,10 @@
 #include "texture_format.hpp"
 #include "constants.hpp"
 
-_agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
+namespace AgpuMetal
+{
+    
+AMtlGraphicsPipelineBuilder::AMtlGraphicsPipelineBuilder(const agpu::device_ref &device)
     : device(device)
 {
     descriptor = nil;
@@ -14,7 +17,6 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     backStencilDescriptor = nil;
     frontStencilDescriptor = nil;
 
-    shaderSignature = nullptr;
     renderTargetCount = 1;
     depthEnabled = false;
     stencilEnabled = false;
@@ -26,54 +28,47 @@ _agpu_pipeline_builder::_agpu_pipeline_builder(agpu_device *device)
     depthBiasSlopeFactor = 0.0f;
 }
 
-void _agpu_pipeline_builder::lostReferences()
+AMtlGraphicsPipelineBuilder::~AMtlGraphicsPipelineBuilder()
 {
     if(descriptor)
         [descriptor release];
     if(depthStencilDescriptor)
         [depthStencilDescriptor release];
-        
-    for(auto &attachedShader : attachedShaders)
-    {
-        if(attachedShader.shader)
-            attachedShader.shader->release();
-    }
 }
 
-_agpu_pipeline_builder *_agpu_pipeline_builder::create(agpu_device *device)
+agpu::pipeline_builder_ref AMtlGraphicsPipelineBuilder::create(const agpu::device_ref &device)
 {
     auto descriptor = [MTLRenderPipelineDescriptor new];
     descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
 
-    auto result = new agpu_pipeline_builder(device);
-    result->descriptor = descriptor;
-    result->depthStencilDescriptor = [MTLDepthStencilDescriptor new];
-    result->backStencilDescriptor = [MTLStencilDescriptor new];
-    result->frontStencilDescriptor = [MTLStencilDescriptor new];
+    auto result = agpu::makeObject<AMtlGraphicsPipelineBuilder> (device);
+    auto builder = result.as<AMtlGraphicsPipelineBuilder> ();
+    builder->descriptor = descriptor;
+    builder->depthStencilDescriptor = [MTLDepthStencilDescriptor new];
+    builder->backStencilDescriptor = [MTLStencilDescriptor new];
+    builder->frontStencilDescriptor = [MTLStencilDescriptor new];
 
     return result;
 }
 
-agpu_pipeline_state* _agpu_pipeline_builder::build ( )
+agpu::pipeline_state_ptr AMtlGraphicsPipelineBuilder::build()
 {
     NSError *error;
 
     bool succeded = true;
     for(auto &attachedShader : attachedShaders)
     {
-        auto shader = attachedShader.shader;
+        const auto &shader = attachedShader.shader;
         if(!shader)
         {
             succeded = false;
             break;
         }
 
-        agpu_shader_forSignature *shaderInstance = nullptr;
-        auto error = shader->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
+        AMtlShaderForSignatureRef shaderInstance;
+        auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
         if(error || !shaderInstance || !shaderInstance->function)
         {
-            if(shaderInstance)
-                shaderInstance->release();
             succeded = false;
             break;
         }
@@ -91,7 +86,6 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
             break;
         }
 
-        shaderInstance->release();
         if(!succeded)
             break;
     }
@@ -99,7 +93,7 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
     if(!succeded)
         return nullptr;
 
-    auto pipelineState = [device->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
+    auto pipelineState = [deviceForMetal->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
     if(!pipelineState)
     {
         auto description = [error localizedDescription];
@@ -111,24 +105,22 @@ agpu_pipeline_state* _agpu_pipeline_builder::build ( )
     depthStencilDescriptor.backFaceStencil = stencilEnabled ? backStencilDescriptor : nil;
     depthStencilDescriptor.frontFaceStencil = stencilEnabled ? frontStencilDescriptor : nil;
 
-    return agpu_pipeline_state::createRender(device, this, pipelineState);
+    return AMtlPipelineState::createRender(device, this, pipelineState).disown();
 }
 
-agpu_error _agpu_pipeline_builder::attachShader ( agpu_shader* shader )
+agpu_error AMtlGraphicsPipelineBuilder::attachShader(const agpu::shader_ref &shader)
 {
     CHECK_POINTER(shader);
-    return attachShaderWithEntryPoint(shader, shader->type, "main");
+    return attachShaderWithEntryPoint(shader, shader.as<AMtlShader> ()->type, "main");
 }
 
-agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
+agpu_error AMtlGraphicsPipelineBuilder::attachShaderWithEntryPoint(const agpu::shader_ref &shader, agpu_shader_type type, agpu_cstring entry_point)
 {
     CHECK_POINTER(shader);
     CHECK_POINTER(entry_point);
     if(type == AGPU_LIBRARY_SHADER)
         return AGPU_INVALID_PARAMETER;
 
-    shader->retain();
-    
     AgpuShaderAttachment attachment;
     attachment.shader = shader;
     attachment.entryPoint = entry_point;
@@ -137,12 +129,12 @@ agpu_error _agpu_pipeline_builder::attachShaderWithEntryPoint ( agpu_shader* sha
     return AGPU_OK;
 }
 
-agpu_size _agpu_pipeline_builder::getBuildingLogLength (  )
+agpu_size AMtlGraphicsPipelineBuilder::getBuildingLogLength()
 {
     return buildingLog.size();
 }
 
-agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_string_buffer buffer )
+agpu_error AMtlGraphicsPipelineBuilder::getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
     CHECK_POINTER(buffer);
     memcpy(buffer, buildingLog.data(), std::min((size_t)buffer_size, buildingLog.size()));
@@ -151,7 +143,7 @@ agpu_error _agpu_pipeline_builder::getBuildingLog ( agpu_size buffer_size, agpu_
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setBlendState ( agpu_int renderTargetMask, agpu_bool enabled )
+agpu_error AMtlGraphicsPipelineBuilder::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
 {
     for(agpu_uint i = 0; i < renderTargetCount; ++i)
     {
@@ -164,7 +156,7 @@ agpu_error _agpu_pipeline_builder::setBlendState ( agpu_int renderTargetMask, ag
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setBlendFunction ( agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
+agpu_error AMtlGraphicsPipelineBuilder::setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
 {
     auto sourceRGBBlendFactor = mapBlendFactor(sourceFactor, false);
     auto destinationRGBBlendFactor = mapBlendFactor(destFactor, false);
@@ -192,7 +184,7 @@ agpu_error _agpu_pipeline_builder::setBlendFunction ( agpu_int renderTargetMask,
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setColorMask ( agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
+agpu_error AMtlGraphicsPipelineBuilder::setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
 {
     auto mask = 0;
     if(redEnabled)
@@ -215,7 +207,7 @@ agpu_error _agpu_pipeline_builder::setColorMask ( agpu_int renderTargetMask, agp
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
+agpu_error AMtlGraphicsPipelineBuilder::setFrontFace(agpu_face_winding winding)
 {
     switch(winding)
     {
@@ -230,7 +222,7 @@ agpu_error _agpu_pipeline_builder::setFrontFace ( agpu_face_winding winding )
     }
 }
 
-agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
+agpu_error AMtlGraphicsPipelineBuilder::setCullMode(agpu_cull_mode mode)
 {
     switch(mode)
     {
@@ -255,13 +247,16 @@ agpu_error _agpu_pipeline_builder::setCullMode ( agpu_cull_mode mode )
     }
 }
 
-agpu_error _agpu_pipeline_builder::setDepthBias ( agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+agpu_error AMtlGraphicsPipelineBuilder::setDepthBias(agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
 {
-    // TODO: Implement myself
+    hasDepthBias = true;
+    depthBiasConstantFactor = constant_factor;
+    depthBiasClamp = clamp;
+    depthBiasSlopeFactor = slope_factor;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
+agpu_error AMtlGraphicsPipelineBuilder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     depthEnabled = enabled;
     depthStencilDescriptor.depthCompareFunction = mapCompareFunction(function);
@@ -269,7 +264,7 @@ agpu_error _agpu_pipeline_builder::setDepthState ( agpu_bool enabled, agpu_bool 
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setStencilState ( agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
+agpu_error AMtlGraphicsPipelineBuilder::setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
 {
     stencilEnabled = enabled;
     backStencilDescriptor.writeMask = writeMask;
@@ -279,7 +274,7 @@ agpu_error _agpu_pipeline_builder::setStencilState ( agpu_bool enabled, agpu_int
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setStencilFrontFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+agpu_error AMtlGraphicsPipelineBuilder::setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 {
     frontStencilDescriptor.stencilFailureOperation = mapStencilOperation(stencilFailOperation);
     frontStencilDescriptor.depthFailureOperation = mapStencilOperation(depthFailOperation);
@@ -288,7 +283,7 @@ agpu_error _agpu_pipeline_builder::setStencilFrontFace ( agpu_stencil_operation 
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setStencilBackFace ( agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+agpu_error AMtlGraphicsPipelineBuilder::setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 {
     backStencilDescriptor.stencilFailureOperation = mapStencilOperation(stencilFailOperation);
     backStencilDescriptor.depthFailureOperation = mapStencilOperation(depthFailOperation);
@@ -297,7 +292,7 @@ agpu_error _agpu_pipeline_builder::setStencilBackFace ( agpu_stencil_operation s
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setRenderTargetCount ( agpu_int count )
+agpu_error AMtlGraphicsPipelineBuilder::setRenderTargetCount(agpu_int count)
 {
     for(agpu_uint i = 0; i < renderTargetCount; ++i)
         descriptor.colorAttachments[i].pixelFormat = MTLPixelFormatInvalid;
@@ -307,7 +302,7 @@ agpu_error _agpu_pipeline_builder::setRenderTargetCount ( agpu_int count )
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setRenderTargetFormat ( agpu_uint index, agpu_texture_format format )
+agpu_error AMtlGraphicsPipelineBuilder::setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
 {
     if(index >= renderTargetCount)
         return AGPU_OUT_OF_BOUNDS;
@@ -316,7 +311,7 @@ agpu_error _agpu_pipeline_builder::setRenderTargetFormat ( agpu_uint index, agpu
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setDepthStencilFormat ( agpu_texture_format format )
+agpu_error AMtlGraphicsPipelineBuilder::setDepthStencilFormat(agpu_texture_format format)
 {
     if(hasDepthComponent(format))
         descriptor.depthAttachmentPixelFormat = mapTextureFormat(format);
@@ -329,7 +324,7 @@ agpu_error _agpu_pipeline_builder::setDepthStencilFormat ( agpu_texture_format f
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPrimitiveType ( agpu_primitive_topology type )
+agpu_error AMtlGraphicsPipelineBuilder::setPrimitiveType(agpu_primitive_topology type)
 {
     switch(type)
     {
@@ -354,185 +349,31 @@ agpu_error _agpu_pipeline_builder::setPrimitiveType ( agpu_primitive_topology ty
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPolygonMode(agpu_polygon_mode mode)
+agpu_error AMtlGraphicsPipelineBuilder::setPolygonMode(agpu_polygon_mode mode)
 {
     // TODO: Implement myself
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setVertexLayout ( agpu_vertex_layout* layout )
+agpu_error AMtlGraphicsPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &layout)
 {
     CHECK_POINTER(layout);
-    descriptor.vertexDescriptor = layout->vertexDescriptor;
-    vertexBufferCount = layout->vertexStrides.size();
+    auto amtlVertexLayout = layout.as<AMtlVertexLayout> ();
+    descriptor.vertexDescriptor = amtlVertexLayout->vertexDescriptor;
+    vertexBufferCount = amtlVertexLayout->vertexStrides.size();
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setPipelineShaderSignature ( agpu_shader_signature* signature )
+agpu_error AMtlGraphicsPipelineBuilder::setShaderSignature(const agpu::shader_signature_ref &signature)
 {
-    if(signature)
-        signature->retain();
-    if(shaderSignature)
-        shaderSignature->release();
-    shaderSignature = signature;
+    this->shaderSignature = signature;
     return AGPU_OK;
 }
 
-agpu_error _agpu_pipeline_builder::setSampleDescription ( agpu_uint sample_count, agpu_uint sample_quality )
+agpu_error AMtlGraphicsPipelineBuilder::setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
 {
     descriptor.sampleCount = sample_count;
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddPipelineBuilderReference ( agpu_pipeline_builder* pipeline_builder )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleasePipelineBuilder ( agpu_pipeline_builder* pipeline_builder )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->release();
-}
-
-AGPU_EXPORT agpu_pipeline_state* agpuBuildPipelineState ( agpu_pipeline_builder* pipeline_builder )
-{
-    if(!pipeline_builder)
-        return nullptr;
-    return pipeline_builder->build();
-}
-
-AGPU_EXPORT agpu_error agpuAttachShader ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->attachShader(shader);
-}
-
-AGPU_EXPORT agpu_error agpuAttachShaderWithEntryPoint ( agpu_pipeline_builder* pipeline_builder, agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->attachShaderWithEntryPoint(shader, type, entry_point);
-}
-
-AGPU_EXPORT agpu_size agpuGetPipelineBuildingLogLength ( agpu_pipeline_builder* pipeline_builder )
-{
-    if(!pipeline_builder)
-        return 0;
-    return pipeline_builder->getBuildingLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetPipelineBuildingLog ( agpu_pipeline_builder* pipeline_builder, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->getBuildingLog(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuSetBlendState ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool enabled )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setBlendState(renderTargetMask, enabled);
-}
-
-AGPU_EXPORT agpu_error agpuSetBlendFunction ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setBlendFunction(renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation);
-}
-
-AGPU_EXPORT agpu_error agpuSetColorMask ( agpu_pipeline_builder* pipeline_builder, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
-}
-
-AGPU_EXPORT agpu_error agpuSetFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_face_winding winding )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setFrontFace(winding);
-}
-
-AGPU_EXPORT agpu_error agpuSetCullMode ( agpu_pipeline_builder* pipeline_builder, agpu_cull_mode mode )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setCullMode(mode);
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthBias ( agpu_pipeline_builder* pipeline_builder, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setDepthBias(constant_factor, clamp, slope_factor);
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setDepthState(enabled, writeMask, function);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilState ( agpu_pipeline_builder* pipeline_builder, agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setStencilState(enabled, writeMask, readMask);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilFrontFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setStencilFrontFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
-}
-
-AGPU_EXPORT agpu_error agpuSetStencilBackFace ( agpu_pipeline_builder* pipeline_builder, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
-}
-
-AGPU_EXPORT agpu_error agpuSetRenderTargetCount ( agpu_pipeline_builder* pipeline_builder, agpu_int count )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setRenderTargetCount(count);
-}
-
-AGPU_EXPORT agpu_error agpuSetRenderTargetFormat ( agpu_pipeline_builder* pipeline_builder, agpu_uint index, agpu_texture_format format )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setRenderTargetFormat(index, format);
-}
-
-AGPU_EXPORT agpu_error agpuSetDepthStencilFormat ( agpu_pipeline_builder* pipeline_builder, agpu_texture_format format )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setDepthStencilFormat(format);
-}
-
-AGPU_EXPORT agpu_error agpuSetPrimitiveType ( agpu_pipeline_builder* pipeline_builder, agpu_primitive_topology type )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setPrimitiveType(type);
-}
-
-AGPU_EXPORT agpu_error agpuSetVertexLayout ( agpu_pipeline_builder* pipeline_builder, agpu_vertex_layout* layout )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setVertexLayout(layout);
-}
-
-AGPU_EXPORT agpu_error agpuSetPipelineShaderSignature ( agpu_pipeline_builder* pipeline_builder, agpu_shader_signature* signature )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setPipelineShaderSignature(signature);
-}
-
-AGPU_EXPORT agpu_error agpuSetSampleDescription ( agpu_pipeline_builder* pipeline_builder, agpu_uint sample_count, agpu_uint sample_quality )
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setSampleDescription(sample_count, sample_quality);
-}
-
-AGPU_EXPORT agpu_error agpuSetPolygonMode(agpu_pipeline_builder* pipeline_builder, agpu_polygon_mode mode)
-{
-    CHECK_POINTER(pipeline_builder);
-    return pipeline_builder->setPolygonMode(mode);
-}
+} // End of namespace AgpuMetal

@@ -37,6 +37,9 @@
         }                                                                      \
     }
 
+namespace AgpuVulkan
+{
+
 void printError(const char *format, ...)
 {
     char buffer[2048];
@@ -150,7 +153,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
         if(strstr(pMessage, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed"))
             return VK_FALSE;
 
-        auto device = reinterpret_cast<agpu_device*> (pUserData);
+        auto device = reinterpret_cast<AVkDevice*> (pUserData);
         if(device->vrSystemWrapper)
         {
             if(strstr(pMessage, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout") &&
@@ -163,7 +166,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
     return VK_FALSE;
 }
 
-_agpu_device::_agpu_device()
+AVkDevice::AVkDevice()
 {
     vulkanInstance = nullptr;
     physicalDevice = nullptr;
@@ -176,21 +179,16 @@ _agpu_device::_agpu_device()
     isVRDisplaySupported = false;
     isVRInputDevicesSupported = false;
     vrSystem = nullptr;
-    vrSystemWrapper = nullptr;
 }
 
-void _agpu_device::lostReferences()
+AVkDevice::~AVkDevice()
 {
-    // Release the VR system wrapper.
-    if(vrSystemWrapper)
-        vrSystemWrapper->release();
-
     // Shutdown the VR system, when I die.
     if(vrSystem)
         vr::VR_Shutdown();
 }
 
-bool _agpu_device::checkVulkanImplementation()
+bool AVkDevice::checkVulkanImplementation(VulkanPlatform *platform)
 {
     std::vector<std::string> requiredInstanceExtensions(coreRequiredInstanceExtensionNames, coreRequiredInstanceExtensionNames + coreRequiredInstanceExtensionCount);
     std::vector<std::string> requiredDeviceExtensions(coreRequiredDeviceExtensionNames, coreRequiredDeviceExtensionNames + coreRequiredDeviceExtensionCount);
@@ -230,9 +228,9 @@ bool _agpu_device::checkVulkanImplementation()
         return false;
 
     // Get the physical devices
-    theVulkanPlatform.gpuCount = 0;
-    error = vkEnumeratePhysicalDevices(vulkanInstance, &theVulkanPlatform.gpuCount, nullptr);
-    if (error || theVulkanPlatform.gpuCount == 0)
+    platform->gpuCount = 0;
+    error = vkEnumeratePhysicalDevices(vulkanInstance, &platform->gpuCount, nullptr);
+    if (error || platform->gpuCount == 0)
     {
         vkDestroyInstance(vulkanInstance, nullptr);
         return false;
@@ -245,16 +243,16 @@ bool _agpu_device::checkVulkanImplementation()
 }
 
 
-agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+agpu::device_ref AVkDevice::open(agpu_device_open_info* openInfo)
 {
-    std::unique_ptr<agpu_device> device(new agpu_device());
-    if (!device->initialize(openInfo))
-        return nullptr;
+    auto device = agpu::makeObject<AVkDevice> ();
+    if (!deviceForVk->initialize(openInfo))
+        return agpu::device_ref();
 
-    return device.release();
+    return device;
 }
 
-bool _agpu_device::checkDebugReportExtension()
+bool AVkDevice::checkDebugReportExtension()
 {
     GET_INSTANCE_PROC_ADDR(CreateDebugReportCallbackEXT);
     GET_INSTANCE_PROC_ADDR(DestroyDebugReportCallbackEXT);
@@ -295,7 +293,7 @@ static void splitSpacesInto(const std::string &string, std::vector<std::string> 
     }
 }
 
-bool _agpu_device::getInstanceExtensionsRequiredForVR(std::vector<std::string> &requiredInstanceExtensions)
+bool AVkDevice::getInstanceExtensionsRequiredForVR(std::vector<std::string> &requiredInstanceExtensions)
 {
     auto compositor = vr::VRCompositor();
 
@@ -311,7 +309,7 @@ bool _agpu_device::getInstanceExtensionsRequiredForVR(std::vector<std::string> &
 }
 
 
-bool _agpu_device::getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDevice, std::vector<std::string> &requiredDeviceExtensions)
+bool AVkDevice::getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDevice, std::vector<std::string> &requiredDeviceExtensions)
 {
     auto compositor = vr::VRCompositor();
 
@@ -326,7 +324,7 @@ bool _agpu_device::getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDev
     return true;
 }
 
-bool _agpu_device::initialize(agpu_device_open_info* openInfo)
+bool AVkDevice::initialize(agpu_device_open_info* openInfo)
 {
     std::vector<std::string> requiredInstanceExtensions(coreRequiredInstanceExtensionNames, coreRequiredInstanceExtensionNames + coreRequiredInstanceExtensionCount);
     std::vector<std::string> requiredDeviceExtensions(coreRequiredDeviceExtensionNames, coreRequiredDeviceExtensionNames + coreRequiredDeviceExtensionCount);
@@ -633,7 +631,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
             VkQueue queue;
             vkGetDeviceQueue(device, i, j, &queue);
 
-            auto commandQueue = agpu_command_queue::create(this, i, j, queue, queueType);
+            auto commandQueue = AVkCommandQueue::create(refFromThis<agpu::device> (), i, j, queue, queueType);
             if (!commandQueue)
                 continue;
 
@@ -658,20 +656,17 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
 
     if(vrSystem)
     {
-        vrSystemWrapper = new agpu_vr_system(this);
-        if(!vrSystemWrapper->initialize())
-        {
-            vrSystemWrapper->release();
-            vrSystemWrapper = nullptr;
-        }
+        vrSystemWrapper = agpu::makeObject<AVkVrSystem> (refFromThis<agpu::device> ());
+        if(!vrSystemWrapper.as<AVkVrSystem> ()->initialize())
+            vrSystemWrapper.reset();
 
-        isVRDisplaySupported = vrSystemWrapper != nullptr;
+        isVRDisplaySupported = (bool)vrSystemWrapper;
     }
 
     return true;
 }
 
-agpu_bool _agpu_device::isFeatureSupported(agpu_feature feature)
+agpu_bool AVkDevice::isFeatureSupported(agpu_feature feature)
 {
 	switch (feature)
 	{
@@ -686,51 +681,151 @@ agpu_bool _agpu_device::isFeatureSupported(agpu_feature feature)
 	}
 }
 
-agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
+agpu_int AVkDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
 {
     return 0;
 }
 
-agpu_command_queue* _agpu_device::getDefaultCommandQueue()
+agpu::command_queue_ptr AVkDevice::getDefaultCommandQueue()
 {
     return getGraphicsCommandQueue(0);
 }
 
-agpu_command_queue* _agpu_device::getGraphicsCommandQueue(agpu_uint index)
+agpu::command_queue_ptr AVkDevice::getGraphicsCommandQueue(agpu_uint index)
 {
     if (index >= graphicsCommandQueues.size())
         return nullptr;
 
-    auto result = graphicsCommandQueues[index];
-    result->retain();
-    return result;
+    return graphicsCommandQueues[index].disownedNewRef();
 }
-agpu_command_queue* _agpu_device::getComputeCommandQueue(agpu_uint index)
+
+agpu::command_queue_ptr AVkDevice::getComputeCommandQueue(agpu_uint index)
 {
     if (index >= computeCommandQueues.size())
         return nullptr;
 
-    auto result = computeCommandQueues[index];
-    result->retain();
-    return result;
+    return computeCommandQueues[index].disownedNewRef();
 }
 
-agpu_command_queue* _agpu_device::getTransferCommandQueue(agpu_uint index)
+agpu::command_queue_ptr AVkDevice::getTransferCommandQueue(agpu_uint index)
 {
     if (index >= transferCommandQueues.size())
         return nullptr;
 
-    auto result = transferCommandQueues[index];
-    result->retain();
-    return result;
+    return transferCommandQueues[index].disownedNewRef();
 }
 
-bool _agpu_device::createSetupCommandBuffer()
+agpu::swap_chain_ptr AVkDevice::createSwapChain(const agpu::command_queue_ref &commandQueue, agpu_swap_chain_create_info* swapChainInfo)
+{
+    return AVkSwapChain::create(refFromThis<agpu::device> (), commandQueue, swapChainInfo).disown();
+}
+
+agpu::buffer_ptr AVkDevice::createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
+{
+    return AVkBuffer::create(refFromThis<agpu::device> (), description, initial_data).disown();
+}
+
+agpu::vertex_layout_ptr AVkDevice::createVertexLayout()
+{
+    return AVkVertexLayout::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::vertex_binding_ptr AVkDevice::createVertexBinding(const agpu::vertex_layout_ref & layout)
+{
+    return AVkVertexBinding::create(refFromThis<agpu::device> (), layout).disown();
+}
+
+agpu::shader_ptr AVkDevice::createShader(agpu_shader_type type)
+{
+    return AVkShader::create(refFromThis<agpu::device> (), type).disown();
+}
+
+agpu::shader_signature_builder_ptr AVkDevice::createShaderSignatureBuilder()
+{
+    return AVkShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::pipeline_builder_ptr AVkDevice::createPipelineBuilder()
+{
+    return AVkGraphicsPipelineBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::compute_pipeline_builder_ptr AVkDevice::createComputePipelineBuilder()
+{
+    return AVkComputePipelineBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::command_allocator_ptr AVkDevice::createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue)
+{
+    return AVkCommandAllocator::create(refFromThis<agpu::device> (), type, queue).disown();
+}
+
+agpu::command_list_ptr AVkDevice::createCommandList(agpu_command_list_type type, const agpu::command_allocator_ref & allocator, const agpu::pipeline_state_ref & initial_pipeline_state)
+{
+    return AVkCommandList::create(refFromThis<agpu::device> (), type, allocator, initial_pipeline_state).disown();
+}
+
+agpu_shader_language AVkDevice::getPreferredShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
+agpu_shader_language AVkDevice::getPreferredIntermediateShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
+agpu_shader_language AVkDevice::getPreferredHighLevelShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_NONE;
+}
+
+agpu::framebuffer_ptr AVkDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+{
+    return AVkFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
+}
+
+agpu::renderpass_ptr AVkDevice::createRenderPass(agpu_renderpass_description* description)
+{
+    return AVkRenderPass::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::texture_ptr AVkDevice::createTexture(agpu_texture_description* description)
+{
+    return AVkTexture::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::fence_ptr AVkDevice::createFence()
+{
+    return AVkFence::create(refFromThis<agpu::device> ()).disown();
+}
+
+AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
+{
+    return false;
+}
+
+agpu_bool AVkDevice::hasTopLeftNdcOrigin()
+{
+    return true;
+}
+
+agpu_bool AVkDevice::hasBottomLeftTextureCoordinates()
+{
+    return false;
+}
+
+agpu::vr_system_ptr AVkDevice::getVRSystem()
+{
+    return vrSystemWrapper.disownedNewRef();
+}
+
+bool AVkDevice::createSetupCommandBuffer()
 {
     VkCommandPoolCreateInfo poolCreate;
     memset(&poolCreate, 0, sizeof(poolCreate));
     poolCreate.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolCreate.queueFamilyIndex = setupQueue->queueFamilyIndex;
+    poolCreate.queueFamilyIndex = setupQueue.as<AVkCommandQueue> ()->queueFamilyIndex;
     poolCreate.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
     auto error = vkCreateCommandPool(device, &poolCreate, nullptr, &setupCommandPool);
@@ -774,7 +869,7 @@ bool _agpu_device::createSetupCommandBuffer()
     return true;
 }
 
-bool _agpu_device::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
+bool AVkDevice::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
 {
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
@@ -791,7 +886,7 @@ bool _agpu_device::setImageLayout(VkImage image, VkImageSubresourceRange range, 
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::clearImageWithColor(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue)
+bool AVkDevice::clearImageWithColor(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue)
 {
     range.aspectMask = aspect;
 
@@ -827,7 +922,7 @@ bool _agpu_device::clearImageWithColor(VkImage image, VkImageSubresourceRange ra
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue)
+bool AVkDevice::clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue)
 {
     range.aspectMask = aspect;
 
@@ -863,7 +958,7 @@ bool _agpu_device::clearImageWithDepthStencil(VkImage image, VkImageSubresourceR
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32_t regionCount, const VkBufferCopy *regions)
+bool AVkDevice::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32_t regionCount, const VkBufferCopy *regions)
 {
     std::unique_lock<std::mutex> l(setupMutex);
     if (!setupCommandBuffer)
@@ -876,7 +971,7 @@ bool _agpu_device::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
+bool AVkDevice::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
 {
     range.aspectMask = aspect;
 
@@ -909,7 +1004,7 @@ bool _agpu_device::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubr
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
+bool AVkDevice::copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
 {
     range.aspectMask = aspect;
 
@@ -942,7 +1037,7 @@ bool _agpu_device::copyImageToBuffer(VkImage image, VkImageSubresourceRange rang
     return submitSetupCommandBuffer();
 }
 
-bool _agpu_device::submitSetupCommandBuffer()
+bool AVkDevice::submitSetupCommandBuffer()
 {
     auto error = vkEndCommandBuffer(setupCommandBuffer);
     if (error)
@@ -954,11 +1049,11 @@ bool _agpu_device::submitSetupCommandBuffer()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &setupCommandBuffer;
 
-    error = vkQueueSubmit(setupQueue->queue, 1, &submitInfo, VK_NULL_HANDLE);
+    error = vkQueueSubmit(setupQueue.as<AVkCommandQueue> ()->queue, 1, &submitInfo, VK_NULL_HANDLE);
     if (error)
         abort();
 
-    error = vkQueueWaitIdle(setupQueue->queue);
+    error = vkQueueWaitIdle(setupQueue.as<AVkCommandQueue> ()->queue);
     if (error)
         abort();
 
@@ -1028,7 +1123,7 @@ inline void addImageLayoutBarrierMasks(VkImageLayout layout, VkAccessFlags &acce
     }
 }
 
-VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages)
+VkImageMemoryBarrier AVkDevice::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages)
 {
     VkImageMemoryBarrier barrier;
     memset(&barrier, 0, sizeof(barrier));
@@ -1048,187 +1143,4 @@ VkImageMemoryBarrier _agpu_device::barrierForImageLayoutTransition(VkImage image
     return barrier;
 }
 
-// Exported C API
-AGPU_EXPORT agpu_error agpuAddDeviceReference(agpu_device* device)
-{
-    CHECK_POINTER(device);
-    return device->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseDevice(agpu_device* device)
-{
-    CHECK_POINTER(device);
-    return device->release();
-}
-
-AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return device->getDefaultCommandQueue();
-}
-
-AGPU_EXPORT agpu_command_queue* agpuGetGraphicsCommandQueue(agpu_device* device, agpu_uint index)
-{
-    if (!device)
-        return nullptr;
-    return device->getGraphicsCommandQueue(index);
-}
-
-AGPU_EXPORT agpu_command_queue* agpuGetComputeCommandQueue(agpu_device* device, agpu_uint index)
-{
-    if (!device)
-        return nullptr;
-    return device->getComputeCommandQueue(index);
-}
-
-AGPU_EXPORT agpu_command_queue* agpuGetTransferCommandQueue(agpu_device* device, agpu_uint index)
-{
-    if (!device)
-        return nullptr;
-    return device->getTransferCommandQueue(index);
-}
-
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain(agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
-}
-
-AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_buffer::create(device, description, initial_data);
-}
-
-AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_vertex_layout::create(device);
-}
-
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout* layout)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_vertex_binding::create(device, layout);
-}
-
-AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type type)
-{
-    if (!device)
-        return nullptr;
-    return agpu_shader::create(device, type);
-}
-
-AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_shader_signature_builder::create(device);
-}
-
-AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_pipeline_builder::create(device);
-}
-
-AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder(agpu_device* device)
-{
-	if (!device)
-		return nullptr;
-	return agpu_compute_pipeline_builder::create(device);
-}
-
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type, agpu_command_queue *commandQueue)
-{
-    if (!device)
-        return nullptr;
-    return agpu_command_allocator::create(device, type, commandQueue);
-}
-
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
-{
-    if (!device)
-        return nullptr;
-    return agpu_command_list::create(device, type, allocator, initial_pipeline_state);
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_SPIR_V;
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_SPIR_V;
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_NONE;
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
-}
-
-AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_renderpass_description* description)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_renderpass::create(device, description);
-}
-
-AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_texture::create(device, description);
-}
-
-AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_fence::create(device);
-}
-
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
-{
-    if (!device)
-        return false;
-    return true;
-}
-
-AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device *device)
-{
-    return false;
-}
-
-AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature)
-{
-	if (!device)
-		return false;
-	return device->isFeatureSupported(feature);
-}
+} // End of namespace AgpuVulkan

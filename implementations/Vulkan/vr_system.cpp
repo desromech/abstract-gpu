@@ -3,6 +3,9 @@
 #include "texture.hpp"
 #include "texture_format.hpp"
 
+namespace AgpuVulkan
+{
+
 inline vr::Hmd_Eye mapVREye(agpu_vr_eye eye)
 {
     switch(eye)
@@ -58,17 +61,18 @@ inline agpu_vr_tracked_device_class mapTrackedDeviceClass(vr::TrackedDeviceClass
     }
 }
 
-_agpu_vr_system::_agpu_vr_system(agpu_device *cdevice)
-    : device(cdevice), submissionCommandBufferIndex(0)
+AVkVrSystem::AVkVrSystem(const agpu::device_ref &cdevice)
+    : weakDevice(cdevice), submissionCommandBufferIndex(0)
 {
 }
 
-void _agpu_vr_system::lostReferences()
+AVkVrSystem::~AVkVrSystem()
 {
 }
 
-bool _agpu_vr_system::initialize()
+bool AVkVrSystem::initialize()
 {
+    auto device = weakDevice.lock();
     for(auto &submissionCommandBuffer: submissionCommandBuffers)
     {
         if(!submissionCommandBuffer.initialize(device))
@@ -78,47 +82,52 @@ bool _agpu_vr_system::initialize()
     return true;
 }
 
-agpu_cstring _agpu_vr_system::getSystemName()
+agpu_cstring AVkVrSystem::getVRSystemName()
 {
     return "OpenVR";
 }
 
-agpu_pointer _agpu_vr_system::getSystemNativeHandle()
+agpu_pointer AVkVrSystem::getNativeHandle()
 {
-    return device->vrSystem;
+    auto device = weakDevice.lock();
+    return deviceForVk->vrSystem;
 }
 
-agpu_error _agpu_vr_system::getRecommendedRenderTargetSize(agpu_size2d* size )
+agpu_error AVkVrSystem::getRecommendedRenderTargetSize(agpu_size2d* size )
 {
     CHECK_POINTER(size);
 
     uint32_t width, height;
-    device->vrSystem->GetRecommendedRenderTargetSize(&width, &height);
+    auto device = weakDevice.lock();
+    deviceForVk->vrSystem->GetRecommendedRenderTargetSize(&width, &height);
     size->width = width;
     size->height = height;
     return AGPU_OK;
 }
 
-agpu_error _agpu_vr_system::getEyeToHeadTransformInto(agpu_vr_eye eye, agpu_matrix4x4f* transform)
+agpu_error AVkVrSystem::getEyeToHeadTransform(agpu_vr_eye eye, agpu_matrix4x4f* transform)
 {
     CHECK_POINTER(transform);
-    *transform = convertOVRMatrix(device->vrSystem->GetEyeToHeadTransform(mapVREye(eye)));
+    auto device = weakDevice.lock();
+    *transform = convertOVRMatrix(deviceForVk->vrSystem->GetEyeToHeadTransform(mapVREye(eye)));
     return AGPU_OK;
 }
 
-agpu_error _agpu_vr_system::getProjectionMatrix ( agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
+agpu_error AVkVrSystem::getProjectionMatrix ( agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
 {
     CHECK_POINTER(projection_matrix);
-    *projection_matrix = convertOVRMatrix(device->vrSystem->GetProjectionMatrix(mapVREye(eye), near_distance, far_distance));
+    auto device = weakDevice.lock();
+    *projection_matrix = convertOVRMatrix(deviceForVk->vrSystem->GetProjectionMatrix(mapVREye(eye), near_distance, far_distance));
     return AGPU_OK;
 }
 
-agpu_error _agpu_vr_system::getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum)
+agpu_error AVkVrSystem::getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum)
 {
     CHECK_POINTER(frustum);
 
     float left, right, top, bottom;
-    device->vrSystem->GetProjectionRaw(mapVREye(eye), &left, &right, &top, &bottom);
+    auto device = weakDevice.lock();
+    deviceForVk->vrSystem->GetProjectionRaw(mapVREye(eye), &left, &right, &top, &bottom);
 
     frustum->left = left;
     frustum->right = right;
@@ -129,7 +138,7 @@ agpu_error _agpu_vr_system::getProjectionFrustumTangents(agpu_vr_eye eye, agpu_f
     return AGPU_OK;
 }
 
-agpu_error _agpu_vr_system::submitVREyeRenderTargets ( agpu_texture* left_eye, agpu_texture* right_eye )
+agpu_error AVkVrSystem::submitEyeRenderTargets(const agpu::texture_ref & left_eye, const agpu::texture_ref & right_eye)
 {
     std::unique_lock<std::mutex> l(submissionMutex);
 
@@ -141,13 +150,14 @@ agpu_error _agpu_vr_system::submitVREyeRenderTargets ( agpu_texture* left_eye, a
     return AGPU_OK;
 }
 
-agpu_vr_tracked_device_pose _agpu_vr_system::convertTrackedDevicePose(agpu_uint deviceId, const vr::TrackedDevicePose_t &devicePose)
+agpu_vr_tracked_device_pose AVkVrSystem::convertTrackedDevicePose(agpu_uint deviceId, const vr::TrackedDevicePose_t &devicePose)
 {
     agpu_vr_tracked_device_pose convertedPose;
     memset(&convertedPose, 0, sizeof(convertedPose));
 
+    auto device = weakDevice.lock();
     convertedPose.device_id = deviceId;
-    convertedPose.device_class = mapTrackedDeviceClass(device->vrSystem->GetTrackedDeviceClass(deviceId));
+    convertedPose.device_class = mapTrackedDeviceClass(deviceForVk->vrSystem->GetTrackedDeviceClass(deviceId));
     convertedPose.device_role = AGPU_VR_TRACKED_DEVICE_ROLE_INVALID;
 
     convertedPose.device_to_absolute_tracking = convertOVRMatrix(devicePose.mDeviceToAbsoluteTracking);
@@ -158,10 +168,9 @@ agpu_vr_tracked_device_pose _agpu_vr_system::convertTrackedDevicePose(agpu_uint 
 }
 
 
-agpu_error _agpu_vr_system::waitAndFetchVRPoses()
+agpu_error AVkVrSystem::waitAndFetchPoses()
 {
     vr::VRCompositor()->WaitGetPoses(trackedDevicesPose, vr::k_unMaxTrackedDeviceCount, renderTrackedDevicesPose, vr::k_unMaxTrackedDeviceCount );
-
 
     validTrackedDevicePoses.clear();
     for(size_t i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i)
@@ -182,12 +191,12 @@ agpu_error _agpu_vr_system::waitAndFetchVRPoses()
     return AGPU_OK;
 }
 
-agpu_size _agpu_vr_system::getValidTrackedDevicePoseCount()
+agpu_size AVkVrSystem::getValidTrackedDevicePoseCount()
 {
     return validTrackedDevicePoses.size();
 }
 
-agpu_error _agpu_vr_system::getValidTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+agpu_error AVkVrSystem::getValidTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
 {
     CHECK_POINTER(dest);
     if(index >= validTrackedDevicePoses.size())
@@ -197,12 +206,12 @@ agpu_error _agpu_vr_system::getValidTrackedDevicePoseInto ( agpu_size index, agp
     return AGPU_OK;
 }
 
-agpu_size _agpu_vr_system::getValidRenderTrackedDevicePoseCount ()
+agpu_size AVkVrSystem::getValidRenderTrackedDevicePoseCount ()
 {
     return validRenderTrackedDevicePoses.size();
 }
 
-agpu_error _agpu_vr_system::getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+agpu_error AVkVrSystem::getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
 {
     CHECK_POINTER(dest);
     if(index >= validRenderTrackedDevicePoses.size())
@@ -212,13 +221,14 @@ agpu_error _agpu_vr_system::getValidRenderTrackedDevicePoseInto ( agpu_size inde
     return AGPU_OK;
 }
 
-agpu_bool _agpu_vr_system::pollEvent ( agpu_vr_event* event )
+agpu_bool AVkVrSystem::pollEvent ( agpu_vr_event* event )
 {
     if(!event)
         return false;
 
     vr::VREvent_t rawEvent;
-    while(device->vrSystem->PollNextEvent(&rawEvent, sizeof(rawEvent)))
+    auto device = weakDevice.lock();
+    while(deviceForVk->vrSystem->PollNextEvent(&rawEvent, sizeof(rawEvent)))
     {
         // We are using the same ids, so there is no need to map them.
         memset(event, 0, sizeof(agpu_vr_event));
@@ -271,8 +281,7 @@ agpu_bool _agpu_vr_system::pollEvent ( agpu_vr_event* event )
 
 // AgpuVkVRSystemSubmissionCommandBuffer
 AgpuVkVRSystemSubmissionCommandBuffer::AgpuVkVRSystemSubmissionCommandBuffer()
-    : device(nullptr),
-      fence(VK_NULL_HANDLE),
+    : fence(VK_NULL_HANDLE),
       isFenceActive(false),
       commandPool(VK_NULL_HANDLE),
       beforeSubmissionCommandList(VK_NULL_HANDLE),
@@ -282,25 +291,25 @@ AgpuVkVRSystemSubmissionCommandBuffer::AgpuVkVRSystemSubmissionCommandBuffer()
 {
 }
 
-void AgpuVkVRSystemSubmissionCommandBuffer::lostReferences()
+AgpuVkVRSystemSubmissionCommandBuffer::~AgpuVkVRSystemSubmissionCommandBuffer()
 {
-    if(fence)
-        vkDestroyFence(device->device, fence, nullptr);
-    if(beforeSubmissionCommandList)
-        vkFreeCommandBuffers(device->device, commandPool, 1, &beforeSubmissionCommandList);
-    if(afterSubmissionCommandList)
-        vkFreeCommandBuffers(device->device, commandPool, 1, &afterSubmissionCommandList);
-    if(commandPool)
-        vkDestroyCommandPool(device->device, commandPool, nullptr);
-    if(leftEyeTexture)
-        leftEyeTexture->release();
-    if(rightEyeTexture)
-        rightEyeTexture->release();
+    auto device = weakDevice.lock();
+    if(device)
+    {
+        if(fence)
+            vkDestroyFence(deviceForVk->device, fence, nullptr);
+        if(beforeSubmissionCommandList)
+            vkFreeCommandBuffers(deviceForVk->device, commandPool, 1, &beforeSubmissionCommandList);
+        if(afterSubmissionCommandList)
+            vkFreeCommandBuffers(deviceForVk->device, commandPool, 1, &afterSubmissionCommandList);
+        if(commandPool)
+            vkDestroyCommandPool(deviceForVk->device, commandPool, nullptr);
+    }
 }
 
-bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(agpu_device *device)
+bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(const agpu::device_ref &device)
 {
-    this->device = device;
+    this->weakDevice = device;
 
     // Create the fence
     {
@@ -308,7 +317,7 @@ bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(agpu_device *device)
         memset(&info, 0, sizeof(info));
         info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 
-        auto error = vkCreateFence(device->device, &info, nullptr, &fence);
+        auto error = vkCreateFence(deviceForVk->device, &info, nullptr, &fence);
         if (error)
             return false;
     }
@@ -318,10 +327,10 @@ bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(agpu_device *device)
         VkCommandPoolCreateInfo poolCreate;
         memset(&poolCreate, 0, sizeof(poolCreate));
         poolCreate.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolCreate.queueFamilyIndex = device->graphicsCommandQueues[0]->queueFamilyIndex;
+        poolCreate.queueFamilyIndex = deviceForVk->graphicsCommandQueues[0].as<AVkCommandQueue> ()->queueFamilyIndex;
         poolCreate.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
-        auto error = vkCreateCommandPool(device->device, &poolCreate, nullptr, &commandPool);
+        auto error = vkCreateCommandPool(deviceForVk->device, &poolCreate, nullptr, &commandPool);
         if (error)
             return false;
     }
@@ -335,7 +344,7 @@ bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(agpu_device *device)
         commandInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         commandInfo.commandBufferCount = 1;
 
-        auto error = vkAllocateCommandBuffers(device->device, &commandInfo, &beforeSubmissionCommandList);
+        auto error = vkAllocateCommandBuffers(deviceForVk->device, &commandInfo, &beforeSubmissionCommandList);
         if (error)
             return false;
     }
@@ -349,7 +358,7 @@ bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(agpu_device *device)
         commandInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         commandInfo.commandBufferCount = 1;
 
-        auto error = vkAllocateCommandBuffers(device->device, &commandInfo, &afterSubmissionCommandList);
+        auto error = vkAllocateCommandBuffers(deviceForVk->device, &commandInfo, &afterSubmissionCommandList);
         if (error)
             return false;
     }
@@ -378,14 +387,15 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::waitFence()
     if(!isFenceActive)
         return AGPU_OK;
 
-    auto result = vkGetFenceStatus(device->device, fence);
+    auto device = weakDevice.lock();
+    auto result = vkGetFenceStatus(deviceForVk->device, fence);
     if (result == VK_SUCCESS)
     {
         // Do nothing
     }
     else if (result == VK_NOT_READY)
     {
-        auto error = vkWaitForFences(device->device, 1, &fence, VK_TRUE, UINT64_MAX);
+        auto error = vkWaitForFences(deviceForVk->device, 1, &fence, VK_TRUE, UINT64_MAX);
         CONVERT_VULKAN_ERROR(error);
     }
     else
@@ -395,20 +405,25 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::waitFence()
     }
 
     // Reset the fence.
-    auto error = vkResetFences(device->device, 1, &fence);
+    auto error = vkResetFences(deviceForVk->device, 1, &fence);
     isFenceActive = false;
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
 }
 
-agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agpu_texture* left_eye, agpu_texture* right_eye )
+agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const agpu::texture_ref &left_eye, const agpu::texture_ref &right_eye)
 {
     CHECK_POINTER(left_eye);
     CHECK_POINTER(right_eye);
 
     // Do the textures have the required image layout? if so, then just submit them.
-    if(left_eye->initialLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && right_eye->initialLayout)
+    auto leftEyeTexture = left_eye.as<AVkTexture> ();
+    auto rightEyeTexture = right_eye.as<AVkTexture> ();
+    if(leftEyeTexture->initialLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL &&
+       rightEyeTexture->initialLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
         return doSubmissionOfEyeTextures(left_eye, right_eye);
+
+    auto device = weakDevice.lock();
 
     // Wait for the fence.
     {
@@ -419,7 +434,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
 
     // Reset the command pool.
     {
-        auto error = vkResetCommandPool(device->device, commandPool, 0);
+        auto error = vkResetCommandPool(deviceForVk->device, commandPool, 0);
         CONVERT_VULKAN_ERROR(error);
     }
 
@@ -428,8 +443,8 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
     imageRange.layerCount = 1;
     imageRange.levelCount = 1;
 
-    auto leftSourceLayout = left_eye->initialLayout;
-    auto rightSourceLayout = right_eye->initialLayout;
+    auto leftSourceLayout = leftEyeTexture->initialLayout;
+    auto rightSourceLayout = rightEyeTexture->initialLayout;
 
     // Before submission command buffer
     {
@@ -441,7 +456,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
         {
             VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = device->barrierForImageLayoutTransition(left_eye->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, leftSourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, left_eye->initialLayoutAccessBits, srcStages, destStages);
+            auto barrier = deviceForVk->barrierForImageLayoutTransition(leftEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, leftSourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, leftEyeTexture->initialLayoutAccessBits, srcStages, destStages);
             vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
@@ -449,7 +464,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
         {
             VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = device->barrierForImageLayoutTransition(right_eye->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, rightSourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, left_eye->initialLayoutAccessBits, srcStages, destStages);
+            auto barrier = deviceForVk->barrierForImageLayoutTransition(rightEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, rightSourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rightEyeTexture->initialLayoutAccessBits, srcStages, destStages);
             vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
@@ -467,7 +482,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
         {
             VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = device->barrierForImageLayoutTransition(left_eye->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, leftSourceLayout, 0, srcStages, destStages);
+            auto barrier = deviceForVk->barrierForImageLayoutTransition(leftEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, leftSourceLayout, 0, srcStages, destStages);
             vkCmdPipelineBarrier(afterSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
@@ -475,7 +490,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
         {
             VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = device->barrierForImageLayoutTransition(right_eye->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rightSourceLayout, 0, srcStages, destStages);
+            auto barrier = deviceForVk->barrierForImageLayoutTransition(rightEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rightSourceLayout, 0, srcStages, destStages);
             vkCmdPipelineBarrier(afterSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
@@ -483,7 +498,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
         CONVERT_VULKAN_ERROR(error);
     }
 
-    auto graphicsQueue = device->graphicsCommandQueues[0]->queue;
+    auto graphicsQueue = deviceForVk->graphicsCommandQueues[0].as<AVkCommandQueue> ()->queue;
 
     // Submit the first command buffer
     {
@@ -521,23 +536,10 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets ( agp
     return AGPU_OK;
 }
 
-agpu_error AgpuVkVRSystemSubmissionCommandBuffer::doSubmissionOfEyeTextures ( agpu_texture* left_eye, agpu_texture* right_eye )
+agpu_error AgpuVkVRSystemSubmissionCommandBuffer::doSubmissionOfEyeTextures (const agpu::texture_ref &left_eye, const agpu::texture_ref &right_eye)
 {
-    {
-        if(left_eye)
-            left_eye->retain();
-        if(leftEyeTexture)
-            leftEyeTexture->release();
-        leftEyeTexture = left_eye;
-    }
-
-    {
-        if(right_eye)
-            right_eye->retain();
-        if(rightEyeTexture)
-            rightEyeTexture->release();
-        rightEyeTexture = right_eye;
-    }
+    leftEyeTexture = left_eye;
+    rightEyeTexture = right_eye;
 
     auto error = submitEyeTexture(vr::Eye_Left, leftEyeTexture);
     if(error)
@@ -550,9 +552,11 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::doSubmissionOfEyeTextures ( ag
     return AGPU_OK;
 }
 
-agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitEyeTexture ( vr::Hmd_Eye eye, agpu_texture* texture)
+agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitEyeTexture ( vr::Hmd_Eye eye, const agpu::texture_ref &texture)
 {
-    auto graphicsQueue = device->graphicsCommandQueues[0];
+    auto device = weakDevice.lock();
+    auto graphicsQueue = deviceForVk->graphicsCommandQueues[0].as<AVkCommandQueue> ();
+    auto avkTexture = texture.as<AVkTexture> ();
 
     vr::VRTextureBounds_t bounds;
     bounds.uMin = 0.0f;
@@ -563,17 +567,17 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitEyeTexture ( vr::Hmd_Eye
     vr::VRVulkanTextureData_t vulkanData;
     memset(&vulkanData, 0, sizeof(vulkanData));
 
-    vulkanData.m_nImage = ( uint64_t ) texture->image;
-	vulkanData.m_pDevice = ( VkDevice_T * ) device->device;
-	vulkanData.m_pPhysicalDevice = ( VkPhysicalDevice_T * )device->physicalDevice;
-	vulkanData.m_pInstance = ( VkInstance_T *) device->vulkanInstance;
+    vulkanData.m_nImage = ( uint64_t ) avkTexture->image;
+	vulkanData.m_pDevice = ( VkDevice_T * ) deviceForVk->device;
+	vulkanData.m_pPhysicalDevice = ( VkPhysicalDevice_T * )deviceForVk->physicalDevice;
+	vulkanData.m_pInstance = ( VkInstance_T *) deviceForVk->vulkanInstance;
 	vulkanData.m_pQueue = ( VkQueue_T * ) graphicsQueue->queue;
     vulkanData.m_nQueueFamilyIndex = graphicsQueue->queueFamilyIndex;
 
-    vulkanData.m_nWidth = texture->description.width;
-    vulkanData.m_nHeight = texture->description.height;
-	vulkanData.m_nFormat = mapTextureFormat(texture->description.format);
-    vulkanData.m_nSampleCount = texture->description.sample_count;
+    vulkanData.m_nWidth = avkTexture->description.width;
+    vulkanData.m_nHeight = avkTexture->description.height;
+	vulkanData.m_nFormat = mapTextureFormat(avkTexture->description.format);
+    vulkanData.m_nSampleCount = avkTexture->description.sample_count;
 
     vr::Texture_t vrTexture= { &vulkanData, vr::TextureType_Vulkan, vr::ColorSpace_Auto };
     vr::VRCompositor()->Submit(eye, &vrTexture, &bounds);
@@ -581,107 +585,4 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitEyeTexture ( vr::Hmd_Eye
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_vr_system* agpuGetVRSystem ( agpu_device* device )
-{
-    if(!device)
-        return nullptr;
-
-    return device->vrSystemWrapper;
-}
-
-AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseVRSystem ( agpu_vr_system* vr_system )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->release();
-}
-
-AGPU_EXPORT agpu_cstring agpuGetVRSystemName ( agpu_vr_system* vr_system )
-{
-    if(!vr_system)
-        return "Dummy";
-    return vr_system->getSystemName();
-}
-
-AGPU_EXPORT agpu_pointer agpuGetVRSystemNativeHandle ( agpu_vr_system* vr_system )
-{
-    if(!vr_system)
-        return nullptr;
-    return vr_system->getSystemNativeHandle();
-}
-
-AGPU_EXPORT agpu_error agpuGetVRRecommendedRenderTargetSize ( agpu_vr_system* vr_system, agpu_size2d* size )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->getRecommendedRenderTargetSize(size);
-}
-
-AGPU_EXPORT agpu_error agpuGetVREyeToHeadTransformInto ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_matrix4x4f* transform )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->getEyeToHeadTransformInto(eye, transform);
-}
-
-AGPU_EXPORT agpu_error agpuGetVRProjectionMatrix ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_float near_distance, agpu_float far_distance, agpu_matrix4x4f* projection_matrix )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->getProjectionMatrix(eye, near_distance, far_distance, projection_matrix);
-}
-
-AGPU_EXPORT agpu_error agpuGetVRProjectionFrustumTangents ( agpu_vr_system* vr_system, agpu_vr_eye eye, agpu_frustum_tangents* frustum )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->getProjectionFrustumTangents(eye, frustum);
-}
-
-AGPU_EXPORT agpu_error agpuSubmitVREyeRenderTargets ( agpu_vr_system* vr_system, agpu_texture* left_eye, agpu_texture* right_eye )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->submitVREyeRenderTargets(left_eye, right_eye);
-}
-
-AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses ( agpu_vr_system* vr_system )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->waitAndFetchVRPoses();
-}
-
-AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount ( agpu_vr_system* vr_system )
-{
-    if(!vr_system)
-        return 0;
-    return vr_system->getValidTrackedDevicePoseCount();
-}
-
-AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->getValidTrackedDevicePoseInto(index, dest);
-}
-
-AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system )
-{
-    if(!vr_system)
-        return 0;
-    return vr_system->getValidRenderTrackedDevicePoseCount();
-}
-
-AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
-{
-    CHECK_POINTER(vr_system);
-    return vr_system->getValidRenderTrackedDevicePoseInto(index, dest);
-}
-
-AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
-{
-    if(!vr_system)
-        return false;
-
-    return vr_system->pollEvent(event);
-}
+} // End of namespace AgpuVulkan

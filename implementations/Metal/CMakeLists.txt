@@ -16,8 +16,7 @@ set(AGPU_Metal_SOURCES
     fence.mm
     framebuffer.hpp
     framebuffer.mm
-    icd.c
-    object.hpp
+    icd.cpp
     pipeline_builder.hpp
     pipeline_builder.mm
     pipeline_state.hpp
@@ -42,7 +41,6 @@ set(AGPU_Metal_SOURCES
     vertex_binding.mm
     vertex_layout.hpp
     vertex_layout.mm
-    ../Common/dummy_vr.cpp
 )
 
 add_definitions(-DAGPU_BUILD)

@@ -2,7 +2,10 @@
 #include "texture.hpp"
 #include "texture_format.hpp"
 
-_agpu_framebuffer::_agpu_framebuffer(agpu_device *device)
+namespace AgpuVulkan
+{
+
+AVkFramebuffer::AVkFramebuffer(const agpu::device_ref &device)
     : device(device)
 {
     renderPass = VK_NULL_HANDLE;
@@ -10,20 +13,16 @@ _agpu_framebuffer::_agpu_framebuffer(agpu_device *device)
     swapChainFramebuffer = false;
 }
 
-void _agpu_framebuffer::lostReferences()
+AVkFramebuffer::~AVkFramebuffer()
 {
-    vkDestroyFramebuffer(device->device, framebuffer, nullptr);
-    vkDestroyRenderPass(device->device, renderPass, nullptr);
+    vkDestroyFramebuffer(deviceForVk->device, framebuffer, nullptr);
+    vkDestroyRenderPass(deviceForVk->device, renderPass, nullptr);
     for (auto view : attachmentViews)
-        vkDestroyImageView(device->device, view, nullptr);
-    for (auto texture : attachmentTextures)
-        texture->release();
+        vkDestroyImageView(deviceForVk->device, view, nullptr);
 }
 
-agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+agpu::framebuffer_ref AVkFramebuffer::create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 {
-    agpu_framebuffer *result = nullptr;
-
     // Attachments
     std::vector<VkAttachmentDescription> attachments(colorCount + (depthStencilView != nullptr ? 1 : 0));
     for (agpu_uint i = 0; i < colorCount; ++i)
@@ -31,7 +30,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
         auto view = &colorViews[i];
         auto &attachment = attachments[i];
         if (!view || !view->texture)
-            return nullptr;
+            return agpu::framebuffer_ref();
 
         attachment.format = mapTextureFormat(view->format);
         attachment.samples = mapSampleCount(view->sample_count);
@@ -46,7 +45,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     if (depthStencilView != nullptr)
     {
         if (!depthStencilView->texture)
-            return nullptr;
+            return agpu::framebuffer_ref();
 
         auto &attachment = attachments.back();
         attachment.format = mapTextureFormat(depthStencilView->format);
@@ -93,16 +92,16 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     renderPassCreateInfo.pSubpasses = &subpass;
 
     VkRenderPass renderPass;
-    auto error = vkCreateRenderPass(device->device, &renderPassCreateInfo, nullptr, &renderPass);
+    auto error = vkCreateRenderPass(deviceForVk->device, &renderPassCreateInfo, nullptr, &renderPass);
     if (error)
-        return nullptr;
+        return agpu::framebuffer_ref();
 
     // Create the framebuffer
     std::vector<VkImageView> attachmentViews(attachments.size());
     std::vector<agpu_texture_view_description> attachmentDescriptions(attachments.size());
     for (agpu_uint i = 0; i < colorCount; ++i)
     {
-        auto view = agpu_texture::createImageView(device, &colorViews[i]);
+        auto view = AVkTexture::createImageView(device, &colorViews[i]);
         if (!view)
             goto failure;
 
@@ -112,7 +111,7 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
 
     if (depthStencilView)
     {
-        auto view = agpu_texture::createImageView(device, depthStencilView);
+        auto view = AVkTexture::createImageView(device, depthStencilView);
         if (!view)
             goto failure;
         attachmentViews.back() = view;
@@ -130,57 +129,41 @@ agpu_framebuffer *_agpu_framebuffer::create(agpu_device *device, agpu_uint width
     createInfo.layers = 1;
 
     VkFramebuffer framebuffer;
-    error = vkCreateFramebuffer(device->device, &createInfo, nullptr, &framebuffer);
+    error = vkCreateFramebuffer(deviceForVk->device, &createInfo, nullptr, &framebuffer);
     if (error)
         goto failure;
 
-    result = new agpu_framebuffer(device);
-    result->colorCount = colorCount;
-    result->hasDepthStencil = depthStencilView != nullptr;
-
-    result->width = width;
-    result->height = height;
-    result->renderPass = renderPass;
-    result->framebuffer = framebuffer;
-    result->attachmentViews = attachmentViews;
-    result->attachmentTextures.resize(attachmentViews.size());
-    result->attachmentDescriptions = attachmentDescriptions;
-    for (agpu_uint i = 0; i < colorCount; ++i)
     {
-        auto texture = colorViews[i].texture;
-        texture->retain();
-        result->attachmentTextures[i] = texture;
-    }
+        auto result = agpu::makeObject<AVkFramebuffer> (device);
+        auto avkFramebuffer = result.as<AVkFramebuffer> ();
+        avkFramebuffer->colorCount = colorCount;
+        avkFramebuffer->hasDepthStencil = depthStencilView != nullptr;
 
-    if (depthStencilView)
-    {
-        auto texture = depthStencilView->texture;
-        texture->retain();
-        result->attachmentTextures.back() = texture;
-    }
+        avkFramebuffer->width = width;
+        avkFramebuffer->height = height;
+        avkFramebuffer->renderPass = renderPass;
+        avkFramebuffer->framebuffer = framebuffer;
+        avkFramebuffer->attachmentViews = attachmentViews;
+        avkFramebuffer->attachmentTextures.resize(attachmentViews.size());
+        avkFramebuffer->attachmentDescriptions = attachmentDescriptions;
+        for (agpu_uint i = 0; i < colorCount; ++i)
+            avkFramebuffer->attachmentTextures[i] = agpu::texture_ref::import(colorViews[i].texture);
 
-    return result;
+        if (depthStencilView)
+            avkFramebuffer->attachmentTextures.back() = agpu::texture_ref::import(depthStencilView->texture);
+
+        return result;
+    }
 
 failure:
-    vkDestroyRenderPass(device->device, renderPass, nullptr);
+    vkDestroyRenderPass(deviceForVk->device, renderPass, nullptr);
     for (auto view : attachmentViews)
     {
         if (view)
-            vkDestroyImageView(device->device, view, nullptr);
+            vkDestroyImageView(deviceForVk->device, view, nullptr);
     }
 
-    return nullptr;
+    return agpu::framebuffer_ref();
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddFramebufferReference(agpu_framebuffer* framebuffer)
-{
-    CHECK_POINTER(framebuffer);
-    return framebuffer->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseFramebuffer(agpu_framebuffer* framebuffer)
-{
-    CHECK_POINTER(framebuffer);
-    return framebuffer->release();
-}
+} // End of namespace AgpuVulkan

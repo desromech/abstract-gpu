@@ -4,27 +4,30 @@
 #include "device.hpp"
 #include "command_queue.hpp"
 
+namespace AgpuVulkan
+{
+
 /**
  * AGPU vulkan swap chain
  */
-struct _agpu_swap_chain : public Object<_agpu_swap_chain>
+struct AVkSwapChain : public agpu::swap_chain
 {
 public:
-    _agpu_swap_chain(agpu_device *device);
-    void lostReferences();
+    AVkSwapChain(const agpu::device_ref &device);
+    ~AVkSwapChain();
 
-    static _agpu_swap_chain *create(agpu_device *device, agpu_command_queue* graphicsCommandQueue, agpu_swap_chain_create_info *createInfo);
+    static agpu::swap_chain_ref create(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo);
     bool initialize(agpu_swap_chain_create_info *createInfo);
 
-    agpu_error swapBuffers();
-    agpu_framebuffer *getCurrentBackBuffer();
-    agpu_size getCurrentBackBufferIndex ( );
-    agpu_size getFramebufferCount ( );
-    
-    agpu_device *device;
+    virtual agpu_error swapBuffers() override;
+    virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+    virtual agpu_size getCurrentBackBufferIndex() override;
+    virtual agpu_size getFramebufferCount() override;
+
+    agpu::device_ref device;
     VkSurfaceKHR surface;
-    agpu_command_queue* graphicsQueue;
-    agpu_command_queue* presentationQueue;
+    agpu::command_queue_ref graphicsQueue;
+    agpu::command_queue_ref presentationQueue;
 
     agpu_uint swapChainWidth;
     agpu_uint swapChainHeight;
@@ -34,7 +37,7 @@ public:
 
     VkSwapchainKHR handle;
     std::vector<VkSemaphore> semaphores;
-    std::vector<agpu_framebuffer*> framebuffers;
+    std::vector<agpu::framebuffer_ref> framebuffers;
 
     uint32_t imageCount;
     uint32_t currentBackBufferIndex;
@@ -42,5 +45,7 @@ public:
 private:
     bool getNextBackBufferIndex();
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_SWAP_CHAIN_HPP

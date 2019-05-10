@@ -16,8 +16,7 @@ set(AGPU_Vulkan_SOURCES
     fence.hpp
     framebuffer.cpp
     framebuffer.hpp
-    icd.c
-    object.hpp
+    icd.cpp
     pipeline_builder.cpp
     pipeline_builder.hpp
     pipeline_state.cpp

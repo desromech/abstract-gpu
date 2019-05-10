@@ -3,17 +3,23 @@
 
 #include "device.hpp"
 
-struct _agpu_fence : public Object<_agpu_fence>
+namespace AgpuVulkan
 {
-    _agpu_fence(agpu_device *device);
-    void lostReferences();
 
-    static agpu_fence *create(agpu_device *device);
+class AVkFence : public agpu::fence
+{
+public:
+    AVkFence(const agpu::device_ref &device);
+    ~AVkFence();
 
-    agpu_error waitOnClient();
+    static agpu::fence_ref create(const agpu::device_ref &device);
 
-    agpu_device *device;
+    virtual agpu_error waitOnClient() override;
+
+    agpu::device_ref device;
     VkFence fence;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_FENCE_HPP

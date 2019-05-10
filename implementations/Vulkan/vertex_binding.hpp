@@ -3,21 +3,27 @@
 
 #include "device.hpp"
 
-struct _agpu_vertex_binding : public Object<_agpu_vertex_binding>
+namespace AgpuVulkan
 {
-    _agpu_vertex_binding(agpu_device *device);
-    void lostReferences();
 
-    static agpu_vertex_binding *create(agpu_device *device, agpu_vertex_layout* layout);
+class AVkVertexBinding : public agpu::vertex_binding
+{
+public:
+    AVkVertexBinding(const agpu::device_ref &device);
+    ~AVkVertexBinding();
 
-    agpu_error bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers);
-    agpu_error bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size *offsets);
+    static agpu::vertex_binding_ref create(const agpu::device_ref &device, const agpu::vertex_layout_ref &layout);
 
-    agpu_device *device;
+    virtual agpu_error bindVertexBuffers(agpu_uint count, agpu::buffer_ref* vertex_buffers) override;
+	virtual agpu_error bindVertexBuffersWithOffsets(agpu_uint count, agpu::buffer_ref* vertex_buffers, agpu_size* offsets) override;
 
-    std::vector<agpu_buffer*> vertexBuffers;
+    agpu::device_ref device;
+
+    std::vector<agpu::buffer_ref> vertexBuffers;
     std::vector<VkBuffer> vulkanBuffers;
     std::vector<VkDeviceSize> offsets;
 };
+
+} // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_VERTEX_BINDING_HPP

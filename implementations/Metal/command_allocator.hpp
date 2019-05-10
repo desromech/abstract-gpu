@@ -3,19 +3,24 @@
 
 #include "device.hpp"
 
-struct _agpu_command_allocator : public Object<_agpu_command_allocator>
+namespace AgpuMetal
+{
+    
+class AMtlCommandAllocator : public agpu::command_allocator
 {
 public:
-    _agpu_command_allocator(agpu_device *device);
-    void lostReferences();
+    AMtlCommandAllocator(const agpu::device_ref &device);
+    ~AMtlCommandAllocator();
 
-    static agpu_command_allocator* create ( agpu_device* device, agpu_command_list_type type, agpu_command_queue* queue );
+    static agpu::command_allocator_ref create ( const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_queue_ref &queue );
 
-    agpu_error reset();
+    virtual agpu_error reset() override;
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_command_list_type type;
-    agpu_command_queue *queue;
+    agpu::command_queue_ref queue;
 };
+
+} // End of namespace AgpuMetal
 
 #endif //AGPU_METAL_COMMAND_ALLOCATOR_HPP
