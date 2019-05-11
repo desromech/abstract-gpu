@@ -6,7 +6,7 @@
 
 namespace AgpuMetal
 {
-    
+
 class AMtlDevice : public agpu::device
 {
 public:
@@ -23,6 +23,7 @@ public:
 	virtual agpu::vertex_layout_ptr createVertexLayout() override;
 	virtual agpu::vertex_binding_ptr createVertexBinding(const agpu::vertex_layout_ref &layout) override;
 	virtual agpu::shader_ptr createShader(agpu_shader_type type) override;
+    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
 	virtual agpu::shader_signature_builder_ptr createShaderSignatureBuilder() override;
 	virtual agpu::pipeline_builder_ptr createPipelineBuilder() override;
 	virtual agpu::compute_pipeline_builder_ptr createComputePipelineBuilder() override;

@@ -1,3 +1,4 @@
 At root:
 
 git subtree pull --prefix thirdparty/spirv-cross https://github.com/KhronosGroup/SPIRV-Cross.git master --squash
+git subtree pull --prefix thirdparty/glslang https://github.com/KhronosGroup/glslang master --squash

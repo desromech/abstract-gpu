@@ -29,8 +29,8 @@ public:
             return false;
 
         // Create the programs.
-        auto vertexShader = compileShaderFromFile("data/shaders/simpleVertex", AGPU_VERTEX_SHADER);
-        auto fragmentShader = compileShaderFromFile("data/shaders/simpleFragment", AGPU_FRAGMENT_SHADER);
+        auto vertexShader = compileShaderFromFile("data/shaders/simpleVertex.glsl", AGPU_VERTEX_SHADER);
+        auto fragmentShader = compileShaderFromFile("data/shaders/simpleFragment.glsl", AGPU_FRAGMENT_SHADER);
         if (!vertexShader || !fragmentShader)
             return false;
 

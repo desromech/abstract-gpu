@@ -1,5 +1,6 @@
 #include "platform.hpp"
 #include "device.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
 namespace AgpuVulkan
 {
@@ -49,6 +50,11 @@ agpu_bool VulkanPlatform::isNative()
 agpu_bool VulkanPlatform::isCrossPlatform()
 {
     return true;
+}
+
+agpu::offline_shader_compiler_ptr VulkanPlatform::createOfflineShaderCompiler()
+{
+    return AgpuCommon::GLSLangOfflineShaderCompiler::create().disown();
 }
 
 } // End of namespace AgpuVulkan

@@ -1,4 +1,5 @@
 #include "device.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
 namespace AgpuGL
 {
@@ -16,6 +17,7 @@ public:
 	virtual agpu_bool hasRealMultithreading() override;
 	virtual agpu_bool isNative() override;
 	virtual agpu_bool isCrossPlatform() override;
+    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
 };
 
 static agpu::platform_ref theGLPlatform;
@@ -61,6 +63,11 @@ agpu_bool GLPlatform::isNative()
 agpu_bool GLPlatform::isCrossPlatform()
 {
     return true;
+}
+
+agpu::offline_shader_compiler_ptr GLPlatform::createOfflineShaderCompiler()
+{
+    return AgpuCommon::GLSLangOfflineShaderCompiler::create().disown();
 }
 
 } // End of namespace AgpuGL

@@ -435,6 +435,11 @@ typedef ref_counter<shader> *shader_ptr;
 typedef ref<shader> shader_ref;
 typedef weak_ref<shader> shader_weakref;
 
+struct offline_shader_compiler;
+typedef ref_counter<offline_shader_compiler> *offline_shader_compiler_ptr;
+typedef ref<offline_shader_compiler> offline_shader_compiler_ref;
+typedef weak_ref<offline_shader_compiler> offline_shader_compiler_weakref;
+
 struct framebuffer;
 typedef ref_counter<framebuffer> *framebuffer_ptr;
 typedef ref<framebuffer> framebuffer_ref;
@@ -477,6 +482,7 @@ public:
 	virtual agpu_bool hasRealMultithreading() = 0;
 	virtual agpu_bool isNative() = 0;
 	virtual agpu_bool isCrossPlatform() = 0;
+	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
 };
 
 
@@ -491,6 +497,7 @@ public:
 	virtual vertex_layout_ptr createVertexLayout() = 0;
 	virtual vertex_binding_ptr createVertexBinding(const vertex_layout_ref & layout) = 0;
 	virtual shader_ptr createShader(agpu_shader_type type) = 0;
+	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
 	virtual shader_signature_builder_ptr createShaderSignatureBuilder() = 0;
 	virtual pipeline_builder_ptr createPipelineBuilder() = 0;
 	virtual compute_pipeline_builder_ptr createComputePipelineBuilder() = 0;
@@ -713,6 +720,23 @@ public:
 	virtual agpu_error compileShader(agpu_cstring options) = 0;
 	virtual agpu_size getCompilationLogLength() = 0;
 	virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
+};
+
+
+// Interface wrapper for agpu_offline_shader_compiler.
+struct offline_shader_compiler : base_interface
+{
+public:
+	typedef offline_shader_compiler main_interface;
+	virtual agpu_bool isShaderLanguageSupported(agpu_shader_language language) = 0;
+	virtual agpu_bool isTargetShaderLanguageSupported(agpu_shader_language language) = 0;
+	virtual agpu_error setShaderSource(agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength) = 0;
+	virtual agpu_error compileShader(agpu_shader_language target_language, agpu_cstring options) = 0;
+	virtual agpu_size getCompilationLogLength() = 0;
+	virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
+	virtual agpu_size getCompilationResultLength() = 0;
+	virtual agpu_error getCompilationResult(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
+	virtual shader_ptr getResultAsShader() = 0;
 };
 
 

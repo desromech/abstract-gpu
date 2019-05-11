@@ -39,6 +39,7 @@ function deploy_variant($VARIANT)
     cd $PSScriptRoot\..
     if (Test-Path deploy) { rm -r -fo deploy }
     mkdir deploy/$PROJECT_NAME > $null
+    cp LICENSE ThirdPartyNotices.txt deploy/$PROJECT_NAME
     cp -R $BUILD_DIR deploy/$PROJECT_NAME/lib
     cp -R include deploy/$PROJECT_NAME/include
     cd deploy

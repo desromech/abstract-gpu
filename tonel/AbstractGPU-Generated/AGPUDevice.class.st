@@ -61,6 +61,13 @@ AGPUDevice >> createShader: type [
 ]
 
 { #category : #'wrappers' }
+AGPUDevice >> createOfflineShaderCompiler [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createOfflineShaderCompiler_device: (self validHandle).
+	^ AGPUOfflineShaderCompiler forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUDevice >> createShaderSignatureBuilder [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance createShaderSignatureBuilder_device: (self validHandle).

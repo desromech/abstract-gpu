@@ -57,6 +57,14 @@ AGPU_EXPORT agpu_bool agpuIsCrossPlatform ( agpu_platform* platform )
 	return (*dispatchTable)->agpuIsCrossPlatform ( platform );
 }
 
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompiler ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_offline_shader_compiler*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuCreateOfflineShaderCompiler ( platform );
+}
+
 AGPU_EXPORT agpu_error agpuAddDeviceReference ( agpu_device* device )
 {
 	if (device == nullptr)
@@ -119,6 +127,14 @@ AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_typ
 		return (agpu_shader*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
 	return (*dispatchTable)->agpuCreateShader ( device, type );
+}
+
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_offline_shader_compiler*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateOfflineShaderCompilerForDevice ( device );
 }
 
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device )
@@ -1271,6 +1287,94 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_s
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader);
 	return (*dispatchTable)->agpuGetShaderCompilationLog ( shader, buffer_size, buffer );
+}
+
+AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuAddOfflineShaderCompilerReference ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuReleaseOfflineShaderCompiler ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuisShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
+}
+
+AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuisTargetShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
+}
+
+AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuSetOfflineShaderCompilerSource ( offline_shader_compiler, language, stage, sourceText, sourceTextLength );
+}
+
+AGPU_EXPORT agpu_error agpuCompileOfflineShader ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuCompileOfflineShader ( offline_shader_compiler, target_language, options );
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationLogLength ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationLog ( offline_shader_compiler, buffer_size, buffer );
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationResultLength ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationResult ( offline_shader_compiler, buffer_size, buffer );
+}
+
+AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_shader*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilerResultAsShader ( offline_shader_compiler );
 }
 
 AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer )

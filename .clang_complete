@@ -5,6 +5,7 @@
 -Ithirdparty/opengl/include
 -Ithirdparty/spirv-cross
 -Ithirdparty/openvr/headers
+-Ithirdparty/glslang
 -IC:\VulkanSDK\1.1.70.1\Include
 -I/usr/include/SDL2
 -DAGPU_BUILD

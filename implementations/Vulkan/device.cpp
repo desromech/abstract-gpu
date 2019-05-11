@@ -18,6 +18,7 @@
 #include "buffer.hpp"
 #include "fence.hpp"
 #include "vr_system.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -738,6 +739,11 @@ agpu::vertex_binding_ptr AVkDevice::createVertexBinding(const agpu::vertex_layou
 agpu::shader_ptr AVkDevice::createShader(agpu_shader_type type)
 {
     return AVkShader::create(refFromThis<agpu::device> (), type).disown();
+}
+
+agpu::offline_shader_compiler_ptr AVkDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
 }
 
 agpu::shader_signature_builder_ptr AVkDevice::createShaderSignatureBuilder()

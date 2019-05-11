@@ -13,6 +13,7 @@ Class {
 		'agpu_texture',
 		'agpu_quaternionf',
 		'agpu_string_length',
+		'agpu_device_open_info',
 		'agpu_sampler_description',
 		'agpu_buffer_mapping_flags',
 		'agpu_size2d',
@@ -60,7 +61,7 @@ Class {
 		'agpu_device_open_flags',
 		'agpu_sbyte',
 		'agpu_shader_language',
-		'agpu_device_open_info',
+		'agpu_offline_shader_compiler',
 		'agpu_renderpass_color_attachment_description',
 		'agpu_polygon_mode',
 		'agpu_bool',
@@ -131,6 +132,7 @@ AGPUTypes class >> initialize [
 	agpu_texture := #'void'.
 	agpu_quaternionf := AGPUQuaternionf.
 	agpu_string_length := #'int'.
+	agpu_device_open_info := AGPUDeviceOpenInfo.
 	agpu_sampler_description := AGPUSamplerDescription.
 	agpu_buffer_mapping_flags := #int.
 	agpu_size2d := AGPUSize2d.
@@ -178,7 +180,7 @@ AGPUTypes class >> initialize [
 	agpu_device_open_flags := #int.
 	agpu_sbyte := #'char'.
 	agpu_shader_language := #int.
-	agpu_device_open_info := AGPUDeviceOpenInfo.
+	agpu_offline_shader_compiler := #'void'.
 	agpu_renderpass_color_attachment_description := AGPURenderpassColorAttachmentDescription.
 	agpu_polygon_mode := #int.
 	agpu_bool := #'int'.

@@ -60,6 +60,9 @@ if(WIN32)
 endif()
 
 add_library(AgpuVulkan SHARED ${AGPU_Vulkan_SOURCES})
-add_dependencies(AgpuVulkan openvr_embeddedapi)
+add_dependencies(AgpuVulkan openvr_embeddedapi ${AgpuCommonHighLevelInterfaces_DEPS})
 include_directories(${OPENVR_INCLUDE})
-target_link_libraries(AgpuVulkan ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES} $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS})
+target_link_libraries(AgpuVulkan
+    ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES}
+    $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS}
+    ${AgpuCommonHighLevelInterfaces_LIBS})

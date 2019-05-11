@@ -55,6 +55,7 @@ typedef struct _agpu_buffer agpu_buffer;
 typedef struct _agpu_vertex_binding agpu_vertex_binding;
 typedef struct _agpu_vertex_layout agpu_vertex_layout;
 typedef struct _agpu_shader agpu_shader;
+typedef struct _agpu_offline_shader_compiler agpu_offline_shader_compiler;
 typedef struct _agpu_framebuffer agpu_framebuffer;
 typedef struct _agpu_renderpass agpu_renderpass;
 typedef struct _agpu_shader_signature_builder agpu_shader_signature_builder;
@@ -234,6 +235,8 @@ typedef enum {
 	AGPU_SHADER_LANGUAGE_METAL = 6,
 	AGPU_SHADER_LANGUAGE_METAL_AIR = 7,
 	AGPU_SHADER_LANGUAGE_BINARY = 8,
+	AGPU_SHADER_LANGUAGE_SPIR_VASSEMBLY = 9,
+	AGPU_SHADER_LANGUAGE_DEVICE_SHADER = 10,
 } agpu_shader_language;
 
 typedef enum {
@@ -836,6 +839,7 @@ typedef agpu_int (*agpuGetPlatformImplementationVersion_FUN) (agpu_platform* pla
 typedef agpu_bool (*agpuPlatformHasRealMultithreading_FUN) (agpu_platform* platform);
 typedef agpu_bool (*agpuIsNativePlatform_FUN) (agpu_platform* platform);
 typedef agpu_bool (*agpuIsCrossPlatform_FUN) (agpu_platform* platform);
+typedef agpu_offline_shader_compiler* (*agpuCreateOfflineShaderCompiler_FUN) (agpu_platform* platform);
 
 AGPU_EXPORT agpu_device* agpuOpenDevice(agpu_platform* platform, agpu_device_open_info* openInfo);
 AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* platform);
@@ -844,6 +848,7 @@ AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platfor
 AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform);
 AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform);
 AGPU_EXPORT agpu_bool agpuIsCrossPlatform(agpu_platform* platform);
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompiler(agpu_platform* platform);
 
 /* Methods for interface agpu_device. */
 typedef agpu_error (*agpuAddDeviceReference_FUN) (agpu_device* device);
@@ -854,6 +859,7 @@ typedef agpu_buffer* (*agpuCreateBuffer_FUN) (agpu_device* device, agpu_buffer_d
 typedef agpu_vertex_layout* (*agpuCreateVertexLayout_FUN) (agpu_device* device);
 typedef agpu_vertex_binding* (*agpuCreateVertexBinding_FUN) (agpu_device* device, agpu_vertex_layout* layout);
 typedef agpu_shader* (*agpuCreateShader_FUN) (agpu_device* device, agpu_shader_type type);
+typedef agpu_offline_shader_compiler* (*agpuCreateOfflineShaderCompilerForDevice_FUN) (agpu_device* device);
 typedef agpu_shader_signature_builder* (*agpuCreateShaderSignatureBuilder_FUN) (agpu_device* device);
 typedef agpu_pipeline_builder* (*agpuCreatePipelineBuilder_FUN) (agpu_device* device);
 typedef agpu_compute_pipeline_builder* (*agpuCreateComputePipelineBuilder_FUN) (agpu_device* device);
@@ -880,6 +886,7 @@ AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_descr
 AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device);
 AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout* layout);
 AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type type);
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* device);
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device);
 AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device);
 AGPU_EXPORT agpu_compute_pipeline_builder* agpuCreateComputePipelineBuilder(agpu_device* device);
@@ -1191,6 +1198,31 @@ AGPU_EXPORT agpu_error agpuCompileShader(agpu_shader* shader, agpu_cstring optio
 AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength(agpu_shader* shader);
 AGPU_EXPORT agpu_error agpuGetShaderCompilationLog(agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer);
 
+/* Methods for interface agpu_offline_shader_compiler. */
+typedef agpu_error (*agpuAddOfflineShaderCompilerReference_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
+typedef agpu_error (*agpuReleaseOfflineShaderCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
+typedef agpu_bool (*agpuisShaderLanguageSupportedByOfflineCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+typedef agpu_bool (*agpuisTargetShaderLanguageSupportedByOfflineCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+typedef agpu_error (*agpuSetOfflineShaderCompilerSource_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength);
+typedef agpu_error (*agpuCompileOfflineShader_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options);
+typedef agpu_size (*agpuGetOfflineShaderCompilationLogLength_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
+typedef agpu_error (*agpuGetOfflineShaderCompilationLog_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer);
+typedef agpu_size (*agpuGetOfflineShaderCompilationResultLength_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
+typedef agpu_error (*agpuGetOfflineShaderCompilationResult_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer);
+typedef agpu_shader* (*agpuGetOfflineShaderCompilerResultAsShader_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
+
+AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference(agpu_offline_shader_compiler* offline_shader_compiler);
+AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler(agpu_offline_shader_compiler* offline_shader_compiler);
+AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength);
+AGPU_EXPORT agpu_error agpuCompileOfflineShader(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options);
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength(agpu_offline_shader_compiler* offline_shader_compiler);
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog(agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer);
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength(agpu_offline_shader_compiler* offline_shader_compiler);
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult(agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer);
+AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader(agpu_offline_shader_compiler* offline_shader_compiler);
+
 /* Methods for interface agpu_framebuffer. */
 typedef agpu_error (*agpuAddFramebufferReference_FUN) (agpu_framebuffer* framebuffer);
 typedef agpu_error (*agpuReleaseFramebuffer_FUN) (agpu_framebuffer* framebuffer);
@@ -1280,6 +1312,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuPlatformHasRealMultithreading_FUN agpuPlatformHasRealMultithreading;
 	agpuIsNativePlatform_FUN agpuIsNativePlatform;
 	agpuIsCrossPlatform_FUN agpuIsCrossPlatform;
+	agpuCreateOfflineShaderCompiler_FUN agpuCreateOfflineShaderCompiler;
 	agpuAddDeviceReference_FUN agpuAddDeviceReference;
 	agpuReleaseDevice_FUN agpuReleaseDevice;
 	agpuGetDefaultCommandQueue_FUN agpuGetDefaultCommandQueue;
@@ -1288,6 +1321,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateVertexLayout_FUN agpuCreateVertexLayout;
 	agpuCreateVertexBinding_FUN agpuCreateVertexBinding;
 	agpuCreateShader_FUN agpuCreateShader;
+	agpuCreateOfflineShaderCompilerForDevice_FUN agpuCreateOfflineShaderCompilerForDevice;
 	agpuCreateShaderSignatureBuilder_FUN agpuCreateShaderSignatureBuilder;
 	agpuCreatePipelineBuilder_FUN agpuCreatePipelineBuilder;
 	agpuCreateComputePipelineBuilder_FUN agpuCreateComputePipelineBuilder;
@@ -1432,6 +1466,17 @@ typedef struct _agpu_icd_dispatch {
 	agpuCompileShader_FUN agpuCompileShader;
 	agpuGetShaderCompilationLogLength_FUN agpuGetShaderCompilationLogLength;
 	agpuGetShaderCompilationLog_FUN agpuGetShaderCompilationLog;
+	agpuAddOfflineShaderCompilerReference_FUN agpuAddOfflineShaderCompilerReference;
+	agpuReleaseOfflineShaderCompiler_FUN agpuReleaseOfflineShaderCompiler;
+	agpuisShaderLanguageSupportedByOfflineCompiler_FUN agpuisShaderLanguageSupportedByOfflineCompiler;
+	agpuisTargetShaderLanguageSupportedByOfflineCompiler_FUN agpuisTargetShaderLanguageSupportedByOfflineCompiler;
+	agpuSetOfflineShaderCompilerSource_FUN agpuSetOfflineShaderCompilerSource;
+	agpuCompileOfflineShader_FUN agpuCompileOfflineShader;
+	agpuGetOfflineShaderCompilationLogLength_FUN agpuGetOfflineShaderCompilationLogLength;
+	agpuGetOfflineShaderCompilationLog_FUN agpuGetOfflineShaderCompilationLog;
+	agpuGetOfflineShaderCompilationResultLength_FUN agpuGetOfflineShaderCompilationResultLength;
+	agpuGetOfflineShaderCompilationResult_FUN agpuGetOfflineShaderCompilationResult;
+	agpuGetOfflineShaderCompilerResultAsShader_FUN agpuGetOfflineShaderCompilerResultAsShader;
 	agpuAddFramebufferReference_FUN agpuAddFramebufferReference;
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
 	agpuAddRenderPassReference_FUN agpuAddRenderPassReference;
