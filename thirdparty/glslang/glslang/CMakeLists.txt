@@ -85,7 +85,7 @@ glslang_pch(SOURCES MachineIndependent/pch.cpp)
 add_library(glslang ${LIB_TYPE} ${BISON_GLSLParser_OUTPUT_SOURCE} ${SOURCES} ${HEADERS})
 set_property(TARGET glslang PROPERTY FOLDER glslang)
 set_property(TARGET glslang PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(glslang OGLCompiler OSDependent)
+#target_link_libraries(glslang OGLCompiler OSDependent)
 target_include_directories(glslang PUBLIC ..)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
@@ -93,7 +93,7 @@ if(WIN32 AND BUILD_SHARED_LIBS)
 endif()
 
 if(ENABLE_HLSL)
-    target_link_libraries(glslang HLSL)
+    #target_link_libraries(glslang HLSL)
 endif()
 
 if(WIN32)

@@ -53,7 +53,7 @@ if(BUILD_TESTING)
         if(ENABLE_HLSL)
             set(LIBRARIES ${LIBRARIES} HLSL)
         endif(ENABLE_HLSL)
-        target_link_libraries(glslangtests PRIVATE ${LIBRARIES} gmock)
+        #target_link_libraries(glslangtests PRIVATE ${LIBRARIES} gmock)
 
         add_test(NAME glslang-gtests
                  COMMAND glslangtests --test-root "${GLSLANG_TEST_DIRECTORY}")

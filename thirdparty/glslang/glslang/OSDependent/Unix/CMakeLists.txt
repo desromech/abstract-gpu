@@ -11,12 +11,12 @@ if(${CMAKE_VERSION} VERSION_LESS "3.1.0" OR CMAKE_CROSSCOMPILING)
     # Also needed when cross-compiling to work around
     # https://gitlab.kitware.com/cmake/cmake/issues/16920
     find_package(Threads)
-    target_link_libraries(OSDependent ${CMAKE_THREAD_LIBS_INIT})
+    #target_link_libraries(OSDependent ${CMAKE_THREAD_LIBS_INIT})
 else()
     # This is the recommended way, so we use it for 3.1+.
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads)
-    target_link_libraries(OSDependent Threads::Threads)
+    #target_link_libraries(OSDependent Threads::Threads)
 endif()
 
 if(ENABLE_GLSLANG_INSTALL)

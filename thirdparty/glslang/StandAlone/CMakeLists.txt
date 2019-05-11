@@ -32,8 +32,8 @@ elseif(UNIX)
     endif()
 endif(WIN32)
 
-target_link_libraries(glslangValidator ${LIBRARIES})
-target_link_libraries(spirv-remap ${LIBRARIES})
+#target_link_libraries(glslangValidator ${LIBRARIES})
+#target_link_libraries(spirv-remap ${LIBRARIES})
 target_include_directories(glslangValidator PUBLIC ../External)
 
 if(WIN32)
