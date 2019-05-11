@@ -20,5 +20,14 @@ set(AgpuCommonHighLevelInterfaces_LIBS
     $<TARGET_OBJECTS:glslang>
     $<TARGET_OBJECTS:glslang-default-resource-limits>
     $<TARGET_OBJECTS:SPIRV>
+PARENT_SCOPE)
 
+set(AgpuCommonHighLevelInterfaces_DEPS
+    AgpuCommonHighLevelInterfaces
+    OSDependent
+    OGLCompiler
+    HLSL
+    glslang
+    glslang-default-resource-limits
+    SPIRV
 PARENT_SCOPE)

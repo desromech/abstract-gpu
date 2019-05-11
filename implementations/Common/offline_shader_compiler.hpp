@@ -3,6 +3,7 @@
 
 #include <AGPU/agpu_impl.hpp>
 #include <vector>
+#include <string>
 
 namespace AgpuCommon
 {
