@@ -12,6 +12,8 @@ foreach(Config ${CMAKE_CONFIGURATION_TYPES} )
     set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
 endforeach()
 
+add_subdirectory(Common)
+
 if(D3D12_FOUND AND BUILD_D3D12)
     add_subdirectory(Direct3D12)
 endif()

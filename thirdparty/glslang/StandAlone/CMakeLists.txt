@@ -1,4 +1,4 @@
-add_library(glslang-default-resource-limits
+add_library(glslang-default-resource-limits OBJECT
             ${CMAKE_CURRENT_SOURCE_DIR}/ResourceLimits.cpp)
 set_property(TARGET glslang-default-resource-limits PROPERTY FOLDER glslang)
 set_property(TARGET glslang-default-resource-limits PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -7,6 +7,7 @@ target_include_directories(glslang-default-resource-limits
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                            PUBLIC ${PROJECT_SOURCE_DIR})
 
+if(FALSE)
 set(SOURCES StandAlone.cpp DirStackFileIncluder.h)
 set(REMAPPER_SOURCES spirv-remap.cpp)
 
@@ -45,9 +46,10 @@ if(ENABLE_GLSLANG_INSTALL)
 
     install(TARGETS spirv-remap
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-            
+
     if(BUILD_SHARED_LIBS)
         install(TARGETS glslang-default-resource-limits
                 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
 endif(ENABLE_GLSLANG_INSTALL)
+endif()

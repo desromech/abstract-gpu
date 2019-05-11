@@ -17,6 +17,8 @@ if(BUILD_SHARED_LIBS)
     set(LIB_TYPE SHARED)
 endif()
 
+set(LIB_TYPE OBJECT)
+
 option(SKIP_GLSLANG_INSTALL "Skip installation" ${SKIP_GLSLANG_INSTALL})
 if(NOT ${SKIP_GLSLANG_INSTALL})
   set(ENABLE_GLSLANG_INSTALL ON)
@@ -24,7 +26,8 @@ endif()
 option(ENABLE_SPVREMAPPER "Enables building of SPVRemapper" ON)
 
 option(ENABLE_AMD_EXTENSIONS "Enables support of AMD-specific extensions" ON)
-option(ENABLE_GLSLANG_BINARIES "Builds glslangValidator and spirv-remap" ON)
+#option(ENABLE_GLSLANG_BINARIES "Builds glslangValidator and spirv-remap" OFF)
+set(ENABLE_GLSLANG_BINARIES OFF)
 
 option(ENABLE_NV_EXTENSIONS "Enables support of Nvidia-specific extensions" ON)
 
@@ -139,9 +142,7 @@ endif()
 
 add_subdirectory(glslang)
 add_subdirectory(OGLCompilersDLL)
-if(ENABLE_GLSLANG_BINARIES)
-    add_subdirectory(StandAlone)
-endif()
+add_subdirectory(StandAlone)
 add_subdirectory(SPIRV)
 if(ENABLE_HLSL)
     add_subdirectory(hlsl)

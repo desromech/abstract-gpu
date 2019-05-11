@@ -488,6 +488,8 @@
             <constant name="ShaderLanguageMetal" value="6" />
             <constant name="ShaderLanguageMetalAir" value="7" />
             <constant name="ShaderLanguageBinary" value="8" />
+            <constant name="ShaderLanguageSpirVAssembly" value="9" />
+            <constant name="ShaderLanguageDeviceShader" value="10" />
 		</enum>
 
         <enum name="field_type">
@@ -851,6 +853,9 @@
 
             <method name="isCrossPlatform" cname="IsCrossPlatform" returnType="bool">
             </method>
+
+            <method name="createOfflineShaderCompiler" cname="CreateOfflineShaderCompiler" returnType="offline_shader_compiler*">
+            </method>
         </interface>
 
         <interface name="device">
@@ -882,6 +887,9 @@
 
             <method name="createShader" cname="CreateShader" returnType="shader*">
                 <arg name="type" type="shader_type" />
+            </method>
+
+            <method name="createOfflineShaderCompiler" cname="CreateOfflineShaderCompilerForDevice" returnType="offline_shader_compiler*">
             </method>
 
             <method name="createShaderSignatureBuilder" cname="CreateShaderSignatureBuilder" returnType="shader_signature_builder*">
@@ -1549,6 +1557,54 @@
                 <arg name="buffer_size" type="size" />
                 <arg name="buffer" type="string_buffer" />
             </method>
+        </interface>
+
+        <interface name="offline_shader_compiler">
+            <method name="addReference" cname="AddOfflineShaderCompilerReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseOfflineShaderCompiler" returnType="error">
+            </method>
+
+            <method name="isShaderLanguageSupported" cname="isShaderLanguageSupportedByOfflineCompiler" returnType="bool">
+                <arg name="language" type="shader_language" />
+            </method>
+
+            <method name="isTargetShaderLanguageSupported" cname="isTargetShaderLanguageSupportedByOfflineCompiler" returnType="bool">
+                <arg name="language" type="shader_language" />
+            </method>
+
+            <method name="setShaderSource" cname="SetOfflineShaderCompilerSource" returnType="error">
+                <arg name="language" type="shader_language" />
+                <arg name="stage" type="shader_type" />
+                <arg name="sourceText" type="string" />
+                <arg name="sourceTextLength" type="string_length" />
+            </method>
+
+            <method name="compileShader" cname="CompileOfflineShader" returnType="error">
+                <arg name="target_language" type="shader_language" />
+                <arg name="options" type="cstring" />
+            </method>
+
+            <method name="getCompilationLogLength" cname="GetOfflineShaderCompilationLogLength" returnType="size">
+            </method>
+
+            <method name="getCompilationLog" cname="GetOfflineShaderCompilationLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="getCompilationResultLength" cname="GetOfflineShaderCompilationResultLength" returnType="size">
+            </method>
+
+            <method name="getCompilationResult" cname="GetOfflineShaderCompilationResult" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="getResultAsShader" cname="GetOfflineShaderCompilerResultAsShader" returnType="shader*">
+            </method>
+
         </interface>
 
         <interface name="framebuffer">

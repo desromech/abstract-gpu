@@ -52,4 +52,6 @@ add_definitions(-DAGPU_BUILD)
 
 add_library(AgpuOpenGL SHARED ${AGPU_OpenGL_SOURCES})
 add_dependencies(AgpuOpenGL spirv-cross-core spirv-cross-glsl)
-target_link_libraries(AgpuOpenGL ${OPENGL_gl_LIBRARY} $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl>)
+target_link_libraries(AgpuOpenGL
+    ${OPENGL_gl_LIBRARY} $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl>
+    ${AgpuCommonHighLevelInterfaces_LIBS})

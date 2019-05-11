@@ -17,6 +17,7 @@
 #include "swap_chain.hpp"
 #include "texture.hpp"
 #include "fence.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -386,6 +387,11 @@ agpu::vertex_binding_ptr GLDevice::createVertexBinding(const agpu::vertex_layout
 agpu::shader_ptr GLDevice::createShader(agpu_shader_type type)
 {
 	return GLShader::createShader(refFromThis<agpu::device> (), type).disown();
+}
+
+agpu::offline_shader_compiler_ptr GLDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
 }
 
 agpu::shader_signature_builder_ptr GLDevice::createShaderSignatureBuilder()

@@ -42,8 +42,8 @@ public:
             return false;
 
         // Create the programs.
-        auto vertexShader = compileShaderFromFile("data/shaders/texturedVertex", AGPU_VERTEX_SHADER);
-        auto fragmentShader = compileShaderFromFile("data/shaders/texturedFragment", AGPU_FRAGMENT_SHADER);
+        auto vertexShader = compileShaderFromFile("data/shaders/texturedVertex.glsl", AGPU_VERTEX_SHADER);
+        auto fragmentShader = compileShaderFromFile("data/shaders/texturedFragment.glsl", AGPU_FRAGMENT_SHADER);
         if (!vertexShader || !fragmentShader)
             return false;
 

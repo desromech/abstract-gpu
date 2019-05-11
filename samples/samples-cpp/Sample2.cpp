@@ -41,8 +41,8 @@ public:
 
         {
             // Create the programs.
-            agpu_shader_ref vertexShader = compileShaderFromFile("data/shaders/simpleVertex", AGPU_VERTEX_SHADER);
-            agpu_shader_ref fragmentShader = compileShaderFromFile("data/shaders/simpleFragment", AGPU_FRAGMENT_SHADER);
+            agpu_shader_ref vertexShader = compileShaderFromFile("data/shaders/simpleVertex.glsl", AGPU_VERTEX_SHADER);
+            agpu_shader_ref fragmentShader = compileShaderFromFile("data/shaders/simpleFragment.glsl", AGPU_FRAGMENT_SHADER);
             if (!vertexShader || !fragmentShader)
                 return false;
 

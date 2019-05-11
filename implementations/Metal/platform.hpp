@@ -20,6 +20,7 @@ public:
 	virtual agpu_bool hasRealMultithreading() override;
 	virtual agpu_bool isNative() override;
 	virtual agpu_bool isCrossPlatform() override;
+    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
 };
 
 } // End of namespace AgpuMetal

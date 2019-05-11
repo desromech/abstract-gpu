@@ -71,50 +71,28 @@ std::string readWholeFile(const std::string &fileName)
 
 agpu_shader_ref AbstractSampleBase::compileShaderFromFile(const char *fileName, agpu_shader_type type)
 {
-    // Read the source file
-    std::string fullName = fileName;
-    switch (preferredShaderLanguage)
-    {
-    case AGPU_SHADER_LANGUAGE_GLSL:
-        fullName += ".glsl";
-        break;
-    case AGPU_SHADER_LANGUAGE_HLSL:
-        fullName += ".hlsl";
-        break;
-    case AGPU_SHADER_LANGUAGE_BINARY:
-        fullName += ".cso";
-        break;
-    case AGPU_SHADER_LANGUAGE_SPIR_V:
-        fullName += ".spv";
-        break;
-    case AGPU_SHADER_LANGUAGE_METAL:
-        fullName += ".metal";
-        break;
-    default:
-        break;
-    }
-
-    auto source = readWholeFile(fullName);
+    auto source = readWholeFile(fileName);
     if(source.empty())
         return nullptr;
 
-    // Create the shader and compile it.
-    agpu_shader_ref shader = device->createShader(type);
-    shader->setShaderSource(preferredShaderLanguage, source.c_str(), (agpu_string_length)source.size());
+    // Create the shader compiler.
+    agpu_offline_shader_compiler_ref shaderCompiler = device->createOfflineShaderCompiler();
+    shaderCompiler->setShaderSource(AGPU_SHADER_LANGUAGE_VGLSL, type, source.c_str(), (agpu_string_length)source.size());
     try
     {
-        shader->compileShader(nullptr);
+        shaderCompiler->compileShader(AGPU_SHADER_LANGUAGE_DEVICE_SHADER, nullptr);
     }
     catch(agpu_exception &e)
     {
-        auto logLength = shader->getCompilationLogLength();
+        auto logLength = shaderCompiler->getCompilationLogLength();
         std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
-        shader->getCompilationLog(logLength+1, logBuffer.get());
-        printError("Compilation error of '%s':%s\n", fullName.c_str(), logBuffer.get());
+        shaderCompiler->getCompilationLog(logLength+1, logBuffer.get());
+        printError("Compilation error of '%s':%s\n", fileName, logBuffer.get());
         return nullptr;
     }
 
-    return shader;
+    // Create the shader and compile it.
+    return shaderCompiler->getResultAsShader();
 }
 
 agpu_pipeline_state_ref AbstractSampleBase::buildPipeline(const agpu_pipeline_builder_ref &builder)

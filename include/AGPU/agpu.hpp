@@ -159,6 +159,11 @@ public:
 		return agpuIsCrossPlatform(this);
 	}
 
+	inline agpu_offline_shader_compiler* createOfflineShaderCompiler()
+	{
+		return agpuCreateOfflineShaderCompiler(this);
+	}
+
 };
 
 typedef agpu_ref<agpu_platform> agpu_platform_ref;
@@ -208,6 +213,11 @@ public:
 	inline agpu_shader* createShader(agpu_shader_type type)
 	{
 		return agpuCreateShader(this, type);
+	}
+
+	inline agpu_offline_shader_compiler* createOfflineShaderCompiler()
+	{
+		return agpuCreateOfflineShaderCompilerForDevice(this);
 	}
 
 	inline agpu_shader_signature_builder* createShaderSignatureBuilder()
@@ -1076,6 +1086,72 @@ public:
 };
 
 typedef agpu_ref<agpu_shader> agpu_shader_ref;
+
+// Interface wrapper for agpu_offline_shader_compiler.
+struct _agpu_offline_shader_compiler
+{
+private:
+	_agpu_offline_shader_compiler() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddOfflineShaderCompilerReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseOfflineShaderCompiler(this));
+	}
+
+	inline agpu_bool isShaderLanguageSupported(agpu_shader_language language)
+	{
+		return agpuisShaderLanguageSupportedByOfflineCompiler(this, language);
+	}
+
+	inline agpu_bool isTargetShaderLanguageSupported(agpu_shader_language language)
+	{
+		return agpuisTargetShaderLanguageSupportedByOfflineCompiler(this, language);
+	}
+
+	inline void setShaderSource(agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength)
+	{
+		agpuThrowIfFailed(agpuSetOfflineShaderCompilerSource(this, language, stage, sourceText, sourceTextLength));
+	}
+
+	inline void compileShader(agpu_shader_language target_language, agpu_cstring options)
+	{
+		agpuThrowIfFailed(agpuCompileOfflineShader(this, target_language, options));
+	}
+
+	inline agpu_size getCompilationLogLength()
+	{
+		return agpuGetOfflineShaderCompilationLogLength(this);
+	}
+
+	inline void getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
+	{
+		agpuThrowIfFailed(agpuGetOfflineShaderCompilationLog(this, buffer_size, buffer));
+	}
+
+	inline agpu_size getCompilationResultLength()
+	{
+		return agpuGetOfflineShaderCompilationResultLength(this);
+	}
+
+	inline void getCompilationResult(agpu_size buffer_size, agpu_string_buffer buffer)
+	{
+		agpuThrowIfFailed(agpuGetOfflineShaderCompilationResult(this, buffer_size, buffer));
+	}
+
+	inline agpu_shader* getResultAsShader()
+	{
+		return agpuGetOfflineShaderCompilerResultAsShader(this);
+	}
+
+};
+
+typedef agpu_ref<agpu_offline_shader_compiler> agpu_offline_shader_compiler_ref;
 
 // Interface wrapper for agpu_framebuffer.
 struct _agpu_framebuffer

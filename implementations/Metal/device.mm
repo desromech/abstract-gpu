@@ -14,10 +14,11 @@
 #include "vertex_layout.hpp"
 #include "vertex_binding.hpp"
 #include "texture.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
 namespace AgpuMetal
 {
-    
+
 AMtlDevice::AMtlDevice()
 {
 }
@@ -57,11 +58,11 @@ agpu_bool AMtlDevice::isFeatureSupported(agpu_feature feature)
     case AGPU_FEATURE_COHERENT_MEMORY_MAPPING:
     case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING:
         return true;
-        
+
     case AGPU_FEATURE_COMMAND_LIST_REUSE:
     case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE:
         return false;
-        
+
     default:
         return false;
     }
@@ -100,6 +101,11 @@ agpu::vertex_binding_ptr AMtlDevice::createVertexBinding(const agpu::vertex_layo
 agpu::shader_ptr AMtlDevice::createShader(agpu_shader_type type)
 {
     return AMtlShader::create(refFromThis<agpu::device> (), type).disown();
+}
+
+agpu::offline_shader_compiler_ptr AMtlDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
 }
 
 agpu::shader_signature_builder_ptr AMtlDevice::createShaderSignatureBuilder()

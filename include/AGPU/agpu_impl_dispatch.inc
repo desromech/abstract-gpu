@@ -48,6 +48,11 @@ AGPU_EXPORT agpu_bool agpuIsCrossPlatform(agpu_platform* self)
 	return asRef(agpu::platform, self)->isCrossPlatform();
 }
 
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompiler(agpu_platform* self)
+{
+	return reinterpret_cast<agpu_offline_shader_compiler*> (asRef(agpu::platform, self)->createOfflineShaderCompiler());
+}
+
 //==============================================================================
 // device C dispatching functions.
 //==============================================================================
@@ -92,6 +97,11 @@ AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* self, agpu
 AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* self, agpu_shader_type type)
 {
 	return reinterpret_cast<agpu_shader*> (asRef(agpu::device, self)->createShader(type));
+}
+
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* self)
+{
+	return reinterpret_cast<agpu_offline_shader_compiler*> (asRef(agpu::device, self)->createOfflineShaderCompiler());
 }
 
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* self)
@@ -976,6 +986,71 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog(agpu_shader* self, agpu_size 
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::shader, self)->getCompilationLog(buffer_size, buffer);
+}
+
+//==============================================================================
+// offline_shader_compiler C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference(agpu_offline_shader_compiler* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::offline_shader_compiler, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler(agpu_offline_shader_compiler* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::offline_shader_compiler, self)->release();
+}
+
+AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
+{
+	return asRef(agpu::offline_shader_compiler, self)->isShaderLanguageSupported(language);
+}
+
+AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
+{
+	return asRef(agpu::offline_shader_compiler, self)->isTargetShaderLanguageSupported(language);
+}
+
+AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource(agpu_offline_shader_compiler* self, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->setShaderSource(language, stage, sourceText, sourceTextLength);
+}
+
+AGPU_EXPORT agpu_error agpuCompileOfflineShader(agpu_offline_shader_compiler* self, agpu_shader_language target_language, agpu_cstring options)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->compileShader(target_language, options);
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength(agpu_offline_shader_compiler* self)
+{
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationLogLength();
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog(agpu_offline_shader_compiler* self, agpu_size buffer_size, agpu_string_buffer buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationLog(buffer_size, buffer);
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength(agpu_offline_shader_compiler* self)
+{
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationResultLength();
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult(agpu_offline_shader_compiler* self, agpu_size buffer_size, agpu_string_buffer buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationResult(buffer_size, buffer);
+}
+
+AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader(agpu_offline_shader_compiler* self)
+{
+	return reinterpret_cast<agpu_shader*> (asRef(agpu::offline_shader_compiler, self)->getResultAsShader());
 }
 
 //==============================================================================

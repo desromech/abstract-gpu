@@ -70,46 +70,26 @@ std::string readWholeFile(const std::string &fileName)
 
 agpu_shader *AbstractSampleBase::compileShaderFromFile(const char *fileName, agpu_shader_type type)
 {
-    // Read the source file
-    std::string fullName = fileName;
-    switch (preferredShaderLanguage)
-    {
-    case AGPU_SHADER_LANGUAGE_GLSL:
-        fullName += ".glsl";
-        break;
-    case AGPU_SHADER_LANGUAGE_HLSL:
-        fullName += ".hlsl";
-        break;
-    case AGPU_SHADER_LANGUAGE_BINARY:
-        fullName += ".cso";
-        break;
-    case AGPU_SHADER_LANGUAGE_SPIR_V:
-        fullName += ".spv";
-        break;
-    case AGPU_SHADER_LANGUAGE_METAL:
-        fullName += ".metal";
-        break;
-    default:
-        break;
-    }
-
-    auto source = readWholeFile(fullName);
+    auto source = readWholeFile(fileName);
     if(source.empty())
         return nullptr;
 
-    // Create the shader and compile it.
-    auto shader = agpuCreateShader(device, type);
-    agpuSetShaderSource(shader, preferredShaderLanguage, source.c_str(), (agpu_string_length)source.size());
-    if(agpuCompileShader(shader, nullptr) != AGPU_OK)
+    // Create the offline shader compiler.
+    auto shaderCompiler = agpuCreateOfflineShaderCompilerForDevice(device);
+    agpuSetOfflineShaderCompilerSource(shaderCompiler, AGPU_SHADER_LANGUAGE_GLSL, type, source.c_str(), (agpu_string_length)source.size());
+    if(agpuCompileOfflineShader(shaderCompiler, AGPU_SHADER_LANGUAGE_DEVICE_SHADER, nullptr) != AGPU_OK)
     {
-        auto logLength = agpuGetShaderCompilationLogLength(shader);
+        auto logLength = agpuGetOfflineShaderCompilationLogLength(shaderCompiler);
         std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
-        agpuGetShaderCompilationLog(shader, logLength+1, logBuffer.get());
-        agpuReleaseShader(shader);
-        printError("Compilation error of '%s':%s\n", fullName.c_str(), logBuffer.get());
+        agpuGetOfflineShaderCompilationLog(shaderCompiler, logLength+1, logBuffer.get());
+        agpuReleaseOfflineShaderCompiler(shaderCompiler);
+        printError("Compilation error of '%s':%s\n", fileName, logBuffer.get());
         return nullptr;
     }
 
+    // Get the shader result.
+    auto shader = agpuGetOfflineShaderCompilerResultAsShader(shaderCompiler);
+    agpuReleaseOfflineShaderCompiler(shaderCompiler);
     return shader;
 }
 
@@ -482,7 +462,7 @@ int ComputeSampleBase::main(int argc, const char **argv)
         printError("Failed to open the device\n");
         return false;
     }
-	
+
 	hasPersistentCoherentMapping = agpuIsFeatureSupportedOnDevice(device, AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
 
     // Get the default command queue
@@ -496,7 +476,7 @@ int ComputeSampleBase::main(int argc, const char **argv)
         if(preferredShaderLanguage == AGPU_SHADER_LANGUAGE_NONE)
             preferredShaderLanguage = agpuGetPreferredShaderLanguage(device);
     }
-    
+
     return run(argc, argv);
 }
 

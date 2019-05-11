@@ -43,6 +43,11 @@ AGPUCBindings >> isCrossPlatform_platform: platform [
 	^ self ffiCall: #(agpu_bool agpuIsCrossPlatform (agpu_platform* platform) )
 ]
 
+{ #category : #'platform' }
+AGPUCBindings >> createOfflineShaderCompiler_platform: platform [
+	^ self ffiCall: #(agpu_offline_shader_compiler* agpuCreateOfflineShaderCompiler (agpu_platform* platform) )
+]
+
 { #category : #'device' }
 AGPUCBindings >> addReference_device: device [
 	^ self ffiCall: #(agpu_error agpuAddDeviceReference (agpu_device* device) )
@@ -81,6 +86,11 @@ AGPUCBindings >> createVertexBinding_device: device layout: layout [
 { #category : #'device' }
 AGPUCBindings >> createShader_device: device type: type [
 	^ self ffiCall: #(agpu_shader* agpuCreateShader (agpu_device* device , agpu_shader_type type) )
+]
+
+{ #category : #'device' }
+AGPUCBindings >> createOfflineShaderCompiler_device: device [
+	^ self ffiCall: #(agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice (agpu_device* device) )
 ]
 
 { #category : #'device' }
@@ -801,6 +811,61 @@ AGPUCBindings >> getCompilationLogLength_shader: shader [
 { #category : #'shader' }
 AGPUCBindings >> getCompilationLog_shader: shader buffer_size: buffer_size buffer: buffer [
 	^ self ffiCall: #(agpu_error agpuGetShaderCompilationLog (agpu_shader* shader , agpu_size buffer_size , agpu_string_buffer buffer) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> addReference_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_error agpuAddOfflineShaderCompilerReference (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> release_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_error agpuReleaseOfflineShaderCompiler (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> isShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
+	^ self ffiCall: #(agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> isTargetShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
+	^ self ffiCall: #(agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> setShaderSource_offline_shader_compiler: offline_shader_compiler language: language stage: stage sourceText: sourceText sourceTextLength: sourceTextLength [
+	^ self ffiCall: #(agpu_error agpuSetOfflineShaderCompilerSource (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language , agpu_shader_type stage , agpu_string sourceText , agpu_string_length sourceTextLength) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> compileShader_offline_shader_compiler: offline_shader_compiler target_language: target_language options: options [
+	^ self ffiCall: #(agpu_error agpuCompileOfflineShader (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language target_language , agpu_cstring options) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationLogLength_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_size agpuGetOfflineShaderCompilationLogLength (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationLog_offline_shader_compiler: offline_shader_compiler buffer_size: buffer_size buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuGetOfflineShaderCompilationLog (agpu_offline_shader_compiler* offline_shader_compiler , agpu_size buffer_size , agpu_string_buffer buffer) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationResultLength_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_size agpuGetOfflineShaderCompilationResultLength (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationResult_offline_shader_compiler: offline_shader_compiler buffer_size: buffer_size buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuGetOfflineShaderCompilationResult (agpu_offline_shader_compiler* offline_shader_compiler , agpu_size buffer_size , agpu_string_buffer buffer) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getResultAsShader_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_shader* agpuGetOfflineShaderCompilerResultAsShader (agpu_offline_shader_compiler* offline_shader_compiler) )
 ]
 
 { #category : #'framebuffer' }

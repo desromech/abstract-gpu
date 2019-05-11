@@ -41,6 +41,7 @@ echo "Creating archive ${ARCHIVE_NAME}"
 # Copy the artifacts into a subtree in deploy
 rm -rf deploy
 mkdir -vp deploy/$PROJECT_NAME || exit 1
+cp -v LICENSE ThirdPartyNotices.txt deploy/$PROJECT_NAME || exit 1
 cp -Rv build/dist deploy/$PROJECT_NAME/lib || exit 1
 cp -Rv include deploy/$PROJECT_NAME/include || exit 1
 cd deploy

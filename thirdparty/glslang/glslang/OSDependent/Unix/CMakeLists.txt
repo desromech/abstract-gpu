@@ -1,4 +1,4 @@
-add_library(OSDependent STATIC ossource.cpp ../osinclude.h)
+add_library(OSDependent OBJECT ossource.cpp ../osinclude.h)
 set_property(TARGET OSDependent PROPERTY FOLDER glslang)
 set_property(TARGET OSDependent PROPERTY POSITION_INDEPENDENT_CODE ON)
 

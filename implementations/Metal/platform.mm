@@ -1,5 +1,6 @@
 #include "platform.hpp"
 #include "device.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
 namespace AgpuMetal
 {
@@ -47,6 +48,11 @@ agpu_bool MetalPlatform::isNative()
 agpu_bool MetalPlatform::isCrossPlatform()
 {
     return false;
+}
+
+agpu::offline_shader_compiler_ptr MetalPlatform::createOfflineShaderCompiler()
+{
+    return AgpuCommon::GLSLangOfflineShaderCompiler::create().disown();
 }
 
 } // End of namespace AgpuMetal

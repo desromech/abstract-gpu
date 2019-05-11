@@ -53,3 +53,10 @@ AGPUPlatform >> isCrossPlatform [
 	^ resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUPlatform >> createOfflineShaderCompiler [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createOfflineShaderCompiler_platform: (self validHandle).
+	^ AGPUOfflineShaderCompiler forHandle: resultValue_
+]
+
