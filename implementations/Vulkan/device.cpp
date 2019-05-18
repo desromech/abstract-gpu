@@ -19,6 +19,7 @@
 #include "fence.hpp"
 #include "vr_system.hpp"
 #include "../Common/offline_shader_compiler.hpp"
+#include "../Common/state_tracker_cache.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -741,11 +742,6 @@ agpu::shader_ptr AVkDevice::createShader(agpu_shader_type type)
     return AVkShader::create(refFromThis<agpu::device> (), type).disown();
 }
 
-agpu::offline_shader_compiler_ptr AVkDevice::createOfflineShaderCompiler()
-{
-	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
-}
-
 agpu::shader_signature_builder_ptr AVkDevice::createShaderSignatureBuilder()
 {
     return AVkShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
@@ -824,6 +820,16 @@ agpu_bool AVkDevice::hasBottomLeftTextureCoordinates()
 agpu::vr_system_ptr AVkDevice::getVRSystem()
 {
     return vrSystemWrapper.disownedNewRef();
+}
+
+agpu::offline_shader_compiler_ptr AVkDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::state_tracker_cache_ptr AVkDevice::createStateTrackerCache(const agpu::command_queue_ref & command_queue_family)
+{
+	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
 bool AVkDevice::createSetupCommandBuffer()

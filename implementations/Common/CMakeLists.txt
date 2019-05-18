@@ -7,6 +7,10 @@ include_directories(
 set(AgpuCommonHighLevelInterfaces_SOURCES
     offline_shader_compiler.cpp
     offline_shader_compiler.hpp
+    state_tracker_cache.cpp
+    state_tracker_cache.hpp
+    state_tracker.cpp
+    state_tracker.hpp
 )
 
 add_library(AgpuCommonHighLevelInterfaces OBJECT ${AgpuCommonHighLevelInterfaces_SOURCES})

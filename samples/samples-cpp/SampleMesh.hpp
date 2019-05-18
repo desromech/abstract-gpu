@@ -36,8 +36,8 @@ public:
 
     void drawWithCommandList(const agpu_command_list_ref &commandList, size_t instanceCount = 1)
     {
-        commandList->useVertexBinding(vertexBinding.get());
-        commandList->useIndexBuffer(indexBuffer.get());
+        commandList->useVertexBinding(vertexBinding);
+        commandList->useIndexBuffer(indexBuffer);
         for(auto &submesh : submeshes)
             commandList->drawElements(submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
     }
@@ -188,9 +188,8 @@ public:
         result->indexBuffer = sampleBase->createImmutableIndexBuffer(indices.size(), sizeof(uint32_t), &indices[0]);
         result->submeshes = submeshes;
         {
-            agpu_buffer *buffer = result->vertexBuffer.get();
-            result->vertexBinding = sampleBase->device->createVertexBinding(sampleBase->getSampleVertexLayout().get());
-            result->vertexBinding->bindVertexBuffers(1, &buffer);
+            result->vertexBinding = sampleBase->device->createVertexBinding(sampleBase->getSampleVertexLayout());
+            result->vertexBinding->bindVertexBuffers(1, &result->vertexBuffer);
         }
 
         return result;

@@ -22,7 +22,7 @@ public:
         cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
     }
 
-    bool initializeSample()
+    virtual bool initializeSample() override
     {
         mainRenderPass = createMainPass();
         if(!mainRenderPass)
@@ -30,7 +30,7 @@ public:
 
         // Create the shader signature.
         {
-            agpu_shader_signature_builder_ref shaderSignatureBuilder = device->createShaderSignatureBuilder();
+            auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
             shaderSignatureBuilder->beginBindingBank(1);
             shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
 
@@ -46,17 +46,17 @@ public:
 
         {
             // Create the programs.
-            agpu_shader_ref vertexShader = compileShaderFromFile("data/shaders/texturedVertex.glsl", AGPU_VERTEX_SHADER);
-            agpu_shader_ref fragmentShader = compileShaderFromFile("data/shaders/texturedFragment.glsl", AGPU_FRAGMENT_SHADER);
+            auto vertexShader = compileShaderFromFile("data/shaders/texturedVertex.glsl", AGPU_VERTEX_SHADER);
+            auto fragmentShader = compileShaderFromFile("data/shaders/texturedFragment.glsl", AGPU_FRAGMENT_SHADER);
             if (!vertexShader || !fragmentShader)
                 return false;
 
             // Create the pipeline builder
-            agpu_pipeline_builder_ref pipelineBuilder = device->createPipelineBuilder();
-            pipelineBuilder->setShaderSignature(shaderSignature.get());
-            pipelineBuilder->attachShader(vertexShader.get());
-            pipelineBuilder->attachShader(fragmentShader.get());
-            pipelineBuilder->setVertexLayout(getSampleVertexLayout().get());
+            auto pipelineBuilder = device->createPipelineBuilder();
+            pipelineBuilder->setShaderSignature(shaderSignature);
+            pipelineBuilder->attachShader(vertexShader);
+            pipelineBuilder->attachShader(fragmentShader);
+            pipelineBuilder->setVertexLayout(getSampleVertexLayout());
             pipelineBuilder->setPrimitiveType(AGPU_TRIANGLES);
             pipelineBuilder->setCullMode(AGPU_CULL_MODE_BACK);
 
@@ -88,10 +88,10 @@ public:
         // Create the shader bindings.
         {
             shaderBindings = shaderSignature->createShaderResourceBinding(0);
-            shaderBindings->bindUniformBuffer(0, transformationBuffer.get());
+            shaderBindings->bindUniformBuffer(0, transformationBuffer);
 
             textureBindings = shaderSignature->createShaderResourceBinding(1);
-            textureBindings->bindTexture(0, diffuseTexture.get(), 0, -1, 0.0f);
+            textureBindings->bindTexture(0, diffuseTexture, 0, -1, 0.0f);
 
             samplerBindings = shaderSignature->createShaderResourceBinding(2);
 
@@ -105,8 +105,8 @@ public:
             samplerBindings->createSampler(0, &samplerDesc);
         }
 
-        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue.get());
-        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get(), nullptr);
+        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         commandList->close();
 
         return true;
@@ -164,7 +164,7 @@ public:
         return cameraTranslation()*cameraOrientation();
     }
 
-    void render()
+    virtual void render() override
     {
         // Compute the projection matrix
         float aspect = float(screenWidth) / float(screenHeight);
@@ -177,20 +177,20 @@ public:
 
         // Build the command list
         commandAllocator->reset();
-        commandList->reset(commandAllocator.get(), pipeline.get());
+        commandList->reset(commandAllocator, pipeline);
 
-        agpu_framebuffer_ref backBuffer = swapChain->getCurrentBackBuffer();
+        auto backBuffer = swapChain->getCurrentBackBuffer();
 
-        commandList->setShaderSignature(shaderSignature.get());
-        commandList->beginRenderPass(mainRenderPass.get(), backBuffer.get(), false);
+        commandList->setShaderSignature(shaderSignature);
+        commandList->beginRenderPass(mainRenderPass, backBuffer, false);
 
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
         // Set the shader resource bindings
-        commandList->useShaderResources(shaderBindings.get());
-        commandList->useShaderResources(textureBindings.get());
-        commandList->useShaderResources(samplerBindings.get());
+        commandList->useShaderResources(shaderBindings);
+        commandList->useShaderResources(textureBindings);
+        commandList->useShaderResources(samplerBindings);
 
         // Draw the mesh
         cubeMesh->drawWithCommandList(commandList);
@@ -200,13 +200,13 @@ public:
         commandList->close();
 
         // Queue the command list
-        commandQueue->addCommandList(commandList.get());
+        commandQueue->addCommandList(commandList);
 
         swapBuffers();
         commandQueue->finishExecution();
     }
 
-    void shutdownSample()
+    virtual void shutdownSample() override
     {
     }
 

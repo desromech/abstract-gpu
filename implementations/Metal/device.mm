@@ -15,6 +15,7 @@
 #include "vertex_binding.hpp"
 #include "texture.hpp"
 #include "../Common/offline_shader_compiler.hpp"
+#include "../Common/state_tracker_cache.hpp"
 
 namespace AgpuMetal
 {
@@ -103,11 +104,6 @@ agpu::shader_ptr AMtlDevice::createShader(agpu_shader_type type)
     return AMtlShader::create(refFromThis<agpu::device> (), type).disown();
 }
 
-agpu::offline_shader_compiler_ptr AMtlDevice::createOfflineShaderCompiler()
-{
-	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
-}
-
 agpu::shader_signature_builder_ptr AMtlDevice::createShaderSignatureBuilder()
 {
     return AMtlShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
@@ -187,6 +183,16 @@ agpu_bool AMtlDevice::hasBottomLeftTextureCoordinates()
 agpu::vr_system_ptr AMtlDevice::getVRSystem()
 {
     return nullptr;
+}
+
+agpu::offline_shader_compiler_ptr AMtlDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::state_tracker_cache_ptr AMtlDevice::createStateTrackerCache(const agpu::command_queue_ref & command_queue_family)
+{
+	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
 } // End of namespace AgpuMetal

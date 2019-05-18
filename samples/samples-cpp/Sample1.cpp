@@ -3,35 +3,35 @@
 class Sample1: public SampleBase
 {
 public:
-    bool initializeSample()
+    virtual bool initializeSample() override
     {
         mainRenderPass = createMainPass(glm::vec4(0, 0, 1, 0));
         if(!mainRenderPass)
             return false;
 
         {
-            agpu_shader_signature_builder_ref shaderSignatureBuilder = device->createShaderSignatureBuilder();
+            auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
             shaderSignature = shaderSignatureBuilder->build();
             if (!shaderSignature)
                 return false;
         }
 
-        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue.get());
-        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get(), nullptr);
+        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         commandList->close();
 
         return true;
     }
 
-    void render()
+    virtual void render() override
     {
         // Build the command list
         commandAllocator->reset();
-        commandList->reset(commandAllocator.get(), nullptr);
+        commandList->reset(commandAllocator, nullptr);
 
-        agpu_framebuffer_ref backBuffer = swapChain->getCurrentBackBuffer();
+        auto backBuffer = swapChain->getCurrentBackBuffer();
 
-        commandList->beginRenderPass(mainRenderPass.get(), backBuffer.get(), false);
+        commandList->beginRenderPass(mainRenderPass, backBuffer, false);
 
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
@@ -41,13 +41,13 @@ public:
         commandList->close();
 
         // Queue the command list
-        commandQueue->addCommandList(commandList.get());
+        commandQueue->addCommandList(commandList);
 
         swapBuffers();
         commandQueue->finishExecution();
     }
 
-    void shutdownSample()
+    virtual void shutdownSample() override
     {
     }
 

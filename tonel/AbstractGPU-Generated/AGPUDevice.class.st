@@ -61,13 +61,6 @@ AGPUDevice >> createShader: type [
 ]
 
 { #category : #'wrappers' }
-AGPUDevice >> createOfflineShaderCompiler [
-	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance createOfflineShaderCompiler_device: (self validHandle).
-	^ AGPUOfflineShaderCompiler forHandle: resultValue_
-]
-
-{ #category : #'wrappers' }
 AGPUDevice >> createShaderSignatureBuilder [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance createShaderSignatureBuilder_device: (self validHandle).
@@ -184,5 +177,19 @@ AGPUDevice >> getVRSystem [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getVRSystem_device: (self validHandle).
 	^ AGPUVrSystem forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUDevice >> createOfflineShaderCompiler [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createOfflineShaderCompiler_device: (self validHandle).
+	^ AGPUOfflineShaderCompiler forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUDevice >> createStateTrackerCache: command_queue_family [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createStateTrackerCache_device: (self validHandle) command_queue_family: (self validHandleOf: command_queue_family).
+	^ AGPUStateTrackerCache forHandle: resultValue_
 ]
 

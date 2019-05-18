@@ -18,6 +18,7 @@
 #include "texture.hpp"
 #include "fence.hpp"
 #include "../Common/offline_shader_compiler.hpp"
+#include "../Common/state_tracker_cache.hpp"
 
 #define LOAD_FUNCTION(functionName) loadExtensionFunction(functionName, #functionName)
 
@@ -389,11 +390,6 @@ agpu::shader_ptr GLDevice::createShader(agpu_shader_type type)
 	return GLShader::createShader(refFromThis<agpu::device> (), type).disown();
 }
 
-agpu::offline_shader_compiler_ptr GLDevice::createOfflineShaderCompiler()
-{
-	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
-}
-
 agpu::shader_signature_builder_ptr GLDevice::createShaderSignatureBuilder()
 {
 	return GLShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
@@ -493,6 +489,16 @@ agpu_bool GLDevice::isFeatureSupported (agpu_feature feature)
 agpu::vr_system_ptr GLDevice::getVRSystem()
 {
 	return nullptr;
+}
+
+agpu::offline_shader_compiler_ptr GLDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::state_tracker_cache_ptr GLDevice::createStateTrackerCache(const agpu::command_queue_ref & command_queue_family)
+{
+	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
 } // End of namespace AgpuGL

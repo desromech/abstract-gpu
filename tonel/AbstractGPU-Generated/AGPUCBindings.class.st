@@ -89,11 +89,6 @@ AGPUCBindings >> createShader_device: device type: type [
 ]
 
 { #category : #'device' }
-AGPUCBindings >> createOfflineShaderCompiler_device: device [
-	^ self ffiCall: #(agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice (agpu_device* device) )
-]
-
-{ #category : #'device' }
 AGPUCBindings >> createShaderSignatureBuilder_device: device [
 	^ self ffiCall: #(agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder (agpu_device* device) )
 ]
@@ -176,6 +171,16 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 { #category : #'device' }
 AGPUCBindings >> getVRSystem_device: device [
 	^ self ffiCall: #(agpu_vr_system* agpuGetVRSystem (agpu_device* device) )
+]
+
+{ #category : #'device' }
+AGPUCBindings >> createOfflineShaderCompiler_device: device [
+	^ self ffiCall: #(agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice (agpu_device* device) )
+]
+
+{ #category : #'device' }
+AGPUCBindings >> createStateTrackerCache_device: device command_queue_family: command_queue_family [
+	^ self ffiCall: #(agpu_state_tracker_cache* agpuCreateStateTrackerCache (agpu_device* device , agpu_command_queue* command_queue_family) )
 ]
 
 { #category : #'vr_system' }
@@ -813,61 +818,6 @@ AGPUCBindings >> getCompilationLog_shader: shader buffer_size: buffer_size buffe
 	^ self ffiCall: #(agpu_error agpuGetShaderCompilationLog (agpu_shader* shader , agpu_size buffer_size , agpu_string_buffer buffer) )
 ]
 
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> addReference_offline_shader_compiler: offline_shader_compiler [
-	^ self ffiCall: #(agpu_error agpuAddOfflineShaderCompilerReference (agpu_offline_shader_compiler* offline_shader_compiler) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> release_offline_shader_compiler: offline_shader_compiler [
-	^ self ffiCall: #(agpu_error agpuReleaseOfflineShaderCompiler (agpu_offline_shader_compiler* offline_shader_compiler) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> isShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
-	^ self ffiCall: #(agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> isTargetShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
-	^ self ffiCall: #(agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> setShaderSource_offline_shader_compiler: offline_shader_compiler language: language stage: stage sourceText: sourceText sourceTextLength: sourceTextLength [
-	^ self ffiCall: #(agpu_error agpuSetOfflineShaderCompilerSource (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language , agpu_shader_type stage , agpu_string sourceText , agpu_string_length sourceTextLength) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> compileShader_offline_shader_compiler: offline_shader_compiler target_language: target_language options: options [
-	^ self ffiCall: #(agpu_error agpuCompileOfflineShader (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language target_language , agpu_cstring options) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> getCompilationLogLength_offline_shader_compiler: offline_shader_compiler [
-	^ self ffiCall: #(agpu_size agpuGetOfflineShaderCompilationLogLength (agpu_offline_shader_compiler* offline_shader_compiler) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> getCompilationLog_offline_shader_compiler: offline_shader_compiler buffer_size: buffer_size buffer: buffer [
-	^ self ffiCall: #(agpu_error agpuGetOfflineShaderCompilationLog (agpu_offline_shader_compiler* offline_shader_compiler , agpu_size buffer_size , agpu_string_buffer buffer) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> getCompilationResultLength_offline_shader_compiler: offline_shader_compiler [
-	^ self ffiCall: #(agpu_size agpuGetOfflineShaderCompilationResultLength (agpu_offline_shader_compiler* offline_shader_compiler) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> getCompilationResult_offline_shader_compiler: offline_shader_compiler buffer_size: buffer_size buffer: buffer [
-	^ self ffiCall: #(agpu_error agpuGetOfflineShaderCompilationResult (agpu_offline_shader_compiler* offline_shader_compiler , agpu_size buffer_size , agpu_string_buffer buffer) )
-]
-
-{ #category : #'offline_shader_compiler' }
-AGPUCBindings >> getResultAsShader_offline_shader_compiler: offline_shader_compiler [
-	^ self ffiCall: #(agpu_shader* agpuGetOfflineShaderCompilerResultAsShader (agpu_offline_shader_compiler* offline_shader_compiler) )
-]
-
 { #category : #'framebuffer' }
 AGPUCBindings >> addReference_framebuffer: framebuffer [
 	^ self ffiCall: #(agpu_error agpuAddFramebufferReference (agpu_framebuffer* framebuffer) )
@@ -1016,6 +966,326 @@ AGPUCBindings >> release_fence: fence [
 { #category : #'fence' }
 AGPUCBindings >> waitOnClient_fence: fence [
 	^ self ffiCall: #(agpu_error agpuWaitOnClient (agpu_fence* fence) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> addReference_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_error agpuAddOfflineShaderCompilerReference (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> release_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_error agpuReleaseOfflineShaderCompiler (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> isShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
+	^ self ffiCall: #(agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> isTargetShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
+	^ self ffiCall: #(agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> setShaderSource_offline_shader_compiler: offline_shader_compiler language: language stage: stage sourceText: sourceText sourceTextLength: sourceTextLength [
+	^ self ffiCall: #(agpu_error agpuSetOfflineShaderCompilerSource (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language , agpu_shader_type stage , agpu_string sourceText , agpu_string_length sourceTextLength) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> compileShader_offline_shader_compiler: offline_shader_compiler target_language: target_language options: options [
+	^ self ffiCall: #(agpu_error agpuCompileOfflineShader (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language target_language , agpu_cstring options) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationLogLength_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_size agpuGetOfflineShaderCompilationLogLength (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationLog_offline_shader_compiler: offline_shader_compiler buffer_size: buffer_size buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuGetOfflineShaderCompilationLog (agpu_offline_shader_compiler* offline_shader_compiler , agpu_size buffer_size , agpu_string_buffer buffer) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationResultLength_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_size agpuGetOfflineShaderCompilationResultLength (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getCompilationResult_offline_shader_compiler: offline_shader_compiler buffer_size: buffer_size buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuGetOfflineShaderCompilationResult (agpu_offline_shader_compiler* offline_shader_compiler , agpu_size buffer_size , agpu_string_buffer buffer) )
+]
+
+{ #category : #'offline_shader_compiler' }
+AGPUCBindings >> getResultAsShader_offline_shader_compiler: offline_shader_compiler [
+	^ self ffiCall: #(agpu_shader* agpuGetOfflineShaderCompilerResultAsShader (agpu_offline_shader_compiler* offline_shader_compiler) )
+]
+
+{ #category : #'state_tracker_cache' }
+AGPUCBindings >> addReference_state_tracker_cache: state_tracker_cache [
+	^ self ffiCall: #(agpu_error agpuAddStateTrackerCacheReference (agpu_state_tracker_cache* state_tracker_cache) )
+]
+
+{ #category : #'state_tracker_cache' }
+AGPUCBindings >> release_state_tracker_cache: state_tracker_cache [
+	^ self ffiCall: #(agpu_error agpuReleaseStateTrackerCacheReference (agpu_state_tracker_cache* state_tracker_cache) )
+]
+
+{ #category : #'state_tracker_cache' }
+AGPUCBindings >> createStateTracker_state_tracker_cache: state_tracker_cache type: type command_queue: command_queue [
+	^ self ffiCall: #(agpu_state_tracker* agpuCreateStateTracker (agpu_state_tracker_cache* state_tracker_cache , agpu_command_list_type type , agpu_command_queue* command_queue) )
+]
+
+{ #category : #'state_tracker_cache' }
+AGPUCBindings >> createStateTrackerWithCommandAllocator_state_tracker_cache: state_tracker_cache type: type command_queue: command_queue command_allocator: command_allocator [
+	^ self ffiCall: #(agpu_state_tracker* agpuCreateStateTrackerWithCommandAllocator (agpu_state_tracker_cache* state_tracker_cache , agpu_command_list_type type , agpu_command_queue* command_queue , agpu_command_allocator* command_allocator) )
+]
+
+{ #category : #'state_tracker_cache' }
+AGPUCBindings >> createStateTrackerWithFrameBuffering_state_tracker_cache: state_tracker_cache type: type command_queue: command_queue framebuffering_count: framebuffering_count [
+	^ self ffiCall: #(agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering (agpu_state_tracker_cache* state_tracker_cache , agpu_command_list_type type , agpu_command_queue* command_queue , agpu_uint framebuffering_count) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> addReference_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuAddStateTrackerReference (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> release_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuReleaseStateTrackerReference (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> reset_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerReset (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> resetGraphicsPipeline_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerResetGraphicsPipeline (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> resetComputePipeline_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerResetComputePipeline (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setComputeStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetComputeStage (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setVertexStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetVertexStage (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setFragmentStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetFragment (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setBlendState_state_tracker: state_tracker renderTargetMask: renderTargetMask enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetBlendState (agpu_state_tracker* state_tracker , agpu_int renderTargetMask , agpu_bool enabled) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setBlendFunction_state_tracker: state_tracker renderTargetMask: renderTargetMask sourceFactor: sourceFactor destFactor: destFactor colorOperation: colorOperation sourceAlphaFactor: sourceAlphaFactor destAlphaFactor: destAlphaFactor alphaOperation: alphaOperation [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetBlendFunction (agpu_state_tracker* state_tracker , agpu_int renderTargetMask , agpu_blending_factor sourceFactor , agpu_blending_factor destFactor , agpu_blending_operation colorOperation , agpu_blending_factor sourceAlphaFactor , agpu_blending_factor destAlphaFactor , agpu_blending_operation alphaOperation) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setColorMask_state_tracker: state_tracker renderTargetMask: renderTargetMask redEnabled: redEnabled greenEnabled: greenEnabled blueEnabled: blueEnabled alphaEnabled: alphaEnabled [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetColorMask (agpu_state_tracker* state_tracker , agpu_int renderTargetMask , agpu_bool redEnabled , agpu_bool greenEnabled , agpu_bool blueEnabled , agpu_bool alphaEnabled) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setFrontFace_state_tracker: state_tracker winding: winding [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetFrontFace (agpu_state_tracker* state_tracker , agpu_face_winding winding) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setCullMode_state_tracker: state_tracker mode: mode [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetCullMode (agpu_state_tracker* state_tracker , agpu_cull_mode mode) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setDepthBias_state_tracker: state_tracker constant_factor: constant_factor clamp: clamp slope_factor: slope_factor [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetDepthBias (agpu_state_tracker* state_tracker , agpu_float constant_factor , agpu_float clamp , agpu_float slope_factor) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setDepthState_state_tracker: state_tracker enabled: enabled writeMask: writeMask function: function [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetDepthState (agpu_state_tracker* state_tracker , agpu_bool enabled , agpu_bool writeMask , agpu_compare_function function) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setPolygonMode_state_tracker: state_tracker mode: mode [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetPolygonMode (agpu_state_tracker* state_tracker , agpu_polygon_mode mode) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setStencilState_state_tracker: state_tracker enabled: enabled writeMask: writeMask readMask: readMask [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetStencilState (agpu_state_tracker* state_tracker , agpu_bool enabled , agpu_int writeMask , agpu_int readMask) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setStencilFrontFace_state_tracker: state_tracker stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetStencilFrontFace (agpu_state_tracker* state_tracker , agpu_stencil_operation stencilFailOperation , agpu_stencil_operation depthFailOperation , agpu_stencil_operation stencilDepthPassOperation , agpu_compare_function stencilFunction) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setStencilBackFace_state_tracker: state_tracker stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetStencilBackFace (agpu_state_tracker* state_tracker , agpu_stencil_operation stencilFailOperation , agpu_stencil_operation depthFailOperation , agpu_stencil_operation stencilDepthPassOperation , agpu_compare_function stencilFunction) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setRenderTargetCount_state_tracker: state_tracker count: count [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetRenderTargetCount (agpu_state_tracker* state_tracker , agpu_int count) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setRenderTargetFormat_state_tracker: state_tracker index: index format: format [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetRenderTargetFormat (agpu_state_tracker* state_tracker , agpu_uint index , agpu_texture_format format) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setDepthStencilFormat_state_tracker: state_tracker format: format [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetDepthStencilFormat (agpu_state_tracker* state_tracker , agpu_texture_format format) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setPrimitiveType_state_tracker: state_tracker type: type [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetPrimitiveType (agpu_state_tracker* state_tracker , agpu_primitive_topology type) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setVertexLayout_state_tracker: state_tracker layout: layout [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetVertexLayout (agpu_state_tracker* state_tracker , agpu_vertex_layout* layout) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setShaderSignature_state_tracker: state_tracker signature: signature [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetShaderSignature (agpu_state_tracker* state_tracker , agpu_shader_signature* signature) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setSampleDescription_state_tracker: state_tracker sample_count: sample_count sample_quality: sample_quality [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetSampleDescription (agpu_state_tracker* state_tracker , agpu_uint sample_count , agpu_uint sample_quality) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setViewport_state_tracker: state_tracker x: x y: y w: w h: h [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetViewport (agpu_state_tracker* state_tracker , agpu_int x , agpu_int y , agpu_int w , agpu_int h) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setScissor_state_tracker: state_tracker x: x y: y w: w h: h [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetScissor (agpu_state_tracker* state_tracker , agpu_int x , agpu_int y , agpu_int w , agpu_int h) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useVertexBinding_state_tracker: state_tracker vertex_binding: vertex_binding [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseVertexBinding (agpu_state_tracker* state_tracker , agpu_vertex_binding* vertex_binding) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useIndexBuffer_state_tracker: state_tracker index_buffer: index_buffer [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseIndexBuffer (agpu_state_tracker* state_tracker , agpu_buffer* index_buffer) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useIndexBufferAt_state_tracker: state_tracker index_buffer: index_buffer offset: offset index_size: index_size [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseIndexBufferAt (agpu_state_tracker* state_tracker , agpu_buffer* index_buffer , agpu_size offset , agpu_size index_size) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useDrawIndirectBuffer_state_tracker: state_tracker draw_buffer: draw_buffer [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseDrawIndirectBuffer (agpu_state_tracker* state_tracker , agpu_buffer* draw_buffer) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useComputeDispatchIndirectBuffer_state_tracker: state_tracker buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseComputeDispatchIndirectBuffer (agpu_state_tracker* state_tracker , agpu_buffer* buffer) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useShaderResources_state_tracker: state_tracker binding: binding [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseShaderResources (agpu_state_tracker* state_tracker , agpu_shader_resource_binding* binding) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useComputeShaderResources_state_tracker: state_tracker binding: binding [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseComputeShaderResources (agpu_state_tracker* state_tracker , agpu_shader_resource_binding* binding) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> drawArrays_state_tracker: state_tracker vertex_count: vertex_count instance_count: instance_count first_vertex: first_vertex base_instance: base_instance [
+	^ self ffiCall: #(agpu_error agpuStateTrackerDrawArrays (agpu_state_tracker* state_tracker , agpu_uint vertex_count , agpu_uint instance_count , agpu_uint first_vertex , agpu_uint base_instance) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> drawArraysIndirect_state_tracker: state_tracker offset: offset drawcount: drawcount [
+	^ self ffiCall: #(agpu_error agpuStateTrackerDrawArraysIndirect (agpu_state_tracker* state_tracker , agpu_size offset , agpu_size drawcount) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> drawElements_state_tracker: state_tracker index_count: index_count instance_count: instance_count first_index: first_index base_vertex: base_vertex base_instance: base_instance [
+	^ self ffiCall: #(agpu_error agpuStateTrackerDrawElements (agpu_state_tracker* state_tracker , agpu_uint index_count , agpu_uint instance_count , agpu_uint first_index , agpu_int base_vertex , agpu_uint base_instance) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> drawElementsIndirect_state_tracker: state_tracker offset: offset drawcount: drawcount [
+	^ self ffiCall: #(agpu_error agpuStateTrackerDrawElementsIndirect (agpu_state_tracker* state_tracker , agpu_size offset , agpu_size drawcount) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> dispatchCompute_state_tracker: state_tracker group_count_x: group_count_x group_count_y: group_count_y group_count_z: group_count_z [
+	^ self ffiCall: #(agpu_error agpuStateTrackerDispatchCompute (agpu_state_tracker* state_tracker , agpu_uint group_count_x , agpu_uint group_count_y , agpu_uint group_count_z) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> dispatchComputeIndirect_state_tracker: state_tracker offset: offset [
+	^ self ffiCall: #(agpu_error agpuStateTrackerDispatchComputeIndirect (agpu_state_tracker* state_tracker , agpu_size offset) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setStencilReference_state_tracker: state_tracker reference: reference [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetStencilReference (agpu_state_tracker* state_tracker , agpu_uint reference) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> executeBundle_state_tracker: state_tracker bundle: bundle [
+	^ self ffiCall: #(agpu_error agpuStateTrackerExecuteBundle (agpu_state_tracker* state_tracker , agpu_command_list* bundle) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> beginRenderPass_state_tracker: state_tracker renderpass: renderpass framebuffer: framebuffer bundle_content: bundle_content [
+	^ self ffiCall: #(agpu_error agpuStateTrackerBeginRenderPass (agpu_state_tracker* state_tracker , agpu_renderpass* renderpass , agpu_framebuffer* framebuffer , agpu_bool bundle_content) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> endRenderPass_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerEndRenderPass (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> resolveFramebuffer_state_tracker: state_tracker destFramebuffer: destFramebuffer sourceFramebuffer: sourceFramebuffer [
+	^ self ffiCall: #(agpu_error agpuStateTrackerResolveFramebuffer (agpu_state_tracker* state_tracker , agpu_framebuffer* destFramebuffer , agpu_framebuffer* sourceFramebuffer) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> resolveTexture_state_tracker: state_tracker sourceTexture: sourceTexture sourceLevel: sourceLevel sourceLayer: sourceLayer destTexture: destTexture destLevel: destLevel destLayer: destLayer levelCount: levelCount layerCount: layerCount aspect: aspect [
+	^ self ffiCall: #(agpu_error agpuStateTrackerResolveTexture (agpu_state_tracker* state_tracker , agpu_texture* sourceTexture , agpu_uint sourceLevel , agpu_uint sourceLayer , agpu_texture* destTexture , agpu_uint destLevel , agpu_uint destLayer , agpu_uint levelCount , agpu_uint layerCount , agpu_texture_aspect aspect) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> pushConstants_state_tracker: state_tracker offset: offset size: size values: values [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPushConstants (agpu_state_tracker* state_tracker , agpu_uint offset , agpu_uint size , agpu_pointer values) )
 ]
 
 { #category : #'global c functions' }

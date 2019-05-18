@@ -32,6 +32,7 @@ Class {
 		'agpu_shader',
 		'agpu_double',
 		'agpu_blending_factor',
+		'agpu_state_tracker',
 		'agpu_renderpass_depth_stencil_description',
 		'agpu_vr_eye',
 		'agpu_primitive_topology',
@@ -42,6 +43,7 @@ Class {
 		'agpu_vertex_layout',
 		'agpu_texture_aspect',
 		'agpu_draw_elements_command',
+		'agpu_texture_type',
 		'agpu_cull_mode',
 		'agpu_shader_signature',
 		'agpu_error',
@@ -80,7 +82,7 @@ Class {
 		'agpu_components_swizzle',
 		'agpu_vr_system',
 		'agpu_command_queue_type',
-		'agpu_texture_type',
+		'agpu_state_tracker_cache',
 		'agpu_vr_event',
 		'agpu_pointer',
 		'agpu_size3d',
@@ -151,6 +153,7 @@ AGPUTypes class >> initialize [
 	agpu_shader := #'void'.
 	agpu_double := #'double'.
 	agpu_blending_factor := #int.
+	agpu_state_tracker := #'void'.
 	agpu_renderpass_depth_stencil_description := AGPURenderpassDepthStencilDescription.
 	agpu_vr_eye := #int.
 	agpu_primitive_topology := #int.
@@ -161,6 +164,7 @@ AGPUTypes class >> initialize [
 	agpu_vertex_layout := #'void'.
 	agpu_texture_aspect := #int.
 	agpu_draw_elements_command := AGPUDrawElementsCommand.
+	agpu_texture_type := #int.
 	agpu_cull_mode := #int.
 	agpu_shader_signature := #'void'.
 	agpu_error := #int.
@@ -199,7 +203,7 @@ AGPUTypes class >> initialize [
 	agpu_components_swizzle := AGPUComponentsSwizzle.
 	agpu_vr_system := #'void'.
 	agpu_command_queue_type := #int.
-	agpu_texture_type := #int.
+	agpu_state_tracker_cache := #'void'.
 	agpu_vr_event := AGPUVrEvent.
 	agpu_pointer := #'void*'.
 	agpu_size3d := AGPUSize3d.
