@@ -2,6 +2,7 @@
 #define AGPU_VULKAN_RENDERPASS_HPP
 
 #include "device.hpp"
+#include <array>
 
 namespace AgpuVulkan
 {
