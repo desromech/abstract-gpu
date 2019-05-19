@@ -5,10 +5,16 @@
 
 namespace AgpuCommon
 {
+
 template<typename T>
 size_t hashOf(const T &v)
 {
     return std::hash<T> ()(v);
+}
+
+size_t hashOfEnum(uint32_t v)
+{
+    return hashOf(v);
 }
 
 // ShaderStageDescription
@@ -104,16 +110,16 @@ bool RenderTargetColorAttachmentDescription::operator==(const RenderTargetColorA
 size_t RenderTargetColorAttachmentDescription::hash() const
 {
     return
-        hashOf(textureFormat) ^
+        hashOfEnum(textureFormat) ^
 
         // Blending
         hashOf(blendingEnabled) ^
-        hashOf(sourceColorBlendingFactor) ^
-        hashOf(destColorBlendingFactor) ^
-        hashOf(colorBlendingOperation) ^
-        hashOf(sourceAlphaBlendingFactor) ^
-        hashOf(destAlphaBlendingFactor) ^
-        hashOf(alphaBlendingOperation) ^
+        hashOfEnum(sourceColorBlendingFactor) ^
+        hashOfEnum(destColorBlendingFactor) ^
+        hashOfEnum(colorBlendingOperation) ^
+        hashOfEnum(sourceAlphaBlendingFactor) ^
+        hashOfEnum(destAlphaBlendingFactor) ^
+        hashOfEnum(alphaBlendingOperation) ^
 
         // Color mask.
         hashOf(redColorMask) ^
@@ -301,11 +307,11 @@ size_t GraphicsPipelineStateDescription::hash() const
         tessellationEvaluationStage.hash() ^
 
         // Depth stencil
-        hashOf(depthStencilFormat) ^
+        hashOfEnum(depthStencilFormat) ^
 
         hashOf(depthTestingEnabled) ^
         hashOf(depthWriteMask) ^
-        hashOf(depthCompareFunction) ^
+        hashOfEnum(depthCompareFunction) ^
 
         hashOf(depthBiasEnabled) ^
         hashOf(depthBiasConstantFactor) ^
@@ -316,23 +322,23 @@ size_t GraphicsPipelineStateDescription::hash() const
         hashOf(stencilWriteMask) ^
         hashOf(stencilReadMask) ^
 
-        hashOf(frontStencilFailOperation) ^
-        hashOf(frontStencilDepthFailOperation) ^
-        hashOf(frontStencilDepthPassOperation) ^
-        hashOf(frontStencilCompareFunction) ^
+        hashOfEnum(frontStencilFailOperation) ^
+        hashOfEnum(frontStencilDepthFailOperation) ^
+        hashOfEnum(frontStencilDepthPassOperation) ^
+        hashOfEnum(frontStencilCompareFunction) ^
 
-        hashOf(backStencilFailOperation) ^
-        hashOf(backStencilDepthFailOperation) ^
-        hashOf(backStencilDepthPassOperation) ^
-        hashOf(backStencilCompareFunction) ^
+        hashOfEnum(backStencilFailOperation) ^
+        hashOfEnum(backStencilDepthFailOperation) ^
+        hashOfEnum(backStencilDepthPassOperation) ^
+        hashOfEnum(backStencilCompareFunction) ^
 
         // Face culling
-        hashOf(frontFaceWinding) ^
-        hashOf(faceCullingMode) ^
+        hashOfEnum(frontFaceWinding) ^
+        hashOfEnum(faceCullingMode) ^
 
         // Rasterization
-        hashOf(polygonMode) ^
-        hashOf(primitiveType) ^
+        hashOfEnum(polygonMode) ^
+        hashOfEnum(primitiveType) ^
         vertexLayout.hash() ^
         hashOf(sampleCount) ^
         hashOf(sampleQuality) ^
