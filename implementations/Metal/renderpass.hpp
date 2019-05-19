@@ -15,7 +15,7 @@ public:
 
     static agpu::renderpass_ref create(const agpu::device_ref &device, agpu_renderpass_description *description);
 
-    virtual MTLRenderPassDescriptor *createDescriptor(const agpu::framebuffer_ref &framebuffer) override;
+    MTLRenderPassDescriptor *createDescriptor(const agpu::framebuffer_ref &framebuffer);
     virtual agpu_error setDepthStencilClearValue(agpu_depth_stencil_value value) override;
     virtual agpu_error setColorClearValue(agpu_uint attachment_index, agpu_color4f value) override;
     virtual agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value) override;

@@ -169,7 +169,7 @@ agpu_error AMtlRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment
 
 agpu_texture_format AMtlRenderPass::getDepthStencilAttachmentFormat()
 {
-    return hasDepthStencil ? depthStencilAttachment.format : AGPU_TEXTURE_FORMAT_UNKNOWN;
+    return hasDepthStencil ? depthStencil.format : AGPU_TEXTURE_FORMAT_UNKNOWN;
 }
 
 } // End of namespace AgpuMetal
