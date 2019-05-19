@@ -22,12 +22,22 @@ public:
             const agpu::command_queue_ref &commandQueue);
     ~AbstractStateTracker();
 
+    virtual agpu_error beginRecordingCommands() override;
+    virtual agpu_error endRecordingAndFlushCommands() override;
+
     virtual agpu_error reset() override;
-	virtual agpu_error resetGraphicsPipeline() override;
+
+    // Compute pipeline methods
 	virtual agpu_error resetComputePipeline() override;
 	virtual agpu_error setComputeStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+
+    // Graphics pipeline methods
+    virtual agpu_error resetGraphicsPipeline() override;
 	virtual agpu_error setVertexStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
 	virtual agpu_error setFragmentStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+    virtual agpu_error setGeometryStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setTessellationControlStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setTessellationEvaluationStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
 	virtual agpu_error setBlendState(agpu_int renderTargetMask, agpu_bool enabled) override;
 	virtual agpu_error setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation) override;
 	virtual agpu_error setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled) override;
@@ -39,13 +49,12 @@ public:
 	virtual agpu_error setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask) override;
 	virtual agpu_error setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) override;
 	virtual agpu_error setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) override;
-	virtual agpu_error setRenderTargetCount(agpu_int count) override;
-	virtual agpu_error setRenderTargetFormat(agpu_uint index, agpu_texture_format format) override;
-	virtual agpu_error setDepthStencilFormat(agpu_texture_format format) override;
 	virtual agpu_error setPrimitiveType(agpu_primitive_topology type) override;
 	virtual agpu_error setVertexLayout(const agpu::vertex_layout_ref & layout) override;
 	virtual agpu_error setShaderSignature(const agpu::shader_signature_ref & signature) override;
 	virtual agpu_error setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality) override;
+
+    // Command list methods.
 	virtual agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h) override;
 	virtual agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h) override;
 	virtual agpu_error useVertexBinding(const agpu::vertex_binding_ref & vertex_binding) override;
@@ -69,12 +78,31 @@ public:
 	virtual agpu_error resolveTexture(const agpu::texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect) override;
 	virtual agpu_error pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values) override;
 
+protected:
+    void invalidateGraphicsPipelineState();
+    agpu_error validateGraphicsPipelineState();
+
+    void invalidateComputePipelineState();
+    agpu_error validateComputePipelineState();
+
+    virtual agpu_error setupCommandListForRecordingCommands() = 0;
+
     agpu::device_ref device;
     agpu::state_tracker_cache_ref cache;
     agpu_command_list_type commandListType;
     agpu::command_queue_ref commandQueue;
     agpu::command_allocator_ref currentCommandAllocator;
     agpu::command_list_ref currentCommandList;
+
+    GraphicsPipelineStateDescription graphicsPipelineStateDescription;
+    bool isGraphicsPipelineDescriptionChanged;
+
+    ComputePipelineStateDescription computePipelineStateDescription;
+    bool isComputePipelineDescriptionChanged;
+
+    bool isRecording;
+
+    std::string pipelineBuildErrorLog;
 };
 
 /**
@@ -98,8 +126,16 @@ public:
             const agpu::command_allocator_ref &commandAllocator,
             bool isCommandAllocatorOwned);
 
+    virtual agpu::command_list_ptr endRecordingCommands() override;
+
+protected:
+    virtual agpu_error setupCommandListForRecordingCommands() override;
+    bool createCommandList();
+
     agpu::command_allocator_ref commandAllocator;
+    agpu::command_list_ref commandList;
     bool isCommandAllocatorOwned;
+
 };
 
 /**
@@ -120,6 +156,11 @@ public:
             agpu_command_list_type type,
             const agpu::command_queue_ref &commandQueue,
             agpu_uint frameBufferingCount);
+
+    virtual agpu::command_list_ptr endRecordingCommands() override;
+
+protected:
+    virtual agpu_error setupCommandListForRecordingCommands() override;
 
     bool createCommandAllocatorsAndCommandLists();
 

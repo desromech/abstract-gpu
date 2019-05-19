@@ -84,4 +84,25 @@ agpu_error GLRenderPass::setColorClearValueFrom ( agpu_uint attachment_index, ag
     return setColorClearValue(attachment_index, *value);
 }
 
+agpu_error GLRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats)
+{
+    CHECK_POINTER(color_attachment_count);
+    if(formats)
+    {
+        if(*color_attachment_count < colorAttachments.size())
+            return AGPU_INVALID_PARAMETER;
+
+        for(size_t i = 0; i < colorAttachments.size(); ++i)
+            formats[i] = colorAttachments[i].format;
+    }
+
+    *color_attachment_count = colorAttachments.size();
+    return AGPU_OK;
+}
+
+agpu_texture_format GLRenderPass::getDepthStencilAttachmentFormat()
+{
+    return hasDepthStencil ? depthStencilAttachment.format : AGPU_TEXTURE_FORMAT_UNKNOWN;
+}
+
 } // End of namespace AgpuGL

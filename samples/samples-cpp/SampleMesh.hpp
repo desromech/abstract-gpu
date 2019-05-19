@@ -34,6 +34,14 @@ public:
     {
     }
 
+    void drawWithStateTracker(const agpu_state_tracker_ref &stateTracker, size_t instanceCount = 1)
+    {
+        stateTracker->useVertexBinding(vertexBinding);
+        stateTracker->useIndexBuffer(indexBuffer);
+        for(auto &submesh : submeshes)
+            stateTracker->drawElements(submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+    }
+
     void drawWithCommandList(const agpu_command_list_ref &commandList, size_t instanceCount = 1)
     {
         commandList->useVertexBinding(vertexBinding);

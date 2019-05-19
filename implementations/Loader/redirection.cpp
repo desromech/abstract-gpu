@@ -1353,6 +1353,22 @@ AGPU_EXPORT agpu_error agpuSetColorClearValueFrom ( agpu_renderpass* renderpass,
 	return (*dispatchTable)->agpuSetColorClearValueFrom ( renderpass, attachment_index, value );
 }
 
+AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats ( agpu_renderpass* renderpass, agpu_uint* color_attachment_count, agpu_texture_format* formats )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuGetRenderPassColorAttachmentFormats ( renderpass, color_attachment_count, formats );
+}
+
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat ( agpu_renderpass* renderpass )
+{
+	if (renderpass == nullptr)
+		return (agpu_texture_format)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuGetRenderPassgetDepthStencilAttachmentFormat ( renderpass );
+}
+
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )
 {
 	if (shader_signature_builder == nullptr)
@@ -1681,6 +1697,30 @@ AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference ( agpu_state_tracker* st
 	return (*dispatchTable)->agpuReleaseStateTrackerReference ( state_tracker );
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRecordingCommands ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerBeginRecordingCommands ( state_tracker );
+}
+
+AGPU_EXPORT agpu_command_list* agpuStateTrackerEndRecordingCommands ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return (agpu_command_list*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerEndRecordingCommands ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerEndRecordingAndFlushCommands ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerEndRecordingAndFlushCommands ( state_tracker );
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerReset ( agpu_state_tracker* state_tracker )
 {
 	if (state_tracker == nullptr)
@@ -1721,12 +1761,36 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage ( agpu_state_tracker* stat
 	return (*dispatchTable)->agpuStateTrackerSetVertexStage ( state_tracker, shader, entryPoint );
 }
 
-AGPU_EXPORT agpu_error agpuStateTrackerSetFragment ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
 {
 	if (state_tracker == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
-	return (*dispatchTable)->agpuStateTrackerSetFragment ( state_tracker, shader, entryPoint );
+	return (*dispatchTable)->agpuStateTrackerSetFragmentStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetGeometryStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetTessellationControlStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetTessellationEvaluationStage ( state_tracker, shader, entryPoint );
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState ( agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool enabled )
@@ -1815,30 +1879,6 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetStencilBackFace ( agpu_state_tracker* 
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerSetStencilBackFace ( state_tracker, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
-}
-
-AGPU_EXPORT agpu_error agpuStateTrackerSetRenderTargetCount ( agpu_state_tracker* state_tracker, agpu_int count )
-{
-	if (state_tracker == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
-	return (*dispatchTable)->agpuStateTrackerSetRenderTargetCount ( state_tracker, count );
-}
-
-AGPU_EXPORT agpu_error agpuStateTrackerSetRenderTargetFormat ( agpu_state_tracker* state_tracker, agpu_uint index, agpu_texture_format format )
-{
-	if (state_tracker == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
-	return (*dispatchTable)->agpuStateTrackerSetRenderTargetFormat ( state_tracker, index, format );
-}
-
-AGPU_EXPORT agpu_error agpuStateTrackerSetDepthStencilFormat ( agpu_state_tracker* state_tracker, agpu_texture_format format )
-{
-	if (state_tracker == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
-	return (*dispatchTable)->agpuStateTrackerSetDepthStencilFormat ( state_tracker, format );
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetPrimitiveType ( agpu_state_tracker* state_tracker, agpu_primitive_topology type )

@@ -4,7 +4,7 @@
 
 namespace AgpuMetal
 {
-    
+
 inline MTLLoadAction mapLoadAction(agpu_renderpass_attachment_action action)
 {
     switch(action)
@@ -98,7 +98,7 @@ MTLRenderPassDescriptor *AMtlRenderPass::createDescriptor(const agpu::framebuffe
         {
             auto &view = amtlFramebuffer->colorBufferDescriptions[i];
             dest.level = view.subresource_range.base_miplevel;
-            dest.slice = view.subresource_range.base_arraylayer;            
+            dest.slice = view.subresource_range.base_arraylayer;
         }
     }
 
@@ -123,7 +123,7 @@ MTLRenderPassDescriptor *AMtlRenderPass::createDescriptor(const agpu::framebuffe
             stencilAttachment.slice = view.subresource_range.base_arraylayer;
             stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
             stencilAttachment.loadAction = mapLoadAction(depthStencil.stencil_begin_action);
-            stencilAttachment.storeAction = mapStoreAction(depthStencil.stencil_end_action);            
+            stencilAttachment.storeAction = mapStoreAction(depthStencil.stencil_end_action);
         }
     }
 
@@ -149,6 +149,27 @@ agpu_error AMtlRenderPass::setColorClearValueFrom(agpu_uint attachment_index, ag
 {
     CHECK_POINTER(value);
     return setColorClearValue(attachment_index, *value);
+}
+
+agpu_error AMtlRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats)
+{
+    CHECK_POINTER(color_attachment_count);
+    if(formats)
+    {
+        if(*color_attachment_count < colorAttachments.size())
+            return AGPU_INVALID_PARAMETER;
+
+        for(size_t i = 0; i < colorAttachments.size(); ++i)
+            formats[i] = colorAttachments[i].format;
+    }
+
+    *color_attachment_count = colorAttachments.size();
+    return AGPU_OK;
+}
+
+agpu_texture_format AMtlRenderPass::getDepthStencilAttachmentFormat()
+{
+    return hasDepthStencil ? depthStencilAttachment.format : AGPU_TEXTURE_FORMAT_UNKNOWN;
 }
 
 } // End of namespace AgpuMetal

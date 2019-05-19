@@ -1215,12 +1215,16 @@ typedef agpu_error (*agpuReleaseRenderPass_FUN) (agpu_renderpass* renderpass);
 typedef agpu_error (*agpuSetDepthStencilClearValue_FUN) (agpu_renderpass* renderpass, agpu_depth_stencil_value value);
 typedef agpu_error (*agpuSetColorClearValue_FUN) (agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value);
 typedef agpu_error (*agpuSetColorClearValueFrom_FUN) (agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value);
+typedef agpu_error (*agpuGetRenderPassColorAttachmentFormats_FUN) (agpu_renderpass* renderpass, agpu_uint* color_attachment_count, agpu_texture_format* formats);
+typedef agpu_texture_format (*agpuGetRenderPassgetDepthStencilAttachmentFormat_FUN) (agpu_renderpass* renderpass);
 
 AGPU_EXPORT agpu_error agpuAddRenderPassReference(agpu_renderpass* renderpass);
 AGPU_EXPORT agpu_error agpuReleaseRenderPass(agpu_renderpass* renderpass);
 AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue(agpu_renderpass* renderpass, agpu_depth_stencil_value value);
 AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value);
 AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value);
+AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats(agpu_renderpass* renderpass, agpu_uint* color_attachment_count, agpu_texture_format* formats);
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat(agpu_renderpass* renderpass);
 
 /* Methods for interface agpu_shader_signature_builder. */
 typedef agpu_error (*agpuAddShaderSignatureBuilderReference_FUN) (agpu_shader_signature_builder* shader_signature_builder);
@@ -1321,12 +1325,18 @@ AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering(agpu_st
 /* Methods for interface agpu_state_tracker. */
 typedef agpu_error (*agpuAddStateTrackerReference_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuReleaseStateTrackerReference_FUN) (agpu_state_tracker* state_tracker);
+typedef agpu_error (*agpuStateTrackerBeginRecordingCommands_FUN) (agpu_state_tracker* state_tracker);
+typedef agpu_command_list* (*agpuStateTrackerEndRecordingCommands_FUN) (agpu_state_tracker* state_tracker);
+typedef agpu_error (*agpuStateTrackerEndRecordingAndFlushCommands_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerReset_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerResetGraphicsPipeline_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerResetComputePipeline_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerSetComputeStage_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
 typedef agpu_error (*agpuStateTrackerSetVertexStage_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
-typedef agpu_error (*agpuStateTrackerSetFragment_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+typedef agpu_error (*agpuStateTrackerSetFragmentStage_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+typedef agpu_error (*agpuStateTrackerSetGeometryStage_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+typedef agpu_error (*agpuStateTrackerSetTessellationControlStage_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+typedef agpu_error (*agpuStateTrackerSetTessellationEvaluationStage_FUN) (agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
 typedef agpu_error (*agpuStateTrackerSetBlendState_FUN) (agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool enabled);
 typedef agpu_error (*agpuStateTrackerSetBlendFunction_FUN) (agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation);
 typedef agpu_error (*agpuStateTrackerSetColorMask_FUN) (agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled);
@@ -1338,9 +1348,6 @@ typedef agpu_error (*agpuStateTrackerSetPolygonMode_FUN) (agpu_state_tracker* st
 typedef agpu_error (*agpuStateTrackerSetStencilState_FUN) (agpu_state_tracker* state_tracker, agpu_bool enabled, agpu_int writeMask, agpu_int readMask);
 typedef agpu_error (*agpuStateTrackerSetStencilFrontFace_FUN) (agpu_state_tracker* state_tracker, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
 typedef agpu_error (*agpuStateTrackerSetStencilBackFace_FUN) (agpu_state_tracker* state_tracker, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
-typedef agpu_error (*agpuStateTrackerSetRenderTargetCount_FUN) (agpu_state_tracker* state_tracker, agpu_int count);
-typedef agpu_error (*agpuStateTrackerSetRenderTargetFormat_FUN) (agpu_state_tracker* state_tracker, agpu_uint index, agpu_texture_format format);
-typedef agpu_error (*agpuStateTrackerSetDepthStencilFormat_FUN) (agpu_state_tracker* state_tracker, agpu_texture_format format);
 typedef agpu_error (*agpuStateTrackerSetPrimitiveType_FUN) (agpu_state_tracker* state_tracker, agpu_primitive_topology type);
 typedef agpu_error (*agpuStateTrackerSetVertexLayout_FUN) (agpu_state_tracker* state_tracker, agpu_vertex_layout* layout);
 typedef agpu_error (*agpuStateTrackerSetShaderSignature_FUN) (agpu_state_tracker* state_tracker, agpu_shader_signature* signature);
@@ -1370,12 +1377,18 @@ typedef agpu_error (*agpuStateTrackerPushConstants_FUN) (agpu_state_tracker* sta
 
 AGPU_EXPORT agpu_error agpuAddStateTrackerReference(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference(agpu_state_tracker* state_tracker);
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRecordingCommands(agpu_state_tracker* state_tracker);
+AGPU_EXPORT agpu_command_list* agpuStateTrackerEndRecordingCommands(agpu_state_tracker* state_tracker);
+AGPU_EXPORT agpu_error agpuStateTrackerEndRecordingAndFlushCommands(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerReset(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerResetGraphicsPipeline(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerResetComputePipeline(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStage(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
 AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
-AGPU_EXPORT agpu_error agpuStateTrackerSetFragment(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage(agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint);
 AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState(agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool enabled);
 AGPU_EXPORT agpu_error agpuStateTrackerSetBlendFunction(agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation);
 AGPU_EXPORT agpu_error agpuStateTrackerSetColorMask(agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled);
@@ -1387,9 +1400,6 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetPolygonMode(agpu_state_tracker* state_
 AGPU_EXPORT agpu_error agpuStateTrackerSetStencilState(agpu_state_tracker* state_tracker, agpu_bool enabled, agpu_int writeMask, agpu_int readMask);
 AGPU_EXPORT agpu_error agpuStateTrackerSetStencilFrontFace(agpu_state_tracker* state_tracker, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
 AGPU_EXPORT agpu_error agpuStateTrackerSetStencilBackFace(agpu_state_tracker* state_tracker, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
-AGPU_EXPORT agpu_error agpuStateTrackerSetRenderTargetCount(agpu_state_tracker* state_tracker, agpu_int count);
-AGPU_EXPORT agpu_error agpuStateTrackerSetRenderTargetFormat(agpu_state_tracker* state_tracker, agpu_uint index, agpu_texture_format format);
-AGPU_EXPORT agpu_error agpuStateTrackerSetDepthStencilFormat(agpu_state_tracker* state_tracker, agpu_texture_format format);
 AGPU_EXPORT agpu_error agpuStateTrackerSetPrimitiveType(agpu_state_tracker* state_tracker, agpu_primitive_topology type);
 AGPU_EXPORT agpu_error agpuStateTrackerSetVertexLayout(agpu_state_tracker* state_tracker, agpu_vertex_layout* layout);
 AGPU_EXPORT agpu_error agpuStateTrackerSetShaderSignature(agpu_state_tracker* state_tracker, agpu_shader_signature* signature);
@@ -1590,6 +1600,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetDepthStencilClearValue_FUN agpuSetDepthStencilClearValue;
 	agpuSetColorClearValue_FUN agpuSetColorClearValue;
 	agpuSetColorClearValueFrom_FUN agpuSetColorClearValueFrom;
+	agpuGetRenderPassColorAttachmentFormats_FUN agpuGetRenderPassColorAttachmentFormats;
+	agpuGetRenderPassgetDepthStencilAttachmentFormat_FUN agpuGetRenderPassgetDepthStencilAttachmentFormat;
 	agpuAddShaderSignatureBuilderReference_FUN agpuAddShaderSignatureBuilderReference;
 	agpuReleaseShaderSignatureBuilder_FUN agpuReleaseShaderSignatureBuilder;
 	agpuBuildShaderSignature_FUN agpuBuildShaderSignature;
@@ -1631,12 +1643,18 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateStateTrackerWithFrameBuffering_FUN agpuCreateStateTrackerWithFrameBuffering;
 	agpuAddStateTrackerReference_FUN agpuAddStateTrackerReference;
 	agpuReleaseStateTrackerReference_FUN agpuReleaseStateTrackerReference;
+	agpuStateTrackerBeginRecordingCommands_FUN agpuStateTrackerBeginRecordingCommands;
+	agpuStateTrackerEndRecordingCommands_FUN agpuStateTrackerEndRecordingCommands;
+	agpuStateTrackerEndRecordingAndFlushCommands_FUN agpuStateTrackerEndRecordingAndFlushCommands;
 	agpuStateTrackerReset_FUN agpuStateTrackerReset;
 	agpuStateTrackerResetGraphicsPipeline_FUN agpuStateTrackerResetGraphicsPipeline;
 	agpuStateTrackerResetComputePipeline_FUN agpuStateTrackerResetComputePipeline;
 	agpuStateTrackerSetComputeStage_FUN agpuStateTrackerSetComputeStage;
 	agpuStateTrackerSetVertexStage_FUN agpuStateTrackerSetVertexStage;
-	agpuStateTrackerSetFragment_FUN agpuStateTrackerSetFragment;
+	agpuStateTrackerSetFragmentStage_FUN agpuStateTrackerSetFragmentStage;
+	agpuStateTrackerSetGeometryStage_FUN agpuStateTrackerSetGeometryStage;
+	agpuStateTrackerSetTessellationControlStage_FUN agpuStateTrackerSetTessellationControlStage;
+	agpuStateTrackerSetTessellationEvaluationStage_FUN agpuStateTrackerSetTessellationEvaluationStage;
 	agpuStateTrackerSetBlendState_FUN agpuStateTrackerSetBlendState;
 	agpuStateTrackerSetBlendFunction_FUN agpuStateTrackerSetBlendFunction;
 	agpuStateTrackerSetColorMask_FUN agpuStateTrackerSetColorMask;
@@ -1648,9 +1666,6 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerSetStencilState_FUN agpuStateTrackerSetStencilState;
 	agpuStateTrackerSetStencilFrontFace_FUN agpuStateTrackerSetStencilFrontFace;
 	agpuStateTrackerSetStencilBackFace_FUN agpuStateTrackerSetStencilBackFace;
-	agpuStateTrackerSetRenderTargetCount_FUN agpuStateTrackerSetRenderTargetCount;
-	agpuStateTrackerSetRenderTargetFormat_FUN agpuStateTrackerSetRenderTargetFormat;
-	agpuStateTrackerSetDepthStencilFormat_FUN agpuStateTrackerSetDepthStencilFormat;
 	agpuStateTrackerSetPrimitiveType_FUN agpuStateTrackerSetPrimitiveType;
 	agpuStateTrackerSetVertexLayout_FUN agpuStateTrackerSetVertexLayout;
 	agpuStateTrackerSetShaderSignature_FUN agpuStateTrackerSetShaderSignature;

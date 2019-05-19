@@ -39,3 +39,17 @@ AGPURenderpass >> setColorClearValueFrom: attachment_index value: value [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPURenderpass >> getColorAttachmentFormats: color_attachment_count formats: formats [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getColorAttachmentFormats_renderpass: (self validHandle) color_attachment_count: color_attachment_count formats: formats.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPURenderpass >> getDepthStencilAttachmentFormat [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getDepthStencilAttachmentFormat_renderpass: (self validHandle).
+	^ resultValue_
+]
+

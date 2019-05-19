@@ -853,6 +853,16 @@ AGPUCBindings >> setColorClearValueFrom_renderpass: renderpass attachment_index:
 	^ self ffiCall: #(agpu_error agpuSetColorClearValueFrom (agpu_renderpass* renderpass , agpu_uint attachment_index , agpu_color4f* value) )
 ]
 
+{ #category : #'renderpass' }
+AGPUCBindings >> getColorAttachmentFormats_renderpass: renderpass color_attachment_count: color_attachment_count formats: formats [
+	^ self ffiCall: #(agpu_error agpuGetRenderPassColorAttachmentFormats (agpu_renderpass* renderpass , agpu_uint* color_attachment_count , agpu_texture_format* formats) )
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getDepthStencilAttachmentFormat_renderpass: renderpass [
+	^ self ffiCall: #(agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat (agpu_renderpass* renderpass) )
+]
+
 { #category : #'shader_signature_builder' }
 AGPUCBindings >> addReference_shader_signature_builder: shader_signature_builder [
 	^ self ffiCall: #(agpu_error agpuAddShaderSignatureBuilderReference (agpu_shader_signature_builder* shader_signature_builder) )
@@ -1059,6 +1069,21 @@ AGPUCBindings >> release_state_tracker: state_tracker [
 ]
 
 { #category : #'state_tracker' }
+AGPUCBindings >> beginRecordingCommands_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerBeginRecordingCommands (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> endRecordingCommands_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_command_list* agpuStateTrackerEndRecordingCommands (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> endRecordingAndFlushCommands_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerEndRecordingAndFlushCommands (agpu_state_tracker* state_tracker) )
+]
+
+{ #category : #'state_tracker' }
 AGPUCBindings >> reset_state_tracker: state_tracker [
 	^ self ffiCall: #(agpu_error agpuStateTrackerReset (agpu_state_tracker* state_tracker) )
 ]
@@ -1085,7 +1110,22 @@ AGPUCBindings >> setVertexStage_state_tracker: state_tracker shader: shader entr
 
 { #category : #'state_tracker' }
 AGPUCBindings >> setFragmentStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
-	^ self ffiCall: #(agpu_error agpuStateTrackerSetFragment (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetFragmentStage (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setGeometryStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetGeometryStage (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setTessellationControlStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetTessellationControlStage (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setTessellationEvaluationStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
+	^ self ffiCall: #(agpu_error agpuStateTrackerSetTessellationEvaluationStage (agpu_state_tracker* state_tracker , agpu_shader* shader , agpu_cstring entryPoint) )
 ]
 
 { #category : #'state_tracker' }
@@ -1141,21 +1181,6 @@ AGPUCBindings >> setStencilFrontFace_state_tracker: state_tracker stencilFailOpe
 { #category : #'state_tracker' }
 AGPUCBindings >> setStencilBackFace_state_tracker: state_tracker stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
 	^ self ffiCall: #(agpu_error agpuStateTrackerSetStencilBackFace (agpu_state_tracker* state_tracker , agpu_stencil_operation stencilFailOperation , agpu_stencil_operation depthFailOperation , agpu_stencil_operation stencilDepthPassOperation , agpu_compare_function stencilFunction) )
-]
-
-{ #category : #'state_tracker' }
-AGPUCBindings >> setRenderTargetCount_state_tracker: state_tracker count: count [
-	^ self ffiCall: #(agpu_error agpuStateTrackerSetRenderTargetCount (agpu_state_tracker* state_tracker , agpu_int count) )
-]
-
-{ #category : #'state_tracker' }
-AGPUCBindings >> setRenderTargetFormat_state_tracker: state_tracker index: index format: format [
-	^ self ffiCall: #(agpu_error agpuStateTrackerSetRenderTargetFormat (agpu_state_tracker* state_tracker , agpu_uint index , agpu_texture_format format) )
-]
-
-{ #category : #'state_tracker' }
-AGPUCBindings >> setDepthStencilFormat_state_tracker: state_tracker format: format [
-	^ self ffiCall: #(agpu_error agpuStateTrackerSetDepthStencilFormat (agpu_state_tracker* state_tracker , agpu_texture_format format) )
 ]
 
 { #category : #'state_tracker' }

@@ -1043,6 +1043,17 @@ AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* self, agpu_ui
 	return asRef(agpu::renderpass, self)->setColorClearValueFrom(attachment_index, value);
 }
 
+AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats(agpu_renderpass* self, agpu_uint* color_attachment_count, agpu_texture_format* formats)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::renderpass, self)->getColorAttachmentFormats(color_attachment_count, formats);
+}
+
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat(agpu_renderpass* self)
+{
+	return asRef(agpu::renderpass, self)->getDepthStencilAttachmentFormat();
+}
+
 //==============================================================================
 // shader_signature_builder C dispatching functions.
 //==============================================================================
@@ -1307,6 +1318,23 @@ AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference(agpu_state_tracker* self
 	return asRefCounter(agpu::state_tracker, self)->release();
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRecordingCommands(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->beginRecordingCommands();
+}
+
+AGPU_EXPORT agpu_command_list* agpuStateTrackerEndRecordingCommands(agpu_state_tracker* self)
+{
+	return reinterpret_cast<agpu_command_list*> (asRef(agpu::state_tracker, self)->endRecordingCommands());
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerEndRecordingAndFlushCommands(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->endRecordingAndFlushCommands();
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerReset(agpu_state_tracker* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
@@ -1337,10 +1365,28 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage(agpu_state_tracker* self, 
 	return asRef(agpu::state_tracker, self)->setVertexStage(asRef(agpu::shader, shader), entryPoint);
 }
 
-AGPU_EXPORT agpu_error agpuStateTrackerSetFragment(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->setFragmentStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setGeometryStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setTessellationControlStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setTessellationEvaluationStage(asRef(agpu::shader, shader), entryPoint);
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState(agpu_state_tracker* self, agpu_int renderTargetMask, agpu_bool enabled)
@@ -1407,24 +1453,6 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetStencilBackFace(agpu_state_tracker* se
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
-}
-
-AGPU_EXPORT agpu_error agpuStateTrackerSetRenderTargetCount(agpu_state_tracker* self, agpu_int count)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::state_tracker, self)->setRenderTargetCount(count);
-}
-
-AGPU_EXPORT agpu_error agpuStateTrackerSetRenderTargetFormat(agpu_state_tracker* self, agpu_uint index, agpu_texture_format format)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::state_tracker, self)->setRenderTargetFormat(index, format);
-}
-
-AGPU_EXPORT agpu_error agpuStateTrackerSetDepthStencilFormat(agpu_state_tracker* self, agpu_texture_format format)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::state_tracker, self)->setDepthStencilFormat(format);
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetPrimitiveType(agpu_state_tracker* self, agpu_primitive_topology type)

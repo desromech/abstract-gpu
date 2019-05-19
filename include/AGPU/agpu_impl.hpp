@@ -750,6 +750,8 @@ public:
 	virtual agpu_error setDepthStencilClearValue(agpu_depth_stencil_value value) = 0;
 	virtual agpu_error setColorClearValue(agpu_uint attachment_index, agpu_color4f value) = 0;
 	virtual agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value) = 0;
+	virtual agpu_error getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats) = 0;
+	virtual agpu_texture_format getDepthStencilAttachmentFormat() = 0;
 };
 
 
@@ -833,12 +835,18 @@ struct state_tracker : base_interface
 {
 public:
 	typedef state_tracker main_interface;
+	virtual agpu_error beginRecordingCommands() = 0;
+	virtual command_list_ptr endRecordingCommands() = 0;
+	virtual agpu_error endRecordingAndFlushCommands() = 0;
 	virtual agpu_error reset() = 0;
 	virtual agpu_error resetGraphicsPipeline() = 0;
 	virtual agpu_error resetComputePipeline() = 0;
 	virtual agpu_error setComputeStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
 	virtual agpu_error setVertexStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
 	virtual agpu_error setFragmentStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setGeometryStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setTessellationControlStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setTessellationEvaluationStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
 	virtual agpu_error setBlendState(agpu_int renderTargetMask, agpu_bool enabled) = 0;
 	virtual agpu_error setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation) = 0;
 	virtual agpu_error setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled) = 0;
@@ -850,9 +858,6 @@ public:
 	virtual agpu_error setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask) = 0;
 	virtual agpu_error setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) = 0;
 	virtual agpu_error setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) = 0;
-	virtual agpu_error setRenderTargetCount(agpu_int count) = 0;
-	virtual agpu_error setRenderTargetFormat(agpu_uint index, agpu_texture_format format) = 0;
-	virtual agpu_error setDepthStencilFormat(agpu_texture_format format) = 0;
 	virtual agpu_error setPrimitiveType(agpu_primitive_topology type) = 0;
 	virtual agpu_error setVertexLayout(const vertex_layout_ref & layout) = 0;
 	virtual agpu_error setShaderSignature(const shader_signature_ref & signature) = 0;

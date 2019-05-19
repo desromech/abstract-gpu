@@ -1587,11 +1587,19 @@
                 <arg name="attachment_index" type="uint" />
                 <arg name="value" type="color4f" />
             </method>
+
             <method name="setColorClearValueFrom" cname="SetColorClearValueFrom" returnType="error">
                 <arg name="attachment_index" type="uint" />
                 <arg name="value" type="color4f*" />
             </method>
 
+            <method name="getColorAttachmentFormats" cname="GetRenderPassColorAttachmentFormats" returnType="error">
+                <arg name="color_attachment_count" type="uint*" />
+                <arg name="formats" type="texture_format*" />
+            </method>
+
+            <method name="getDepthStencilAttachmentFormat" cname="GetRenderPassgetDepthStencilAttachmentFormat" returnType="texture_format">
+            </method>
         </interface>
 
         <interface name="shader_signature_builder">
@@ -1789,6 +1797,15 @@
             <method name="release" cname="ReleaseStateTrackerReference" returnType="error">
             </method>
 
+            <method name="beginRecordingCommands" cname="StateTrackerBeginRecordingCommands" returnType="error">
+            </method>
+
+            <method name="endRecordingCommands" cname="StateTrackerEndRecordingCommands" returnType="command_list*">
+            </method>
+
+            <method name="endRecordingAndFlushCommands" cname="StateTrackerEndRecordingAndFlushCommands" returnType="error">
+            </method>
+
             <method name="reset" cname="StateTrackerReset" returnType="error">
             </method>
 
@@ -1810,7 +1827,22 @@
                 <arg name="entryPoint" type="cstring" />
             </method>
 
-            <method name="setFragmentStage" cname="StateTrackerSetFragment" returnType="error">
+            <method name="setFragmentStage" cname="StateTrackerSetFragmentStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setGeometryStage" cname="StateTrackerSetGeometryStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setTessellationControlStage" cname="StateTrackerSetTessellationControlStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setTessellationEvaluationStage" cname="StateTrackerSetTessellationEvaluationStage" returnType="error">
                 <arg name="shader" type="shader*" />
                 <arg name="entryPoint" type="cstring" />
             </method>
@@ -1880,19 +1912,6 @@
                 <arg name="depthFailOperation" type="stencil_operation" />
                 <arg name="stencilDepthPassOperation" type="stencil_operation" />
                 <arg name="stencilFunction" type="compare_function" />
-            </method>
-
-            <method name="setRenderTargetCount" cname="StateTrackerSetRenderTargetCount" returnType="error">
-                <arg name="count" type="int" />
-            </method>
-
-            <method name="setRenderTargetFormat" cname="StateTrackerSetRenderTargetFormat" returnType="error">
-                <arg name="index" type="uint" />
-                <arg name="format" type="texture_format" />
-            </method>
-
-            <method name="setDepthStencilFormat" cname="StateTrackerSetDepthStencilFormat" returnType="error">
-                <arg name="format" type="texture_format" />
             </method>
 
             <method name="setPrimitiveType" cname="StateTrackerSetPrimitiveType" returnType="error">

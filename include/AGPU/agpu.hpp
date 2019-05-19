@@ -45,8 +45,9 @@ public:
     }
 
     agpu_ref(T* pointer)
-        : pointer(pointer)
+        : pointer(0)
     {
+		reset(pointer);
     }
 
     ~agpu_ref()
@@ -1144,6 +1145,16 @@ public:
 		agpuThrowIfFailed(agpuSetColorClearValueFrom(this, attachment_index, value));
 	}
 
+	inline void getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats)
+	{
+		agpuThrowIfFailed(agpuGetRenderPassColorAttachmentFormats(this, color_attachment_count, formats));
+	}
+
+	inline agpu_texture_format getDepthStencilAttachmentFormat()
+	{
+		return agpuGetRenderPassgetDepthStencilAttachmentFormat(this);
+	}
+
 };
 
 typedef agpu_ref<agpu_renderpass> agpu_renderpass_ref;
@@ -1426,6 +1437,21 @@ public:
 		agpuThrowIfFailed(agpuReleaseStateTrackerReference(this));
 	}
 
+	inline void beginRecordingCommands()
+	{
+		agpuThrowIfFailed(agpuStateTrackerBeginRecordingCommands(this));
+	}
+
+	inline agpu_ref<agpu_command_list> endRecordingCommands()
+	{
+		return agpuStateTrackerEndRecordingCommands(this);
+	}
+
+	inline void endRecordingAndFlushCommands()
+	{
+		agpuThrowIfFailed(agpuStateTrackerEndRecordingAndFlushCommands(this));
+	}
+
 	inline void reset()
 	{
 		agpuThrowIfFailed(agpuStateTrackerReset(this));
@@ -1453,7 +1479,22 @@ public:
 
 	inline void setFragmentStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
 	{
-		agpuThrowIfFailed(agpuStateTrackerSetFragment(this, shader.get(), entryPoint));
+		agpuThrowIfFailed(agpuStateTrackerSetFragmentStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setGeometryStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetGeometryStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setTessellationControlStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetTessellationControlStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setTessellationEvaluationStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetTessellationEvaluationStage(this, shader.get(), entryPoint));
 	}
 
 	inline void setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
@@ -1509,21 +1550,6 @@ public:
 	inline void setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
 	{
 		agpuThrowIfFailed(agpuStateTrackerSetStencilBackFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
-	}
-
-	inline void setRenderTargetCount(agpu_int count)
-	{
-		agpuThrowIfFailed(agpuStateTrackerSetRenderTargetCount(this, count));
-	}
-
-	inline void setRenderTargetFormat(agpu_uint index, agpu_texture_format format)
-	{
-		agpuThrowIfFailed(agpuStateTrackerSetRenderTargetFormat(this, index, format));
-	}
-
-	inline void setDepthStencilFormat(agpu_texture_format format)
-	{
-		agpuThrowIfFailed(agpuStateTrackerSetDepthStencilFormat(this, format));
 	}
 
 	inline void setPrimitiveType(agpu_primitive_topology type)
