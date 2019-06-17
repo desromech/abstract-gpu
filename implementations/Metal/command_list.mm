@@ -515,4 +515,42 @@ agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, ag
     return AGPU_OK;
 }
 
+agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+    MTLBarrierScope scope = MTLBarrierScopeBuffers | MTLBarrierScopeTextures;
+    if((source_stage & AGPU_PIPELINE_STAGE_COMPUTE_SHADER) != 0 && computeEncoder)
+        [computeEncoder memoryBarrierWithScope: MTLBarrierScopeBuffers | MTLBarrierScopeTextures];
+        
+    if(renderEncoder)
+    {
+        auto combinedAccesses = source_accesses | dest_accesses;
+        if(combinedAccesses & (
+            AGPU_ACCESS_COLOR_ATTACHMENT_READ | AGPU_ACCESS_COLOR_ATTACHMENT_WRITE |
+            AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ | AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE
+        ))
+            scope |= MTLBarrierScopeRenderTargets;
+        
+        MTLRenderStages sourceStages = 0;
+        MTLRenderStages destStages = 0;
+        if(source_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
+            sourceStages |= MTLRenderStageVertex;
+        if(source_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
+            sourceStages |= MTLRenderStageFragment;
+        if(source_stage & AGPU_PIPELINE_STAGE_BOTTOM_OF_PIPE)
+            sourceStages = MTLRenderStageVertex | MTLRenderStageFragment;
+
+        if(dest_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
+            destStages |= MTLRenderStageVertex;
+        if(dest_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
+            destStages |= MTLRenderStageFragment;
+        if(dest_stage & AGPU_PIPELINE_STAGE_TOP_OF_PIPE)
+            destStages = MTLRenderStageVertex | MTLRenderStageFragment;            
+            
+        [renderEncoder memoryBarrierWithScope: scope
+            afterStages: sourceStages beforeStages: destStages];
+    }
+    
+    return AGPU_OK;
+}
+
 } // End of namespace AgpuMetal

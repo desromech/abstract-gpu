@@ -42,7 +42,7 @@ public:
         if (description.type == AGPU_TEXTURE_1D || region.size.height == 0)
             region.size.height = 1;
 
-        region.size.depth = description.depthOrArraySize >> level;
+        region.size.depth = description.depth >> level;
         if (description.type != AGPU_TEXTURE_3D || region.size.depth == 0)
             region.size.depth = 1;
         return region;

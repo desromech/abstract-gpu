@@ -23,9 +23,9 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         return agpu::texture_ref();
 
     auto descriptor = [MTLTextureDescriptor new];
-    bool isArray = description->depthOrArraySize > 1;
+    bool isArray = description->layers > 1;
 
-    descriptor.arrayLength = description->depthOrArraySize;
+    descriptor.arrayLength = description->layers;
     switch(description->type)
     {
     case AGPU_TEXTURE_1D:
@@ -41,7 +41,7 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
     case AGPU_TEXTURE_3D:
         descriptor.textureType = MTLTextureType3D;
         descriptor.arrayLength = 1;
-        descriptor.depth = description->depthOrArraySize;
+        descriptor.depth = description->depth;
         break;
     default:
         return agpu::texture_ref();
@@ -57,16 +57,13 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         descriptor.storageMode = MTLStorageModePrivate;
     }    
 
-    auto flags = description->flags;
-    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+    auto usageModes = description->usage_modes;
+    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
     {
         descriptor.usage = MTLTextureUsageRenderTarget;
         descriptor.storageMode = MTLStorageModePrivate;
-        if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
-            descriptor.usage |= MTLTextureUsageShaderRead;
-
     }
-    else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+    else if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
     {
         descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
     }
@@ -74,6 +71,9 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
     {
         descriptor.usage = MTLTextureUsageShaderRead;
     }
+
+    if (usageModes & AGPU_TEXTURE_USAGE_SAMPLED)
+        descriptor.usage |= MTLTextureUsageShaderRead;
 
     auto handle = [deviceForMetal->device newTextureWithDescriptor: descriptor];
     [descriptor release];
@@ -181,11 +181,11 @@ agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* 
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.usage_mode = description.usage_modes;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
-    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    viewDescription->subresource_range.layer_count = description.layers;
     if(viewDescription->subresource_range.layer_count == 1)
         viewDescription->subresource_range.layer_count = 0;
 
