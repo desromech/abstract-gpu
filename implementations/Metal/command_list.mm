@@ -517,6 +517,8 @@ agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, ag
 
 agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
 {
+    // Disabled, not found on CI server.
+#if 0
     MTLBarrierScope scope = MTLBarrierScopeBuffers | MTLBarrierScopeTextures;
     if((source_stage & AGPU_PIPELINE_STAGE_COMPUTE_SHADER) != 0 && computeEncoder)
         [computeEncoder memoryBarrierWithScope: MTLBarrierScopeBuffers | MTLBarrierScopeTextures];
@@ -549,7 +551,7 @@ agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage
         [renderEncoder memoryBarrierWithScope: scope
             afterStages: sourceStages beforeStages: destStages];
     }
-    
+#endif
     return AGPU_OK;
 }
 
