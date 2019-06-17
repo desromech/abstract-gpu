@@ -13,7 +13,7 @@ inline GLenum findTextureTarget(agpu_texture_description *description)
     switch(description->type)
     {
     case AGPU_TEXTURE_1D:
-        if(description->depthOrArraySize > 1)
+        if(description->layers > 1)
             return GL_TEXTURE_1D_ARRAY;
         else
             return GL_TEXTURE_1D;
@@ -24,7 +24,7 @@ inline GLenum findTextureTarget(agpu_texture_description *description)
         }
         else
         {
-            if(description->depthOrArraySize > 1)
+            if(description->layers > 1)
                 return GL_TEXTURE_2D_ARRAY;
             else
                 return GL_TEXTURE_2D;

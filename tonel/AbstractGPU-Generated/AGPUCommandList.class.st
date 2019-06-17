@@ -207,3 +207,10 @@ AGPUCommandList >> pushConstants: offset size: size values: values [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUCommandList >> memoryBarrier: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance memoryBarrier_command_list: (self validHandle) source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses.
+	self checkErrorCode: resultValue_
+]
+

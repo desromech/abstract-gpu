@@ -129,14 +129,6 @@ AGPU_EXPORT agpu_shader* agpuCreateShader ( agpu_device* device, agpu_shader_typ
 	return (*dispatchTable)->agpuCreateShader ( device, type );
 }
 
-AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice ( agpu_device* device )
-{
-	if (device == nullptr)
-		return (agpu_offline_shader_compiler*)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuCreateOfflineShaderCompilerForDevice ( device );
-}
-
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder ( agpu_device* device )
 {
 	if (device == nullptr)
@@ -271,6 +263,22 @@ AGPU_EXPORT agpu_vr_system* agpuGetVRSystem ( agpu_device* device )
 		return (agpu_vr_system*)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
 	return (*dispatchTable)->agpuGetVRSystem ( device );
+}
+
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_offline_shader_compiler*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateOfflineShaderCompilerForDevice ( device );
+}
+
+AGPU_EXPORT agpu_state_tracker_cache* agpuCreateStateTrackerCache ( agpu_device* device, agpu_command_queue* command_queue_family )
+{
+	if (device == nullptr)
+		return (agpu_state_tracker_cache*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateStateTrackerCache ( device, command_queue_family );
 }
 
 AGPU_EXPORT agpu_error agpuAddVRSystemReference ( agpu_vr_system* vr_system )
@@ -1025,6 +1033,14 @@ AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu
 	return (*dispatchTable)->agpuPushConstants ( command_list, offset, size, values );
 }
 
+AGPU_EXPORT agpu_error agpuMemoryBarrier ( agpu_command_list* command_list, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuMemoryBarrier ( command_list, source_stage, dest_stage, source_accesses, dest_accesses );
+}
+
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
 {
 	if (texture == nullptr)
@@ -1289,94 +1305,6 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog ( agpu_shader* shader, agpu_s
 	return (*dispatchTable)->agpuGetShaderCompilationLog ( shader, buffer_size, buffer );
 }
 
-AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference ( agpu_offline_shader_compiler* offline_shader_compiler )
-{
-	if (offline_shader_compiler == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuAddOfflineShaderCompilerReference ( offline_shader_compiler );
-}
-
-AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler ( agpu_offline_shader_compiler* offline_shader_compiler )
-{
-	if (offline_shader_compiler == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuReleaseOfflineShaderCompiler ( offline_shader_compiler );
-}
-
-AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
-{
-	if (offline_shader_compiler == nullptr)
-		return (agpu_bool)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuisShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
-}
-
-AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
-{
-	if (offline_shader_compiler == nullptr)
-		return (agpu_bool)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuisTargetShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
-}
-
-AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength )
-{
-	if (offline_shader_compiler == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuSetOfflineShaderCompilerSource ( offline_shader_compiler, language, stage, sourceText, sourceTextLength );
-}
-
-AGPU_EXPORT agpu_error agpuCompileOfflineShader ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options )
-{
-	if (offline_shader_compiler == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuCompileOfflineShader ( offline_shader_compiler, target_language, options );
-}
-
-AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength ( agpu_offline_shader_compiler* offline_shader_compiler )
-{
-	if (offline_shader_compiler == nullptr)
-		return (agpu_size)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuGetOfflineShaderCompilationLogLength ( offline_shader_compiler );
-}
-
-AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-	if (offline_shader_compiler == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuGetOfflineShaderCompilationLog ( offline_shader_compiler, buffer_size, buffer );
-}
-
-AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength ( agpu_offline_shader_compiler* offline_shader_compiler )
-{
-	if (offline_shader_compiler == nullptr)
-		return (agpu_size)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuGetOfflineShaderCompilationResultLength ( offline_shader_compiler );
-}
-
-AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer )
-{
-	if (offline_shader_compiler == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuGetOfflineShaderCompilationResult ( offline_shader_compiler, buffer_size, buffer );
-}
-
-AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader ( agpu_offline_shader_compiler* offline_shader_compiler )
-{
-	if (offline_shader_compiler == nullptr)
-		return (agpu_shader*)0;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuGetOfflineShaderCompilerResultAsShader ( offline_shader_compiler );
-}
-
 AGPU_EXPORT agpu_error agpuAddFramebufferReference ( agpu_framebuffer* framebuffer )
 {
 	if (framebuffer == nullptr)
@@ -1431,6 +1359,22 @@ AGPU_EXPORT agpu_error agpuSetColorClearValueFrom ( agpu_renderpass* renderpass,
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
 	return (*dispatchTable)->agpuSetColorClearValueFrom ( renderpass, attachment_index, value );
+}
+
+AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats ( agpu_renderpass* renderpass, agpu_uint* color_attachment_count, agpu_texture_format* formats )
+{
+	if (renderpass == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuGetRenderPassColorAttachmentFormats ( renderpass, color_attachment_count, formats );
+}
+
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat ( agpu_renderpass* renderpass )
+{
+	if (renderpass == nullptr)
+		return (agpu_texture_format)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuGetRenderPassgetDepthStencilAttachmentFormat ( renderpass );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )
@@ -1615,5 +1559,549 @@ AGPU_EXPORT agpu_error agpuWaitOnClient ( agpu_fence* fence )
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (fence);
 	return (*dispatchTable)->agpuWaitOnClient ( fence );
+}
+
+AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuAddOfflineShaderCompilerReference ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuReleaseOfflineShaderCompiler ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuisShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
+}
+
+AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuisTargetShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
+}
+
+AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuSetOfflineShaderCompilerSource ( offline_shader_compiler, language, stage, sourceText, sourceTextLength );
+}
+
+AGPU_EXPORT agpu_error agpuCompileOfflineShader ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuCompileOfflineShader ( offline_shader_compiler, target_language, options );
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationLogLength ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationLog ( offline_shader_compiler, buffer_size, buffer );
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationResultLength ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_size buffer_size, agpu_string_buffer buffer )
+{
+	if (offline_shader_compiler == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilationResult ( offline_shader_compiler, buffer_size, buffer );
+}
+
+AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader ( agpu_offline_shader_compiler* offline_shader_compiler )
+{
+	if (offline_shader_compiler == nullptr)
+		return (agpu_shader*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
+	return (*dispatchTable)->agpuGetOfflineShaderCompilerResultAsShader ( offline_shader_compiler );
+}
+
+AGPU_EXPORT agpu_error agpuAddStateTrackerCacheReference ( agpu_state_tracker_cache* state_tracker_cache )
+{
+	if (state_tracker_cache == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker_cache);
+	return (*dispatchTable)->agpuAddStateTrackerCacheReference ( state_tracker_cache );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseStateTrackerCacheReference ( agpu_state_tracker_cache* state_tracker_cache )
+{
+	if (state_tracker_cache == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker_cache);
+	return (*dispatchTable)->agpuReleaseStateTrackerCacheReference ( state_tracker_cache );
+}
+
+AGPU_EXPORT agpu_state_tracker* agpuCreateStateTracker ( agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue )
+{
+	if (state_tracker_cache == nullptr)
+		return (agpu_state_tracker*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker_cache);
+	return (*dispatchTable)->agpuCreateStateTracker ( state_tracker_cache, type, command_queue );
+}
+
+AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithCommandAllocator ( agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_command_allocator* command_allocator )
+{
+	if (state_tracker_cache == nullptr)
+		return (agpu_state_tracker*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker_cache);
+	return (*dispatchTable)->agpuCreateStateTrackerWithCommandAllocator ( state_tracker_cache, type, command_queue, command_allocator );
+}
+
+AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering ( agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_uint framebuffering_count )
+{
+	if (state_tracker_cache == nullptr)
+		return (agpu_state_tracker*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker_cache);
+	return (*dispatchTable)->agpuCreateStateTrackerWithFrameBuffering ( state_tracker_cache, type, command_queue, framebuffering_count );
+}
+
+AGPU_EXPORT agpu_error agpuAddStateTrackerReference ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuAddStateTrackerReference ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuReleaseStateTrackerReference ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRecordingCommands ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerBeginRecordingCommands ( state_tracker );
+}
+
+AGPU_EXPORT agpu_command_list* agpuStateTrackerEndRecordingCommands ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return (agpu_command_list*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerEndRecordingCommands ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerEndRecordingAndFlushCommands ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerEndRecordingAndFlushCommands ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerReset ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerReset ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResetGraphicsPipeline ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerResetGraphicsPipeline ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResetComputePipeline ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerResetComputePipeline ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetComputeStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetVertexStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetFragmentStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetGeometryStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetTessellationControlStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetTessellationEvaluationStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState ( agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool enabled )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetBlendState ( state_tracker, renderTargetMask, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetBlendFunction ( agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetBlendFunction ( state_tracker, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetColorMask ( agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetColorMask ( state_tracker, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetFrontFace ( agpu_state_tracker* state_tracker, agpu_face_winding winding )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetFrontFace ( state_tracker, winding );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetCullMode ( agpu_state_tracker* state_tracker, agpu_cull_mode mode )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetCullMode ( state_tracker, mode );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetDepthBias ( agpu_state_tracker* state_tracker, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetDepthBias ( state_tracker, constant_factor, clamp, slope_factor );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetDepthState ( agpu_state_tracker* state_tracker, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetDepthState ( state_tracker, enabled, writeMask, function );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetPolygonMode ( agpu_state_tracker* state_tracker, agpu_polygon_mode mode )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetPolygonMode ( state_tracker, mode );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilState ( agpu_state_tracker* state_tracker, agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetStencilState ( state_tracker, enabled, writeMask, readMask );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilFrontFace ( agpu_state_tracker* state_tracker, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetStencilFrontFace ( state_tracker, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilBackFace ( agpu_state_tracker* state_tracker, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetStencilBackFace ( state_tracker, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetPrimitiveType ( agpu_state_tracker* state_tracker, agpu_primitive_topology type )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetPrimitiveType ( state_tracker, type );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetVertexLayout ( agpu_state_tracker* state_tracker, agpu_vertex_layout* layout )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetVertexLayout ( state_tracker, layout );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetShaderSignature ( agpu_state_tracker* state_tracker, agpu_shader_signature* signature )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetShaderSignature ( state_tracker, signature );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetSampleDescription ( agpu_state_tracker* state_tracker, agpu_uint sample_count, agpu_uint sample_quality )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetSampleDescription ( state_tracker, sample_count, sample_quality );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetViewport ( agpu_state_tracker* state_tracker, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetViewport ( state_tracker, x, y, w, h );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetScissor ( agpu_state_tracker* state_tracker, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetScissor ( state_tracker, x, y, w, h );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseVertexBinding ( agpu_state_tracker* state_tracker, agpu_vertex_binding* vertex_binding )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseVertexBinding ( state_tracker, vertex_binding );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseIndexBuffer ( agpu_state_tracker* state_tracker, agpu_buffer* index_buffer )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseIndexBuffer ( state_tracker, index_buffer );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseIndexBufferAt ( agpu_state_tracker* state_tracker, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseIndexBufferAt ( state_tracker, index_buffer, offset, index_size );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseDrawIndirectBuffer ( agpu_state_tracker* state_tracker, agpu_buffer* draw_buffer )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseDrawIndirectBuffer ( state_tracker, draw_buffer );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeDispatchIndirectBuffer ( agpu_state_tracker* state_tracker, agpu_buffer* buffer )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseComputeDispatchIndirectBuffer ( state_tracker, buffer );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResources ( agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseShaderResources ( state_tracker, binding );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResources ( agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseComputeShaderResources ( state_tracker, binding );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawArrays ( agpu_state_tracker* state_tracker, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerDrawArrays ( state_tracker, vertex_count, instance_count, first_vertex, base_instance );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawArraysIndirect ( agpu_state_tracker* state_tracker, agpu_size offset, agpu_size drawcount )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerDrawArraysIndirect ( state_tracker, offset, drawcount );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawElements ( agpu_state_tracker* state_tracker, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerDrawElements ( state_tracker, index_count, instance_count, first_index, base_vertex, base_instance );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawElementsIndirect ( agpu_state_tracker* state_tracker, agpu_size offset, agpu_size drawcount )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerDrawElementsIndirect ( state_tracker, offset, drawcount );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDispatchCompute ( agpu_state_tracker* state_tracker, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerDispatchCompute ( state_tracker, group_count_x, group_count_y, group_count_z );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDispatchComputeIndirect ( agpu_state_tracker* state_tracker, agpu_size offset )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerDispatchComputeIndirect ( state_tracker, offset );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilReference ( agpu_state_tracker* state_tracker, agpu_uint reference )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetStencilReference ( state_tracker, reference );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerExecuteBundle ( agpu_state_tracker* state_tracker, agpu_command_list* bundle )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerExecuteBundle ( state_tracker, bundle );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRenderPass ( agpu_state_tracker* state_tracker, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerBeginRenderPass ( state_tracker, renderpass, framebuffer, bundle_content );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerEndRenderPass ( agpu_state_tracker* state_tracker )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerEndRenderPass ( state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResolveFramebuffer ( agpu_state_tracker* state_tracker, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerResolveFramebuffer ( state_tracker, destFramebuffer, sourceFramebuffer );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResolveTexture ( agpu_state_tracker* state_tracker, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerResolveTexture ( state_tracker, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerPushConstants ( agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerPushConstants ( state_tracker, offset, size, values );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier ( agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerMemoryBarrier ( state_tracker, source_stage, dest_stage, source_accesses, dest_accesses );
 }
 

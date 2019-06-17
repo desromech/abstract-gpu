@@ -3,14 +3,20 @@ set(SampleCommon_SRC
     SampleBase.hpp
 )
 
-add_executable(Sample-Cpp-1 Sample1.cpp ${SampleCommon_SRC})
-target_link_libraries(Sample-Cpp-1 ${AGPU_SAMPLES_LIBS})
+add_library(SampleCppCommon STATIC ${SampleCommon_SRC})
+target_link_libraries(SampleCppCommon ${AGPU_SAMPLES_LIBS})
 
-add_executable(Sample-Cpp-2 Sample2.cpp ${SampleCommon_SRC})
-target_link_libraries(Sample-Cpp-2 ${AGPU_SAMPLES_LIBS})
+add_executable(Sample-Cpp-1 Sample1.cpp)
+target_link_libraries(Sample-Cpp-1 SampleCppCommon)
 
-add_executable(Sample-Cpp-3 Sample3.cpp ${SampleCommon_SRC})
-target_link_libraries(Sample-Cpp-3 ${AGPU_SAMPLES_LIBS})
+add_executable(Sample-Cpp-2 Sample2.cpp)
+target_link_libraries(Sample-Cpp-2 SampleCppCommon)
 
-add_executable(Sample-Cpp-4 Sample4.cpp ${SampleCommon_SRC})
-target_link_libraries(Sample-Cpp-4 ${AGPU_SAMPLES_LIBS})
+add_executable(Sample-Cpp-3 Sample3.cpp)
+target_link_libraries(Sample-Cpp-3 SampleCppCommon)
+
+add_executable(Sample-Cpp-4 Sample4.cpp)
+target_link_libraries(Sample-Cpp-4 SampleCppCommon)
+
+add_executable(Sample-Cpp-5 Sample5.cpp)
+target_link_libraries(Sample-Cpp-5 SampleCppCommon)

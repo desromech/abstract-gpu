@@ -185,20 +185,21 @@ agpu_error AMtlShader::getCompilationLog ( agpu_size buffer_size, agpu_string_bu
     return AGPU_OK;
 }
 
-agpu_error AMtlShader::getOrCreateShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type expectedEntryPointName, std::string *errorMessage, AMtlShaderForSignatureRef *result)
+agpu_error AMtlShader::getOrCreateShaderInstanceForSignature(const agpu::shader_signature_ref &signature, const std::string &entryPoint, agpu_shader_type expectedEntryPointName, std::string *errorMessage, AMtlShaderForSignatureRef *result)
 {
     if(language == AGPU_SHADER_LANGUAGE_METAL || language == AGPU_SHADER_LANGUAGE_METAL_AIR)
     {
         *result = genericShaderInstance;
         return AGPU_OK;
     }
+
     else if(language == AGPU_SHADER_LANGUAGE_SPIR_V)
-        return getOrCreateSpirVShaderInstanceForSignature(signature, vertexBufferCount, entryPoint, expectedEntryPointName, errorMessage, result);
+        return getOrCreateSpirVShaderInstanceForSignature(signature, entryPoint, expectedEntryPointName, errorMessage, result);
     else
         return AGPU_UNSUPPORTED;
 }
 
-agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &expectedEntryPointName, agpu_shader_type expectedEntryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result)
+agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::shader_signature_ref &signature, const std::string &expectedEntryPointName, agpu_shader_type expectedEntryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result)
 {
     char buffer[256];
     uint32_t *rawData = reinterpret_cast<uint32_t *> (&source[0]);
@@ -209,10 +210,6 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
     for(auto &binding : resourceBindings)
     {
         binding.stage = expectedExecutionModel;
-        if(expectedEntryPointStage == AGPU_VERTEX_SHADER)
-        {
-            binding.msl_buffer += vertexBufferCount;
-        }
     }
 
     //printf("getOrCreateSpirVShaderInstanceForSignature\n");
@@ -279,7 +276,7 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
 	shaderInstance->source = std::vector<uint8_t> ((uint8_t*)&compiled[0], (uint8_t*)&compiled[0] + compiled.size());
     shaderInstance->entryPoint = msl.get_cleansed_entry_point_name(usedEntryPoint, expectedExecutionModel);
     
-    if(type == AGPU_COMPUTE_SHADER)
+    if(expectedEntryPointStage == AGPU_COMPUTE_SHADER)
     {
         MTLSize localSize;
         localSize.width = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);

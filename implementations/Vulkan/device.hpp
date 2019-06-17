@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "include_vulkan.h"
+#include "vk_mem_alloc.h"
 #include <string.h>
 #include <memory>
 #include <mutex>
@@ -42,7 +43,6 @@ public:
 	virtual agpu::vertex_layout_ptr createVertexLayout() override;
 	virtual agpu::vertex_binding_ptr createVertexBinding(const agpu::vertex_layout_ref & layout) override;
 	virtual agpu::shader_ptr createShader(agpu_shader_type type) override;
-    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
 	virtual agpu::shader_signature_builder_ptr createShaderSignatureBuilder() override;
 	virtual agpu::pipeline_builder_ptr createPipelineBuilder() override;
 	virtual agpu::compute_pipeline_builder_ptr createComputePipelineBuilder() override;
@@ -60,6 +60,8 @@ public:
 	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
 	virtual agpu::vr_system_ptr getVRSystem() override;
+    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
+    virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
 
 public:
     std::vector<VkPhysicalDevice> physicalDevices;
@@ -108,6 +110,9 @@ public:
     std::vector<agpu::command_queue_ref> computeCommandQueues;
     std::vector<agpu::command_queue_ref> transferCommandQueues;
 
+    // The memory allocator
+    VmaAllocator memoryAllocator;
+
 public:
     bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)
     {
@@ -149,6 +154,18 @@ private:
     agpu::command_queue_ref setupQueue;
 };
 
+inline VmaMemoryUsage mapHeapType(agpu_memory_heap_type type)
+{
+    switch(type)
+    {
+    default:
+    case AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL: return VMA_MEMORY_USAGE_GPU_ONLY;
+    case AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE: return VMA_MEMORY_USAGE_CPU_TO_GPU;
+    case AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST: return VMA_MEMORY_USAGE_GPU_TO_CPU;
+    case AGPU_MEMORY_HEAP_TYPE_HOST: return VMA_MEMORY_USAGE_CPU_ONLY;
+    case AGPU_MEMORY_HEAP_TYPE_CUSTOM: return VMA_MEMORY_USAGE_UNKNOWN;
+    }
+}
 } // End of namespace AgpuVulkan
 
 #endif //AGPU_VULKAN_DEVICE_HPP

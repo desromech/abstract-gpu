@@ -45,6 +45,11 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
 
     // Attachments
     auto colorCount = description->color_attachment_count;
+    if(colorCount > MaxRenderTargetAttachmentCount)
+        return agpu::renderpass_ref();
+
+    std::array<agpu_texture_format, MaxRenderTargetAttachmentCount> colorAttachmentFormats;
+    agpu_texture_format depthStencilFormat = AGPU_TEXTURE_FORMAT_UNKNOWN;
 
     bool hasDepthStencil = description->depth_stencil_attachment != nullptr;
     std::vector<VkAttachmentDescription> attachments(colorCount + (hasDepthStencil ? 1 : 0));
@@ -54,6 +59,7 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
     {
         auto desc = description->color_attachments[i];
         auto &attachment = attachments[i];
+        colorAttachmentFormats[i] = desc.format;
 
         attachment.format = mapTextureFormat(desc.format);
         attachment.samples = mapSampleCount(desc.sample_count);
@@ -77,6 +83,7 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
         auto desc = description->depth_stencil_attachment;
         auto &attachment = attachments.back();
         auto hasStencil = hasStencilComponent(desc->format);
+        depthStencilFormat = desc->format;
         attachment.format = mapTextureFormat(desc->format);
         attachment.samples = mapSampleCount(desc->sample_count);
         attachment.loadOp = mapLoadOp(desc->begin_action);
@@ -141,6 +148,10 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
     avkRenderpass->handle = renderPass;
     avkRenderpass->clearValues = clearValues;
     avkRenderpass->hasDepthStencil = description->depth_stencil_attachment != nullptr;
+    avkRenderpass->colorAttachmentCount = colorCount;
+    avkRenderpass->colorAttachmentFormats = colorAttachmentFormats;
+    avkRenderpass->depthStencilFormat = depthStencilFormat;
+
     return result;
 }
 
@@ -176,6 +187,27 @@ agpu_error AVkRenderPass::setColorClearValueFrom(agpu_uint attachment_index, agp
 {
     CHECK_POINTER(value);
     return setColorClearValue(attachment_index, *value);
+}
+
+agpu_error AVkRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats)
+{
+    CHECK_POINTER(color_attachment_count);
+    if(formats)
+    {
+        if(*color_attachment_count < this->colorAttachmentCount)
+            return AGPU_INVALID_PARAMETER;
+
+        for(agpu_uint i = 0; i < colorAttachmentCount; ++i)
+            formats[i] = this->colorAttachmentFormats[i];
+    }
+
+    *color_attachment_count = this->colorAttachmentCount;
+    return AGPU_OK;
+}
+
+agpu_texture_format AVkRenderPass::getDepthStencilAttachmentFormat()
+{
+    return depthStencilFormat;
 }
 
 } // End of namespace AgpuVulkan

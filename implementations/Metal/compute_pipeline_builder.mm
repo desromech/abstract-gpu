@@ -31,7 +31,7 @@ agpu::pipeline_state_ptr AMtlComputePipelineBuilder::build ()
     }
 
     AMtlShaderForSignatureRef shaderInstance;
-    auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, 0, shaderEntryPoint, AGPU_COMPUTE_SHADER, &buildingLog, &shaderInstance);
+    auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, shaderEntryPoint, AGPU_COMPUTE_SHADER, &buildingLog, &shaderInstance);
     if(error || !shaderInstance || !shaderInstance->function)
         return nullptr;
 

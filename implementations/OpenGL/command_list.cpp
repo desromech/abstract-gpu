@@ -509,4 +509,10 @@ agpu_error GLCommandList::resolveTexture(const agpu::texture_ref &sourceTexture,
     return AGPU_OK;
 }
 
+agpu_error GLCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+    // TODO: Implement this.
+    return AGPU_OK;
+}
+
 } // End of namespace AgpuGL

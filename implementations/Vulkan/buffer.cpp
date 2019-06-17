@@ -35,7 +35,7 @@ agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_d
         return agpu::buffer_ref();
 
     // Try to determine whan kind of buffer is needed.
-    bool streaming = description->usage == AGPU_STREAM;
+    bool streaming = description->heap_type == AGPU_STREAM;
     bool canBeSubUpdated = (description->mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
     bool hasInitialData = initial_data != nullptr;
     bool canBeMapped = (description->mapping_flags & AGPU_MAP_READ_BIT) || (description->mapping_flags & AGPU_MAP_WRITE_BIT);

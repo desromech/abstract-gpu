@@ -23,7 +23,7 @@ struct TransformationState
 class Sample2: public SampleBase
 {
 public:
-    bool initializeSample()
+    virtual bool initializeSample() override
     {
         mainRenderPass = createMainPass();
         if(!mainRenderPass)
@@ -31,7 +31,7 @@ public:
 
         // Create the shader signature.
         {
-            agpu_shader_signature_builder_ref shaderSignatureBuilder = device->createShaderSignatureBuilder();
+            auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
             shaderSignatureBuilder->beginBindingBank(1);
             shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
             shaderSignature = shaderSignatureBuilder->build();
@@ -41,8 +41,8 @@ public:
 
         {
             // Create the programs.
-            agpu_shader_ref vertexShader = compileShaderFromFile("data/shaders/simpleVertex.glsl", AGPU_VERTEX_SHADER);
-            agpu_shader_ref fragmentShader = compileShaderFromFile("data/shaders/simpleFragment.glsl", AGPU_FRAGMENT_SHADER);
+            auto vertexShader = compileShaderFromFile("data/shaders/simpleVertex.glsl", AGPU_VERTEX_SHADER);
+            auto fragmentShader = compileShaderFromFile("data/shaders/simpleFragment.glsl", AGPU_FRAGMENT_SHADER);
             if (!vertexShader || !fragmentShader)
                 return false;
 
@@ -52,11 +52,11 @@ public:
             vertexLayout->addVertexAttributeBindings(1, &vertexStride, SampleVertex::DescriptionSize, SampleVertex::Description);
 
             // Create the pipeline builder
-            agpu_pipeline_builder_ref pipelineBuilder = device->createPipelineBuilder();
-            pipelineBuilder->setShaderSignature(shaderSignature.get());
-            pipelineBuilder->attachShader(vertexShader.get());
-            pipelineBuilder->attachShader(fragmentShader.get());
-            pipelineBuilder->setVertexLayout(vertexLayout.get());
+            auto pipelineBuilder = device->createPipelineBuilder();
+            pipelineBuilder->setShaderSignature(shaderSignature);
+            pipelineBuilder->attachShader(vertexShader);
+            pipelineBuilder->attachShader(fragmentShader);
+            pipelineBuilder->setVertexLayout(vertexLayout);
             pipelineBuilder->setPrimitiveType(AGPU_TRIANGLES);
 
             // Build the pipeline
@@ -74,23 +74,20 @@ public:
 
         // Create the shader bindings.
         shaderBindings = shaderSignature->createShaderResourceBinding(0);
-        shaderBindings->bindUniformBuffer(0, transformationBuffer.get());
+        shaderBindings->bindUniformBuffer(0, transformationBuffer);
 
         // Create the vertex buffer binding.
-        {
-            agpu_buffer *buffer = vertexBuffer.get();
-            vertexBinding = device->createVertexBinding(vertexLayout.get());
-            vertexBinding->bindVertexBuffers(1, &buffer);
-        }
+        vertexBinding = device->createVertexBinding(vertexLayout);
+        vertexBinding->bindVertexBuffers(1, &vertexBuffer);
 
-        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue.get());
-        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get(), nullptr);
+        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         commandList->close();
 
         return true;
     }
 
-    void render()
+    virtual void render() override
     {
         // Compute the projection matrix
         float aspect = float(screenWidth) / float(screenHeight);
@@ -103,20 +100,20 @@ public:
 
         // Build the command list
         commandAllocator->reset();
-        commandList->reset(commandAllocator.get(), pipeline.get());
+        commandList->reset(commandAllocator, pipeline);
 
-        agpu_framebuffer_ref backBuffer = swapChain->getCurrentBackBuffer();
+        auto backBuffer = swapChain->getCurrentBackBuffer();
 
-        commandList->setShaderSignature(shaderSignature.get());
-        commandList->beginRenderPass(mainRenderPass.get(), backBuffer.get(), false);
+        commandList->setShaderSignature(shaderSignature);
+        commandList->beginRenderPass(mainRenderPass, backBuffer, false);
 
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
         // Use the vertices and the indices.
-        commandList->useVertexBinding(vertexBinding.get());
-        commandList->useIndexBuffer(indexBuffer.get());
-        commandList->useShaderResources(shaderBindings.get());
+        commandList->useVertexBinding(vertexBinding);
+        commandList->useIndexBuffer(indexBuffer);
+        commandList->useShaderResources(shaderBindings);
 
         // Draw the objects
         commandList->drawElements(3, 1, 0, 0, 0);
@@ -126,13 +123,13 @@ public:
         commandList->close();
 
         // Queue the command list
-        commandQueue->addCommandList(commandList.get());
+        commandQueue->addCommandList(commandList);
 
         swapBuffers();
         commandQueue->finishExecution();
     }
 
-    void shutdownSample()
+    virtual void shutdownSample() override
     {
     }
 

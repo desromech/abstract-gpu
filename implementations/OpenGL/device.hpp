@@ -140,8 +140,7 @@ public:
 	virtual agpu::vertex_layout_ptr createVertexLayout() override;
 	virtual agpu::vertex_binding_ptr createVertexBinding(const agpu::vertex_layout_ref & layout) override;
 	virtual agpu::shader_ptr createShader(agpu_shader_type type) override;
-    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
-	virtual agpu::shader_signature_builder_ptr createShaderSignatureBuilder() override;
+    virtual agpu::shader_signature_builder_ptr createShaderSignatureBuilder() override;
 	virtual agpu::pipeline_builder_ptr createPipelineBuilder() override;
 	virtual agpu::compute_pipeline_builder_ptr createComputePipelineBuilder() override;
 	virtual agpu::command_allocator_ptr createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue) override;
@@ -160,6 +159,8 @@ public:
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
 
 	virtual agpu::vr_system_ptr getVRSystem() override;
+    virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
+    virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
 
 public:
     OpenGLVersion versionNumber;

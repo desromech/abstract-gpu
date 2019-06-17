@@ -99,11 +99,6 @@ AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* self, agpu_shader_type ty
 	return reinterpret_cast<agpu_shader*> (asRef(agpu::device, self)->createShader(type));
 }
 
-AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* self)
-{
-	return reinterpret_cast<agpu_offline_shader_compiler*> (asRef(agpu::device, self)->createOfflineShaderCompiler());
-}
-
 AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* self)
 {
 	return reinterpret_cast<agpu_shader_signature_builder*> (asRef(agpu::device, self)->createShaderSignatureBuilder());
@@ -187,6 +182,16 @@ AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* self, agpu_fea
 AGPU_EXPORT agpu_vr_system* agpuGetVRSystem(agpu_device* self)
 {
 	return reinterpret_cast<agpu_vr_system*> (asRef(agpu::device, self)->getVRSystem());
+}
+
+AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* self)
+{
+	return reinterpret_cast<agpu_offline_shader_compiler*> (asRef(agpu::device, self)->createOfflineShaderCompiler());
+}
+
+AGPU_EXPORT agpu_state_tracker_cache* agpuCreateStateTrackerCache(agpu_device* self, agpu_command_queue* command_queue_family)
+{
+	return reinterpret_cast<agpu_state_tracker_cache*> (asRef(agpu::device, self)->createStateTrackerCache(asRef(agpu::command_queue, command_queue_family)));
 }
 
 //==============================================================================
@@ -773,6 +778,12 @@ AGPU_EXPORT agpu_error agpuPushConstants(agpu_command_list* self, agpu_uint offs
 	return asRef(agpu::command_list, self)->pushConstants(offset, size, values);
 }
 
+AGPU_EXPORT agpu_error agpuMemoryBarrier(agpu_command_list* self, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
 //==============================================================================
 // texture C dispatching functions.
 //==============================================================================
@@ -989,71 +1000,6 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog(agpu_shader* self, agpu_size 
 }
 
 //==============================================================================
-// offline_shader_compiler C dispatching functions.
-//==============================================================================
-
-AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference(agpu_offline_shader_compiler* self)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRefCounter(agpu::offline_shader_compiler, self)->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler(agpu_offline_shader_compiler* self)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRefCounter(agpu::offline_shader_compiler, self)->release();
-}
-
-AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
-{
-	return asRef(agpu::offline_shader_compiler, self)->isShaderLanguageSupported(language);
-}
-
-AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
-{
-	return asRef(agpu::offline_shader_compiler, self)->isTargetShaderLanguageSupported(language);
-}
-
-AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource(agpu_offline_shader_compiler* self, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::offline_shader_compiler, self)->setShaderSource(language, stage, sourceText, sourceTextLength);
-}
-
-AGPU_EXPORT agpu_error agpuCompileOfflineShader(agpu_offline_shader_compiler* self, agpu_shader_language target_language, agpu_cstring options)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::offline_shader_compiler, self)->compileShader(target_language, options);
-}
-
-AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength(agpu_offline_shader_compiler* self)
-{
-	return asRef(agpu::offline_shader_compiler, self)->getCompilationLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog(agpu_offline_shader_compiler* self, agpu_size buffer_size, agpu_string_buffer buffer)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::offline_shader_compiler, self)->getCompilationLog(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength(agpu_offline_shader_compiler* self)
-{
-	return asRef(agpu::offline_shader_compiler, self)->getCompilationResultLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult(agpu_offline_shader_compiler* self, agpu_size buffer_size, agpu_string_buffer buffer)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::offline_shader_compiler, self)->getCompilationResult(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader(agpu_offline_shader_compiler* self)
-{
-	return reinterpret_cast<agpu_shader*> (asRef(agpu::offline_shader_compiler, self)->getResultAsShader());
-}
-
-//==============================================================================
 // framebuffer C dispatching functions.
 //==============================================================================
 
@@ -1101,6 +1047,17 @@ AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* self, agpu_ui
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::renderpass, self)->setColorClearValueFrom(attachment_index, value);
+}
+
+AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats(agpu_renderpass* self, agpu_uint* color_attachment_count, agpu_texture_format* formats)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::renderpass, self)->getColorAttachmentFormats(color_attachment_count, formats);
+}
+
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat(agpu_renderpass* self)
+{
+	return asRef(agpu::renderpass, self)->getDepthStencilAttachmentFormat();
 }
 
 //==============================================================================
@@ -1253,6 +1210,417 @@ AGPU_EXPORT agpu_error agpuWaitOnClient(agpu_fence* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::fence, self)->waitOnClient();
+}
+
+//==============================================================================
+// offline_shader_compiler C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference(agpu_offline_shader_compiler* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::offline_shader_compiler, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler(agpu_offline_shader_compiler* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::offline_shader_compiler, self)->release();
+}
+
+AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
+{
+	return asRef(agpu::offline_shader_compiler, self)->isShaderLanguageSupported(language);
+}
+
+AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
+{
+	return asRef(agpu::offline_shader_compiler, self)->isTargetShaderLanguageSupported(language);
+}
+
+AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource(agpu_offline_shader_compiler* self, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->setShaderSource(language, stage, sourceText, sourceTextLength);
+}
+
+AGPU_EXPORT agpu_error agpuCompileOfflineShader(agpu_offline_shader_compiler* self, agpu_shader_language target_language, agpu_cstring options)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->compileShader(target_language, options);
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength(agpu_offline_shader_compiler* self)
+{
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationLogLength();
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationLog(agpu_offline_shader_compiler* self, agpu_size buffer_size, agpu_string_buffer buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationLog(buffer_size, buffer);
+}
+
+AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationResultLength(agpu_offline_shader_compiler* self)
+{
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationResultLength();
+}
+
+AGPU_EXPORT agpu_error agpuGetOfflineShaderCompilationResult(agpu_offline_shader_compiler* self, agpu_size buffer_size, agpu_string_buffer buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::offline_shader_compiler, self)->getCompilationResult(buffer_size, buffer);
+}
+
+AGPU_EXPORT agpu_shader* agpuGetOfflineShaderCompilerResultAsShader(agpu_offline_shader_compiler* self)
+{
+	return reinterpret_cast<agpu_shader*> (asRef(agpu::offline_shader_compiler, self)->getResultAsShader());
+}
+
+//==============================================================================
+// state_tracker_cache C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddStateTrackerCacheReference(agpu_state_tracker_cache* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::state_tracker_cache, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseStateTrackerCacheReference(agpu_state_tracker_cache* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::state_tracker_cache, self)->release();
+}
+
+AGPU_EXPORT agpu_state_tracker* agpuCreateStateTracker(agpu_state_tracker_cache* self, agpu_command_list_type type, agpu_command_queue* command_queue)
+{
+	return reinterpret_cast<agpu_state_tracker*> (asRef(agpu::state_tracker_cache, self)->createStateTracker(type, asRef(agpu::command_queue, command_queue)));
+}
+
+AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithCommandAllocator(agpu_state_tracker_cache* self, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_command_allocator* command_allocator)
+{
+	return reinterpret_cast<agpu_state_tracker*> (asRef(agpu::state_tracker_cache, self)->createStateTrackerWithCommandAllocator(type, asRef(agpu::command_queue, command_queue), asRef(agpu::command_allocator, command_allocator)));
+}
+
+AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering(agpu_state_tracker_cache* self, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_uint framebuffering_count)
+{
+	return reinterpret_cast<agpu_state_tracker*> (asRef(agpu::state_tracker_cache, self)->createStateTrackerWithFrameBuffering(type, asRef(agpu::command_queue, command_queue), framebuffering_count));
+}
+
+//==============================================================================
+// state_tracker C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddStateTrackerReference(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::state_tracker, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::state_tracker, self)->release();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRecordingCommands(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->beginRecordingCommands();
+}
+
+AGPU_EXPORT agpu_command_list* agpuStateTrackerEndRecordingCommands(agpu_state_tracker* self)
+{
+	return reinterpret_cast<agpu_command_list*> (asRef(agpu::state_tracker, self)->endRecordingCommands());
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerEndRecordingAndFlushCommands(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->endRecordingAndFlushCommands();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerReset(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->reset();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResetGraphicsPipeline(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->resetGraphicsPipeline();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResetComputePipeline(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->resetComputePipeline();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setComputeStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setVertexStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setFragmentStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setGeometryStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setTessellationControlStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setTessellationEvaluationStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState(agpu_state_tracker* self, agpu_int renderTargetMask, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setBlendState(renderTargetMask, enabled);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetBlendFunction(agpu_state_tracker* self, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setBlendFunction(renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetColorMask(agpu_state_tracker* self, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetFrontFace(agpu_state_tracker* self, agpu_face_winding winding)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setFrontFace(winding);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetCullMode(agpu_state_tracker* self, agpu_cull_mode mode)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setCullMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetDepthBias(agpu_state_tracker* self, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setDepthBias(constant_factor, clamp, slope_factor);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetDepthState(agpu_state_tracker* self, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setDepthState(enabled, writeMask, function);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetPolygonMode(agpu_state_tracker* self, agpu_polygon_mode mode)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setPolygonMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilState(agpu_state_tracker* self, agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setStencilState(enabled, writeMask, readMask);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilFrontFace(agpu_state_tracker* self, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setStencilFrontFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilBackFace(agpu_state_tracker* self, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetPrimitiveType(agpu_state_tracker* self, agpu_primitive_topology type)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setPrimitiveType(type);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetVertexLayout(agpu_state_tracker* self, agpu_vertex_layout* layout)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setVertexLayout(asRef(agpu::vertex_layout, layout));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetShaderSignature(agpu_state_tracker* self, agpu_shader_signature* signature)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setShaderSignature(asRef(agpu::shader_signature, signature));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetSampleDescription(agpu_state_tracker* self, agpu_uint sample_count, agpu_uint sample_quality)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setSampleDescription(sample_count, sample_quality);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetViewport(agpu_state_tracker* self, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setViewport(x, y, w, h);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetScissor(agpu_state_tracker* self, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setScissor(x, y, w, h);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseVertexBinding(agpu_state_tracker* self, agpu_vertex_binding* vertex_binding)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useVertexBinding(asRef(agpu::vertex_binding, vertex_binding));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseIndexBuffer(agpu_state_tracker* self, agpu_buffer* index_buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useIndexBuffer(asRef(agpu::buffer, index_buffer));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseIndexBufferAt(agpu_state_tracker* self, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useIndexBufferAt(asRef(agpu::buffer, index_buffer), offset, index_size);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseDrawIndirectBuffer(agpu_state_tracker* self, agpu_buffer* draw_buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useDrawIndirectBuffer(asRef(agpu::buffer, draw_buffer));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeDispatchIndirectBuffer(agpu_state_tracker* self, agpu_buffer* buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useComputeDispatchIndirectBuffer(asRef(agpu::buffer, buffer));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResources(agpu_state_tracker* self, agpu_shader_resource_binding* binding)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useShaderResources(asRef(agpu::shader_resource_binding, binding));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResources(agpu_state_tracker* self, agpu_shader_resource_binding* binding)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useComputeShaderResources(asRef(agpu::shader_resource_binding, binding));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawArrays(agpu_state_tracker* self, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawArraysIndirect(agpu_state_tracker* self, agpu_size offset, agpu_size drawcount)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->drawArraysIndirect(offset, drawcount);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawElements(agpu_state_tracker* self, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDrawElementsIndirect(agpu_state_tracker* self, agpu_size offset, agpu_size drawcount)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->drawElementsIndirect(offset, drawcount);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDispatchCompute(agpu_state_tracker* self, agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->dispatchCompute(group_count_x, group_count_y, group_count_z);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerDispatchComputeIndirect(agpu_state_tracker* self, agpu_size offset)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->dispatchComputeIndirect(offset);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetStencilReference(agpu_state_tracker* self, agpu_uint reference)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setStencilReference(reference);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerExecuteBundle(agpu_state_tracker* self, agpu_command_list* bundle)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->executeBundle(asRef(agpu::command_list, bundle));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerBeginRenderPass(agpu_state_tracker* self, agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->beginRenderPass(asRef(agpu::renderpass, renderpass), asRef(agpu::framebuffer, framebuffer), bundle_content);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerEndRenderPass(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->endRenderPass();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResolveFramebuffer(agpu_state_tracker* self, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->resolveFramebuffer(asRef(agpu::framebuffer, destFramebuffer), asRef(agpu::framebuffer, sourceFramebuffer));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerResolveTexture(agpu_state_tracker* self, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->resolveTexture(asRef(agpu::texture, sourceTexture), sourceLevel, sourceLayer, asRef(agpu::texture, destTexture), destLevel, destLayer, levelCount, layerCount, aspect);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerPushConstants(agpu_state_tracker* self, agpu_uint offset, agpu_uint size, agpu_pointer values)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->pushConstants(offset, size, values);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* self, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
 }
 
 

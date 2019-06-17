@@ -12,10 +12,10 @@ struct TransformationState
 };
 
 
-class Sample4: public SampleBase
+class Sample5: public SampleBase
 {
 public:
-    Sample4()
+    Sample5()
     {
         draggingLeft = false;
         draggingRight = false;
@@ -44,27 +44,8 @@ public:
                 return false;
         }
 
-        {
-            // Create the programs.
-            auto vertexShader = compileShaderFromFile("data/shaders/texturedVertex.glsl", AGPU_VERTEX_SHADER);
-            auto fragmentShader = compileShaderFromFile("data/shaders/texturedFragment.glsl", AGPU_FRAGMENT_SHADER);
-            if (!vertexShader || !fragmentShader)
-                return false;
-
-            // Create the pipeline builder
-            auto pipelineBuilder = device->createPipelineBuilder();
-            pipelineBuilder->setShaderSignature(shaderSignature);
-            pipelineBuilder->attachShader(vertexShader);
-            pipelineBuilder->attachShader(fragmentShader);
-            pipelineBuilder->setVertexLayout(getSampleVertexLayout());
-            pipelineBuilder->setPrimitiveType(AGPU_TRIANGLES);
-            pipelineBuilder->setCullMode(AGPU_CULL_MODE_BACK);
-
-            // Build the pipeline
-            pipeline = pipelineBuilder->build();
-            if (!pipeline)
-                return false;
-        }
+        vertexShader = compileShaderFromFile("data/shaders/texturedVertex.glsl", AGPU_VERTEX_SHADER);
+        fragmentShader = compileShaderFromFile("data/shaders/texturedFragment.glsl", AGPU_FRAGMENT_SHADER);
 
         // Load the texture
         {
@@ -105,9 +86,8 @@ public:
             samplerBindings->createSampler(0, &samplerDesc);
         }
 
-        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
-        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
-        commandList->close();
+        stateTrackerCache = device->createStateTrackerCache(commandQueue);
+        stateTracker = stateTrackerCache->createStateTracker(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
 
         return true;
     }
@@ -175,32 +155,36 @@ public:
         // Upload the transformation state.
         transformationBuffer->uploadBufferData(0, sizeof(transformationState), &transformationState);
 
-        // Build the command list
-        commandAllocator->reset();
-        commandList->reset(commandAllocator, pipeline);
+        // Begin rendering
+        stateTracker->beginRecordingCommands();
 
+        // Build the command list
         auto backBuffer = swapChain->getCurrentBackBuffer();
 
-        commandList->setShaderSignature(shaderSignature);
-        commandList->beginRenderPass(mainRenderPass, backBuffer, false);
+        stateTracker->beginRenderPass(mainRenderPass, backBuffer, false);
+        stateTracker->setViewport(0, 0, screenWidth, screenHeight);
+        stateTracker->setScissor(0, 0, screenWidth, screenHeight);
 
-        commandList->setViewport(0, 0, screenWidth, screenHeight);
-        commandList->setScissor(0, 0, screenWidth, screenHeight);
+        stateTracker->setShaderSignature(shaderSignature);
+        stateTracker->setVertexStage(vertexShader, "main");
+        stateTracker->setFragmentStage(fragmentShader, "main");
 
         // Set the shader resource bindings
-        commandList->useShaderResources(shaderBindings);
-        commandList->useShaderResources(textureBindings);
-        commandList->useShaderResources(samplerBindings);
+        stateTracker->useShaderResources(shaderBindings);
+        stateTracker->useShaderResources(textureBindings);
+        stateTracker->useShaderResources(samplerBindings);
 
         // Draw the mesh
-        cubeMesh->drawWithCommandList(commandList);
+        stateTracker->setPrimitiveType(AGPU_TRIANGLES);
+        stateTracker->setVertexLayout(getSampleVertexLayout());
+        stateTracker->setCullMode(AGPU_CULL_MODE_BACK);
+        cubeMesh->drawWithStateTracker(stateTracker);
 
-        // Finish the command list
-        commandList->endRenderPass();
-        commandList->close();
+        // End the render pass.
+        stateTracker->endRenderPass();
 
-        // Queue the command list
-        commandQueue->addCommandList(commandList);
+        // End recording and flush the commands.
+        stateTracker->endRecordingAndFlushCommands();
 
         swapBuffers();
         commandQueue->finishExecution();
@@ -215,10 +199,11 @@ public:
     agpu_shader_resource_binding_ref shaderBindings;
     agpu_shader_resource_binding_ref textureBindings;
     agpu_shader_resource_binding_ref samplerBindings;
+    agpu_shader_ref vertexShader;
+    agpu_shader_ref fragmentShader;
 
-    agpu_pipeline_state_ref pipeline;
-    agpu_command_allocator_ref commandAllocator;
-    agpu_command_list_ref commandList;
+    agpu_state_tracker_cache_ref stateTrackerCache;
+    agpu_state_tracker_ref stateTracker;
 
     agpu_texture_ref diffuseTexture;
     agpu_renderpass_ref mainRenderPass;
@@ -232,4 +217,4 @@ public:
     glm::vec3 cameraPosition;
 };
 
-SAMPLE_MAIN(Sample4)
+SAMPLE_MAIN(Sample5)

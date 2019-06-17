@@ -435,11 +435,6 @@ typedef ref_counter<shader> *shader_ptr;
 typedef ref<shader> shader_ref;
 typedef weak_ref<shader> shader_weakref;
 
-struct offline_shader_compiler;
-typedef ref_counter<offline_shader_compiler> *offline_shader_compiler_ptr;
-typedef ref<offline_shader_compiler> offline_shader_compiler_ref;
-typedef weak_ref<offline_shader_compiler> offline_shader_compiler_weakref;
-
 struct framebuffer;
 typedef ref_counter<framebuffer> *framebuffer_ptr;
 typedef ref<framebuffer> framebuffer_ref;
@@ -470,6 +465,21 @@ typedef ref_counter<fence> *fence_ptr;
 typedef ref<fence> fence_ref;
 typedef weak_ref<fence> fence_weakref;
 
+struct offline_shader_compiler;
+typedef ref_counter<offline_shader_compiler> *offline_shader_compiler_ptr;
+typedef ref<offline_shader_compiler> offline_shader_compiler_ref;
+typedef weak_ref<offline_shader_compiler> offline_shader_compiler_weakref;
+
+struct state_tracker_cache;
+typedef ref_counter<state_tracker_cache> *state_tracker_cache_ptr;
+typedef ref<state_tracker_cache> state_tracker_cache_ref;
+typedef weak_ref<state_tracker_cache> state_tracker_cache_weakref;
+
+struct state_tracker;
+typedef ref_counter<state_tracker> *state_tracker_ptr;
+typedef ref<state_tracker> state_tracker_ref;
+typedef weak_ref<state_tracker> state_tracker_weakref;
+
 // Interface wrapper for agpu_platform.
 struct platform : base_interface
 {
@@ -497,7 +507,6 @@ public:
 	virtual vertex_layout_ptr createVertexLayout() = 0;
 	virtual vertex_binding_ptr createVertexBinding(const vertex_layout_ref & layout) = 0;
 	virtual shader_ptr createShader(agpu_shader_type type) = 0;
-	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
 	virtual shader_signature_builder_ptr createShaderSignatureBuilder() = 0;
 	virtual pipeline_builder_ptr createPipelineBuilder() = 0;
 	virtual compute_pipeline_builder_ptr createComputePipelineBuilder() = 0;
@@ -515,6 +524,8 @@ public:
 	virtual agpu_bool hasBottomLeftTextureCoordinates() = 0;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) = 0;
 	virtual vr_system_ptr getVRSystem() = 0;
+	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
+	virtual state_tracker_cache_ptr createStateTrackerCache(const command_queue_ref & command_queue_family) = 0;
 };
 
 
@@ -657,6 +668,7 @@ public:
 	virtual agpu_error resolveFramebuffer(const framebuffer_ref & destFramebuffer, const framebuffer_ref & sourceFramebuffer) = 0;
 	virtual agpu_error resolveTexture(const texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect) = 0;
 	virtual agpu_error pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values) = 0;
+	virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) = 0;
 };
 
 
@@ -723,23 +735,6 @@ public:
 };
 
 
-// Interface wrapper for agpu_offline_shader_compiler.
-struct offline_shader_compiler : base_interface
-{
-public:
-	typedef offline_shader_compiler main_interface;
-	virtual agpu_bool isShaderLanguageSupported(agpu_shader_language language) = 0;
-	virtual agpu_bool isTargetShaderLanguageSupported(agpu_shader_language language) = 0;
-	virtual agpu_error setShaderSource(agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength) = 0;
-	virtual agpu_error compileShader(agpu_shader_language target_language, agpu_cstring options) = 0;
-	virtual agpu_size getCompilationLogLength() = 0;
-	virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
-	virtual agpu_size getCompilationResultLength() = 0;
-	virtual agpu_error getCompilationResult(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
-	virtual shader_ptr getResultAsShader() = 0;
-};
-
-
 // Interface wrapper for agpu_framebuffer.
 struct framebuffer : base_interface
 {
@@ -756,6 +751,8 @@ public:
 	virtual agpu_error setDepthStencilClearValue(agpu_depth_stencil_value value) = 0;
 	virtual agpu_error setColorClearValue(agpu_uint attachment_index, agpu_color4f value) = 0;
 	virtual agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value) = 0;
+	virtual agpu_error getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats) = 0;
+	virtual agpu_texture_format getDepthStencilAttachmentFormat() = 0;
 };
 
 
@@ -803,6 +800,92 @@ struct fence : base_interface
 public:
 	typedef fence main_interface;
 	virtual agpu_error waitOnClient() = 0;
+};
+
+
+// Interface wrapper for agpu_offline_shader_compiler.
+struct offline_shader_compiler : base_interface
+{
+public:
+	typedef offline_shader_compiler main_interface;
+	virtual agpu_bool isShaderLanguageSupported(agpu_shader_language language) = 0;
+	virtual agpu_bool isTargetShaderLanguageSupported(agpu_shader_language language) = 0;
+	virtual agpu_error setShaderSource(agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength) = 0;
+	virtual agpu_error compileShader(agpu_shader_language target_language, agpu_cstring options) = 0;
+	virtual agpu_size getCompilationLogLength() = 0;
+	virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
+	virtual agpu_size getCompilationResultLength() = 0;
+	virtual agpu_error getCompilationResult(agpu_size buffer_size, agpu_string_buffer buffer) = 0;
+	virtual shader_ptr getResultAsShader() = 0;
+};
+
+
+// Interface wrapper for agpu_state_tracker_cache.
+struct state_tracker_cache : base_interface
+{
+public:
+	typedef state_tracker_cache main_interface;
+	virtual state_tracker_ptr createStateTracker(agpu_command_list_type type, const command_queue_ref & command_queue) = 0;
+	virtual state_tracker_ptr createStateTrackerWithCommandAllocator(agpu_command_list_type type, const command_queue_ref & command_queue, const command_allocator_ref & command_allocator) = 0;
+	virtual state_tracker_ptr createStateTrackerWithFrameBuffering(agpu_command_list_type type, const command_queue_ref & command_queue, agpu_uint framebuffering_count) = 0;
+};
+
+
+// Interface wrapper for agpu_state_tracker.
+struct state_tracker : base_interface
+{
+public:
+	typedef state_tracker main_interface;
+	virtual agpu_error beginRecordingCommands() = 0;
+	virtual command_list_ptr endRecordingCommands() = 0;
+	virtual agpu_error endRecordingAndFlushCommands() = 0;
+	virtual agpu_error reset() = 0;
+	virtual agpu_error resetGraphicsPipeline() = 0;
+	virtual agpu_error resetComputePipeline() = 0;
+	virtual agpu_error setComputeStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setVertexStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setFragmentStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setGeometryStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setTessellationControlStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setTessellationEvaluationStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setBlendState(agpu_int renderTargetMask, agpu_bool enabled) = 0;
+	virtual agpu_error setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation) = 0;
+	virtual agpu_error setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled) = 0;
+	virtual agpu_error setFrontFace(agpu_face_winding winding) = 0;
+	virtual agpu_error setCullMode(agpu_cull_mode mode) = 0;
+	virtual agpu_error setDepthBias(agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor) = 0;
+	virtual agpu_error setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function) = 0;
+	virtual agpu_error setPolygonMode(agpu_polygon_mode mode) = 0;
+	virtual agpu_error setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask) = 0;
+	virtual agpu_error setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) = 0;
+	virtual agpu_error setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) = 0;
+	virtual agpu_error setPrimitiveType(agpu_primitive_topology type) = 0;
+	virtual agpu_error setVertexLayout(const vertex_layout_ref & layout) = 0;
+	virtual agpu_error setShaderSignature(const shader_signature_ref & signature) = 0;
+	virtual agpu_error setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality) = 0;
+	virtual agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h) = 0;
+	virtual agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h) = 0;
+	virtual agpu_error useVertexBinding(const vertex_binding_ref & vertex_binding) = 0;
+	virtual agpu_error useIndexBuffer(const buffer_ref & index_buffer) = 0;
+	virtual agpu_error useIndexBufferAt(const buffer_ref & index_buffer, agpu_size offset, agpu_size index_size) = 0;
+	virtual agpu_error useDrawIndirectBuffer(const buffer_ref & draw_buffer) = 0;
+	virtual agpu_error useComputeDispatchIndirectBuffer(const buffer_ref & buffer) = 0;
+	virtual agpu_error useShaderResources(const shader_resource_binding_ref & binding) = 0;
+	virtual agpu_error useComputeShaderResources(const shader_resource_binding_ref & binding) = 0;
+	virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) = 0;
+	virtual agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount) = 0;
+	virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;
+	virtual agpu_error drawElementsIndirect(agpu_size offset, agpu_size drawcount) = 0;
+	virtual agpu_error dispatchCompute(agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z) = 0;
+	virtual agpu_error dispatchComputeIndirect(agpu_size offset) = 0;
+	virtual agpu_error setStencilReference(agpu_uint reference) = 0;
+	virtual agpu_error executeBundle(const command_list_ref & bundle) = 0;
+	virtual agpu_error beginRenderPass(const renderpass_ref & renderpass, const framebuffer_ref & framebuffer, agpu_bool bundle_content) = 0;
+	virtual agpu_error endRenderPass() = 0;
+	virtual agpu_error resolveFramebuffer(const framebuffer_ref & destFramebuffer, const framebuffer_ref & sourceFramebuffer) = 0;
+	virtual agpu_error resolveTexture(const texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect) = 0;
+	virtual agpu_error pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values) = 0;
+	virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) = 0;
 };
 
 

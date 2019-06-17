@@ -124,7 +124,7 @@ private:
 	_agpu_platform() {}
 
 public:
-	inline agpu_device* openDevice(agpu_device_open_info* openInfo)
+	inline agpu_ref<agpu_device> openDevice(agpu_device_open_info* openInfo)
 	{
 		return agpuOpenDevice(this, openInfo);
 	}
@@ -159,7 +159,7 @@ public:
 		return agpuIsCrossPlatform(this);
 	}
 
-	inline agpu_offline_shader_compiler* createOfflineShaderCompiler()
+	inline agpu_ref<agpu_offline_shader_compiler> createOfflineShaderCompiler()
 	{
 		return agpuCreateOfflineShaderCompiler(this);
 	}
@@ -185,64 +185,59 @@ public:
 		agpuThrowIfFailed(agpuReleaseDevice(this));
 	}
 
-	inline agpu_command_queue* getDefaultCommandQueue()
+	inline agpu_ref<agpu_command_queue> getDefaultCommandQueue()
 	{
 		return agpuGetDefaultCommandQueue(this);
 	}
 
-	inline agpu_swap_chain* createSwapChain(agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo)
+	inline agpu_ref<agpu_swap_chain> createSwapChain(const agpu_ref<agpu_command_queue>& commandQueue, agpu_swap_chain_create_info* swapChainInfo)
 	{
-		return agpuCreateSwapChain(this, commandQueue, swapChainInfo);
+		return agpuCreateSwapChain(this, commandQueue.get(), swapChainInfo);
 	}
 
-	inline agpu_buffer* createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
+	inline agpu_ref<agpu_buffer> createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
 	{
 		return agpuCreateBuffer(this, description, initial_data);
 	}
 
-	inline agpu_vertex_layout* createVertexLayout()
+	inline agpu_ref<agpu_vertex_layout> createVertexLayout()
 	{
 		return agpuCreateVertexLayout(this);
 	}
 
-	inline agpu_vertex_binding* createVertexBinding(agpu_vertex_layout* layout)
+	inline agpu_ref<agpu_vertex_binding> createVertexBinding(const agpu_ref<agpu_vertex_layout>& layout)
 	{
-		return agpuCreateVertexBinding(this, layout);
+		return agpuCreateVertexBinding(this, layout.get());
 	}
 
-	inline agpu_shader* createShader(agpu_shader_type type)
+	inline agpu_ref<agpu_shader> createShader(agpu_shader_type type)
 	{
 		return agpuCreateShader(this, type);
 	}
 
-	inline agpu_offline_shader_compiler* createOfflineShaderCompiler()
-	{
-		return agpuCreateOfflineShaderCompilerForDevice(this);
-	}
-
-	inline agpu_shader_signature_builder* createShaderSignatureBuilder()
+	inline agpu_ref<agpu_shader_signature_builder> createShaderSignatureBuilder()
 	{
 		return agpuCreateShaderSignatureBuilder(this);
 	}
 
-	inline agpu_pipeline_builder* createPipelineBuilder()
+	inline agpu_ref<agpu_pipeline_builder> createPipelineBuilder()
 	{
 		return agpuCreatePipelineBuilder(this);
 	}
 
-	inline agpu_compute_pipeline_builder* createComputePipelineBuilder()
+	inline agpu_ref<agpu_compute_pipeline_builder> createComputePipelineBuilder()
 	{
 		return agpuCreateComputePipelineBuilder(this);
 	}
 
-	inline agpu_command_allocator* createCommandAllocator(agpu_command_list_type type, agpu_command_queue* queue)
+	inline agpu_ref<agpu_command_allocator> createCommandAllocator(agpu_command_list_type type, const agpu_ref<agpu_command_queue>& queue)
 	{
-		return agpuCreateCommandAllocator(this, type, queue);
+		return agpuCreateCommandAllocator(this, type, queue.get());
 	}
 
-	inline agpu_command_list* createCommandList(agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+	inline agpu_ref<agpu_command_list> createCommandList(agpu_command_list_type type, const agpu_ref<agpu_command_allocator>& allocator, const agpu_ref<agpu_pipeline_state>& initial_pipeline_state)
 	{
-		return agpuCreateCommandList(this, type, allocator, initial_pipeline_state);
+		return agpuCreateCommandList(this, type, allocator.get(), initial_pipeline_state.get());
 	}
 
 	inline agpu_shader_language getPreferredShaderLanguage()
@@ -260,22 +255,22 @@ public:
 		return agpuGetPreferredHighLevelShaderLanguage(this);
 	}
 
-	inline agpu_framebuffer* createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+	inline agpu_ref<agpu_framebuffer> createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
 	{
 		return agpuCreateFrameBuffer(this, width, height, colorCount, colorViews, depthStencilView);
 	}
 
-	inline agpu_renderpass* createRenderPass(agpu_renderpass_description* description)
+	inline agpu_ref<agpu_renderpass> createRenderPass(agpu_renderpass_description* description)
 	{
 		return agpuCreateRenderPass(this, description);
 	}
 
-	inline agpu_texture* createTexture(agpu_texture_description* description)
+	inline agpu_ref<agpu_texture> createTexture(agpu_texture_description* description)
 	{
 		return agpuCreateTexture(this, description);
 	}
 
-	inline agpu_fence* createFence()
+	inline agpu_ref<agpu_fence> createFence()
 	{
 		return agpuCreateFence(this);
 	}
@@ -300,9 +295,19 @@ public:
 		return agpuIsFeatureSupportedOnDevice(this, feature);
 	}
 
-	inline agpu_vr_system* getVRSystem()
+	inline agpu_ref<agpu_vr_system> getVRSystem()
 	{
 		return agpuGetVRSystem(this);
+	}
+
+	inline agpu_ref<agpu_offline_shader_compiler> createOfflineShaderCompiler()
+	{
+		return agpuCreateOfflineShaderCompilerForDevice(this);
+	}
+
+	inline agpu_ref<agpu_state_tracker_cache> createStateTrackerCache(const agpu_ref<agpu_command_queue>& command_queue_family)
+	{
+		return agpuCreateStateTrackerCache(this, command_queue_family.get());
 	}
 
 };
@@ -356,9 +361,9 @@ public:
 		agpuThrowIfFailed(agpuGetVRProjectionFrustumTangents(this, eye, frustum));
 	}
 
-	inline void submitEyeRenderTargets(agpu_texture* left_eye, agpu_texture* right_eye)
+	inline void submitEyeRenderTargets(const agpu_ref<agpu_texture>& left_eye, const agpu_ref<agpu_texture>& right_eye)
 	{
-		agpuThrowIfFailed(agpuSubmitVREyeRenderTargets(this, left_eye, right_eye));
+		agpuThrowIfFailed(agpuSubmitVREyeRenderTargets(this, left_eye.get(), right_eye.get()));
 	}
 
 	inline void waitAndFetchPoses()
@@ -417,7 +422,7 @@ public:
 		agpuThrowIfFailed(agpuSwapBuffers(this));
 	}
 
-	inline agpu_framebuffer* getCurrentBackBuffer()
+	inline agpu_ref<agpu_framebuffer> getCurrentBackBuffer()
 	{
 		return agpuGetCurrentBackBuffer(this);
 	}
@@ -453,19 +458,19 @@ public:
 		agpuThrowIfFailed(agpuReleaseComputePipelineBuilder(this));
 	}
 
-	inline agpu_pipeline_state* build()
+	inline agpu_ref<agpu_pipeline_state> build()
 	{
 		return agpuBuildComputePipelineState(this);
 	}
 
-	inline void attachShader(agpu_shader* shader)
+	inline void attachShader(const agpu_ref<agpu_shader>& shader)
 	{
-		agpuThrowIfFailed(agpuAttachComputeShader(this, shader));
+		agpuThrowIfFailed(agpuAttachComputeShader(this, shader.get()));
 	}
 
-	inline void attachShaderWithEntryPoint(agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point)
+	inline void attachShaderWithEntryPoint(const agpu_ref<agpu_shader>& shader, agpu_shader_type type, agpu_cstring entry_point)
 	{
-		agpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint(this, shader, type, entry_point));
+		agpuThrowIfFailed(agpuAttachComputeShaderWithEntryPoint(this, shader.get(), type, entry_point));
 	}
 
 	inline agpu_size getBuildingLogLength()
@@ -478,9 +483,9 @@ public:
 		agpuThrowIfFailed(agpuGetComputePipelineBuildingLog(this, buffer_size, buffer));
 	}
 
-	inline void setShaderSignature(agpu_shader_signature* signature)
+	inline void setShaderSignature(const agpu_ref<agpu_shader_signature>& signature)
 	{
-		agpuThrowIfFailed(agpuSetComputePipelineShaderSignature(this, signature));
+		agpuThrowIfFailed(agpuSetComputePipelineShaderSignature(this, signature.get()));
 	}
 
 };
@@ -504,19 +509,19 @@ public:
 		agpuThrowIfFailed(agpuReleasePipelineBuilder(this));
 	}
 
-	inline agpu_pipeline_state* build()
+	inline agpu_ref<agpu_pipeline_state> build()
 	{
 		return agpuBuildPipelineState(this);
 	}
 
-	inline void attachShader(agpu_shader* shader)
+	inline void attachShader(const agpu_ref<agpu_shader>& shader)
 	{
-		agpuThrowIfFailed(agpuAttachShader(this, shader));
+		agpuThrowIfFailed(agpuAttachShader(this, shader.get()));
 	}
 
-	inline void attachShaderWithEntryPoint(agpu_shader* shader, agpu_shader_type type, agpu_cstring entry_point)
+	inline void attachShaderWithEntryPoint(const agpu_ref<agpu_shader>& shader, agpu_shader_type type, agpu_cstring entry_point)
 	{
-		agpuThrowIfFailed(agpuAttachShaderWithEntryPoint(this, shader, type, entry_point));
+		agpuThrowIfFailed(agpuAttachShaderWithEntryPoint(this, shader.get(), type, entry_point));
 	}
 
 	inline agpu_size getBuildingLogLength()
@@ -604,14 +609,14 @@ public:
 		agpuThrowIfFailed(agpuSetPrimitiveType(this, type));
 	}
 
-	inline void setVertexLayout(agpu_vertex_layout* layout)
+	inline void setVertexLayout(const agpu_ref<agpu_vertex_layout>& layout)
 	{
-		agpuThrowIfFailed(agpuSetVertexLayout(this, layout));
+		agpuThrowIfFailed(agpuSetVertexLayout(this, layout.get()));
 	}
 
-	inline void setShaderSignature(agpu_shader_signature* signature)
+	inline void setShaderSignature(const agpu_ref<agpu_shader_signature>& signature)
 	{
-		agpuThrowIfFailed(agpuSetPipelineShaderSignature(this, signature));
+		agpuThrowIfFailed(agpuSetPipelineShaderSignature(this, signature.get()));
 	}
 
 	inline void setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
@@ -661,9 +666,9 @@ public:
 		agpuThrowIfFailed(agpuReleaseCommandQueue(this));
 	}
 
-	inline void addCommandList(agpu_command_list* command_list)
+	inline void addCommandList(const agpu_ref<agpu_command_list>& command_list)
 	{
-		agpuThrowIfFailed(agpuAddCommandList(this, command_list));
+		agpuThrowIfFailed(agpuAddCommandList(this, command_list.get()));
 	}
 
 	inline void finishExecution()
@@ -671,14 +676,14 @@ public:
 		agpuThrowIfFailed(agpuFinishQueueExecution(this));
 	}
 
-	inline void signalFence(agpu_fence* fence)
+	inline void signalFence(const agpu_ref<agpu_fence>& fence)
 	{
-		agpuThrowIfFailed(agpuSignalFence(this, fence));
+		agpuThrowIfFailed(agpuSignalFence(this, fence.get()));
 	}
 
-	inline void waitFence(agpu_fence* fence)
+	inline void waitFence(const agpu_ref<agpu_fence>& fence)
 	{
-		agpuThrowIfFailed(agpuWaitFence(this, fence));
+		agpuThrowIfFailed(agpuWaitFence(this, fence.get()));
 	}
 
 };
@@ -728,9 +733,9 @@ public:
 		agpuThrowIfFailed(agpuReleaseCommandList(this));
 	}
 
-	inline void setShaderSignature(agpu_shader_signature* signature)
+	inline void setShaderSignature(const agpu_ref<agpu_shader_signature>& signature)
 	{
-		agpuThrowIfFailed(agpuSetShaderSignature(this, signature));
+		agpuThrowIfFailed(agpuSetShaderSignature(this, signature.get()));
 	}
 
 	inline void setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
@@ -743,44 +748,44 @@ public:
 		agpuThrowIfFailed(agpuSetScissor(this, x, y, w, h));
 	}
 
-	inline void usePipelineState(agpu_pipeline_state* pipeline)
+	inline void usePipelineState(const agpu_ref<agpu_pipeline_state>& pipeline)
 	{
-		agpuThrowIfFailed(agpuUsePipelineState(this, pipeline));
+		agpuThrowIfFailed(agpuUsePipelineState(this, pipeline.get()));
 	}
 
-	inline void useVertexBinding(agpu_vertex_binding* vertex_binding)
+	inline void useVertexBinding(const agpu_ref<agpu_vertex_binding>& vertex_binding)
 	{
-		agpuThrowIfFailed(agpuUseVertexBinding(this, vertex_binding));
+		agpuThrowIfFailed(agpuUseVertexBinding(this, vertex_binding.get()));
 	}
 
-	inline void useIndexBuffer(agpu_buffer* index_buffer)
+	inline void useIndexBuffer(const agpu_ref<agpu_buffer>& index_buffer)
 	{
-		agpuThrowIfFailed(agpuUseIndexBuffer(this, index_buffer));
+		agpuThrowIfFailed(agpuUseIndexBuffer(this, index_buffer.get()));
 	}
 
-	inline void useIndexBufferAt(agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+	inline void useIndexBufferAt(const agpu_ref<agpu_buffer>& index_buffer, agpu_size offset, agpu_size index_size)
 	{
-		agpuThrowIfFailed(agpuUseIndexBufferAt(this, index_buffer, offset, index_size));
+		agpuThrowIfFailed(agpuUseIndexBufferAt(this, index_buffer.get(), offset, index_size));
 	}
 
-	inline void useDrawIndirectBuffer(agpu_buffer* draw_buffer)
+	inline void useDrawIndirectBuffer(const agpu_ref<agpu_buffer>& draw_buffer)
 	{
-		agpuThrowIfFailed(agpuUseDrawIndirectBuffer(this, draw_buffer));
+		agpuThrowIfFailed(agpuUseDrawIndirectBuffer(this, draw_buffer.get()));
 	}
 
-	inline void useComputeDispatchIndirectBuffer(agpu_buffer* buffer)
+	inline void useComputeDispatchIndirectBuffer(const agpu_ref<agpu_buffer>& buffer)
 	{
-		agpuThrowIfFailed(agpuUseComputeDispatchIndirectBuffer(this, buffer));
+		agpuThrowIfFailed(agpuUseComputeDispatchIndirectBuffer(this, buffer.get()));
 	}
 
-	inline void useShaderResources(agpu_shader_resource_binding* binding)
+	inline void useShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
 	{
-		agpuThrowIfFailed(agpuUseShaderResources(this, binding));
+		agpuThrowIfFailed(agpuUseShaderResources(this, binding.get()));
 	}
 
-	inline void useComputeShaderResources(agpu_shader_resource_binding* binding)
+	inline void useComputeShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
 	{
-		agpuThrowIfFailed(agpuUseComputeShaderResources(this, binding));
+		agpuThrowIfFailed(agpuUseComputeShaderResources(this, binding.get()));
 	}
 
 	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
@@ -818,9 +823,9 @@ public:
 		agpuThrowIfFailed(agpuSetStencilReference(this, reference));
 	}
 
-	inline void executeBundle(agpu_command_list* bundle)
+	inline void executeBundle(const agpu_ref<agpu_command_list>& bundle)
 	{
-		agpuThrowIfFailed(agpuExecuteBundle(this, bundle));
+		agpuThrowIfFailed(agpuExecuteBundle(this, bundle.get()));
 	}
 
 	inline void close()
@@ -828,19 +833,19 @@ public:
 		agpuThrowIfFailed(agpuCloseCommandList(this));
 	}
 
-	inline void reset(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
+	inline void reset(const agpu_ref<agpu_command_allocator>& allocator, const agpu_ref<agpu_pipeline_state>& initial_pipeline_state)
 	{
-		agpuThrowIfFailed(agpuResetCommandList(this, allocator, initial_pipeline_state));
+		agpuThrowIfFailed(agpuResetCommandList(this, allocator.get(), initial_pipeline_state.get()));
 	}
 
-	inline void resetBundle(agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state, agpu_inheritance_info* inheritance_info)
+	inline void resetBundle(const agpu_ref<agpu_command_allocator>& allocator, const agpu_ref<agpu_pipeline_state>& initial_pipeline_state, agpu_inheritance_info* inheritance_info)
 	{
-		agpuThrowIfFailed(agpuResetBundleCommandList(this, allocator, initial_pipeline_state, inheritance_info));
+		agpuThrowIfFailed(agpuResetBundleCommandList(this, allocator.get(), initial_pipeline_state.get(), inheritance_info));
 	}
 
-	inline void beginRenderPass(agpu_renderpass* renderpass, agpu_framebuffer* framebuffer, agpu_bool bundle_content)
+	inline void beginRenderPass(const agpu_ref<agpu_renderpass>& renderpass, const agpu_ref<agpu_framebuffer>& framebuffer, agpu_bool bundle_content)
 	{
-		agpuThrowIfFailed(agpuBeginRenderPass(this, renderpass, framebuffer, bundle_content));
+		agpuThrowIfFailed(agpuBeginRenderPass(this, renderpass.get(), framebuffer.get(), bundle_content));
 	}
 
 	inline void endRenderPass()
@@ -848,19 +853,24 @@ public:
 		agpuThrowIfFailed(agpuEndRenderPass(this));
 	}
 
-	inline void resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer)
+	inline void resolveFramebuffer(const agpu_ref<agpu_framebuffer>& destFramebuffer, const agpu_ref<agpu_framebuffer>& sourceFramebuffer)
 	{
-		agpuThrowIfFailed(agpuResolveFramebuffer(this, destFramebuffer, sourceFramebuffer));
+		agpuThrowIfFailed(agpuResolveFramebuffer(this, destFramebuffer.get(), sourceFramebuffer.get()));
 	}
 
-	inline void resolveTexture(agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
+	inline void resolveTexture(const agpu_ref<agpu_texture>& sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu_ref<agpu_texture>& destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
 	{
-		agpuThrowIfFailed(agpuResolveTexture(this, sourceTexture, sourceLevel, sourceLayer, destTexture, destLevel, destLayer, levelCount, layerCount, aspect));
+		agpuThrowIfFailed(agpuResolveTexture(this, sourceTexture.get(), sourceLevel, sourceLayer, destTexture.get(), destLevel, destLayer, levelCount, layerCount, aspect));
 	}
 
 	inline void pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
 	{
 		agpuThrowIfFailed(agpuPushConstants(this, offset, size, values));
+	}
+
+	inline void memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+	{
+		agpuThrowIfFailed(agpuMemoryBarrier(this, source_stage, dest_stage, source_accesses, dest_accesses));
 	}
 
 };
@@ -1006,14 +1016,14 @@ public:
 		agpuThrowIfFailed(agpuReleaseVertexBinding(this));
 	}
 
-	inline void bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
+	inline void bindVertexBuffers(agpu_uint count, agpu_ref<agpu_buffer>* vertex_buffers)
 	{
-		agpuThrowIfFailed(agpuBindVertexBuffers(this, count, vertex_buffers));
+		agpuThrowIfFailed(agpuBindVertexBuffers(this, count, reinterpret_cast<agpu_buffer**> (vertex_buffers)));
 	}
 
-	inline void bindVertexBuffersWithOffsets(agpu_uint count, agpu_buffer** vertex_buffers, agpu_size* offsets)
+	inline void bindVertexBuffersWithOffsets(agpu_uint count, agpu_ref<agpu_buffer>* vertex_buffers, agpu_size* offsets)
 	{
-		agpuThrowIfFailed(agpuBindVertexBuffersWithOffsets(this, count, vertex_buffers, offsets));
+		agpuThrowIfFailed(agpuBindVertexBuffersWithOffsets(this, count, reinterpret_cast<agpu_buffer**> (vertex_buffers), offsets));
 	}
 
 };
@@ -1087,6 +1097,232 @@ public:
 
 typedef agpu_ref<agpu_shader> agpu_shader_ref;
 
+// Interface wrapper for agpu_framebuffer.
+struct _agpu_framebuffer
+{
+private:
+	_agpu_framebuffer() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddFramebufferReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseFramebuffer(this));
+	}
+
+};
+
+typedef agpu_ref<agpu_framebuffer> agpu_framebuffer_ref;
+
+// Interface wrapper for agpu_renderpass.
+struct _agpu_renderpass
+{
+private:
+	_agpu_renderpass() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddRenderPassReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseRenderPass(this));
+	}
+
+	inline void setDepthStencilClearValue(agpu_depth_stencil_value value)
+	{
+		agpuThrowIfFailed(agpuSetDepthStencilClearValue(this, value));
+	}
+
+	inline void setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
+	{
+		agpuThrowIfFailed(agpuSetColorClearValue(this, attachment_index, value));
+	}
+
+	inline void setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value)
+	{
+		agpuThrowIfFailed(agpuSetColorClearValueFrom(this, attachment_index, value));
+	}
+
+	inline void getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats)
+	{
+		agpuThrowIfFailed(agpuGetRenderPassColorAttachmentFormats(this, color_attachment_count, formats));
+	}
+
+	inline agpu_texture_format getDepthStencilAttachmentFormat()
+	{
+		return agpuGetRenderPassgetDepthStencilAttachmentFormat(this);
+	}
+
+};
+
+typedef agpu_ref<agpu_renderpass> agpu_renderpass_ref;
+
+// Interface wrapper for agpu_shader_signature_builder.
+struct _agpu_shader_signature_builder
+{
+private:
+	_agpu_shader_signature_builder() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddShaderSignatureBuilderReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseShaderSignatureBuilder(this));
+	}
+
+	inline agpu_ref<agpu_shader_signature> build()
+	{
+		return agpuBuildShaderSignature(this);
+	}
+
+	inline void addBindingConstant()
+	{
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingConstant(this));
+	}
+
+	inline void addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
+	{
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingElement(this, type, maxBindings));
+	}
+
+	inline void beginBindingBank(agpu_uint maxBindings)
+	{
+		agpuThrowIfFailed(agpuBeginShaderSignatureBindingBank(this, maxBindings));
+	}
+
+	inline void addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
+	{
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement(this, type, bindingPointCount));
+	}
+
+};
+
+typedef agpu_ref<agpu_shader_signature_builder> agpu_shader_signature_builder_ref;
+
+// Interface wrapper for agpu_shader_signature.
+struct _agpu_shader_signature
+{
+private:
+	_agpu_shader_signature() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddShaderSignature(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseShaderSignature(this));
+	}
+
+	inline agpu_ref<agpu_shader_resource_binding> createShaderResourceBinding(agpu_uint element)
+	{
+		return agpuCreateShaderResourceBinding(this, element);
+	}
+
+};
+
+typedef agpu_ref<agpu_shader_signature> agpu_shader_signature_ref;
+
+// Interface wrapper for agpu_shader_resource_binding.
+struct _agpu_shader_resource_binding
+{
+private:
+	_agpu_shader_resource_binding() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddShaderResourceBindingReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseShaderResourceBinding(this));
+	}
+
+	inline void bindUniformBuffer(agpu_int location, const agpu_ref<agpu_buffer>& uniform_buffer)
+	{
+		agpuThrowIfFailed(agpuBindUniformBuffer(this, location, uniform_buffer.get()));
+	}
+
+	inline void bindUniformBufferRange(agpu_int location, const agpu_ref<agpu_buffer>& uniform_buffer, agpu_size offset, agpu_size size)
+	{
+		agpuThrowIfFailed(agpuBindUniformBufferRange(this, location, uniform_buffer.get(), offset, size));
+	}
+
+	inline void bindStorageBuffer(agpu_int location, const agpu_ref<agpu_buffer>& storage_buffer)
+	{
+		agpuThrowIfFailed(agpuBindStorageBuffer(this, location, storage_buffer.get()));
+	}
+
+	inline void bindStorageBufferRange(agpu_int location, const agpu_ref<agpu_buffer>& storage_buffer, agpu_size offset, agpu_size size)
+	{
+		agpuThrowIfFailed(agpuBindStorageBufferRange(this, location, storage_buffer.get(), offset, size));
+	}
+
+	inline void bindTexture(agpu_int location, const agpu_ref<agpu_texture>& texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+	{
+		agpuThrowIfFailed(agpuBindTexture(this, location, texture.get(), startMiplevel, miplevels, lodclamp));
+	}
+
+	inline void bindTextureArrayRange(agpu_int location, const agpu_ref<agpu_texture>& texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+	{
+		agpuThrowIfFailed(agpuBindTextureArrayRange(this, location, texture.get(), startMiplevel, miplevels, firstElement, numberOfElements, lodclamp));
+	}
+
+	inline void bindImage(agpu_int location, const agpu_ref<agpu_texture>& texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
+	{
+		agpuThrowIfFailed(agpuBindImage(this, location, texture.get(), level, layer, access, format));
+	}
+
+	inline void createSampler(agpu_int location, agpu_sampler_description* description)
+	{
+		agpuThrowIfFailed(agpuCreateSampler(this, location, description));
+	}
+
+};
+
+typedef agpu_ref<agpu_shader_resource_binding> agpu_shader_resource_binding_ref;
+
+// Interface wrapper for agpu_fence.
+struct _agpu_fence
+{
+private:
+	_agpu_fence() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddFenceReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseFenceReference(this));
+	}
+
+	inline void waitOnClient()
+	{
+		agpuThrowIfFailed(agpuWaitOnClient(this));
+	}
+
+};
+
+typedef agpu_ref<agpu_fence> agpu_fence_ref;
+
 // Interface wrapper for agpu_offline_shader_compiler.
 struct _agpu_offline_shader_compiler
 {
@@ -1144,7 +1380,7 @@ public:
 		agpuThrowIfFailed(agpuGetOfflineShaderCompilationResult(this, buffer_size, buffer));
 	}
 
-	inline agpu_shader* getResultAsShader()
+	inline agpu_ref<agpu_shader> getResultAsShader()
 	{
 		return agpuGetOfflineShaderCompilerResultAsShader(this);
 	}
@@ -1153,221 +1389,312 @@ public:
 
 typedef agpu_ref<agpu_offline_shader_compiler> agpu_offline_shader_compiler_ref;
 
-// Interface wrapper for agpu_framebuffer.
-struct _agpu_framebuffer
+// Interface wrapper for agpu_state_tracker_cache.
+struct _agpu_state_tracker_cache
 {
 private:
-	_agpu_framebuffer() {}
+	_agpu_state_tracker_cache() {}
 
 public:
 	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddFramebufferReference(this));
+		agpuThrowIfFailed(agpuAddStateTrackerCacheReference(this));
 	}
 
 	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseFramebuffer(this));
+		agpuThrowIfFailed(agpuReleaseStateTrackerCacheReference(this));
+	}
+
+	inline agpu_ref<agpu_state_tracker> createStateTracker(agpu_command_list_type type, const agpu_ref<agpu_command_queue>& command_queue)
+	{
+		return agpuCreateStateTracker(this, type, command_queue.get());
+	}
+
+	inline agpu_ref<agpu_state_tracker> createStateTrackerWithCommandAllocator(agpu_command_list_type type, const agpu_ref<agpu_command_queue>& command_queue, const agpu_ref<agpu_command_allocator>& command_allocator)
+	{
+		return agpuCreateStateTrackerWithCommandAllocator(this, type, command_queue.get(), command_allocator.get());
+	}
+
+	inline agpu_ref<agpu_state_tracker> createStateTrackerWithFrameBuffering(agpu_command_list_type type, const agpu_ref<agpu_command_queue>& command_queue, agpu_uint framebuffering_count)
+	{
+		return agpuCreateStateTrackerWithFrameBuffering(this, type, command_queue.get(), framebuffering_count);
 	}
 
 };
 
-typedef agpu_ref<agpu_framebuffer> agpu_framebuffer_ref;
+typedef agpu_ref<agpu_state_tracker_cache> agpu_state_tracker_cache_ref;
 
-// Interface wrapper for agpu_renderpass.
-struct _agpu_renderpass
+// Interface wrapper for agpu_state_tracker.
+struct _agpu_state_tracker
 {
 private:
-	_agpu_renderpass() {}
+	_agpu_state_tracker() {}
 
 public:
 	inline void addReference()
 	{
-		agpuThrowIfFailed(agpuAddRenderPassReference(this));
+		agpuThrowIfFailed(agpuAddStateTrackerReference(this));
 	}
 
 	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleaseRenderPass(this));
+		agpuThrowIfFailed(agpuReleaseStateTrackerReference(this));
 	}
 
-	inline void setDepthStencilClearValue(agpu_depth_stencil_value value)
+	inline void beginRecordingCommands()
 	{
-		agpuThrowIfFailed(agpuSetDepthStencilClearValue(this, value));
+		agpuThrowIfFailed(agpuStateTrackerBeginRecordingCommands(this));
 	}
 
-	inline void setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
+	inline agpu_ref<agpu_command_list> endRecordingCommands()
 	{
-		agpuThrowIfFailed(agpuSetColorClearValue(this, attachment_index, value));
+		return agpuStateTrackerEndRecordingCommands(this);
 	}
 
-	inline void setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value)
+	inline void endRecordingAndFlushCommands()
 	{
-		agpuThrowIfFailed(agpuSetColorClearValueFrom(this, attachment_index, value));
+		agpuThrowIfFailed(agpuStateTrackerEndRecordingAndFlushCommands(this));
+	}
+
+	inline void reset()
+	{
+		agpuThrowIfFailed(agpuStateTrackerReset(this));
+	}
+
+	inline void resetGraphicsPipeline()
+	{
+		agpuThrowIfFailed(agpuStateTrackerResetGraphicsPipeline(this));
+	}
+
+	inline void resetComputePipeline()
+	{
+		agpuThrowIfFailed(agpuStateTrackerResetComputePipeline(this));
+	}
+
+	inline void setComputeStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetComputeStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setVertexStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetVertexStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setFragmentStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetFragmentStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setGeometryStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetGeometryStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setTessellationControlStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetTessellationControlStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setTessellationEvaluationStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetTessellationEvaluationStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetBlendState(this, renderTargetMask, enabled));
+	}
+
+	inline void setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetBlendFunction(this, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation));
+	}
+
+	inline void setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetColorMask(this, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled));
+	}
+
+	inline void setFrontFace(agpu_face_winding winding)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetFrontFace(this, winding));
+	}
+
+	inline void setCullMode(agpu_cull_mode mode)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetCullMode(this, mode));
+	}
+
+	inline void setDepthBias(agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetDepthBias(this, constant_factor, clamp, slope_factor));
+	}
+
+	inline void setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetDepthState(this, enabled, writeMask, function));
+	}
+
+	inline void setPolygonMode(agpu_polygon_mode mode)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetPolygonMode(this, mode));
+	}
+
+	inline void setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetStencilState(this, enabled, writeMask, readMask));
+	}
+
+	inline void setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetStencilFrontFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
+	}
+
+	inline void setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetStencilBackFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
+	}
+
+	inline void setPrimitiveType(agpu_primitive_topology type)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetPrimitiveType(this, type));
+	}
+
+	inline void setVertexLayout(const agpu_ref<agpu_vertex_layout>& layout)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetVertexLayout(this, layout.get()));
+	}
+
+	inline void setShaderSignature(const agpu_ref<agpu_shader_signature>& signature)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetShaderSignature(this, signature.get()));
+	}
+
+	inline void setSampleDescription(agpu_uint sample_count, agpu_uint sample_quality)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetSampleDescription(this, sample_count, sample_quality));
+	}
+
+	inline void setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetViewport(this, x, y, w, h));
+	}
+
+	inline void setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetScissor(this, x, y, w, h));
+	}
+
+	inline void useVertexBinding(const agpu_ref<agpu_vertex_binding>& vertex_binding)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseVertexBinding(this, vertex_binding.get()));
+	}
+
+	inline void useIndexBuffer(const agpu_ref<agpu_buffer>& index_buffer)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseIndexBuffer(this, index_buffer.get()));
+	}
+
+	inline void useIndexBufferAt(const agpu_ref<agpu_buffer>& index_buffer, agpu_size offset, agpu_size index_size)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseIndexBufferAt(this, index_buffer.get(), offset, index_size));
+	}
+
+	inline void useDrawIndirectBuffer(const agpu_ref<agpu_buffer>& draw_buffer)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseDrawIndirectBuffer(this, draw_buffer.get()));
+	}
+
+	inline void useComputeDispatchIndirectBuffer(const agpu_ref<agpu_buffer>& buffer)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseComputeDispatchIndirectBuffer(this, buffer.get()));
+	}
+
+	inline void useShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseShaderResources(this, binding.get()));
+	}
+
+	inline void useComputeShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseComputeShaderResources(this, binding.get()));
+	}
+
+	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+	{
+		agpuThrowIfFailed(agpuStateTrackerDrawArrays(this, vertex_count, instance_count, first_vertex, base_instance));
+	}
+
+	inline void drawArraysIndirect(agpu_size offset, agpu_size drawcount)
+	{
+		agpuThrowIfFailed(agpuStateTrackerDrawArraysIndirect(this, offset, drawcount));
+	}
+
+	inline void drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+	{
+		agpuThrowIfFailed(agpuStateTrackerDrawElements(this, index_count, instance_count, first_index, base_vertex, base_instance));
+	}
+
+	inline void drawElementsIndirect(agpu_size offset, agpu_size drawcount)
+	{
+		agpuThrowIfFailed(agpuStateTrackerDrawElementsIndirect(this, offset, drawcount));
+	}
+
+	inline void dispatchCompute(agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z)
+	{
+		agpuThrowIfFailed(agpuStateTrackerDispatchCompute(this, group_count_x, group_count_y, group_count_z));
+	}
+
+	inline void dispatchComputeIndirect(agpu_size offset)
+	{
+		agpuThrowIfFailed(agpuStateTrackerDispatchComputeIndirect(this, offset));
+	}
+
+	inline void setStencilReference(agpu_uint reference)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetStencilReference(this, reference));
+	}
+
+	inline void executeBundle(const agpu_ref<agpu_command_list>& bundle)
+	{
+		agpuThrowIfFailed(agpuStateTrackerExecuteBundle(this, bundle.get()));
+	}
+
+	inline void beginRenderPass(const agpu_ref<agpu_renderpass>& renderpass, const agpu_ref<agpu_framebuffer>& framebuffer, agpu_bool bundle_content)
+	{
+		agpuThrowIfFailed(agpuStateTrackerBeginRenderPass(this, renderpass.get(), framebuffer.get(), bundle_content));
+	}
+
+	inline void endRenderPass()
+	{
+		agpuThrowIfFailed(agpuStateTrackerEndRenderPass(this));
+	}
+
+	inline void resolveFramebuffer(const agpu_ref<agpu_framebuffer>& destFramebuffer, const agpu_ref<agpu_framebuffer>& sourceFramebuffer)
+	{
+		agpuThrowIfFailed(agpuStateTrackerResolveFramebuffer(this, destFramebuffer.get(), sourceFramebuffer.get()));
+	}
+
+	inline void resolveTexture(const agpu_ref<agpu_texture>& sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu_ref<agpu_texture>& destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
+	{
+		agpuThrowIfFailed(agpuStateTrackerResolveTexture(this, sourceTexture.get(), sourceLevel, sourceLayer, destTexture.get(), destLevel, destLayer, levelCount, layerCount, aspect));
+	}
+
+	inline void pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
+	{
+		agpuThrowIfFailed(agpuStateTrackerPushConstants(this, offset, size, values));
+	}
+
+	inline void memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+	{
+		agpuThrowIfFailed(agpuStateTrackerMemoryBarrier(this, source_stage, dest_stage, source_accesses, dest_accesses));
 	}
 
 };
 
-typedef agpu_ref<agpu_renderpass> agpu_renderpass_ref;
-
-// Interface wrapper for agpu_shader_signature_builder.
-struct _agpu_shader_signature_builder
-{
-private:
-	_agpu_shader_signature_builder() {}
-
-public:
-	inline void addReference()
-	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBuilderReference(this));
-	}
-
-	inline void release()
-	{
-		agpuThrowIfFailed(agpuReleaseShaderSignatureBuilder(this));
-	}
-
-	inline agpu_shader_signature* build()
-	{
-		return agpuBuildShaderSignature(this);
-	}
-
-	inline void addBindingConstant()
-	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBindingConstant(this));
-	}
-
-	inline void addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings)
-	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBindingElement(this, type, maxBindings));
-	}
-
-	inline void beginBindingBank(agpu_uint maxBindings)
-	{
-		agpuThrowIfFailed(agpuBeginShaderSignatureBindingBank(this, maxBindings));
-	}
-
-	inline void addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
-	{
-		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement(this, type, bindingPointCount));
-	}
-
-};
-
-typedef agpu_ref<agpu_shader_signature_builder> agpu_shader_signature_builder_ref;
-
-// Interface wrapper for agpu_shader_signature.
-struct _agpu_shader_signature
-{
-private:
-	_agpu_shader_signature() {}
-
-public:
-	inline void addReference()
-	{
-		agpuThrowIfFailed(agpuAddShaderSignature(this));
-	}
-
-	inline void release()
-	{
-		agpuThrowIfFailed(agpuReleaseShaderSignature(this));
-	}
-
-	inline agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element)
-	{
-		return agpuCreateShaderResourceBinding(this, element);
-	}
-
-};
-
-typedef agpu_ref<agpu_shader_signature> agpu_shader_signature_ref;
-
-// Interface wrapper for agpu_shader_resource_binding.
-struct _agpu_shader_resource_binding
-{
-private:
-	_agpu_shader_resource_binding() {}
-
-public:
-	inline void addReference()
-	{
-		agpuThrowIfFailed(agpuAddShaderResourceBindingReference(this));
-	}
-
-	inline void release()
-	{
-		agpuThrowIfFailed(agpuReleaseShaderResourceBinding(this));
-	}
-
-	inline void bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
-	{
-		agpuThrowIfFailed(agpuBindUniformBuffer(this, location, uniform_buffer));
-	}
-
-	inline void bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
-	{
-		agpuThrowIfFailed(agpuBindUniformBufferRange(this, location, uniform_buffer, offset, size));
-	}
-
-	inline void bindStorageBuffer(agpu_int location, agpu_buffer* storage_buffer)
-	{
-		agpuThrowIfFailed(agpuBindStorageBuffer(this, location, storage_buffer));
-	}
-
-	inline void bindStorageBufferRange(agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size)
-	{
-		agpuThrowIfFailed(agpuBindStorageBufferRange(this, location, storage_buffer, offset, size));
-	}
-
-	inline void bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
-	{
-		agpuThrowIfFailed(agpuBindTexture(this, location, texture, startMiplevel, miplevels, lodclamp));
-	}
-
-	inline void bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
-	{
-		agpuThrowIfFailed(agpuBindTextureArrayRange(this, location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp));
-	}
-
-	inline void bindImage(agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
-	{
-		agpuThrowIfFailed(agpuBindImage(this, location, texture, level, layer, access, format));
-	}
-
-	inline void createSampler(agpu_int location, agpu_sampler_description* description)
-	{
-		agpuThrowIfFailed(agpuCreateSampler(this, location, description));
-	}
-
-};
-
-typedef agpu_ref<agpu_shader_resource_binding> agpu_shader_resource_binding_ref;
-
-// Interface wrapper for agpu_fence.
-struct _agpu_fence
-{
-private:
-	_agpu_fence() {}
-
-public:
-	inline void addReference()
-	{
-		agpuThrowIfFailed(agpuAddFenceReference(this));
-	}
-
-	inline void release()
-	{
-		agpuThrowIfFailed(agpuReleaseFenceReference(this));
-	}
-
-	inline void waitOnClient()
-	{
-		agpuThrowIfFailed(agpuWaitOnClient(this));
-	}
-
-};
-
-typedef agpu_ref<agpu_fence> agpu_fence_ref;
+typedef agpu_ref<agpu_state_tracker> agpu_state_tracker_ref;
 
 
 #endif /* AGPU_HPP_ */

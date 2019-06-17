@@ -32,7 +32,7 @@ public:
     VkImageLayout initialLayout;
     VkAccessFlags initialLayoutAccessBits;
     VkImageAspectFlags imageAspect;
-    VkDeviceMemory memory;
+    VmaAllocation memory;
     bool owned;
     agpu::buffer_ref uploadBuffer;
     agpu::buffer_ref readbackBuffer;

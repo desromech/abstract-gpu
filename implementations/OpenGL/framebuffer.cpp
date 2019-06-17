@@ -127,7 +127,7 @@ void GLFramebuffer::attachTo(GLenum target, agpu_texture_view_description *view,
     switch(glTexture->description.type)
     {
     case AGPU_TEXTURE_2D:
-		if(glTexture->description.depthOrArraySize > 1)
+		if(glTexture->description.layers > 1)
 			deviceForGL->glFramebufferTextureLayer(target, attachmentPoint, glTexture->handle, view->subresource_range.base_miplevel, view->subresource_range.base_arraylayer);
 		else
         	deviceForGL->glFramebufferTexture2D(target, attachmentPoint, glTexture->target, glTexture->handle, view->subresource_range.base_miplevel);
