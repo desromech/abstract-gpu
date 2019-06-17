@@ -1033,6 +1033,14 @@ AGPU_EXPORT agpu_error agpuPushConstants ( agpu_command_list* command_list, agpu
 	return (*dispatchTable)->agpuPushConstants ( command_list, offset, size, values );
 }
 
+AGPU_EXPORT agpu_error agpuMemoryBarrier ( agpu_command_list* command_list, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuMemoryBarrier ( command_list, source_stage, dest_stage, source_accesses, dest_accesses );
+}
+
 AGPU_EXPORT agpu_error agpuAddTextureReference ( agpu_texture* texture )
 {
 	if (texture == nullptr)
@@ -2087,5 +2095,13 @@ AGPU_EXPORT agpu_error agpuStateTrackerPushConstants ( agpu_state_tracker* state
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerPushConstants ( state_tracker, offset, size, values );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier ( agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerMemoryBarrier ( state_tracker, source_stage, dest_stage, source_accesses, dest_accesses );
 }
 

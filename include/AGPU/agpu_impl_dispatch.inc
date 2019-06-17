@@ -778,6 +778,12 @@ AGPU_EXPORT agpu_error agpuPushConstants(agpu_command_list* self, agpu_uint offs
 	return asRef(agpu::command_list, self)->pushConstants(offset, size, values);
 }
 
+AGPU_EXPORT agpu_error agpuMemoryBarrier(agpu_command_list* self, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
 //==============================================================================
 // texture C dispatching functions.
 //==============================================================================
@@ -1609,6 +1615,12 @@ AGPU_EXPORT agpu_error agpuStateTrackerPushConstants(agpu_state_tracker* self, a
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->pushConstants(offset, size, values);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* self, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
 }
 
 

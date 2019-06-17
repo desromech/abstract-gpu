@@ -51,8 +51,8 @@ void BufferTextureTransferLayout::setFromDescriptionAndLevel(const agpu_texture_
 void GLTexture::allocateTexture1D(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    if(description->depthOrArraySize > 1)
-        deviceForGL->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->depthOrArraySize);
+    if(description->layers > 1)
+        deviceForGL->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->layers);
     else
         deviceForGL->glTexStorage1D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width);
 }
@@ -66,8 +66,8 @@ void GLTexture::allocateTexture2D(const agpu::device_ref &device, GLuint handle,
     }
     else
     {
-        if(description->depthOrArraySize > 1)
-            deviceForGL->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+        if(description->layers > 1)
+            deviceForGL->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->layers);
         else
             deviceForGL->glTexStorage2D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height);
     }
@@ -76,7 +76,7 @@ void GLTexture::allocateTexture2D(const agpu::device_ref &device, GLuint handle,
 void GLTexture::allocateTexture3D(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
 {
     glBindTexture(target, handle);
-    deviceForGL->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->depthOrArraySize);
+    deviceForGL->glTexStorage3D(target, description->miplevels, mapInternalTextureFormat(description->format), description->width, description->height, description->layers);
 }
 
 void GLTexture::allocateTextureCube(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description)
@@ -162,7 +162,7 @@ void GLTexture::performTransferToCpu(int level)
 {
     deviceForGL->glBindBuffer(GL_PIXEL_PACK_BUFFER, transferBuffer);
     glBindTexture(target, handle);
-    bool isArray = description.depthOrArraySize > 1;
+    bool isArray = description.layers > 1;
     if(isArray)
         return; // Can't support it.
 
@@ -184,7 +184,7 @@ void GLTexture::performTransferToGpu(int level, int arrayIndex)
     deviceForGL->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, transferBuffer);
     glBindTexture(target, handle);
     auto transferLayout = BufferTextureTransferLayout::fromDescriptionAndLevel(description, level);
-    bool isArray = description.depthOrArraySize > 1;
+    bool isArray = description.layers > 1;
     auto width = transferLayout.logicalWidth;
     auto height = transferLayout.logicalHeight;
     auto depth = transferLayout.logicalDepthOrArraySize;
@@ -408,11 +408,11 @@ agpu_error GLTexture::getFullViewDescription(agpu_texture_view_description *view
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.usage_mode = description.usage_modes;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
-    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    viewDescription->subresource_range.layer_count = description.layers;
     return AGPU_OK;
 }
 

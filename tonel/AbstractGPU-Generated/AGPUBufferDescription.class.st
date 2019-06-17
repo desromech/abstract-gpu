@@ -15,7 +15,7 @@ AGPUBufferDescription class >> fieldsDesc [
 	"
 	^ #(
 		 agpu_uint size;
-		 agpu_buffer_usage_type usage;
+		 agpu_memory_heap_type heap_type;
 		 agpu_buffer_binding_type binding;
 		 agpu_bitfield mapping_flags;
 		 agpu_uint stride;

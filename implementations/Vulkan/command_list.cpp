@@ -585,4 +585,17 @@ agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTextur
     return AGPU_OK;
 }
 
+agpu_error AVkCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+    VkMemoryBarrier barrier;
+    memset(&barrier, 0, sizeof(barrier));
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask = VkAccessFlags(source_accesses);
+    barrier.dstAccessMask = VkAccessFlags(dest_accesses);
+    vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags(source_stage), VkPipelineStageFlags(dest_stage),
+            0, 1, &barrier, 0, nullptr, 0, nullptr);
+    return AGPU_OK;
+}
+
+
 } // End of namespace AgpuVulkan

@@ -299,34 +299,37 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         return false;
 
     // Color buffers descriptions
-    agpu_texture_description colorDesc;
-    memset(&colorDesc, 0, sizeof(colorDesc));
+    agpu_texture_description colorDesc = {};
     colorDesc.type = AGPU_TEXTURE_2D;
     colorDesc.width = createInfo->width;
     colorDesc.height = createInfo->height;
-    colorDesc.depthOrArraySize = 1;
+    colorDesc.depth = 1;
+    colorDesc.layers = 1;
     colorDesc.format = agpuFormat;
-    colorDesc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
+    colorDesc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+    colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+    colorDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     colorDesc.miplevels = 1;
     colorDesc.sample_count = 1;
 
     // Depth stencil buffer descriptions.
-    agpu_texture_description depthStencilDesc;
-    memset(&depthStencilDesc, 0, sizeof(depthStencilDesc));
+    agpu_texture_description depthStencilDesc = {};
     depthStencilDesc.type = AGPU_TEXTURE_2D;
     depthStencilDesc.width = createInfo->width;
     depthStencilDesc.height = createInfo->height;
-    depthStencilDesc.depthOrArraySize = 1;
+    depthStencilDesc.depth = 1;
+    depthStencilDesc.layers = 1;
     depthStencilDesc.format = createInfo->depth_stencil_format;
-    depthStencilDesc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
+    depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     depthStencilDesc.miplevels = 1;
 
     bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
     bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
     if (hasDepth)
-        depthStencilDesc.flags = agpu_texture_flags(depthStencilDesc.flags | AGPU_TEXTURE_FLAG_DEPTH);
+        depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT);
     if (hasStencil)
-        depthStencilDesc.flags = agpu_texture_flags(depthStencilDesc.flags | AGPU_TEXTURE_FLAG_STENCIL);
+        depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+    depthStencilDesc.main_usage_mode = depthStencilDesc.usage_modes;
 
     agpu_texture_view_description colorViewDesc;
     agpu_texture_view_description depthStencilViewDesc;

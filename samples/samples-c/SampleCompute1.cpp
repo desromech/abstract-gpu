@@ -6,7 +6,7 @@ public:
     int run(int argc, const char **argv)
     {
 		// Create the programs.
-		auto computeShader = compileShaderFromFile("data/shaders/computeAdd", AGPU_COMPUTE_SHADER);
+		auto computeShader = compileShaderFromFile("data/shaders/computeAdd.glsl", AGPU_COMPUTE_SHADER);
 		if (!computeShader)
 			return false;
 
@@ -70,7 +70,7 @@ public:
 
 		agpuAddCommandList(commandQueue, commandList);
 		agpuFinishQueueExecution(commandQueue);
-		
+
 		// Remap the buffer if needed
 		if (!hasPersistentCoherentMapping)
 		{

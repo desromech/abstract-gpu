@@ -77,6 +77,7 @@ public:
 	virtual agpu_error resolveFramebuffer(const agpu::framebuffer_ref & destFramebuffer, const agpu::framebuffer_ref & sourceFramebuffer) override;
 	virtual agpu_error resolveTexture(const agpu::texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect) override;
 	virtual agpu_error pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values) override;
+    virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) override;
 
 protected:
     void invalidateGraphicsPipelineState();

@@ -653,6 +653,11 @@ AGPUCBindings >> pushConstants_command_list: command_list offset: offset size: s
 	^ self ffiCall: #(agpu_error agpuPushConstants (agpu_command_list* command_list , agpu_uint offset , agpu_uint size , agpu_pointer values) )
 ]
 
+{ #category : #'command_list' }
+AGPUCBindings >> memoryBarrier_command_list: command_list source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses [
+	^ self ffiCall: #(agpu_error agpuMemoryBarrier (agpu_command_list* command_list , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses) )
+]
+
 { #category : #'texture' }
 AGPUCBindings >> addReference_texture: texture [
 	^ self ffiCall: #(agpu_error agpuAddTextureReference (agpu_texture* texture) )
@@ -1311,6 +1316,11 @@ AGPUCBindings >> resolveTexture_state_tracker: state_tracker sourceTexture: sour
 { #category : #'state_tracker' }
 AGPUCBindings >> pushConstants_state_tracker: state_tracker offset: offset size: size values: values [
 	^ self ffiCall: #(agpu_error agpuStateTrackerPushConstants (agpu_state_tracker* state_tracker , agpu_uint offset , agpu_uint size , agpu_pointer values) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> memoryBarrier_state_tracker: state_tracker source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses [
+	^ self ffiCall: #(agpu_error agpuStateTrackerMemoryBarrier (agpu_state_tracker* state_tracker , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses) )
 ]
 
 { #category : #'global c functions' }

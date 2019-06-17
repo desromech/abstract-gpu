@@ -86,7 +86,7 @@
 
 		<struct name="buffer_description">
 			<field name="size" type="uint" />
-			<field name="usage" type="buffer_usage_type" />
+			<field name="heap_type" type="memory_heap_type" />
 			<field name="binding" type="buffer_binding_type" />
 			<field name="mapping_flags" type="bitfield" bits="buffer_mapping_flags" />
 			<field name="stride" type="uint" />
@@ -96,14 +96,15 @@
             <field name="type" type="texture_type" />
             <field name="width" type="uint" />
             <field name="height" type="uint" />
-            <field name="depthOrArraySize" type="ushort" />
+            <field name="depth" type="uint" />
+            <field name="layers" type="uint" />
             <field name="miplevels" type="ushort" />
             <field name="format" type="texture_format" />
-            <field name="flags" type="texture_flags" />
+            <field name="usage_modes" type="texture_usage_mode_mask" />
+            <field name="main_usage_mode" type="texture_usage_mode_mask" />
+            <field name="heap_type" type="memory_heap_type" />
             <field name="sample_count" type="uint" />
             <field name="sample_quality" type="uint" />
-            <field name="upload_buffer" type="buffer*" />
-            <field name="readback_buffer" type="buffer*" />
         </struct>
 
         <struct name="components_swizzle">
@@ -114,7 +115,7 @@
         </struct>
 
         <struct name="subresource_range" >
-            <field name="usage_flags" type="texture_flags"/>
+            <field name="usage_mode" type="texture_usage_mode_mask"/>
             <field name="base_miplevel" type="uint"/>
             <field name="level_count" type="uint"/>
             <field name="base_arraylayer" type="uint"/>
@@ -338,6 +339,53 @@
             <constant name="CommandQueueTypeTransfer" value="2" />
         </enum>
 
+        <enum name="access_flags">
+            <!-- Same bit patterns as Vulkan VkAccessFlags -->
+            <constant name="AccessIndirectCommandRead" value="1" />
+            <constant name="AccessIndexRead" value="2" />
+            <constant name="AccessVertexAttributeRead" value="4" />
+            <constant name="AccessUniformRead" value="8" />
+            <constant name="AccessInputAttachmentRead" value="16" />
+            <constant name="AccessShaderRead" value="32" />
+            <constant name="AccessShaderWrite" value="64" />
+            <constant name="AccessColorAttachmentRead" value="128" />
+            <constant name="AccessColorAttachmentWrite" value="256" />
+            <constant name="AccessDepthStencilAttachmentRead" value="512" />
+            <constant name="AccessDepthStencilAttachmentWrite" value="1024" />
+            <constant name="AccessTransferRead" value="2048" />
+            <constant name="AccessTransferWrite" value="4096" />
+            <constant name="AccessHostRead" value="8192" />
+            <constant name="AccessHostWrite" value="16384" />
+            <constant name="AccessMemoryRead" value="32768" />
+            <constant name="AccessMemoryWrite" value="65536" />
+            <constant name="AccessTransformFeedbackWrite" value="33554432" />
+            <constant name="AccessTransformFeedbackCounterRead" value="67108864" />
+            <constant name="AccessTransformFeedbackCounterWrite" value="134217728" />
+        </enum>
+
+        <enum name="pipeline_stage_flags">
+            <!-- Same bit patterns as VkPipelineStageFlagBits -->
+            <constant name="PipelineStageTopOfPipe" value="1" />
+            <constant name="PipelineStageDrawIndirect" value="2" />
+            <constant name="PipelineStageVertexInput" value="4" />
+            <constant name="PipelineStageVertexShader" value="8" />
+            <constant name="PipelineStageTessellationControl" value="16" />
+            <constant name="PipelineStageTessellationEvaluation" value="32" />
+            <constant name="PipelineStageGeometryShader" value="64" />
+            <constant name="PipelineStageFragmentShader" value="128" />
+            <constant name="PipelineStageEarlyFragmentTests" value="256" />
+            <constant name="PipelineStageLateFragmentTests" value="512" />
+            <constant name="PipelineStageColorAttachmentOutput" value="1024" />
+            <constant name="PipelineStageComputeShader" value="2048" />
+            <constant name="PipelineStageTransfer" value="4096" />
+            <constant name="PipelineStageBottomOfPipe" value="8192" />
+            <constant name="PipelineStageHost" value="16384" />
+            <constant name="PipelineStageAllGraphics" value="32768" />
+            <constant name="PipelineStageAllCommands" value="65536" />
+            <constant name="PipelineStageTransformFeedback" value="16777216" />
+            <constant name="PipelineStageConditionalRendering" value="262144" />
+        </enum>
+
 		<enum name="primitive_topology">
             <constant name="Points" value="0" />
 
@@ -407,16 +455,15 @@
             <constant name="Texture3D" value="5" />
         </enum>
 
-        <enum name="texture_flags">
-            <constant name="TextureFlagNone" value="0" />
-            <constant name="TextureFlagRenderTarget" value="1" />
-            <constant name="TextureFlagDepth" value="2" />
-            <constant name="TextureFlagStencil" value="4" />
-            <constant name="TextureFlagStorage" value="8" />
-            <constant name="TextureFlagRenderbufferOnly" value="16" />
-
-            <constant name="TextureFlagReadedBack" value="32" />
-            <constant name="TextureFlagUploaded" value="64" />
+        <enum name="texture_usage_mode_mask">
+            <constant name="TextureUsageNone" value="0" />
+            <constant name="TextureUsageSampled" value="1" />
+            <constant name="TextureUsageColorAttachment" value="2" />
+            <constant name="TextureUsageDepthAttachment" value="4" />
+            <constant name="TextureUsageStencilAttachment" value="8" />
+            <constant name="TextureUsageStorage" value="16" />
+            <constant name="TextureUsageReadedBack" value="32" />
+            <constant name="TextureUsageUploaded" value="64" />
         </enum>
 
 		<enum name="shader_type">
@@ -429,10 +476,17 @@
 			<constant name="LibraryShader" value="6" />
 		</enum>
 
-		<enum name="buffer_usage_type">
-			<constant name="Static" value="0" />
-			<constant name="Dynamic" value="1" />
-			<constant name="Stream" value="2" />
+		<enum name="memory_heap_type">
+            <constant name="MemoryHeapTypeDeviceLocal" value="0" />
+            <constant name="MemoryHeapTypeHostToDevice" value="1" />
+            <constant name="MemoryHeapTypeDeviceToHost" value="2" />
+            <constant name="MemoryHeapTypeHost" value="3" />
+            <constant name="MemoryHeapTypeCustom" value="4" />
+
+            <!-- These constants are for compatibility purpose -->
+            <constant name="Static" value="0" />
+            <constant name="Dynamic" value="1" />
+            <constant name="Stream" value="1" />
 		</enum>
 
 		<enum name="buffer_binding_type">
@@ -1398,6 +1452,13 @@
                 <arg name="size" type="uint" />
                 <arg name="values" type="pointer" />
             </method>
+
+            <method name="memoryBarrier" cname="MemoryBarrier" returnType="error">
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+            </method>
         </interface>
 
         <interface name="texture">
@@ -2051,6 +2112,13 @@
                 <arg name="offset" type="uint" />
                 <arg name="size" type="uint" />
                 <arg name="values" type="pointer" />
+            </method>
+
+            <method name="memoryBarrier" cname="StateTrackerMemoryBarrier" returnType="error">
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
             </method>
         </interface>
     </interfaces>

@@ -92,6 +92,51 @@ typedef enum {
 } agpu_command_queue_type;
 
 typedef enum {
+	AGPU_ACCESS_INDIRECT_COMMAND_READ = 1,
+	AGPU_ACCESS_INDEX_READ = 2,
+	AGPU_ACCESS_VERTEX_ATTRIBUTE_READ = 4,
+	AGPU_ACCESS_UNIFORM_READ = 8,
+	AGPU_ACCESS_INPUT_ATTACHMENT_READ = 16,
+	AGPU_ACCESS_SHADER_READ = 32,
+	AGPU_ACCESS_SHADER_WRITE = 64,
+	AGPU_ACCESS_COLOR_ATTACHMENT_READ = 128,
+	AGPU_ACCESS_COLOR_ATTACHMENT_WRITE = 256,
+	AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ = 512,
+	AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE = 1024,
+	AGPU_ACCESS_TRANSFER_READ = 2048,
+	AGPU_ACCESS_TRANSFER_WRITE = 4096,
+	AGPU_ACCESS_HOST_READ = 8192,
+	AGPU_ACCESS_HOST_WRITE = 16384,
+	AGPU_ACCESS_MEMORY_READ = 32768,
+	AGPU_ACCESS_MEMORY_WRITE = 65536,
+	AGPU_ACCESS_TRANSFORM_FEEDBACK_WRITE = 33554432,
+	AGPU_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ = 67108864,
+	AGPU_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE = 134217728,
+} agpu_access_flags;
+
+typedef enum {
+	AGPU_PIPELINE_STAGE_TOP_OF_PIPE = 1,
+	AGPU_PIPELINE_STAGE_DRAW_INDIRECT = 2,
+	AGPU_PIPELINE_STAGE_VERTEX_INPUT = 4,
+	AGPU_PIPELINE_STAGE_VERTEX_SHADER = 8,
+	AGPU_PIPELINE_STAGE_TESSELLATION_CONTROL = 16,
+	AGPU_PIPELINE_STAGE_TESSELLATION_EVALUATION = 32,
+	AGPU_PIPELINE_STAGE_GEOMETRY_SHADER = 64,
+	AGPU_PIPELINE_STAGE_FRAGMENT_SHADER = 128,
+	AGPU_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS = 256,
+	AGPU_PIPELINE_STAGE_LATE_FRAGMENT_TESTS = 512,
+	AGPU_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT = 1024,
+	AGPU_PIPELINE_STAGE_COMPUTE_SHADER = 2048,
+	AGPU_PIPELINE_STAGE_TRANSFER = 4096,
+	AGPU_PIPELINE_STAGE_BOTTOM_OF_PIPE = 8192,
+	AGPU_PIPELINE_STAGE_HOST = 16384,
+	AGPU_PIPELINE_STAGE_ALL_GRAPHICS = 32768,
+	AGPU_PIPELINE_STAGE_ALL_COMMANDS = 65536,
+	AGPU_PIPELINE_STAGE_TRANSFORM_FEEDBACK = 16777216,
+	AGPU_PIPELINE_STAGE_CONDITIONAL_RENDERING = 262144,
+} agpu_pipeline_stage_flags;
+
+typedef enum {
 	AGPU_POINTS = 0,
 	AGPU_LINES = 1,
 	AGPU_LINES_ADJACENCY = 2,
@@ -158,15 +203,15 @@ typedef enum {
 } agpu_texture_type;
 
 typedef enum {
-	AGPU_TEXTURE_FLAG_NONE = 0,
-	AGPU_TEXTURE_FLAG_RENDER_TARGET = 1,
-	AGPU_TEXTURE_FLAG_DEPTH = 2,
-	AGPU_TEXTURE_FLAG_STENCIL = 4,
-	AGPU_TEXTURE_FLAG_STORAGE = 8,
-	AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY = 16,
-	AGPU_TEXTURE_FLAG_READED_BACK = 32,
-	AGPU_TEXTURE_FLAG_UPLOADED = 64,
-} agpu_texture_flags;
+	AGPU_TEXTURE_USAGE_NONE = 0,
+	AGPU_TEXTURE_USAGE_SAMPLED = 1,
+	AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT = 2,
+	AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT = 4,
+	AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT = 8,
+	AGPU_TEXTURE_USAGE_STORAGE = 16,
+	AGPU_TEXTURE_USAGE_READED_BACK = 32,
+	AGPU_TEXTURE_USAGE_UPLOADED = 64,
+} agpu_texture_usage_mode_mask;
 
 typedef enum {
 	AGPU_VERTEX_SHADER = 0,
@@ -179,10 +224,15 @@ typedef enum {
 } agpu_shader_type;
 
 typedef enum {
+	AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL = 0,
+	AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE = 1,
+	AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST = 2,
+	AGPU_MEMORY_HEAP_TYPE_HOST = 3,
+	AGPU_MEMORY_HEAP_TYPE_CUSTOM = 4,
 	AGPU_STATIC = 0,
 	AGPU_DYNAMIC = 1,
-	AGPU_STREAM = 2,
-} agpu_buffer_usage_type;
+	AGPU_STREAM = 1,
+} agpu_memory_heap_type;
 
 typedef enum {
 	AGPU_GENERIC_DATA_BUFFER = 0,
@@ -578,7 +628,7 @@ typedef struct agpu_swap_chain_create_info {
 /* Structure agpu_buffer_description. */
 typedef struct agpu_buffer_description {
 	agpu_uint size;
-	agpu_buffer_usage_type usage;
+	agpu_memory_heap_type heap_type;
 	agpu_buffer_binding_type binding;
 	agpu_bitfield mapping_flags;
 	agpu_uint stride;
@@ -589,14 +639,15 @@ typedef struct agpu_texture_description {
 	agpu_texture_type type;
 	agpu_uint width;
 	agpu_uint height;
-	agpu_ushort depthOrArraySize;
+	agpu_uint depth;
+	agpu_uint layers;
 	agpu_ushort miplevels;
 	agpu_texture_format format;
-	agpu_texture_flags flags;
+	agpu_texture_usage_mode_mask usage_modes;
+	agpu_texture_usage_mode_mask main_usage_mode;
+	agpu_memory_heap_type heap_type;
 	agpu_uint sample_count;
 	agpu_uint sample_quality;
-	agpu_buffer* upload_buffer;
-	agpu_buffer* readback_buffer;
 } agpu_texture_description;
 
 /* Structure agpu_components_swizzle. */
@@ -609,7 +660,7 @@ typedef struct agpu_components_swizzle {
 
 /* Structure agpu_subresource_range. */
 typedef struct agpu_subresource_range {
-	agpu_texture_flags usage_flags;
+	agpu_texture_usage_mode_mask usage_mode;
 	agpu_uint base_miplevel;
 	agpu_uint level_count;
 	agpu_uint base_arraylayer;
@@ -1090,6 +1141,7 @@ typedef agpu_error (*agpuEndRenderPass_FUN) (agpu_command_list* command_list);
 typedef agpu_error (*agpuResolveFramebuffer_FUN) (agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
 typedef agpu_error (*agpuResolveTexture_FUN) (agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 typedef agpu_error (*agpuPushConstants_FUN) (agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values);
+typedef agpu_error (*agpuMemoryBarrier_FUN) (agpu_command_list* command_list, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 
 AGPU_EXPORT agpu_error agpuAddCommandListReference(agpu_command_list* command_list);
 AGPU_EXPORT agpu_error agpuReleaseCommandList(agpu_command_list* command_list);
@@ -1120,6 +1172,7 @@ AGPU_EXPORT agpu_error agpuEndRenderPass(agpu_command_list* command_list);
 AGPU_EXPORT agpu_error agpuResolveFramebuffer(agpu_command_list* command_list, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
 AGPU_EXPORT agpu_error agpuResolveTexture(agpu_command_list* command_list, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 AGPU_EXPORT agpu_error agpuPushConstants(agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values);
+AGPU_EXPORT agpu_error agpuMemoryBarrier(agpu_command_list* command_list, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 
 /* Methods for interface agpu_texture. */
 typedef agpu_error (*agpuAddTextureReference_FUN) (agpu_texture* texture);
@@ -1374,6 +1427,7 @@ typedef agpu_error (*agpuStateTrackerEndRenderPass_FUN) (agpu_state_tracker* sta
 typedef agpu_error (*agpuStateTrackerResolveFramebuffer_FUN) (agpu_state_tracker* state_tracker, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
 typedef agpu_error (*agpuStateTrackerResolveTexture_FUN) (agpu_state_tracker* state_tracker, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 typedef agpu_error (*agpuStateTrackerPushConstants_FUN) (agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values);
+typedef agpu_error (*agpuStateTrackerMemoryBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 
 AGPU_EXPORT agpu_error agpuAddStateTrackerReference(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference(agpu_state_tracker* state_tracker);
@@ -1426,6 +1480,7 @@ AGPU_EXPORT agpu_error agpuStateTrackerEndRenderPass(agpu_state_tracker* state_t
 AGPU_EXPORT agpu_error agpuStateTrackerResolveFramebuffer(agpu_state_tracker* state_tracker, agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
 AGPU_EXPORT agpu_error agpuStateTrackerResolveTexture(agpu_state_tracker* state_tracker, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 AGPU_EXPORT agpu_error agpuStateTrackerPushConstants(agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values);
+AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 
 /* Installable client driver interface. */
 typedef struct _agpu_icd_dispatch {
@@ -1560,6 +1615,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuResolveFramebuffer_FUN agpuResolveFramebuffer;
 	agpuResolveTexture_FUN agpuResolveTexture;
 	agpuPushConstants_FUN agpuPushConstants;
+	agpuMemoryBarrier_FUN agpuMemoryBarrier;
 	agpuAddTextureReference_FUN agpuAddTextureReference;
 	agpuReleaseTexture_FUN agpuReleaseTexture;
 	agpuGetTextureDescription_FUN agpuGetTextureDescription;
@@ -1692,6 +1748,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerResolveFramebuffer_FUN agpuStateTrackerResolveFramebuffer;
 	agpuStateTrackerResolveTexture_FUN agpuStateTrackerResolveTexture;
 	agpuStateTrackerPushConstants_FUN agpuStateTrackerPushConstants;
+	agpuStateTrackerMemoryBarrier_FUN agpuStateTrackerMemoryBarrier;
 } agpu_icd_dispatch;
 
 

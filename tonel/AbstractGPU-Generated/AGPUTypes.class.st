@@ -52,19 +52,21 @@ Class {
 		'agpu_compute_pipeline_builder',
 		'agpu_int',
 		'agpu_vr_controller_event',
-		'agpu_renderpass',
+		'agpu_access_flags',
 		'agpu_vr_dual_analog_event',
 		'agpu_frustum_tangents',
 		'agpu_cstring',
-		'agpu_buffer_usage_type',
+		'agpu_buffer_binding_type',
 		'agpu_mapping_access',
 		'agpu_compare_function',
 		'agpu_size',
 		'agpu_device_open_flags',
+		'agpu_texture_usage_mode_mask',
 		'agpu_sbyte',
-		'agpu_shader_language',
+		'agpu_renderpass',
 		'agpu_offline_shader_compiler',
 		'agpu_renderpass_color_attachment_description',
+		'agpu_pipeline_stage_flags',
 		'agpu_polygon_mode',
 		'agpu_bool',
 		'agpu_pipeline_builder',
@@ -76,7 +78,6 @@ Class {
 		'agpu_face_winding',
 		'agpu_shader_resource_binding',
 		'agpu_vr_button',
-		'agpu_buffer_binding_type',
 		'agpu_ushort',
 		'agpu_pipeline_state',
 		'agpu_components_swizzle',
@@ -88,6 +89,7 @@ Class {
 		'agpu_size3d',
 		'agpu_texture_address_mode',
 		'agpu_vector3f',
+		'agpu_shader_language',
 		'agpu_vector4f',
 		'agpu_command_list',
 		'agpu_cstring_buffer',
@@ -99,8 +101,8 @@ Class {
 		'agpu_bitfield',
 		'agpu_region3d',
 		'agpu_vr_tracked_device_role',
+		'agpu_memory_heap_type',
 		'agpu_subresource_range',
-		'agpu_texture_flags',
 		'agpu_stencil_operation',
 		'agpu_vr_tracked_device_pose',
 		'agpu_command_queue',
@@ -173,19 +175,21 @@ AGPUTypes class >> initialize [
 	agpu_compute_pipeline_builder := #'void'.
 	agpu_int := #'int'.
 	agpu_vr_controller_event := AGPUVrControllerEvent.
-	agpu_renderpass := #'void'.
+	agpu_access_flags := #int.
 	agpu_vr_dual_analog_event := AGPUVrDualAnalogEvent.
 	agpu_frustum_tangents := AGPUFrustumTangents.
 	agpu_cstring := #'char*'.
-	agpu_buffer_usage_type := #int.
+	agpu_buffer_binding_type := #int.
 	agpu_mapping_access := #int.
 	agpu_compare_function := #int.
 	agpu_size := #'uint'.
 	agpu_device_open_flags := #int.
+	agpu_texture_usage_mode_mask := #int.
 	agpu_sbyte := #'char'.
-	agpu_shader_language := #int.
+	agpu_renderpass := #'void'.
 	agpu_offline_shader_compiler := #'void'.
 	agpu_renderpass_color_attachment_description := AGPURenderpassColorAttachmentDescription.
+	agpu_pipeline_stage_flags := #int.
 	agpu_polygon_mode := #int.
 	agpu_bool := #'int'.
 	agpu_pipeline_builder := #'void'.
@@ -197,7 +201,6 @@ AGPUTypes class >> initialize [
 	agpu_face_winding := #int.
 	agpu_shader_resource_binding := #'void'.
 	agpu_vr_button := #int.
-	agpu_buffer_binding_type := #int.
 	agpu_ushort := #'ushort'.
 	agpu_pipeline_state := #'void'.
 	agpu_components_swizzle := AGPUComponentsSwizzle.
@@ -209,6 +212,7 @@ AGPUTypes class >> initialize [
 	agpu_size3d := AGPUSize3d.
 	agpu_texture_address_mode := #int.
 	agpu_vector3f := AGPUVector3f.
+	agpu_shader_language := #int.
 	agpu_vector4f := AGPUVector4f.
 	agpu_command_list := #'void'.
 	agpu_cstring_buffer := #'char*'.
@@ -220,8 +224,8 @@ AGPUTypes class >> initialize [
 	agpu_bitfield := #'uint'.
 	agpu_region3d := AGPURegion3d.
 	agpu_vr_tracked_device_role := #int.
+	agpu_memory_heap_type := #int.
 	agpu_subresource_range := AGPUSubresourceRange.
-	agpu_texture_flags := #int.
 	agpu_stencil_operation := #int.
 	agpu_vr_tracked_device_pose := AGPUVrTrackedDevicePose.
 	agpu_command_queue := #'void'.

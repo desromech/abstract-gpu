@@ -60,7 +60,7 @@ static VkExtent3D getLevelExtent(const agpu_texture_description &description, in
     if (description.type == AGPU_TEXTURE_1D || extent.height == 0)
         extent.height = 1;
 
-    extent.depth = description.depthOrArraySize >> level;
+    extent.depth = description.depth >> level;
     if (description.type != AGPU_TEXTURE_3D || extent.depth == 0)
         extent.depth = 1;
     return extent;
@@ -125,14 +125,6 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     if (!description)
         return agpu::texture_ref();
 
-    uint32_t depth = 1;
-    uint32_t arrayLayers = description->depthOrArraySize;
-    if (description->type == AGPU_TEXTURE_3D)
-    {
-        depth = description->depthOrArraySize;
-        arrayLayers = 1;
-    }
-
     // Create the image
     VkImageCreateInfo createInfo;
     memset(&createInfo, 0, sizeof(createInfo));
@@ -141,8 +133,8 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     createInfo.format = mapTextureFormat(description->format);
     createInfo.extent.width = description->width;
     createInfo.extent.height = description->height;
-    createInfo.extent.depth = depth;
-    createInfo.arrayLayers = arrayLayers;
+    createInfo.extent.depth = description->depth;
+    createInfo.arrayLayers = description->layers;
     createInfo.mipLevels = description->miplevels;
     createInfo.samples = mapSampleCount(description->sample_count);
     createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -158,38 +150,40 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     VkAccessFlags initialLayoutAccessBits = VkAccessFlagBits(0);
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    auto flags = description->flags;
-    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+    auto usageModes = description->usage_modes;
+    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
     {
         createInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         initialLayoutAccessBits = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         imageAspect = 0;
-        if (flags & (AGPU_TEXTURE_FLAG_DEPTH))
+        if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT))
             imageAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (flags & (AGPU_TEXTURE_FLAG_STENCIL))
-            imageAspect |= imageAspect | VK_IMAGE_ASPECT_STENCIL_BIT;
+        if (usageModes & (AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
+            imageAspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
 
-        if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+        if (usageModes & AGPU_TEXTURE_USAGE_SAMPLED)
         {
             createInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
             initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
             initialLayoutAccessBits = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         }
     }
-    else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+    else if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
     {
-        createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        if (usageModes & AGPU_TEXTURE_USAGE_SAMPLED)
+            createInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
     else
     {
         createInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        if(!(flags & AGPU_TEXTURE_FLAG_STORAGE))
+        if(!(usageModes & AGPU_TEXTURE_USAGE_STORAGE))
             initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
-    if(flags & AGPU_TEXTURE_FLAG_STORAGE)
+    if(usageModes & AGPU_TEXTURE_USAGE_STORAGE)
         createInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
     createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -239,14 +233,14 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     if (initialLayout != createInfo.initialLayout)
     {
         bool success = false;
-        if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+        if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
         {
             VkClearDepthStencilValue clearValue;
             clearValue.depth = 1.0;
             clearValue.stencil = 0;
             success = deviceForVk->clearImageWithDepthStencil(image, wholeImageSubresource, imageAspect, createInfo.initialLayout, initialLayout, VkAccessFlagBits(0), &clearValue);
         }
-        else if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+        else if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
         {
             VkClearColorValue clearValue;
             memset(&clearValue, 0, sizeof(clearValue));
@@ -271,8 +265,9 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     }
 
     // Create the the buffers
-    bool hasUploadBuffer = (description->flags & AGPU_TEXTURE_FLAG_UPLOADED) != 0;
-    bool hasReadbackBuffer = (description->flags & AGPU_TEXTURE_FLAG_READED_BACK) != 0;
+    /// TODO: Remove this and use a shared buffer for uploading and reading textures!!.
+    bool hasUploadBuffer = (description->usage_modes & AGPU_TEXTURE_USAGE_UPLOADED) != 0;
+    bool hasReadbackBuffer = (description->usage_modes & AGPU_TEXTURE_USAGE_READED_BACK) != 0;
     VkSubresourceLayout transferLayout;
     memset(&transferLayout, 0, sizeof(transferLayout));
 
@@ -286,7 +281,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
         agpu_buffer_description bufferDesc;
         memset(&bufferDesc, 0, sizeof(bufferDesc));
         bufferDesc.binding = AGPU_GENERIC_DATA_BUFFER;
-        bufferDesc.usage = AGPU_STREAM;
+        bufferDesc.heap_type = AGPU_STREAM;
         bufferDesc.stride = 1;
         bufferDesc.size = (agpu_uint)transferLayout.size;
 
@@ -369,11 +364,11 @@ VkImageView AVkTexture::createImageView(const agpu::device_ref &device, agpu_tex
     if(viewDescription->type == AGPU_TEXTURE_CUBE)
         subresource.layerCount *= 6;
 
-    if((viewDescription->subresource_range.usage_flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL)) == 0)
+    if((viewDescription->subresource_range.usage_mode & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) == 0)
         subresource.aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
-    if (viewDescription->subresource_range.usage_flags & AGPU_TEXTURE_FLAG_DEPTH)
+    if (viewDescription->subresource_range.usage_mode & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT)
         subresource.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (viewDescription->subresource_range.usage_flags & AGPU_TEXTURE_FLAG_STENCIL)
+    if (viewDescription->subresource_range.usage_mode & AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)
         subresource.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 
     VkImageView view;
@@ -403,17 +398,17 @@ agpu_error AVkTexture::getFullViewDescription(agpu_texture_view_description *vie
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.usage_mode = description.usage_modes;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
-    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
+    viewDescription->subresource_range.layer_count = description.layers;
     if(viewDescription->subresource_range.layer_count == 1)
         viewDescription->subresource_range.layer_count = 0;
     return AGPU_OK;
 }
 
-agpu_pointer AVkTexture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d *region)
+agpu_pointer AVkTexture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access usageModes, agpu_region3d *region)
 {
     return nullptr;
 }
@@ -436,13 +431,8 @@ void AVkTexture::computeBufferImageTransferLayout(int level, VkSubresourceLayout
 agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
     CHECK_POINTER(buffer);
-    if ((description.flags & AGPU_TEXTURE_FLAG_READED_BACK) == 0)
+    if ((description.usage_modes & AGPU_TEXTURE_USAGE_READED_BACK) == 0)
         return AGPU_INVALID_OPERATION;
-
-    VkImageSubresource subresource;
-    subresource.arrayLayer = arrayIndex;
-    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresource.mipLevel = level;
 
     VkImageSubresourceRange range;
     memset(&range, 0, sizeof(range));
@@ -468,7 +458,7 @@ agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu
     if (!readbackPointer)
         return AGPU_ERROR;
 
-    if (pitch == layout.rowPitch && slicePitch == layout.depthPitch)
+    if (agpu_uint(pitch) == layout.rowPitch && agpu_uint(slicePitch) == layout.depthPitch)
     {
         memcpy(buffer, readbackPointer, slicePitch);
     }
@@ -497,17 +487,12 @@ agpu_error AVkTexture::uploadTextureData(agpu_int level, agpu_int arrayIndex, ag
 agpu_error AVkTexture::uploadTextureSubData (agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
 {
     CHECK_POINTER(data);
-    if ((description.flags & AGPU_TEXTURE_FLAG_UPLOADED) == 0)
+    if ((description.usage_modes & AGPU_TEXTURE_USAGE_UPLOADED) == 0)
         return AGPU_INVALID_OPERATION;
 
     auto bufferPointer = uploadBuffer->mapBuffer(AGPU_WRITE_ONLY);
     if (!bufferPointer)
         return AGPU_ERROR;
-
-    VkImageSubresource subresource;
-    subresource.arrayLayer = arrayIndex;
-    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresource.mipLevel = level;
 
     VkImageSubresourceRange range;
     memset(&range, 0, sizeof(range));
@@ -521,7 +506,7 @@ agpu_error AVkTexture::uploadTextureSubData (agpu_int level, agpu_int arrayIndex
     computeBufferImageTransferLayout(level, &layout, &copy);
 
     auto &extent = copy.imageExtent;
-    if (pitch == layout.rowPitch && slicePitch == layout.depthPitch && !sourceSize && !destRegion)
+    if (agpu_uint(pitch) == layout.rowPitch && agpu_uint(slicePitch) == layout.depthPitch && !sourceSize && !destRegion)
     {
         memcpy(bufferPointer, data, slicePitch);
     }

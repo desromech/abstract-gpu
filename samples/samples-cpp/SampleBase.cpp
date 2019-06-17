@@ -133,7 +133,7 @@ agpu_buffer_ref AbstractSampleBase::createImmutableVertexBuffer(size_t capacity,
 {
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity * vertexSize);
-    desc.usage = AGPU_STATIC;
+    desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     desc.binding = AGPU_ARRAY_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = agpu_uint(vertexSize);
@@ -144,7 +144,7 @@ agpu_buffer_ref AbstractSampleBase::createImmutableIndexBuffer(size_t capacity, 
 {
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity * indexSize);
-    desc.usage = AGPU_STATIC;
+    desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     desc.binding = AGPU_ELEMENT_ARRAY_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = agpu_uint(indexSize);
@@ -156,7 +156,7 @@ agpu_buffer_ref AbstractSampleBase::createImmutableDrawBuffer(size_t capacity, v
     size_t commandSize = sizeof(agpu_draw_elements_command);
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity * commandSize);
-    desc.usage = AGPU_STATIC;
+    desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     desc.binding = AGPU_DRAW_INDIRECT_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = agpu_uint(commandSize);
@@ -167,7 +167,7 @@ agpu_buffer_ref AbstractSampleBase::createUploadableUniformBuffer(size_t capacit
 {
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity);
-    desc.usage = AGPU_DYNAMIC;
+    desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
     desc.binding = AGPU_UNIFORM_BUFFER;
     desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
     desc.stride = 0;
@@ -178,7 +178,7 @@ agpu_buffer_ref AbstractSampleBase::createMappableStorage(size_t capacity, void 
 {
 	agpu_buffer_description desc;
 	desc.size = agpu_uint(capacity);
-	desc.usage = AGPU_DYNAMIC;
+	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
 	desc.binding = AGPU_STORAGE_BUFFER;
 	desc.mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_READ_BIT;
 	desc.stride = 0;
@@ -205,11 +205,13 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName)
     desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     desc.width = convertedSurface->w;
     desc.height = convertedSurface->h;
-    desc.depthOrArraySize = 1;
+    desc.depth = 1;
+    desc.layers = 1;
     desc.miplevels = 1;
     desc.sample_count = 1;
     desc.sample_quality = 0;
-    desc.flags = AGPU_TEXTURE_FLAG_UPLOADED;
+    desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
+    desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
     agpu_texture_ref texture = device->createTexture(&desc);
     if (!texture)
         return nullptr;

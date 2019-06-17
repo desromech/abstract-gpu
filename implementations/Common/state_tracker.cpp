@@ -546,6 +546,12 @@ agpu_error AbstractStateTracker::pushConstants(agpu_uint offset, agpu_uint size,
     return currentCommandList->pushConstants(offset, size, values);
 }
 
+agpu_error AbstractStateTracker::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
 //==============================================================================
 // DirectStateTracker
 //==============================================================================

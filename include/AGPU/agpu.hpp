@@ -868,6 +868,11 @@ public:
 		agpuThrowIfFailed(agpuPushConstants(this, offset, size, values));
 	}
 
+	inline void memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+	{
+		agpuThrowIfFailed(agpuMemoryBarrier(this, source_stage, dest_stage, source_accesses, dest_accesses));
+	}
+
 };
 
 typedef agpu_ref<agpu_command_list> agpu_command_list_ref;
@@ -1680,6 +1685,11 @@ public:
 	inline void pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
 	{
 		agpuThrowIfFailed(agpuStateTrackerPushConstants(this, offset, size, values));
+	}
+
+	inline void memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+	{
+		agpuThrowIfFailed(agpuStateTrackerMemoryBarrier(this, source_stage, dest_stage, source_accesses, dest_accesses));
 	}
 
 };

@@ -361,3 +361,10 @@ AGPUStateTracker >> pushConstants: offset size: size values: values [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUStateTracker >> memoryBarrier: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance memoryBarrier_state_tracker: (self validHandle) source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses.
+	self checkErrorCode: resultValue_
+]
+
