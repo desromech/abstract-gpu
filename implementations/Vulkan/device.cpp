@@ -188,6 +188,9 @@ AVkDevice::~AVkDevice()
     // Shutdown the VR system, when I die.
     if(vrSystem)
         vr::VR_Shutdown();
+
+    // Destroy the memory allocator.
+    vmaDestroyAllocator(memoryAllocator);
 }
 
 bool AVkDevice::checkVulkanImplementation(VulkanPlatform *platform)

@@ -13,6 +13,6 @@
 
 #include <vulkan/vulkan.h>
 
-#define VK_ERROR_OUT_OF_POOL_MEMORY -1000069000 // For VulkanMemoryAllocator on CI
+#define VK_ERROR_OUT_OF_POOL_MEMORY VkResult(-1000069000) // For VulkanMemoryAllocator on CI
 
 #endif //AGPU_VULKAN_INCLUDE_VULKAN_H
