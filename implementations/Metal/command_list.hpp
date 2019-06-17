@@ -72,7 +72,6 @@ public:
 
     agpu::pipeline_state_ref currentPipeline;
     agpu::shader_signature_ref currentShaderSignature;
-    agpu_uint vertexBufferCount;
     agpu_bool used;
     agpu::shader_resource_binding_ref activeShaderResourceBindings[MaxActiveResourceBindings];
     agpu::shader_resource_binding_ref activeComputeShaderResourceBindings[MaxActiveResourceBindings];

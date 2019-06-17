@@ -26,6 +26,7 @@ public:
 
     agpu_size pushConstantBufferSize;
     agpu_uint pushConstantBufferIndex;
+    agpu_uint boundVertexBufferCount;
     
     std::vector<spirv_cross::MSLResourceBinding> resourceBindings;
 };

@@ -11,7 +11,7 @@
 
 namespace AgpuMetal
 {
-
+    
 inline MTLIndexType mapIndexType(agpu_size stride)
 {
     switch(stride)
@@ -25,7 +25,6 @@ inline MTLIndexType mapIndexType(agpu_size stride)
 AMtlCommandList::AMtlCommandList(const agpu::device_ref &device)
     : device(device)
 {
-    vertexBufferCount = 0;
     buffer = nil;
     blitEncoder = nil;
     renderEncoder = nil;
@@ -71,7 +70,7 @@ agpu_error AMtlCommandList::setShaderSignature(const agpu::shader_signature_ref 
         activeShaderResourceBindings[i].reset();
     for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
         activeComputeShaderResourceBindings[i].reset();
-
+        
     if(oldPipeline)
         usePipelineState(oldPipeline);
 
@@ -116,7 +115,7 @@ agpu_error AMtlCommandList::usePipelineState(const agpu::pipeline_state_ref &pip
         if(renderEncoder)
             amtlPipeline->applyRenderCommands(renderEncoder);
         if(computeEncoder)
-            amtlPipeline->applyComputeCommands(computeEncoder);
+            amtlPipeline->applyComputeCommands(computeEncoder);        
     }
 
     return AGPU_OK;
@@ -147,7 +146,7 @@ agpu_error AMtlCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffe
     currentIndexBuffer = index_buffer;
     currentIndexBufferOffset = offset;
     currentIndexBufferStride = index_size;
-    return AGPU_OK;
+    return AGPU_OK;    
 }
 
 agpu_error AMtlCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer)
@@ -195,14 +194,14 @@ void AMtlCommandList::activateVertexBinding ( )
 {
     if(!currentVertexBinding)
     {
-        vertexBufferCount = 0;
         return;
     }
 
     auto amtlVertexBinding = currentVertexBinding.as<AMtlVertexBinding> ();
+    auto boundVertexBufferCount = currentShaderSignature.as<AMtlShaderSignature> ()->boundVertexBufferCount;
     auto &buffers = amtlVertexBinding->buffers;
     auto &offsets = amtlVertexBinding->offsets;
-    vertexBufferCount = buffers.size();
+    auto vertexBufferCount = buffers.size();
     for(size_t i = 0; i < vertexBufferCount; ++i)
     {
         auto buffer = buffers[i];
@@ -210,7 +209,7 @@ void AMtlCommandList::activateVertexBinding ( )
             return;
 
         auto handle = buffer.as<AMtlBuffer> ()->handle;
-        [renderEncoder setVertexBuffer: handle offset: offsets[i] atIndex: i];
+        [renderEncoder setVertexBuffer: handle offset: offsets[i] atIndex: boundVertexBufferCount + i];
     }
 }
 
@@ -222,8 +221,8 @@ void AMtlCommandList::activateShaderResourceBindings()
         auto activeBinding = activeShaderResourceBindings[i];
         if(!activeBinding)
             continue;
-
-        activeBinding.as<AMtlShaderResourceBinding> ()->activateOn(vertexBufferCount, renderEncoder);
+            
+        activeBinding.as<AMtlShaderResourceBinding> ()->activateOn(0, renderEncoder);
     }
 }
 
@@ -233,7 +232,7 @@ void AMtlCommandList::uploadPushConstants()
     if(/*!pushConstantsModified || */signature->pushConstantBufferSize == 0)
         return;
 
-    [renderEncoder setVertexBytes: pushConstantsBuffer length: signature->pushConstantBufferSize atIndex: vertexBufferCount + signature->pushConstantBufferIndex];
+    [renderEncoder setVertexBytes: pushConstantsBuffer length: signature->pushConstantBufferSize atIndex: signature->pushConstantBufferIndex];
     [renderEncoder setFragmentBytes: pushConstantsBuffer length: signature->pushConstantBufferSize atIndex: signature->pushConstantBufferIndex];
     pushConstantsModified = false;
 }
@@ -257,7 +256,7 @@ void AMtlCommandList::activateComputeShaderResourceBindings()
         auto activeBinding = activeComputeShaderResourceBindings[i];
         if(!activeBinding)
             continue;
-
+            
         activeBinding.as<AMtlShaderResourceBinding> ()->activateComputeOn(computeEncoder);
     }
 }
@@ -399,7 +398,6 @@ agpu_error AMtlCommandList::reset(const agpu::command_allocator_ref &allocator, 
     currentPipeline = initial_pipeline_state;
     currentShaderSignature.reset();
 
-    vertexBufferCount = 0;
     pushConstantsModified = true;
     memset(pushConstantsBuffer, 0, sizeof(pushConstantsBuffer));
 
@@ -425,7 +423,7 @@ agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpa
     auto descriptor = renderpass.as<AMtlRenderPass> ()->createDescriptor(framebuffer);
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
-
+    
     auto oldPipeline = currentPipeline;
     currentPipeline.reset();
     if(oldPipeline)
@@ -448,10 +446,10 @@ agpu_error AMtlCommandList::resolveFramebuffer(const agpu::framebuffer_ref &dest
 {
     CHECK_POINTER(destFramebuffer);
     CHECK_POINTER(sourceFramebuffer);
-
+    
     auto amtlSourceFramebuffer = sourceFramebuffer.as<AMtlFramebuffer> ();
     auto amtlDestFramebuffer = destFramebuffer.as<AMtlFramebuffer> ();
-
+    
     auto sourceTexture = amtlSourceFramebuffer->getColorTexture(0);
     auto destTexture = amtlDestFramebuffer->getColorTexture(0);
     if(sourceTexture.sampleCount == destTexture.sampleCount)
@@ -514,12 +512,6 @@ agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, ag
 
     memcpy(pushConstantsBuffer + offset, values, size);
     pushConstantsModified = true;
-    return AGPU_OK;
-}
-
-agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
-{
-    //TODO: Implement this.
     return AGPU_OK;
 }
 
