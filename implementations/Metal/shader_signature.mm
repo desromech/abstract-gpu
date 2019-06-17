@@ -22,6 +22,9 @@ agpu::shader_signature_ref AMtlShaderSignature::create(const agpu::device_ref &d
     shaderSignature->elements = builder->elements;
     shaderSignature->pushConstantBufferSize = builder->bindingPointsUsed[(int)MetalResourceBindingType::Bytes]*4;
     shaderSignature->pushConstantBufferIndex = builder->bindingPointsUsed[(int)MetalResourceBindingType::Buffer];
+    shaderSignature->boundVertexBufferCount = builder->bindingPointsUsed[(int)MetalResourceBindingType::Buffer];
+    if(shaderSignature->pushConstantBufferSize > 0)
+        ++shaderSignature->boundVertexBufferCount;
     shaderSignature->buildMSLMapping();
     return result;
 }

@@ -16,9 +16,11 @@ public:
     static agpu::vertex_layout_ref create(const agpu::device_ref &device);
 
     agpu_error addVertexAttributeBindings(agpu_uint vertex_buffer_count, agpu_size* vertex_strides, agpu_size attribute_count, agpu_vertex_attrib_description* attributes);
-
+    
+    MTLVertexDescriptor *createVertexDescriptor(agpu_uint vertexBufferStartIndex);
+    
     agpu::device_ref device;
-    MTLVertexDescriptor *vertexDescriptor;
+    std::vector<agpu_vertex_attrib_description> vertexAttributes;
     std::vector<agpu_size> vertexStrides;
 };
 

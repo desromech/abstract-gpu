@@ -41,8 +41,8 @@ public:
 
     static agpu::shader_ref create(const agpu::device_ref &device, agpu_shader_type type);
     
-    agpu_error getOrCreateShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result);
-    agpu_error getOrCreateSpirVShaderInstanceForSignature(const agpu::shader_signature_ref &signature, agpu_uint vertexBufferCount, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result);
+    agpu_error getOrCreateShaderInstanceForSignature(const agpu::shader_signature_ref &signature, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result);
+    agpu_error getOrCreateSpirVShaderInstanceForSignature(const agpu::shader_signature_ref &signature, const std::string &entryPoint, agpu_shader_type entryPointStage, std::string *errorMessage, AMtlShaderForSignatureRef *result);
 
     virtual agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength) override;
     virtual agpu_error compileShader(agpu_cstring options) override;

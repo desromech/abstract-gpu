@@ -51,6 +51,7 @@ public:
 
     agpu::device_ref device;
     agpu::shader_signature_ref shaderSignature;
+    agpu::vertex_layout_ref vertexLayout;
     MTLRenderPipelineDescriptor *descriptor;
     MTLDepthStencilDescriptor *depthStencilDescriptor;
     MTLStencilDescriptor *backStencilDescriptor;
@@ -61,7 +62,6 @@ public:
     agpu_pipeline_command_state commandState;
     agpu_bool depthEnabled;
     agpu_bool stencilEnabled;
-    agpu_uint vertexBufferCount;
     
     agpu_bool hasDepthBias;
     agpu_float depthBiasConstantFactor;

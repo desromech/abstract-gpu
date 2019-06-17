@@ -20,7 +20,6 @@ AMtlGraphicsPipelineBuilder::AMtlGraphicsPipelineBuilder(const agpu::device_ref 
     renderTargetCount = 1;
     depthEnabled = false;
     stencilEnabled = false;
-    vertexBufferCount = 0;
     
     hasDepthBias = false;
     depthBiasConstantFactor = 0.0f;
@@ -66,7 +65,7 @@ agpu::pipeline_state_ptr AMtlGraphicsPipelineBuilder::build()
         }
 
         AMtlShaderForSignatureRef shaderInstance;
-        auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, vertexBufferCount, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
+        auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
         if(error || !shaderInstance || !shaderInstance->function)
         {
             succeded = false;
@@ -92,6 +91,15 @@ agpu::pipeline_state_ptr AMtlGraphicsPipelineBuilder::build()
 
     if(!succeded)
         return nullptr;
+
+    auto amtlShaderSignature = shaderSignature.as<AMtlShaderSignature> ();
+    if(vertexLayout)
+    {
+        auto amtlVertexLayout = vertexLayout.as<AMtlVertexLayout> ();
+        auto vertexDescriptor = amtlVertexLayout->createVertexDescriptor(amtlShaderSignature->boundVertexBufferCount);
+        descriptor.vertexDescriptor = vertexDescriptor;
+        [vertexDescriptor release];
+    }
 
     auto pipelineState = [deviceForMetal->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
     if(!pipelineState)
@@ -259,8 +267,16 @@ agpu_error AMtlGraphicsPipelineBuilder::setDepthBias(agpu_float constant_factor,
 agpu_error AMtlGraphicsPipelineBuilder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     depthEnabled = enabled;
-    depthStencilDescriptor.depthCompareFunction = mapCompareFunction(function);
-    depthStencilDescriptor.depthWriteEnabled = writeMask;
+    if(depthEnabled)
+    {
+        depthStencilDescriptor.depthCompareFunction = mapCompareFunction(function);
+        depthStencilDescriptor.depthWriteEnabled = writeMask;        
+    }
+    else
+    {
+        depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionAlways;
+        depthStencilDescriptor.depthWriteEnabled = NO;
+    }
     return AGPU_OK;
 }
 
@@ -358,9 +374,7 @@ agpu_error AMtlGraphicsPipelineBuilder::setPolygonMode(agpu_polygon_mode mode)
 agpu_error AMtlGraphicsPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &layout)
 {
     CHECK_POINTER(layout);
-    auto amtlVertexLayout = layout.as<AMtlVertexLayout> ();
-    descriptor.vertexDescriptor = amtlVertexLayout->vertexDescriptor;
-    vertexBufferCount = amtlVertexLayout->vertexStrides.size();
+    this->vertexLayout = layout;
     return AGPU_OK;
 }
 
