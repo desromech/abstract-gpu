@@ -654,8 +654,16 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
         }
     }
 
+    // Initialize the memory allocator.
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+    vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
+
+    // Store a copy to the setup queue.
     setupQueue = graphicsCommandQueues[0];
 
+    // Create the VR system.
     if(vrSystem)
     {
         vrSystemWrapper = agpu::makeObject<AVkVrSystem> (refFromThis<agpu::device> ());

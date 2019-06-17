@@ -17,6 +17,7 @@ set(AGPU_Vulkan_SOURCES
     framebuffer.cpp
     framebuffer.hpp
     icd.cpp
+    memory_allocator.cpp
     pipeline_builder.cpp
     pipeline_builder.hpp
     pipeline_state.cpp
@@ -42,6 +43,7 @@ set(AGPU_Vulkan_SOURCES
     vertex_binding.hpp
     vertex_layout.cpp
     vertex_layout.hpp
+    vk_mem_alloc.h
     vr_system.cpp
     vr_system.hpp
 )

@@ -115,9 +115,7 @@ AVkTexture::~AVkTexture()
         return;
 
     if(image)
-        vkDestroyImage(deviceForVk->device, image, nullptr);
-    if(memory)
-        vkFreeMemory(deviceForVk->device, memory, nullptr);
+        vmaDestroyImage(deviceForVk->memoryAllocator, image, memory);
 }
 
 agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_texture_description *description)
@@ -187,43 +185,13 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
         createInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
     createInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    // Image memory allocation
-    VkMemoryAllocateInfo allocateInfo;
-    memset(&allocateInfo, 0, sizeof(allocateInfo));
-    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-
-    // Create the image.
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = mapHeapType(description->heap_type);
     VkImage image;
-    auto error = vkCreateImage(deviceForVk->device, &createInfo, nullptr, &image);
-    if (error)
+    VmaAllocation textureMemory;
+    auto error = vmaCreateImage(deviceForVk->memoryAllocator, &createInfo, &allocInfo, &image, &textureMemory, nullptr);
+    if(error)
         return agpu::texture_ref();
-
-    // Get the memory requirements
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(deviceForVk->device, image, &memRequirements);
-    allocateInfo.allocationSize = memRequirements.size;
-    if (!deviceForVk->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocateInfo.memoryTypeIndex))
-    {
-        vkDestroyImage(deviceForVk->device, image, nullptr);
-        return agpu::texture_ref();
-    }
-
-    // Allocate memory for the image.
-    VkDeviceMemory textureMemory;
-    error = vkAllocateMemory(deviceForVk->device, &allocateInfo, nullptr, &textureMemory);
-    if (error)
-    {
-        vkDestroyImage(deviceForVk->device, image, nullptr);
-        return agpu::texture_ref();
-    }
-
-    error = vkBindImageMemory(deviceForVk->device, image, textureMemory, 0);
-    if (error)
-    {
-        vkDestroyImage(deviceForVk->device, image, nullptr);
-        vkFreeMemory(deviceForVk->device, textureMemory, nullptr);
-        return agpu::texture_ref();
-    }
 
     VkImageSubresourceRange wholeImageSubresource;
     memset(&wholeImageSubresource, 0, sizeof(wholeImageSubresource));
@@ -258,8 +226,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
 
         if (!success)
         {
-            vkDestroyImage(deviceForVk->device, image, nullptr);
-            vkFreeMemory(deviceForVk->device, textureMemory, nullptr);
+            vmaDestroyImage(deviceForVk->memoryAllocator, image, textureMemory);
             return agpu::texture_ref();
         }
     }
@@ -306,8 +273,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
 
         if (!success)
         {
-            vkDestroyImage(deviceForVk->device, image, nullptr);
-            vkFreeMemory(deviceForVk->device, textureMemory, nullptr);
+            vmaDestroyImage(deviceForVk->memoryAllocator, image, textureMemory);
             return agpu::texture_ref();
         }
     }

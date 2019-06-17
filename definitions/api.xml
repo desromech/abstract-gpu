@@ -483,6 +483,8 @@
             <constant name="MemoryHeapTypeHost" value="3" />
             <constant name="MemoryHeapTypeCustom" value="4" />
 
+            <constant name="MemoryHeapTypeStagingUpload" value="3" />
+
             <!-- These constants are for compatibility purpose -->
             <constant name="Static" value="0" />
             <constant name="Dynamic" value="1" />
