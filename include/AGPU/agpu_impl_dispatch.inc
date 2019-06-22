@@ -1656,6 +1656,198 @@ AGPU_EXPORT agpu_error agpuEndImmediateRendering(agpu_immediate_renderer* self)
 	return asRef(agpu::immediate_renderer, self)->endRendering();
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetBlendState(agpu_immediate_renderer* self, agpu_int renderTargetMask, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setBlendState(renderTargetMask, enabled);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetBlendFunction(agpu_immediate_renderer* self, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setBlendFunction(renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetColorMask(agpu_immediate_renderer* self, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setColorMask(renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFrontFace(agpu_immediate_renderer* self, agpu_face_winding winding)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setFrontFace(winding);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetCullMode(agpu_immediate_renderer* self, agpu_cull_mode mode)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setCullMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetDepthBias(agpu_immediate_renderer* self, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setDepthBias(constant_factor, clamp, slope_factor);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetDepthState(agpu_immediate_renderer* self, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setDepthState(enabled, writeMask, function);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetPolygonMode(agpu_immediate_renderer* self, agpu_polygon_mode mode)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setPolygonMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilState(agpu_immediate_renderer* self, agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setStencilState(enabled, writeMask, readMask);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilFrontFace(agpu_immediate_renderer* self, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setStencilFrontFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilBackFace(agpu_immediate_renderer* self, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetViewport(agpu_immediate_renderer* self, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setViewport(x, y, w, h);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetScissor(agpu_immediate_renderer* self, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setScissor(x, y, w, h);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilReference(agpu_immediate_renderer* self, agpu_uint reference)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setStencilReference(reference);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererProjectionMatrixMode(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->projectionMatrixMode();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererModelViewMatrixMode(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->modelViewMatrixMode();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererIdentity(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->loadIdentity();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererPushMatrix(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->pushMatrix();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererPopMatrix(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->popMatrix();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererOrtho(agpu_immediate_renderer* self, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->ortho(left, right, bottom, top, near, far);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererFrustum(agpu_immediate_renderer* self, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->frustum(left, right, bottom, top, near, far);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererPerspective(agpu_immediate_renderer* self, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->perspective(fovy, aspect, near, far);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererRotate(agpu_immediate_renderer* self, agpu_float angle, agpu_float x, agpu_float y, agpu_float z)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->rotate(angle, x, y, z);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererTranslate(agpu_immediate_renderer* self, agpu_float x, agpu_float y, agpu_float z)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->translate(x, y, z);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererScale(agpu_immediate_renderer* self, agpu_float x, agpu_float y, agpu_float z)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->scale(x, y, z);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFlatShading(agpu_immediate_renderer* self, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setFlatShading(enabled);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingEnabled(agpu_immediate_renderer* self, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setLightingEnabled(enabled);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererClearLights(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->clearLights();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetAmbientLighting(agpu_immediate_renderer* self, agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setAmbientLighting(r, g, b, a);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLight(agpu_immediate_renderer* self, agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setLight(index, enabled, state);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* self, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setTexturingEnabled(enabled);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer* self, agpu_texture* texture)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->bindTexture(asRef(agpu::texture, texture));
+}
+
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* self, agpu_primitive_topology type)
 {
 	if(!self) return AGPU_NULL_POINTER;

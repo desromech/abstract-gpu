@@ -312,6 +312,19 @@
             <field name="event_age_seconds" type="float" />
             <field name="data" type="vr_event_data" />
         </struct>
+
+        <struct name="immediate_renderer_light">
+            <field name="ambient" type="vector4f" />
+            <field name="diffuse" type="vector4f" />
+            <field name="specular" type="vector4f" />
+            <field name="position" type="vector4f" />
+            <field name="spot_direction" type="vector3f" />
+            <field name="spot_exponent" type="float" />
+            <field name="spot_cutoff" type="float" />
+            <field name="constant_attenuation" type="float" />
+            <field name="linear_attenuation" type="float" />
+            <field name="quadratic_attenuation" type="float" />
+        </struct>
 	</structs>
 
     <constants>
@@ -326,8 +339,9 @@
             <constant name="Unimplemented" value="-7" />
             <constant name="NotCurrentContext" value="-8" />
             <constant name="CompilationError" value="-9" />
-            <constant name="LinkingError" value="-9" />
-            <constant name="CommandListClosed" value="-10" />
+            <constant name="LinkingError" value="-10" />
+            <constant name="CommandListClosed" value="-11" />
+            <constant name="OutOfMemory" value="-12" />
         </enum>
 
         <enum name="device_open_flags">
@@ -2144,6 +2158,187 @@
             <method name="endRendering" cname="EndImmediateRendering" returnType="error">
             </method>
 
+            <!-- Graphics pipeline methods -->
+            <method name="setBlendState" cname="ImmediateRendererSetBlendState" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setBlendFunction" cname="ImmediateRendererSetBlendFunction" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="sourceFactor" type="blending_factor" />
+                <arg name="destFactor" type="blending_factor" />
+                <arg name="colorOperation" type="blending_operation" />
+                <arg name="sourceAlphaFactor" type="blending_factor" />
+                <arg name="destAlphaFactor" type="blending_factor" />
+                <arg name="alphaOperation" type="blending_operation" />
+            </method>
+
+            <method name="setColorMask" cname="ImmediateRendererSetColorMask" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="redEnabled" type="bool" />
+                <arg name="greenEnabled" type="bool" />
+                <arg name="blueEnabled" type="bool" />
+                <arg name="alphaEnabled" type="bool" />
+            </method>
+
+            <method name="setFrontFace" cname="ImmediateRendererSetFrontFace" returnType="error">
+                <arg name="winding" type="face_winding" />
+            </method>
+
+            <method name="setCullMode" cname="ImmediateRendererSetCullMode" returnType="error">
+                <arg name="mode" type="cull_mode" />
+            </method>
+
+            <method name="setDepthBias" cname="ImmediateRendererSetDepthBias" returnType="error">
+                <arg name="constant_factor" type="float" />
+                <arg name="clamp" type="float" />
+                <arg name="slope_factor" type="float" />
+            </method>
+
+            <method name="setDepthState" cname="ImmediateRendererSetDepthState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="bool" />
+                <arg name="function" type="compare_function" />
+            </method>
+
+            <method name="setPolygonMode" cname="ImmediateRendererSetPolygonMode" returnType="error">
+                <arg name="mode" type="polygon_mode" />
+            </method>
+
+            <method name="setStencilState" cname="ImmediateRendererSetStencilState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="int" />
+                <arg name="readMask" type="int" />
+            </method>
+
+            <method name="setStencilFrontFace" cname="ImmediateRendererSetStencilFrontFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setStencilBackFace" cname="ImmediateRendererSetStencilBackFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <!-- Rendering commands -->
+            <method name="setViewport" cname="ImmediateRendererSetViewport" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setScissor" cname="ImmediateRendererSetScissor" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setStencilReference" cname="ImmediateRendererSetStencilReference" returnType="error">
+                <arg name="reference" type="uint" />
+            </method>
+
+            <!-- Matrix stack -->
+            <method name="projectionMatrixMode" cname="ImmediateRendererProjectionMatrixMode" returnType="error">
+            </method>
+
+            <method name="modelViewMatrixMode" cname="ImmediateRendererModelViewMatrixMode" returnType="error">
+            </method>
+
+            <method name="loadIdentity" cname="ImmediateRendererIdentity" returnType="error">
+            </method>
+
+            <method name="pushMatrix" cname="ImmediateRendererPushMatrix" returnType="error">
+            </method>
+
+            <method name="popMatrix" cname="ImmediateRendererPopMatrix" returnType="error">
+            </method>
+
+            <method name="ortho" cname="ImmediateRendererOrtho" returnType="error">
+                <arg name="left" type="float" />
+                <arg name="right" type="float" />
+                <arg name="bottom" type="float" />
+                <arg name="top" type="float" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+            </method>
+
+            <method name="frustum" cname="ImmediateRendererFrustum" returnType="error">
+                <arg name="left" type="float" />
+                <arg name="right" type="float" />
+                <arg name="bottom" type="float" />
+                <arg name="top" type="float" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+            </method>
+
+            <method name="perspective" cname="ImmediateRendererPerspective" returnType="error">
+                <arg name="fovy" type="float" />
+                <arg name="aspect" type="float" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+            </method>
+
+            <method name="rotate" cname="ImmediateRendererRotate" returnType="error">
+                <arg name="angle" type="float" />
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="translate" cname="ImmediateRendererTranslate" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="scale" cname="ImmediateRendererScale" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <!-- Fixed function pipeline states -->
+            <method name="setFlatShading" cname="ImmediateRendererSetFlatShading" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setLightingEnabled" cname="ImmediateRendererSetLightingEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="clearLights" cname="ImmediateRendererClearLights" returnType="error">
+            </method>
+
+            <method name="setAmbientLighting" cname="ImmediateRendererSetAmbientLighting" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="setLight" cname="ImmediateRendererSetLight" returnType="error">
+                <arg name="index" type="uint" />
+                <arg name="enabled" type="bool" />
+                <arg name="state" type="immediate_renderer_light*" />
+            </method>
+
+            <method name="setTexturingEnabled" cname="ImmediateRendererSetTextureEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="bindTexture" cname="ImmediateRendererBindTexture" returnType="error">
+                <arg name="texture" type="texture*" />
+            </method>
+
+            <!-- Geometry -->
             <method name="beginPrimitives" cname="BeginImmediateRendererPrimitives" returnType="error">
                 <arg name="type" type="primitive_topology" />
             </method>

@@ -1728,6 +1728,166 @@ public:
 		agpuThrowIfFailed(agpuEndImmediateRendering(this));
 	}
 
+	inline void setBlendState(agpu_int renderTargetMask, agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetBlendState(this, renderTargetMask, enabled));
+	}
+
+	inline void setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetBlendFunction(this, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation));
+	}
+
+	inline void setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetColorMask(this, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled));
+	}
+
+	inline void setFrontFace(agpu_face_winding winding)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetFrontFace(this, winding));
+	}
+
+	inline void setCullMode(agpu_cull_mode mode)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetCullMode(this, mode));
+	}
+
+	inline void setDepthBias(agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetDepthBias(this, constant_factor, clamp, slope_factor));
+	}
+
+	inline void setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetDepthState(this, enabled, writeMask, function));
+	}
+
+	inline void setPolygonMode(agpu_polygon_mode mode)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetPolygonMode(this, mode));
+	}
+
+	inline void setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetStencilState(this, enabled, writeMask, readMask));
+	}
+
+	inline void setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetStencilFrontFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
+	}
+
+	inline void setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetStencilBackFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
+	}
+
+	inline void setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetViewport(this, x, y, w, h));
+	}
+
+	inline void setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetScissor(this, x, y, w, h));
+	}
+
+	inline void setStencilReference(agpu_uint reference)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetStencilReference(this, reference));
+	}
+
+	inline void projectionMatrixMode()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererProjectionMatrixMode(this));
+	}
+
+	inline void modelViewMatrixMode()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererModelViewMatrixMode(this));
+	}
+
+	inline void loadIdentity()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererIdentity(this));
+	}
+
+	inline void pushMatrix()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererPushMatrix(this));
+	}
+
+	inline void popMatrix()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererPopMatrix(this));
+	}
+
+	inline void ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererOrtho(this, left, right, bottom, top, near, far));
+	}
+
+	inline void frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererFrustum(this, left, right, bottom, top, near, far));
+	}
+
+	inline void perspective(agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererPerspective(this, fovy, aspect, near, far));
+	}
+
+	inline void rotate(agpu_float angle, agpu_float x, agpu_float y, agpu_float z)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererRotate(this, angle, x, y, z));
+	}
+
+	inline void translate(agpu_float x, agpu_float y, agpu_float z)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererTranslate(this, x, y, z));
+	}
+
+	inline void scale(agpu_float x, agpu_float y, agpu_float z)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererScale(this, x, y, z));
+	}
+
+	inline void setFlatShading(agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetFlatShading(this, enabled));
+	}
+
+	inline void setLightingEnabled(agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetLightingEnabled(this, enabled));
+	}
+
+	inline void clearLights()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererClearLights(this));
+	}
+
+	inline void setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetAmbientLighting(this, r, g, b, a));
+	}
+
+	inline void setLight(agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetLight(this, index, enabled, state));
+	}
+
+	inline void setTexturingEnabled(agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetTextureEnabled(this, enabled));
+	}
+
+	inline void bindTexture(const agpu_ref<agpu_texture>& texture)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererBindTexture(this, texture.get()));
+	}
+
 	inline void beginPrimitives(agpu_primitive_topology type)
 	{
 		agpuThrowIfFailed(agpuBeginImmediateRendererPrimitives(this, type));

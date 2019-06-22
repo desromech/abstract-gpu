@@ -201,6 +201,7 @@ struct hash<AgpuCommon::ComputePipelineStateDescription>
 
 namespace AgpuCommon
 {
+class ImmediateShaderLibrary;
 
 /**
  * I am a cache for the on the fly generated pipeline state objects that are
@@ -225,12 +226,21 @@ public:
     agpu::device_ref device;
     uint32_t queueFamilyType;
 
+    bool ensureImmediateRendererObjectsExists();
+
+    agpu::shader_signature_ref immediateShaderSignature;
+    std::unique_ptr<ImmediateShaderLibrary> immediateShaderLibrary;
+    agpu::vertex_layout_ref immediateVertexLayout;
+
 private:
     std::mutex computePipelineStateCacheMutex;
     std::unordered_map<ComputePipelineStateDescription, agpu::pipeline_state_ref> computePipelineStateCache;
 
     std::mutex graphicsPipelineStateCacheMutex;
     std::unordered_map<GraphicsPipelineStateDescription, agpu::pipeline_state_ref> graphicsPipelineStateCache;
+
+    std::mutex immediateRendererObjectsMutex;
+    bool immediateRendererObjectsInitialized;
 
 };
 

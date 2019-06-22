@@ -49,6 +49,7 @@ Class {
 		'agpu_shader_signature',
 		'agpu_error',
 		'agpu_uint',
+		'agpu_immediate_renderer_light',
 		'agpu_short',
 		'agpu_compute_pipeline_builder',
 		'agpu_int',
@@ -173,6 +174,7 @@ AGPUTypes class >> initialize [
 	agpu_shader_signature := #'void'.
 	agpu_error := #int.
 	agpu_uint := #'uint'.
+	agpu_immediate_renderer_light := AGPUImmediateRendererLight.
 	agpu_short := #'short'.
 	agpu_compute_pipeline_builder := #'void'.
 	agpu_int := #'int'.

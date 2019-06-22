@@ -1616,6 +1616,198 @@ AGPUCBindings >> endRendering_immediate_renderer: immediate_renderer [
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setBlendState_immediate_renderer: immediate_renderer renderTargetMask: renderTargetMask enabled: enabled [
+	<cdecl: long 'agpuImmediateRendererSetBlendState' (void* long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setBlendFunction_immediate_renderer: immediate_renderer renderTargetMask: renderTargetMask sourceFactor: sourceFactor destFactor: destFactor colorOperation: colorOperation sourceAlphaFactor: sourceAlphaFactor destAlphaFactor: destAlphaFactor alphaOperation: alphaOperation [
+	<cdecl: long 'agpuImmediateRendererSetBlendFunction' (void* long long long long long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setColorMask_immediate_renderer: immediate_renderer renderTargetMask: renderTargetMask redEnabled: redEnabled greenEnabled: greenEnabled blueEnabled: blueEnabled alphaEnabled: alphaEnabled [
+	<cdecl: long 'agpuImmediateRendererSetColorMask' (void* long long long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFrontFace_immediate_renderer: immediate_renderer winding: winding [
+	<cdecl: long 'agpuImmediateRendererSetFrontFace' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCullMode_immediate_renderer: immediate_renderer mode: mode [
+	<cdecl: long 'agpuImmediateRendererSetCullMode' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setDepthBias_immediate_renderer: immediate_renderer constant_factor: constant_factor clamp: clamp slope_factor: slope_factor [
+	<cdecl: long 'agpuImmediateRendererSetDepthBias' (void* float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setDepthState_immediate_renderer: immediate_renderer enabled: enabled writeMask: writeMask function: function [
+	<cdecl: long 'agpuImmediateRendererSetDepthState' (void* long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setPolygonMode_immediate_renderer: immediate_renderer mode: mode [
+	<cdecl: long 'agpuImmediateRendererSetPolygonMode' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilState_immediate_renderer: immediate_renderer enabled: enabled writeMask: writeMask readMask: readMask [
+	<cdecl: long 'agpuImmediateRendererSetStencilState' (void* long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilFrontFace_immediate_renderer: immediate_renderer stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
+	<cdecl: long 'agpuImmediateRendererSetStencilFrontFace' (void* long long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilBackFace_immediate_renderer: immediate_renderer stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
+	<cdecl: long 'agpuImmediateRendererSetStencilBackFace' (void* long long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setViewport_immediate_renderer: immediate_renderer x: x y: y w: w h: h [
+	<cdecl: long 'agpuImmediateRendererSetViewport' (void* long long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setScissor_immediate_renderer: immediate_renderer x: x y: y w: w h: h [
+	<cdecl: long 'agpuImmediateRendererSetScissor' (void* long long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilReference_immediate_renderer: immediate_renderer reference: reference [
+	<cdecl: long 'agpuImmediateRendererSetStencilReference' (void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> projectionMatrixMode_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererProjectionMatrixMode' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> modelViewMatrixMode_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererModelViewMatrixMode' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadIdentity_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererIdentity' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> pushMatrix_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererPushMatrix' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> popMatrix_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererPopMatrix' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> ortho_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
+	<cdecl: long 'agpuImmediateRendererOrtho' (void* float float float float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> frustum_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
+	<cdecl: long 'agpuImmediateRendererFrustum' (void* float float float float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> perspective_immediate_renderer: immediate_renderer fovy: fovy aspect: aspect near: near far: far [
+	<cdecl: long 'agpuImmediateRendererPerspective' (void* float float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> rotate_immediate_renderer: immediate_renderer angle: angle x: x y: y z: z [
+	<cdecl: long 'agpuImmediateRendererRotate' (void* float float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> translate_immediate_renderer: immediate_renderer x: x y: y z: z [
+	<cdecl: long 'agpuImmediateRendererTranslate' (void* float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> scale_immediate_renderer: immediate_renderer x: x y: y z: z [
+	<cdecl: long 'agpuImmediateRendererScale' (void* float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFlatShading_immediate_renderer: immediate_renderer enabled: enabled [
+	<cdecl: long 'agpuImmediateRendererSetFlatShading' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setLightingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	<cdecl: long 'agpuImmediateRendererSetLightingEnabled' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> clearLights_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererClearLights' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setAmbientLighting_immediate_renderer: immediate_renderer r: r g: g b: b a: a [
+	<cdecl: long 'agpuImmediateRendererSetAmbientLighting' (void* float float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index enabled: enabled state: state [
+	<cdecl: long 'agpuImmediateRendererSetLight' (void* ulong long AGPUImmediateRendererLight*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	<cdecl: long 'agpuImmediateRendererSetTextureEnabled' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> bindTexture_immediate_renderer: immediate_renderer texture: texture [
+	<cdecl: long 'agpuImmediateRendererBindTexture' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> beginPrimitives_immediate_renderer: immediate_renderer type: type [
 	<cdecl: long 'agpuBeginImmediateRendererPrimitives' (void* long)>
 	^ self externalCallFailed

@@ -389,6 +389,7 @@ size_t ComputePipelineStateDescription::hash() const
 StateTrackerCache::StateTrackerCache(const agpu::device_ref &device, uint32_t queueFamilyType)
     : device(device), queueFamilyType(queueFamilyType)
 {
+    immediateRendererObjectsInitialized = false;
 }
 
 StateTrackerCache::~StateTrackerCache()

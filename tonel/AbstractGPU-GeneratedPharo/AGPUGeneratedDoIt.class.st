@@ -45,6 +45,7 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrDualAnalogEvent rebuildFieldAccessors.
 	AGPUVrEventData rebuildFieldAccessors.
 	AGPUVrEvent rebuildFieldAccessors.
+	AGPUImmediateRendererLight rebuildFieldAccessors.
 ]
 
 { #category : #'initialization' }

@@ -1349,6 +1349,166 @@ AGPUCBindings >> endRendering_immediate_renderer: immediate_renderer [
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setBlendState_immediate_renderer: immediate_renderer renderTargetMask: renderTargetMask enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetBlendState (agpu_immediate_renderer* immediate_renderer , agpu_int renderTargetMask , agpu_bool enabled) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setBlendFunction_immediate_renderer: immediate_renderer renderTargetMask: renderTargetMask sourceFactor: sourceFactor destFactor: destFactor colorOperation: colorOperation sourceAlphaFactor: sourceAlphaFactor destAlphaFactor: destAlphaFactor alphaOperation: alphaOperation [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetBlendFunction (agpu_immediate_renderer* immediate_renderer , agpu_int renderTargetMask , agpu_blending_factor sourceFactor , agpu_blending_factor destFactor , agpu_blending_operation colorOperation , agpu_blending_factor sourceAlphaFactor , agpu_blending_factor destAlphaFactor , agpu_blending_operation alphaOperation) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setColorMask_immediate_renderer: immediate_renderer renderTargetMask: renderTargetMask redEnabled: redEnabled greenEnabled: greenEnabled blueEnabled: blueEnabled alphaEnabled: alphaEnabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetColorMask (agpu_immediate_renderer* immediate_renderer , agpu_int renderTargetMask , agpu_bool redEnabled , agpu_bool greenEnabled , agpu_bool blueEnabled , agpu_bool alphaEnabled) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFrontFace_immediate_renderer: immediate_renderer winding: winding [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetFrontFace (agpu_immediate_renderer* immediate_renderer , agpu_face_winding winding) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCullMode_immediate_renderer: immediate_renderer mode: mode [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetCullMode (agpu_immediate_renderer* immediate_renderer , agpu_cull_mode mode) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setDepthBias_immediate_renderer: immediate_renderer constant_factor: constant_factor clamp: clamp slope_factor: slope_factor [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetDepthBias (agpu_immediate_renderer* immediate_renderer , agpu_float constant_factor , agpu_float clamp , agpu_float slope_factor) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setDepthState_immediate_renderer: immediate_renderer enabled: enabled writeMask: writeMask function: function [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetDepthState (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled , agpu_bool writeMask , agpu_compare_function function) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setPolygonMode_immediate_renderer: immediate_renderer mode: mode [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetPolygonMode (agpu_immediate_renderer* immediate_renderer , agpu_polygon_mode mode) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilState_immediate_renderer: immediate_renderer enabled: enabled writeMask: writeMask readMask: readMask [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetStencilState (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled , agpu_int writeMask , agpu_int readMask) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilFrontFace_immediate_renderer: immediate_renderer stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetStencilFrontFace (agpu_immediate_renderer* immediate_renderer , agpu_stencil_operation stencilFailOperation , agpu_stencil_operation depthFailOperation , agpu_stencil_operation stencilDepthPassOperation , agpu_compare_function stencilFunction) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilBackFace_immediate_renderer: immediate_renderer stencilFailOperation: stencilFailOperation depthFailOperation: depthFailOperation stencilDepthPassOperation: stencilDepthPassOperation stencilFunction: stencilFunction [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetStencilBackFace (agpu_immediate_renderer* immediate_renderer , agpu_stencil_operation stencilFailOperation , agpu_stencil_operation depthFailOperation , agpu_stencil_operation stencilDepthPassOperation , agpu_compare_function stencilFunction) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setViewport_immediate_renderer: immediate_renderer x: x y: y w: w h: h [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetViewport (agpu_immediate_renderer* immediate_renderer , agpu_int x , agpu_int y , agpu_int w , agpu_int h) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setScissor_immediate_renderer: immediate_renderer x: x y: y w: w h: h [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetScissor (agpu_immediate_renderer* immediate_renderer , agpu_int x , agpu_int y , agpu_int w , agpu_int h) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setStencilReference_immediate_renderer: immediate_renderer reference: reference [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetStencilReference (agpu_immediate_renderer* immediate_renderer , agpu_uint reference) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> projectionMatrixMode_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererProjectionMatrixMode (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> modelViewMatrixMode_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererModelViewMatrixMode (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadIdentity_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererIdentity (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> pushMatrix_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererPushMatrix (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> popMatrix_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererPopMatrix (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> ortho_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererOrtho (agpu_immediate_renderer* immediate_renderer , agpu_float left , agpu_float right , agpu_float bottom , agpu_float top , agpu_float near , agpu_float far) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> frustum_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererFrustum (agpu_immediate_renderer* immediate_renderer , agpu_float left , agpu_float right , agpu_float bottom , agpu_float top , agpu_float near , agpu_float far) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> perspective_immediate_renderer: immediate_renderer fovy: fovy aspect: aspect near: near far: far [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererPerspective (agpu_immediate_renderer* immediate_renderer , agpu_float fovy , agpu_float aspect , agpu_float near , agpu_float far) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> rotate_immediate_renderer: immediate_renderer angle: angle x: x y: y z: z [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererRotate (agpu_immediate_renderer* immediate_renderer , agpu_float angle , agpu_float x , agpu_float y , agpu_float z) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> translate_immediate_renderer: immediate_renderer x: x y: y z: z [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererTranslate (agpu_immediate_renderer* immediate_renderer , agpu_float x , agpu_float y , agpu_float z) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> scale_immediate_renderer: immediate_renderer x: x y: y z: z [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererScale (agpu_immediate_renderer* immediate_renderer , agpu_float x , agpu_float y , agpu_float z) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFlatShading_immediate_renderer: immediate_renderer enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetFlatShading (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setLightingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetLightingEnabled (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> clearLights_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererClearLights (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setAmbientLighting_immediate_renderer: immediate_renderer r: r g: g b: b a: a [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetAmbientLighting (agpu_immediate_renderer* immediate_renderer , agpu_float r , agpu_float g , agpu_float b , agpu_float a) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index enabled: enabled state: state [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetLight (agpu_immediate_renderer* immediate_renderer , agpu_uint index , agpu_bool enabled , agpu_immediate_renderer_light* state) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetTextureEnabled (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> bindTexture_immediate_renderer: immediate_renderer texture: texture [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererBindTexture (agpu_immediate_renderer* immediate_renderer , agpu_texture* texture) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> beginPrimitives_immediate_renderer: immediate_renderer type: type [
 	^ self ffiCall: #(agpu_error agpuBeginImmediateRendererPrimitives (agpu_immediate_renderer* immediate_renderer , agpu_primitive_topology type) )
 ]
