@@ -217,6 +217,7 @@ public:
     virtual agpu::state_tracker_ptr createStateTracker(agpu_command_list_type type, const agpu::command_queue_ref & command_queue) override;
 	virtual agpu::state_tracker_ptr createStateTrackerWithCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & command_queue, const agpu::command_allocator_ref & command_allocator) override;
 	virtual agpu::state_tracker_ptr createStateTrackerWithFrameBuffering(agpu_command_list_type type, const agpu::command_queue_ref & command_queue, agpu_uint framebuffering_count) override;
+    virtual agpu::immediate_renderer_ptr createImmediateRenderer() override;
 
     agpu::pipeline_state_ref getComputePipelineWithDescription(const ComputePipelineStateDescription &description, std::string &pipelineBuildErrorLog);
     agpu::pipeline_state_ref getGraphicsPipelineWithDescription(const GraphicsPipelineStateDescription &description, std::string &pipelineBuildErrorLog);

@@ -21,10 +21,12 @@
 
     <language name="Pharo">
         <property key="namespacePrefix" value="AGPU" />
-        <property key="package" value="AbstractGPU-Generated" />
+        <property key="package" value="AbstractGPU-GeneratedPharo" />
     </language>
 
     <language name="Squeak">
+        <property key="namespacePrefix" value="AGPU" />
+        <property key="package" value="AbstractGPU-GeneratedSqueak" />
         <property key="externalStructureSuperClass" value="AGPUExternalStructure" />
         <property key="externalUnionSuperClass" value="AGPUExternalUnion" />
     </language>
@@ -1851,6 +1853,10 @@
                 <arg name="command_queue" type="command_queue*" />
                 <arg name="framebuffering_count" type="uint" />
             </method>
+
+            <method name="createImmediateRenderer" cname="CreateImmediateRenderer" returnType="immediate_renderer*">
+            </method>
+
         </interface>
 
         <interface name="state_tracker">
@@ -2121,6 +2127,52 @@
                 <arg name="dest_stage" type="pipeline_stage_flags" />
                 <arg name="source_accesses" type="access_flags" />
                 <arg name="dest_accesses" type="access_flags" />
+            </method>
+        </interface>
+
+        <interface name="immediate_renderer">
+            <method name="addReference" cname="AddImmediateRendererReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseImmediateRendererReference" returnType="error">
+            </method>
+
+            <method name="beginRendering" cname="BeginImmediateRendering" returnType="error">
+                <arg name="state_tracker" type="state_tracker*" />
+            </method>
+
+            <method name="endRendering" cname="EndImmediateRendering" returnType="error">
+            </method>
+
+            <method name="beginPrimitives" cname="BeginImmediateRendererPrimitives" returnType="error">
+                <arg name="type" type="primitive_topology" />
+            </method>
+
+            <method name="endPrimitives" cname="EndImmediateRendererPrimitives" returnType="error">
+            </method>
+
+            <method name="color" cname="SetImmediateRendererColor" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="texcoord" cname="SetImmediateRendererTexcoord" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+            </method>
+
+            <method name="normal" cname="SetImmediateRendererNormal" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="vertex" cname="AddImmediateRendererVertex" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
             </method>
         </interface>
     </interfaces>

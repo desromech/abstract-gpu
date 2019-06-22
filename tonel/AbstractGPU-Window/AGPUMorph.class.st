@@ -57,7 +57,6 @@ AGPUMorph >> checkFramebuffer [
 		mainDepthbuffer ifNotNil: [
 			mainDepthbuffer release.
 		].
-		mainFramebufferForm destroySurface.
 	
 		self createFramebuffer
 	]
@@ -65,7 +64,7 @@ AGPUMorph >> checkFramebuffer [
 
 { #category : #'session management' }
 AGPUMorph >> checkSession [
-	session ~~ Smalltalk session ifTrue: [
+	session ~~ AGPU session ifTrue: [
 		self initializeForNewSession.
 	].
 ]
@@ -82,10 +81,12 @@ AGPUMorph >> createFramebuffer [
 		type: AGPU_TEXTURE_2D;
 		width: screenWidth;
 		height: screenHeight;
-		depthOrArraySize: 1;
+		depth: 1;
+		layers: 1;
 		miplevels: 1;
 		format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-		flags: AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_READED_BACK;
+		usage_modes: (AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT bitOr: AGPU_TEXTURE_USAGE_READED_BACK);
+		main_usage_mode: AGPU_TEXTURE_USAGE_READED_BACK;
 		sample_count: 1.
 	mainColorbuffer := device createTexture: colorBufferDesc.
 	
@@ -94,18 +95,22 @@ AGPUMorph >> createFramebuffer [
 
 	mainDepthbufferView := nil.
 	(hasDepth or: [ hasStencil ]) ifTrue: [ 
-		depthStencilFormat := hasStencil ifTrue: [ AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT ] ifFalse: [ AGPU_TEXTURE_FORMAT_D32_FLOAT ].
+		depthStencilFormat := self depthStencilFormat.
 		depthStencilDesc := AGPUTextureDescription new
 			type: AGPU_TEXTURE_2D;
 			width: screenWidth;
 			height: screenHeight;
-			depthOrArraySize: 1;
+			depth: 1;
+			layers: 1;
 			miplevels: 1;
 			format: depthStencilFormat;
-			flags: AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY;
+			usage_modes: AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
+			main_usage_mode: AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
 			sample_count: 1.
 		hasStencil ifTrue: [
-			depthStencilDesc flags: depthStencilDesc flags | AGPU_TEXTURE_FLAG_STENCIL
+			depthStencilDesc
+				usage_modes: (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT bitOr: AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+				main_usage_mode: (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT bitOr: AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)
 		].
 
 		mainDepthbuffer := device createTexture: depthStencilDesc.
@@ -119,6 +124,46 @@ AGPUMorph >> createFramebuffer [
 ]
 
 { #category : #initialization }
+AGPUMorph >> createRenderPassWithColor: aColor [
+	| colorAttachment depthStencilAttachment renderpassDescription |
+	colorAttachment := nil.
+	depthStencilAttachment := nil.
+	
+	[
+		colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
+		colorAttachment
+			format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+			begin_action: AGPU_ATTACHMENT_CLEAR;
+			end_action: AGPU_ATTACHMENT_KEEP;
+			clear_value: aColor asAGPUColor4f;
+			sample_count: 1.
+		
+		depthStencilAttachment := AGPURenderpassDepthStencilDescription externalNew.
+		depthStencilAttachment
+			format: self depthStencilFormat;
+			begin_action: AGPU_ATTACHMENT_CLEAR;
+			end_action: AGPU_ATTACHMENT_KEEP;
+			clear_value: (AGPUDepthStencilValue new depth: 1.0; stencil: 0; yourself);
+			sample_count: 1.
+		
+		renderpassDescription := AGPURenderpassDescription new.
+		renderpassDescription
+			color_attachment_count: 1;
+			color_attachments: colorAttachment;
+			depth_stencil_attachment: depthStencilAttachment.
+		^ device createRenderPass: renderpassDescription.
+	] ensure: [
+		colorAttachment ifNotNil: [ colorAttachment free ].
+		depthStencilAttachment ifNotNil: [ depthStencilAttachment free ].
+	]
+]
+
+{ #category : #initialization }
+AGPUMorph >> depthStencilFormat [
+	^ self hasStencil ifTrue: [ AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ] ifFalse: [ AGPU_TEXTURE_FORMAT_D32_FLOAT ]
+]
+
+{ #category : #initialization }
 AGPUMorph >> drawOn: aCanvas [
 	self checkSession.
 	self checkFramebuffer.
@@ -126,6 +171,16 @@ AGPUMorph >> drawOn: aCanvas [
 	self render.
 	
 	self blitTexture: mainColorbuffer toScreen: aCanvas
+]
+
+{ #category : #initialization }
+AGPUMorph >> hasDepth [
+	^ self class usesDepth
+]
+
+{ #category : #initialization }
+AGPUMorph >> hasStencil [
+	^ self class usesStencil
 ]
 
 { #category : #initialization }
@@ -145,7 +200,7 @@ AGPUMorph >> initializeForNewSession [
 	
 	self createFramebuffer.
 
-	session := Smalltalk session.
+	session := AGPU session.
 	
 ]
 

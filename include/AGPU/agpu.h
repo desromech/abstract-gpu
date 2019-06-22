@@ -64,6 +64,7 @@ typedef struct _agpu_fence agpu_fence;
 typedef struct _agpu_offline_shader_compiler agpu_offline_shader_compiler;
 typedef struct _agpu_state_tracker_cache agpu_state_tracker_cache;
 typedef struct _agpu_state_tracker agpu_state_tracker;
+typedef struct _agpu_immediate_renderer agpu_immediate_renderer;
 
 typedef enum {
 	AGPU_OK = 0,
@@ -1369,12 +1370,14 @@ typedef agpu_error (*agpuReleaseStateTrackerCacheReference_FUN) (agpu_state_trac
 typedef agpu_state_tracker* (*agpuCreateStateTracker_FUN) (agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue);
 typedef agpu_state_tracker* (*agpuCreateStateTrackerWithCommandAllocator_FUN) (agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_command_allocator* command_allocator);
 typedef agpu_state_tracker* (*agpuCreateStateTrackerWithFrameBuffering_FUN) (agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_uint framebuffering_count);
+typedef agpu_immediate_renderer* (*agpuCreateImmediateRenderer_FUN) (agpu_state_tracker_cache* state_tracker_cache);
 
 AGPU_EXPORT agpu_error agpuAddStateTrackerCacheReference(agpu_state_tracker_cache* state_tracker_cache);
 AGPU_EXPORT agpu_error agpuReleaseStateTrackerCacheReference(agpu_state_tracker_cache* state_tracker_cache);
 AGPU_EXPORT agpu_state_tracker* agpuCreateStateTracker(agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithCommandAllocator(agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_command_allocator* command_allocator);
 AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering(agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_uint framebuffering_count);
+AGPU_EXPORT agpu_immediate_renderer* agpuCreateImmediateRenderer(agpu_state_tracker_cache* state_tracker_cache);
 
 /* Methods for interface agpu_state_tracker. */
 typedef agpu_error (*agpuAddStateTrackerReference_FUN) (agpu_state_tracker* state_tracker);
@@ -1482,6 +1485,29 @@ AGPU_EXPORT agpu_error agpuStateTrackerResolveFramebuffer(agpu_state_tracker* st
 AGPU_EXPORT agpu_error agpuStateTrackerResolveTexture(agpu_state_tracker* state_tracker, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 AGPU_EXPORT agpu_error agpuStateTrackerPushConstants(agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values);
 AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
+
+/* Methods for interface agpu_immediate_renderer. */
+typedef agpu_error (*agpuAddImmediateRendererReference_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuReleaseImmediateRendererReference_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuBeginImmediateRendering_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_state_tracker* state_tracker);
+typedef agpu_error (*agpuEndImmediateRendering_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuBeginImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
+typedef agpu_error (*agpuEndImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuSetImmediateRendererColor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+typedef agpu_error (*agpuSetImmediateRendererTexcoord_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y);
+typedef agpu_error (*agpuSetImmediateRendererNormal_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+typedef agpu_error (*agpuAddImmediateRendererVertex_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+
+AGPU_EXPORT agpu_error agpuAddImmediateRendererReference(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuReleaseImmediateRendererReference(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuBeginImmediateRendering(agpu_immediate_renderer* immediate_renderer, agpu_state_tracker* state_tracker);
+AGPU_EXPORT agpu_error agpuEndImmediateRendering(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
+AGPU_EXPORT agpu_error agpuEndImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererColor(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererTexcoord(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererNormal(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+AGPU_EXPORT agpu_error agpuAddImmediateRendererVertex(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
 
 /* Installable client driver interface. */
 typedef struct _agpu_icd_dispatch {
@@ -1698,6 +1724,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateStateTracker_FUN agpuCreateStateTracker;
 	agpuCreateStateTrackerWithCommandAllocator_FUN agpuCreateStateTrackerWithCommandAllocator;
 	agpuCreateStateTrackerWithFrameBuffering_FUN agpuCreateStateTrackerWithFrameBuffering;
+	agpuCreateImmediateRenderer_FUN agpuCreateImmediateRenderer;
 	agpuAddStateTrackerReference_FUN agpuAddStateTrackerReference;
 	agpuReleaseStateTrackerReference_FUN agpuReleaseStateTrackerReference;
 	agpuStateTrackerBeginRecordingCommands_FUN agpuStateTrackerBeginRecordingCommands;
@@ -1750,6 +1777,16 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerResolveTexture_FUN agpuStateTrackerResolveTexture;
 	agpuStateTrackerPushConstants_FUN agpuStateTrackerPushConstants;
 	agpuStateTrackerMemoryBarrier_FUN agpuStateTrackerMemoryBarrier;
+	agpuAddImmediateRendererReference_FUN agpuAddImmediateRendererReference;
+	agpuReleaseImmediateRendererReference_FUN agpuReleaseImmediateRendererReference;
+	agpuBeginImmediateRendering_FUN agpuBeginImmediateRendering;
+	agpuEndImmediateRendering_FUN agpuEndImmediateRendering;
+	agpuBeginImmediateRendererPrimitives_FUN agpuBeginImmediateRendererPrimitives;
+	agpuEndImmediateRendererPrimitives_FUN agpuEndImmediateRendererPrimitives;
+	agpuSetImmediateRendererColor_FUN agpuSetImmediateRendererColor;
+	agpuSetImmediateRendererTexcoord_FUN agpuSetImmediateRendererTexcoord;
+	agpuSetImmediateRendererNormal_FUN agpuSetImmediateRendererNormal;
+	agpuAddImmediateRendererVertex_FUN agpuAddImmediateRendererVertex;
 } agpu_icd_dispatch;
 
 

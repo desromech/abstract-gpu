@@ -1421,6 +1421,11 @@ public:
 		return agpuCreateStateTrackerWithFrameBuffering(this, type, command_queue.get(), framebuffering_count);
 	}
 
+	inline agpu_ref<agpu_immediate_renderer> createImmediateRenderer()
+	{
+		return agpuCreateImmediateRenderer(this);
+	}
+
 };
 
 typedef agpu_ref<agpu_state_tracker_cache> agpu_state_tracker_cache_ref;
@@ -1695,6 +1700,67 @@ public:
 };
 
 typedef agpu_ref<agpu_state_tracker> agpu_state_tracker_ref;
+
+// Interface wrapper for agpu_immediate_renderer.
+struct _agpu_immediate_renderer
+{
+private:
+	_agpu_immediate_renderer() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddImmediateRendererReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseImmediateRendererReference(this));
+	}
+
+	inline void beginRendering(const agpu_ref<agpu_state_tracker>& state_tracker)
+	{
+		agpuThrowIfFailed(agpuBeginImmediateRendering(this, state_tracker.get()));
+	}
+
+	inline void endRendering()
+	{
+		agpuThrowIfFailed(agpuEndImmediateRendering(this));
+	}
+
+	inline void beginPrimitives(agpu_primitive_topology type)
+	{
+		agpuThrowIfFailed(agpuBeginImmediateRendererPrimitives(this, type));
+	}
+
+	inline void endPrimitives()
+	{
+		agpuThrowIfFailed(agpuEndImmediateRendererPrimitives(this));
+	}
+
+	inline void color(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+	{
+		agpuThrowIfFailed(agpuSetImmediateRendererColor(this, r, g, b, a));
+	}
+
+	inline void texcoord(agpu_float x, agpu_float y)
+	{
+		agpuThrowIfFailed(agpuSetImmediateRendererTexcoord(this, x, y));
+	}
+
+	inline void normal(agpu_float x, agpu_float y, agpu_float z)
+	{
+		agpuThrowIfFailed(agpuSetImmediateRendererNormal(this, x, y, z));
+	}
+
+	inline void vertex(agpu_float x, agpu_float y, agpu_float z)
+	{
+		agpuThrowIfFailed(agpuAddImmediateRendererVertex(this, x, y, z));
+	}
+
+};
+
+typedef agpu_ref<agpu_immediate_renderer> agpu_immediate_renderer_ref;
 
 
 #endif /* AGPU_HPP_ */

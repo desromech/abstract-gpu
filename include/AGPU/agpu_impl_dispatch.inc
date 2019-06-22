@@ -1308,6 +1308,11 @@ AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering(agpu_st
 	return reinterpret_cast<agpu_state_tracker*> (asRef(agpu::state_tracker_cache, self)->createStateTrackerWithFrameBuffering(type, asRef(agpu::command_queue, command_queue), framebuffering_count));
 }
 
+AGPU_EXPORT agpu_immediate_renderer* agpuCreateImmediateRenderer(agpu_state_tracker_cache* self)
+{
+	return reinterpret_cast<agpu_immediate_renderer*> (asRef(agpu::state_tracker_cache, self)->createImmediateRenderer());
+}
+
 //==============================================================================
 // state_tracker C dispatching functions.
 //==============================================================================
@@ -1621,6 +1626,70 @@ AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* self, a
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
+//==============================================================================
+// immediate_renderer C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddImmediateRendererReference(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::immediate_renderer, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseImmediateRendererReference(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::immediate_renderer, self)->release();
+}
+
+AGPU_EXPORT agpu_error agpuBeginImmediateRendering(agpu_immediate_renderer* self, agpu_state_tracker* state_tracker)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->beginRendering(asRef(agpu::state_tracker, state_tracker));
+}
+
+AGPU_EXPORT agpu_error agpuEndImmediateRendering(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->endRendering();
+}
+
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* self, agpu_primitive_topology type)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->beginPrimitives(type);
+}
+
+AGPU_EXPORT agpu_error agpuEndImmediateRendererPrimitives(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->endPrimitives();
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererColor(agpu_immediate_renderer* self, agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->color(r, g, b, a);
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererTexcoord(agpu_immediate_renderer* self, agpu_float x, agpu_float y)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->texcoord(x, y);
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererNormal(agpu_immediate_renderer* self, agpu_float x, agpu_float y, agpu_float z)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->normal(x, y, z);
+}
+
+AGPU_EXPORT agpu_error agpuAddImmediateRendererVertex(agpu_immediate_renderer* self, agpu_float x, agpu_float y, agpu_float z)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->vertex(x, y, z);
 }
 
 

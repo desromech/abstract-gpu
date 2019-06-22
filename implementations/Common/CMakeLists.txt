@@ -11,6 +11,8 @@ set(AgpuCommonHighLevelInterfaces_SOURCES
     state_tracker_cache.hpp
     state_tracker.cpp
     state_tracker.hpp
+    immediate_renderer.cpp
+    immediate_renderer.hpp
 )
 
 add_library(AgpuCommonHighLevelInterfaces OBJECT ${AgpuCommonHighLevelInterfaces_SOURCES})

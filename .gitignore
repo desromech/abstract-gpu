@@ -1,2 +1,11 @@
 phanapi
+pharo-local
+pharo-vm
+pharo
+pharo-ui
+mc
+*.image
+*.changes
 *.pyc
+*.sources
+*.log

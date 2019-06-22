@@ -480,6 +480,11 @@ typedef ref_counter<state_tracker> *state_tracker_ptr;
 typedef ref<state_tracker> state_tracker_ref;
 typedef weak_ref<state_tracker> state_tracker_weakref;
 
+struct immediate_renderer;
+typedef ref_counter<immediate_renderer> *immediate_renderer_ptr;
+typedef ref<immediate_renderer> immediate_renderer_ref;
+typedef weak_ref<immediate_renderer> immediate_renderer_weakref;
+
 // Interface wrapper for agpu_platform.
 struct platform : base_interface
 {
@@ -828,6 +833,7 @@ public:
 	virtual state_tracker_ptr createStateTracker(agpu_command_list_type type, const command_queue_ref & command_queue) = 0;
 	virtual state_tracker_ptr createStateTrackerWithCommandAllocator(agpu_command_list_type type, const command_queue_ref & command_queue, const command_allocator_ref & command_allocator) = 0;
 	virtual state_tracker_ptr createStateTrackerWithFrameBuffering(agpu_command_list_type type, const command_queue_ref & command_queue, agpu_uint framebuffering_count) = 0;
+	virtual immediate_renderer_ptr createImmediateRenderer() = 0;
 };
 
 
@@ -886,6 +892,22 @@ public:
 	virtual agpu_error resolveTexture(const texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect) = 0;
 	virtual agpu_error pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values) = 0;
 	virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) = 0;
+};
+
+
+// Interface wrapper for agpu_immediate_renderer.
+struct immediate_renderer : base_interface
+{
+public:
+	typedef immediate_renderer main_interface;
+	virtual agpu_error beginRendering(const state_tracker_ref & state_tracker) = 0;
+	virtual agpu_error endRendering() = 0;
+	virtual agpu_error beginPrimitives(agpu_primitive_topology type) = 0;
+	virtual agpu_error endPrimitives() = 0;
+	virtual agpu_error color(agpu_float r, agpu_float g, agpu_float b, agpu_float a) = 0;
+	virtual agpu_error texcoord(agpu_float x, agpu_float y) = 0;
+	virtual agpu_error normal(agpu_float x, agpu_float y, agpu_float z) = 0;
+	virtual agpu_error vertex(agpu_float x, agpu_float y, agpu_float z) = 0;
 };
 
 
