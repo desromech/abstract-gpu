@@ -10,7 +10,9 @@ Class {
 		'mainDepthbuffer',
 		'mainFramebufferForm',
 		'screenWidth',
-		'screenHeight'
+		'screenHeight',
+		'perFrameSynchronization',
+		'stateTracker'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -36,13 +38,15 @@ AGPUMorph class >> usesStencil [
 { #category : #initialization }
 AGPUMorph >> blitTexture: texture toScreen: aCanvas [
 	| pitch slicePitch |
-	"texture readTextureLevel: 0 arrayIndex: 0 pitch: mainFramebufferForm width * 4 slicePitch: 0 data: mainFramebufferForm bits."
-	pitch := mainFramebufferForm width * 4.
-	slicePitch := pitch * mainFramebufferForm height.
-	mainFramebufferForm unhibernate.
+	perFrameSynchronization synchronizeForFrameReadback: [ :readbackFrameIndex |
+		pitch := mainFramebufferForm width * 4.
+		slicePitch := pitch * mainFramebufferForm height.
+		mainFramebufferForm unhibernate.
 	
-	texture readTextureData: 0 arrayIndex: 0 pitch: pitch slicePitch: slicePitch buffer: mainFramebufferForm bits.
-	aCanvas translucentImage: mainFramebufferForm at: self bounds origin.
+		texture readTextureData: 0 arrayIndex: 0 pitch: pitch slicePitch: slicePitch buffer: mainFramebufferForm bits.
+		aCanvas translucentImage: mainFramebufferForm at: self bounds origin.
+	].
+
 ]
 
 { #category : #initialization }
@@ -70,6 +74,11 @@ AGPUMorph >> checkSession [
 ]
 
 { #category : #initialization }
+AGPUMorph >> colorAttachmentFormat [
+	^ AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB
+]
+
+{ #category : #initialization }
 AGPUMorph >> createFramebuffer [
 	| innerBounds colorBufferDesc hasDepth hasStencil depthStencilFormat depthStencilDesc mainColorbufferView mainDepthbufferView |
 	innerBounds := self innerBounds.
@@ -84,7 +93,7 @@ AGPUMorph >> createFramebuffer [
 		depth: 1;
 		layers: 1;
 		miplevels: 1;
-		format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+		format: self colorAttachmentFormat;
 		usage_modes: (AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT bitOr: AGPU_TEXTURE_USAGE_READED_BACK);
 		main_usage_mode: AGPU_TEXTURE_USAGE_READED_BACK;
 		sample_count: 1.
@@ -132,7 +141,7 @@ AGPUMorph >> createRenderPassWithColor: aColor [
 	[
 		colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
 		colorAttachment
-			format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+			format: self colorAttachmentFormat;
 			begin_action: AGPU_ATTACHMENT_CLEAR;
 			end_action: AGPU_ATTACHMENT_KEEP;
 			clear_value: aColor asAGPUColor4f;
@@ -168,7 +177,10 @@ AGPUMorph >> drawOn: aCanvas [
 	self checkSession.
 	self checkFramebuffer.
 	
-	self render.
+	perFrameSynchronization renderFrameWith: [ :aStateTracker |
+		stateTracker := aStateTracker.
+		self render.
+	].
 	
 	self blitTexture: mainColorbuffer toScreen: aCanvas
 ]
@@ -198,10 +210,16 @@ AGPUMorph >> initialize [
 AGPUMorph >> initializeForNewSession [
 	device := AGPU mainDevice.
 	
+	perFrameSynchronization := AGPUImplicitFrameSynchronization for: device.
 	self createFramebuffer.
 
 	session := AGPU session.
 	
+]
+
+{ #category : #'as yet unclassified' }
+AGPUMorph >> mainImmediateRenderer [
+	^ perFrameSynchronization immediateRendererForPass: #main
 ]
 
 { #category : #initialization }
