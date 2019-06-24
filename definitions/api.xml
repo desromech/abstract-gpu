@@ -27,8 +27,8 @@
     <language name="Squeak">
         <property key="namespacePrefix" value="AGPU" />
         <property key="package" value="AbstractGPU-GeneratedSqueak" />
-        <property key="externalStructureSuperClass" value="AGPUExternalStructure" />
-        <property key="externalUnionSuperClass" value="AGPUExternalUnion" />
+        <property key="externalStructureSuperClass" value="ExternalStructure" />
+        <property key="externalUnionSuperClass" value="ExternalUnion" />
     </language>
 
 </bindings>

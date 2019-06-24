@@ -3,7 +3,7 @@ Class {
 	#pools : [
 		'AGPUConstants'
 	],
-	#superclass : #AGPUExternalUnion,
+	#superclass : #ExternalUnion,
 	#category : 'AbstractGPU-GeneratedSqueak'
 }
 

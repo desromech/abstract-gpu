@@ -62,10 +62,9 @@ loaded in Squeak by running the following script:
 ```smalltalk
 (Installer repository: 'http://source.squeak.org/FFI')
     install: 'FFI-Pools';
-    install: 'FFI-Kernel';
-    install: 'FFI-Tests';
-    install: 'FFI-Examples'.
-
+    install: 'FFI-Kernel'.
+(Smalltalk at: #ExternalType) initialize.
+ 
 "Replace with the path to the converted MC files, or make a symlink to this folder ;)"
 Installer monticello directory: 'mc';
     install: 'AbstractGPU-CoreSqueak';
