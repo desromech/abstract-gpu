@@ -303,7 +303,7 @@ agpu_error AMtlCommandList::drawElements ( agpu_uint index_count, agpu_uint inst
                    indexCount: index_count
                     indexType: mapIndexType(currentIndexBufferStride)
                   indexBuffer: indexBuffer->handle
-            indexBufferOffset: currentIndexBufferOffset + first_index*indexBuffer->description.stride
+            indexBufferOffset: currentIndexBufferOffset + first_index*currentIndexBufferStride
                 instanceCount: instance_count
                    baseVertex: base_vertex
                  baseInstance: base_instance];
@@ -424,11 +424,7 @@ agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpa
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
     
-    auto oldPipeline = currentPipeline;
     currentPipeline.reset();
-    if(oldPipeline)
-        usePipelineState(oldPipeline);
-
     return AGPU_OK;
 }
 

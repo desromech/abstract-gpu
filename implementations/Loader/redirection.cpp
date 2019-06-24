@@ -1689,6 +1689,14 @@ AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering ( agpu_
 	return (*dispatchTable)->agpuCreateStateTrackerWithFrameBuffering ( state_tracker_cache, type, command_queue, framebuffering_count );
 }
 
+AGPU_EXPORT agpu_immediate_renderer* agpuCreateImmediateRenderer ( agpu_state_tracker_cache* state_tracker_cache )
+{
+	if (state_tracker_cache == nullptr)
+		return (agpu_immediate_renderer*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker_cache);
+	return (*dispatchTable)->agpuCreateImmediateRenderer ( state_tracker_cache );
+}
+
 AGPU_EXPORT agpu_error agpuAddStateTrackerReference ( agpu_state_tracker* state_tracker )
 {
 	if (state_tracker == nullptr)
@@ -2103,5 +2111,341 @@ AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier ( agpu_state_tracker* state
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerMemoryBarrier ( state_tracker, source_stage, dest_stage, source_accesses, dest_accesses );
+}
+
+AGPU_EXPORT agpu_error agpuAddImmediateRendererReference ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuAddImmediateRendererReference ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseImmediateRendererReference ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuReleaseImmediateRendererReference ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuBeginImmediateRendering ( agpu_immediate_renderer* immediate_renderer, agpu_state_tracker* state_tracker )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuBeginImmediateRendering ( immediate_renderer, state_tracker );
+}
+
+AGPU_EXPORT agpu_error agpuEndImmediateRendering ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuEndImmediateRendering ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetBlendState ( agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_bool enabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetBlendState ( immediate_renderer, renderTargetMask, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetBlendFunction ( agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetBlendFunction ( immediate_renderer, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetColorMask ( agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetColorMask ( immediate_renderer, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFrontFace ( agpu_immediate_renderer* immediate_renderer, agpu_face_winding winding )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetFrontFace ( immediate_renderer, winding );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetCullMode ( agpu_immediate_renderer* immediate_renderer, agpu_cull_mode mode )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetCullMode ( immediate_renderer, mode );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetDepthBias ( agpu_immediate_renderer* immediate_renderer, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetDepthBias ( immediate_renderer, constant_factor, clamp, slope_factor );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetDepthState ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetDepthState ( immediate_renderer, enabled, writeMask, function );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetPolygonMode ( agpu_immediate_renderer* immediate_renderer, agpu_polygon_mode mode )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetPolygonMode ( immediate_renderer, mode );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilState ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_int writeMask, agpu_int readMask )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetStencilState ( immediate_renderer, enabled, writeMask, readMask );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilFrontFace ( agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetStencilFrontFace ( immediate_renderer, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilBackFace ( agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetStencilBackFace ( immediate_renderer, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetViewport ( agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetViewport ( immediate_renderer, x, y, w, h );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetScissor ( agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetScissor ( immediate_renderer, x, y, w, h );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilReference ( agpu_immediate_renderer* immediate_renderer, agpu_uint reference )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetStencilReference ( immediate_renderer, reference );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererProjectionMatrixMode ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererProjectionMatrixMode ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererModelViewMatrixMode ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererModelViewMatrixMode ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererIdentity ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererIdentity ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererPushMatrix ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererPushMatrix ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererPopMatrix ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererPopMatrix ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererOrtho ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererOrtho ( immediate_renderer, left, right, bottom, top, near, far );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererFrustum ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererFrustum ( immediate_renderer, left, right, bottom, top, near, far );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererPerspective ( agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererPerspective ( immediate_renderer, fovy, aspect, near, far );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererRotate ( agpu_immediate_renderer* immediate_renderer, agpu_float angle, agpu_float x, agpu_float y, agpu_float z )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererRotate ( immediate_renderer, angle, x, y, z );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererTranslate ( agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererTranslate ( immediate_renderer, x, y, z );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererScale ( agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererScale ( immediate_renderer, x, y, z );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFlatShading ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetFlatShading ( immediate_renderer, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingEnabled ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetLightingEnabled ( immediate_renderer, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererClearLights ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererClearLights ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetAmbientLighting ( agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetAmbientLighting ( immediate_renderer, r, g, b, a );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLight ( agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetLight ( immediate_renderer, index, enabled, state );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetTextureEnabled ( immediate_renderer, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture ( agpu_immediate_renderer* immediate_renderer, agpu_texture* texture )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererBindTexture ( immediate_renderer, texture );
+}
+
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives ( agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuBeginImmediateRendererPrimitives ( immediate_renderer, type );
+}
+
+AGPU_EXPORT agpu_error agpuEndImmediateRendererPrimitives ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuEndImmediateRendererPrimitives ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererColor ( agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuSetImmediateRendererColor ( immediate_renderer, r, g, b, a );
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererTexcoord ( agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuSetImmediateRendererTexcoord ( immediate_renderer, x, y );
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererNormal ( agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuSetImmediateRendererNormal ( immediate_renderer, x, y, z );
+}
+
+AGPU_EXPORT agpu_error agpuAddImmediateRendererVertex ( agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuAddImmediateRendererVertex ( immediate_renderer, x, y, z );
 }
 

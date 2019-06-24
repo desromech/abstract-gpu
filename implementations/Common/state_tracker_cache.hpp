@@ -201,6 +201,7 @@ struct hash<AgpuCommon::ComputePipelineStateDescription>
 
 namespace AgpuCommon
 {
+class ImmediateShaderLibrary;
 
 /**
  * I am a cache for the on the fly generated pipeline state objects that are
@@ -217,6 +218,7 @@ public:
     virtual agpu::state_tracker_ptr createStateTracker(agpu_command_list_type type, const agpu::command_queue_ref & command_queue) override;
 	virtual agpu::state_tracker_ptr createStateTrackerWithCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & command_queue, const agpu::command_allocator_ref & command_allocator) override;
 	virtual agpu::state_tracker_ptr createStateTrackerWithFrameBuffering(agpu_command_list_type type, const agpu::command_queue_ref & command_queue, agpu_uint framebuffering_count) override;
+    virtual agpu::immediate_renderer_ptr createImmediateRenderer() override;
 
     agpu::pipeline_state_ref getComputePipelineWithDescription(const ComputePipelineStateDescription &description, std::string &pipelineBuildErrorLog);
     agpu::pipeline_state_ref getGraphicsPipelineWithDescription(const GraphicsPipelineStateDescription &description, std::string &pipelineBuildErrorLog);
@@ -224,12 +226,21 @@ public:
     agpu::device_ref device;
     uint32_t queueFamilyType;
 
+    bool ensureImmediateRendererObjectsExists();
+
+    agpu::shader_signature_ref immediateShaderSignature;
+    std::unique_ptr<ImmediateShaderLibrary> immediateShaderLibrary;
+    agpu::vertex_layout_ref immediateVertexLayout;
+
 private:
     std::mutex computePipelineStateCacheMutex;
     std::unordered_map<ComputePipelineStateDescription, agpu::pipeline_state_ref> computePipelineStateCache;
 
     std::mutex graphicsPipelineStateCacheMutex;
     std::unordered_map<GraphicsPipelineStateDescription, agpu::pipeline_state_ref> graphicsPipelineStateCache;
+
+    std::mutex immediateRendererObjectsMutex;
+    bool immediateRendererObjectsInitialized;
 
 };
 

@@ -1,5 +1,6 @@
 #include "state_tracker_cache.hpp"
 #include "state_tracker.hpp"
+#include "immediate_renderer.hpp"
 
 #define CHECK_ERROR() if(error) return error
 
@@ -388,6 +389,7 @@ size_t ComputePipelineStateDescription::hash() const
 StateTrackerCache::StateTrackerCache(const agpu::device_ref &device, uint32_t queueFamilyType)
     : device(device), queueFamilyType(queueFamilyType)
 {
+    immediateRendererObjectsInitialized = false;
 }
 
 StateTrackerCache::~StateTrackerCache()
@@ -415,6 +417,11 @@ agpu::state_tracker_ptr StateTrackerCache::createStateTrackerWithCommandAllocato
 agpu::state_tracker_ptr StateTrackerCache::createStateTrackerWithFrameBuffering(agpu_command_list_type type, const agpu::command_queue_ref & command_queue, agpu_uint framebuffering_count)
 {
     return FrameBufferredStateTracker::create(refFromThis<agpu::state_tracker_cache> (), device, type, command_queue, framebuffering_count).disown();
+}
+
+agpu::immediate_renderer_ptr StateTrackerCache::createImmediateRenderer()
+{
+    return ImmediateRenderer::create(refFromThis<agpu::state_tracker_cache> ()).disown();
 }
 
 agpu::pipeline_state_ref StateTrackerCache::getComputePipelineWithDescription(const ComputePipelineStateDescription &description, std::string &pipelineBuildErrorLog)

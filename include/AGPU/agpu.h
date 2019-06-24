@@ -64,6 +64,7 @@ typedef struct _agpu_fence agpu_fence;
 typedef struct _agpu_offline_shader_compiler agpu_offline_shader_compiler;
 typedef struct _agpu_state_tracker_cache agpu_state_tracker_cache;
 typedef struct _agpu_state_tracker agpu_state_tracker;
+typedef struct _agpu_immediate_renderer agpu_immediate_renderer;
 
 typedef enum {
 	AGPU_OK = 0,
@@ -76,8 +77,9 @@ typedef enum {
 	AGPU_UNIMPLEMENTED = -7,
 	AGPU_NOT_CURRENT_CONTEXT = -8,
 	AGPU_COMPILATION_ERROR = -9,
-	AGPU_LINKING_ERROR = -9,
-	AGPU_COMMAND_LIST_CLOSED = -10,
+	AGPU_LINKING_ERROR = -10,
+	AGPU_COMMAND_LIST_CLOSED = -11,
+	AGPU_OUT_OF_MEMORY = -12,
 } agpu_error;
 
 typedef enum {
@@ -880,6 +882,20 @@ typedef struct agpu_vr_event {
 	agpu_vr_event_data data;
 } agpu_vr_event;
 
+/* Structure agpu_immediate_renderer_light. */
+typedef struct agpu_immediate_renderer_light {
+	agpu_vector4f ambient;
+	agpu_vector4f diffuse;
+	agpu_vector4f specular;
+	agpu_vector4f position;
+	agpu_vector3f spot_direction;
+	agpu_float spot_exponent;
+	agpu_float spot_cutoff;
+	agpu_float constant_attenuation;
+	agpu_float linear_attenuation;
+	agpu_float quadratic_attenuation;
+} agpu_immediate_renderer_light;
+
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) (agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms);
 
@@ -1369,12 +1385,14 @@ typedef agpu_error (*agpuReleaseStateTrackerCacheReference_FUN) (agpu_state_trac
 typedef agpu_state_tracker* (*agpuCreateStateTracker_FUN) (agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue);
 typedef agpu_state_tracker* (*agpuCreateStateTrackerWithCommandAllocator_FUN) (agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_command_allocator* command_allocator);
 typedef agpu_state_tracker* (*agpuCreateStateTrackerWithFrameBuffering_FUN) (agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_uint framebuffering_count);
+typedef agpu_immediate_renderer* (*agpuCreateImmediateRenderer_FUN) (agpu_state_tracker_cache* state_tracker_cache);
 
 AGPU_EXPORT agpu_error agpuAddStateTrackerCacheReference(agpu_state_tracker_cache* state_tracker_cache);
 AGPU_EXPORT agpu_error agpuReleaseStateTrackerCacheReference(agpu_state_tracker_cache* state_tracker_cache);
 AGPU_EXPORT agpu_state_tracker* agpuCreateStateTracker(agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithCommandAllocator(agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_command_allocator* command_allocator);
 AGPU_EXPORT agpu_state_tracker* agpuCreateStateTrackerWithFrameBuffering(agpu_state_tracker_cache* state_tracker_cache, agpu_command_list_type type, agpu_command_queue* command_queue, agpu_uint framebuffering_count);
+AGPU_EXPORT agpu_immediate_renderer* agpuCreateImmediateRenderer(agpu_state_tracker_cache* state_tracker_cache);
 
 /* Methods for interface agpu_state_tracker. */
 typedef agpu_error (*agpuAddStateTrackerReference_FUN) (agpu_state_tracker* state_tracker);
@@ -1482,6 +1500,93 @@ AGPU_EXPORT agpu_error agpuStateTrackerResolveFramebuffer(agpu_state_tracker* st
 AGPU_EXPORT agpu_error agpuStateTrackerResolveTexture(agpu_state_tracker* state_tracker, agpu_texture* sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, agpu_texture* destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 AGPU_EXPORT agpu_error agpuStateTrackerPushConstants(agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values);
 AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
+
+/* Methods for interface agpu_immediate_renderer. */
+typedef agpu_error (*agpuAddImmediateRendererReference_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuReleaseImmediateRendererReference_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuBeginImmediateRendering_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_state_tracker* state_tracker);
+typedef agpu_error (*agpuEndImmediateRendering_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererSetBlendState_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_bool enabled);
+typedef agpu_error (*agpuImmediateRendererSetBlendFunction_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation);
+typedef agpu_error (*agpuImmediateRendererSetColorMask_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled);
+typedef agpu_error (*agpuImmediateRendererSetFrontFace_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_face_winding winding);
+typedef agpu_error (*agpuImmediateRendererSetCullMode_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_cull_mode mode);
+typedef agpu_error (*agpuImmediateRendererSetDepthBias_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor);
+typedef agpu_error (*agpuImmediateRendererSetDepthState_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function);
+typedef agpu_error (*agpuImmediateRendererSetPolygonMode_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_polygon_mode mode);
+typedef agpu_error (*agpuImmediateRendererSetStencilState_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_int writeMask, agpu_int readMask);
+typedef agpu_error (*agpuImmediateRendererSetStencilFrontFace_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
+typedef agpu_error (*agpuImmediateRendererSetStencilBackFace_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
+typedef agpu_error (*agpuImmediateRendererSetViewport_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
+typedef agpu_error (*agpuImmediateRendererSetScissor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
+typedef agpu_error (*agpuImmediateRendererSetStencilReference_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_uint reference);
+typedef agpu_error (*agpuImmediateRendererProjectionMatrixMode_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererModelViewMatrixMode_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererIdentity_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererPushMatrix_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererPopMatrix_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererOrtho_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
+typedef agpu_error (*agpuImmediateRendererFrustum_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
+typedef agpu_error (*agpuImmediateRendererPerspective_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far);
+typedef agpu_error (*agpuImmediateRendererRotate_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float angle, agpu_float x, agpu_float y, agpu_float z);
+typedef agpu_error (*agpuImmediateRendererTranslate_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+typedef agpu_error (*agpuImmediateRendererScale_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+typedef agpu_error (*agpuImmediateRendererSetFlatShading_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
+typedef agpu_error (*agpuImmediateRendererSetLightingEnabled_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
+typedef agpu_error (*agpuImmediateRendererClearLights_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuImmediateRendererSetAmbientLighting_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+typedef agpu_error (*agpuImmediateRendererSetLight_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state);
+typedef agpu_error (*agpuImmediateRendererSetTextureEnabled_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
+typedef agpu_error (*agpuImmediateRendererBindTexture_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
+typedef agpu_error (*agpuBeginImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
+typedef agpu_error (*agpuEndImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer);
+typedef agpu_error (*agpuSetImmediateRendererColor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+typedef agpu_error (*agpuSetImmediateRendererTexcoord_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y);
+typedef agpu_error (*agpuSetImmediateRendererNormal_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+typedef agpu_error (*agpuAddImmediateRendererVertex_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+
+AGPU_EXPORT agpu_error agpuAddImmediateRendererReference(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuReleaseImmediateRendererReference(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuBeginImmediateRendering(agpu_immediate_renderer* immediate_renderer, agpu_state_tracker* state_tracker);
+AGPU_EXPORT agpu_error agpuEndImmediateRendering(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetBlendState(agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_bool enabled);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetBlendFunction(agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetColorMask(agpu_immediate_renderer* immediate_renderer, agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFrontFace(agpu_immediate_renderer* immediate_renderer, agpu_face_winding winding);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetCullMode(agpu_immediate_renderer* immediate_renderer, agpu_cull_mode mode);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetDepthBias(agpu_immediate_renderer* immediate_renderer, agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetDepthState(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetPolygonMode(agpu_immediate_renderer* immediate_renderer, agpu_polygon_mode mode);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilState(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_int writeMask, agpu_int readMask);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilFrontFace(agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilBackFace(agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetViewport(agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetScissor(agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilReference(agpu_immediate_renderer* immediate_renderer, agpu_uint reference);
+AGPU_EXPORT agpu_error agpuImmediateRendererProjectionMatrixMode(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererModelViewMatrixMode(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererIdentity(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererPushMatrix(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererPopMatrix(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererOrtho(agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
+AGPU_EXPORT agpu_error agpuImmediateRendererFrustum(agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
+AGPU_EXPORT agpu_error agpuImmediateRendererPerspective(agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far);
+AGPU_EXPORT agpu_error agpuImmediateRendererRotate(agpu_immediate_renderer* immediate_renderer, agpu_float angle, agpu_float x, agpu_float y, agpu_float z);
+AGPU_EXPORT agpu_error agpuImmediateRendererTranslate(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+AGPU_EXPORT agpu_error agpuImmediateRendererScale(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFlatShading(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingEnabled(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
+AGPU_EXPORT agpu_error agpuImmediateRendererClearLights(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetAmbientLighting(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLight(agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
+AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
+AGPU_EXPORT agpu_error agpuEndImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererColor(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererTexcoord(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererNormal(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+AGPU_EXPORT agpu_error agpuAddImmediateRendererVertex(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
 
 /* Installable client driver interface. */
 typedef struct _agpu_icd_dispatch {
@@ -1698,6 +1803,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCreateStateTracker_FUN agpuCreateStateTracker;
 	agpuCreateStateTrackerWithCommandAllocator_FUN agpuCreateStateTrackerWithCommandAllocator;
 	agpuCreateStateTrackerWithFrameBuffering_FUN agpuCreateStateTrackerWithFrameBuffering;
+	agpuCreateImmediateRenderer_FUN agpuCreateImmediateRenderer;
 	agpuAddStateTrackerReference_FUN agpuAddStateTrackerReference;
 	agpuReleaseStateTrackerReference_FUN agpuReleaseStateTrackerReference;
 	agpuStateTrackerBeginRecordingCommands_FUN agpuStateTrackerBeginRecordingCommands;
@@ -1750,6 +1856,48 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerResolveTexture_FUN agpuStateTrackerResolveTexture;
 	agpuStateTrackerPushConstants_FUN agpuStateTrackerPushConstants;
 	agpuStateTrackerMemoryBarrier_FUN agpuStateTrackerMemoryBarrier;
+	agpuAddImmediateRendererReference_FUN agpuAddImmediateRendererReference;
+	agpuReleaseImmediateRendererReference_FUN agpuReleaseImmediateRendererReference;
+	agpuBeginImmediateRendering_FUN agpuBeginImmediateRendering;
+	agpuEndImmediateRendering_FUN agpuEndImmediateRendering;
+	agpuImmediateRendererSetBlendState_FUN agpuImmediateRendererSetBlendState;
+	agpuImmediateRendererSetBlendFunction_FUN agpuImmediateRendererSetBlendFunction;
+	agpuImmediateRendererSetColorMask_FUN agpuImmediateRendererSetColorMask;
+	agpuImmediateRendererSetFrontFace_FUN agpuImmediateRendererSetFrontFace;
+	agpuImmediateRendererSetCullMode_FUN agpuImmediateRendererSetCullMode;
+	agpuImmediateRendererSetDepthBias_FUN agpuImmediateRendererSetDepthBias;
+	agpuImmediateRendererSetDepthState_FUN agpuImmediateRendererSetDepthState;
+	agpuImmediateRendererSetPolygonMode_FUN agpuImmediateRendererSetPolygonMode;
+	agpuImmediateRendererSetStencilState_FUN agpuImmediateRendererSetStencilState;
+	agpuImmediateRendererSetStencilFrontFace_FUN agpuImmediateRendererSetStencilFrontFace;
+	agpuImmediateRendererSetStencilBackFace_FUN agpuImmediateRendererSetStencilBackFace;
+	agpuImmediateRendererSetViewport_FUN agpuImmediateRendererSetViewport;
+	agpuImmediateRendererSetScissor_FUN agpuImmediateRendererSetScissor;
+	agpuImmediateRendererSetStencilReference_FUN agpuImmediateRendererSetStencilReference;
+	agpuImmediateRendererProjectionMatrixMode_FUN agpuImmediateRendererProjectionMatrixMode;
+	agpuImmediateRendererModelViewMatrixMode_FUN agpuImmediateRendererModelViewMatrixMode;
+	agpuImmediateRendererIdentity_FUN agpuImmediateRendererIdentity;
+	agpuImmediateRendererPushMatrix_FUN agpuImmediateRendererPushMatrix;
+	agpuImmediateRendererPopMatrix_FUN agpuImmediateRendererPopMatrix;
+	agpuImmediateRendererOrtho_FUN agpuImmediateRendererOrtho;
+	agpuImmediateRendererFrustum_FUN agpuImmediateRendererFrustum;
+	agpuImmediateRendererPerspective_FUN agpuImmediateRendererPerspective;
+	agpuImmediateRendererRotate_FUN agpuImmediateRendererRotate;
+	agpuImmediateRendererTranslate_FUN agpuImmediateRendererTranslate;
+	agpuImmediateRendererScale_FUN agpuImmediateRendererScale;
+	agpuImmediateRendererSetFlatShading_FUN agpuImmediateRendererSetFlatShading;
+	agpuImmediateRendererSetLightingEnabled_FUN agpuImmediateRendererSetLightingEnabled;
+	agpuImmediateRendererClearLights_FUN agpuImmediateRendererClearLights;
+	agpuImmediateRendererSetAmbientLighting_FUN agpuImmediateRendererSetAmbientLighting;
+	agpuImmediateRendererSetLight_FUN agpuImmediateRendererSetLight;
+	agpuImmediateRendererSetTextureEnabled_FUN agpuImmediateRendererSetTextureEnabled;
+	agpuImmediateRendererBindTexture_FUN agpuImmediateRendererBindTexture;
+	agpuBeginImmediateRendererPrimitives_FUN agpuBeginImmediateRendererPrimitives;
+	agpuEndImmediateRendererPrimitives_FUN agpuEndImmediateRendererPrimitives;
+	agpuSetImmediateRendererColor_FUN agpuSetImmediateRendererColor;
+	agpuSetImmediateRendererTexcoord_FUN agpuSetImmediateRendererTexcoord;
+	agpuSetImmediateRendererNormal_FUN agpuSetImmediateRendererNormal;
+	agpuAddImmediateRendererVertex_FUN agpuAddImmediateRendererVertex;
 } agpu_icd_dispatch;
 
 
