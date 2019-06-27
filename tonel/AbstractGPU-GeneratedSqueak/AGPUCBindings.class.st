@@ -170,6 +170,12 @@ AGPUCBindings >> createTexture_device: device description: description [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> createSampler_device: device description: description [
+	<cdecl: void* 'agpuCreateSampler' (void* AGPUSamplerDescription*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'device' }
 AGPUCBindings >> createFence_device: device [
 	<cdecl: void* 'agpuCreateFence' (void*)>
 	^ self externalCallFailed
@@ -853,6 +859,42 @@ AGPUCBindings >> getFullViewDescription_texture: texture result: result [
 	^ self externalCallFailed
 ]
 
+{ #category : #'texture' }
+AGPUCBindings >> createView_texture: texture description: description [
+	<cdecl: void* 'agpuCreateTextureView' (void* AGPUTextureViewDescription*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'texture_view' }
+AGPUCBindings >> addReference_texture_view: texture_view [
+	<cdecl: long 'agpuAddTextureViewReference' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'texture_view' }
+AGPUCBindings >> release_texture_view: texture_view [
+	<cdecl: long 'agpuReleaseTextureView' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'texture_view' }
+AGPUCBindings >> getTexture_texture_view: texture_view [
+	<cdecl: void* 'agpuGetTextureFromView' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'sampler' }
+AGPUCBindings >> addReference_sampler: sampler [
+	<cdecl: long 'agpuAddSamplerReference' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'sampler' }
+AGPUCBindings >> release_sampler: sampler [
+	<cdecl: long 'agpuReleasSampler' (void*)>
+	^ self externalCallFailed
+]
+
 { #category : #'buffer' }
 AGPUCBindings >> addReference_buffer: buffer [
 	<cdecl: long 'agpuAddBufferReference' (void*)>
@@ -1136,26 +1178,20 @@ AGPUCBindings >> bindStorageBufferRange_shader_resource_binding: shader_resource
 ]
 
 { #category : #'shader_resource_binding' }
-AGPUCBindings >> bindTexture_shader_resource_binding: shader_resource_binding location: location texture: texture startMiplevel: startMiplevel miplevels: miplevels lodclamp: lodclamp [
-	<cdecl: long 'agpuBindTexture' (void* long void* ulong long float)>
+AGPUCBindings >> bindSampledTextureView_shader_resource_binding: shader_resource_binding location: location view: view [
+	<cdecl: long 'agpuBindSampledTextureView' (void* long void*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'shader_resource_binding' }
-AGPUCBindings >> bindTextureArrayRange_shader_resource_binding: shader_resource_binding location: location texture: texture startMiplevel: startMiplevel miplevels: miplevels firstElement: firstElement numberOfElements: numberOfElements lodclamp: lodclamp [
-	<cdecl: long 'agpuBindTextureArrayRange' (void* long void* ulong long long long float)>
+AGPUCBindings >> bindStorageImageView_shader_resource_binding: shader_resource_binding location: location view: view [
+	<cdecl: long 'agpuBindStorageImageView' (void* long void*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'shader_resource_binding' }
-AGPUCBindings >> bindImage_shader_resource_binding: shader_resource_binding location: location texture: texture level: level layer: layer access: access format: format [
-	<cdecl: long 'agpuBindImage' (void* long void* long long long long)>
-	^ self externalCallFailed
-]
-
-{ #category : #'shader_resource_binding' }
-AGPUCBindings >> createSampler_shader_resource_binding: shader_resource_binding location: location description: description [
-	<cdecl: long 'agpuCreateSampler' (void* long AGPUSamplerDescription*)>
+AGPUCBindings >> bindSampler_shader_resource_binding: shader_resource_binding location: location sampler: sampler [
+	<cdecl: long 'agpuBindSampler' (void* long void*)>
 	^ self externalCallFailed
 ]
 

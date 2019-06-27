@@ -138,6 +138,13 @@ AGPUDevice >> createTexture: description [
 ]
 
 { #category : #'wrappers' }
+AGPUDevice >> createSampler: description [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createSampler_device: (self validHandle) description: description.
+	^ AGPUSampler forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUDevice >> createFence [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance createFence_device: (self validHandle).

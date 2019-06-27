@@ -81,3 +81,10 @@ AGPUTexture >> getFullViewDescription: result [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUTexture >> createView: description [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createView_texture: (self validHandle) description: description.
+	^ AGPUTextureView forHandle: resultValue_
+]
+

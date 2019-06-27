@@ -1006,6 +1006,10 @@
                 <arg name="description" type="texture_description*" />
             </method>
 
+            <method name="createSampler" cname="CreateSampler" returnType="sampler*">
+                <arg name="description" type="sampler_description*" />
+            </method>
+
             <method name="createFence" cname="CreateFence" returnType="fence*">
             </method>
 
@@ -1535,6 +1539,10 @@
             <method name="getFullViewDescription" cname="GetTextureFullViewDescription" returnType="error">
                 <arg name="result" type="texture_view_description*" />
             </method>
+
+            <method name="createView" cname="CreateTextureView" returnType="texture_view*">
+                <arg name="description" type="texture_view_description*" />
+            </method>
 <!--
             <method name="getLevelLayout" cname="GetTextureLevelLayout" returnType="error">
                 <arg name="level" type="uint" />
@@ -1544,6 +1552,25 @@
                 <arg name="slicePitch" type="int*" />
             </method>
 -->
+        </interface>
+
+        <interface name="texture_view">
+            <method name="addReference" cname="AddTextureViewReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseTextureView" returnType="error">
+            </method>
+
+            <method name="getTexture" cname="GetTextureFromView" returnType="texture*">
+            </method>
+        </interface>
+
+        <interface name="sampler">
+            <method name="addReference" cname="AddSamplerReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleasSampler" returnType="error">
+            </method>
         </interface>
 
         <interface name="buffer">
@@ -1752,36 +1779,19 @@
                 <arg name="size" type="size" />
             </method>
 
-            <method name="bindTexture" cname="BindTexture" returnType="error">
+            <method name="bindSampledTextureView" cname="BindSampledTextureView" returnType="error">
                 <arg name="location" type="int" />
-                <arg name="texture" type="texture*" />
-                <arg name="startMiplevel" type="uint" />
-                <arg name="miplevels" type="int" />
-                <arg name="lodclamp" type="float" />
+                <arg name="view" type="texture_view*" />
             </method>
 
-            <method name="bindTextureArrayRange" cname="BindTextureArrayRange" returnType="error">
+            <method name="bindStorageImageView" cname="BindStorageImageView" returnType="error">
                 <arg name="location" type="int" />
-                <arg name="texture" type="texture*" />
-                <arg name="startMiplevel" type="uint" />
-                <arg name="miplevels" type="int" />
-                <arg name="firstElement" type="int" />
-                <arg name="numberOfElements" type="int" />
-                <arg name="lodclamp" type="float" />
+                <arg name="view" type="texture_view*" />
             </method>
 
-            <method name="bindImage" cname="BindImage" returnType="error">
+            <method name="bindSampler" cname="BindSampler" returnType="error">
                 <arg name="location" type="int" />
-                <arg name="texture" type="texture*" />
-                <arg name="level" type="int" />
-                <arg name="layer" type="int" />
-                <arg name="access" type="mapping_access" />
-                <arg name="format" type="texture_format" />
-            </method>
-
-            <method name="createSampler" cname="CreateSampler" returnType="error">
-                <arg name="location" type="int" />
-                <arg name="description" type="sampler_description*" />
+                <arg name="sampler" type="sampler*" />
             </method>
         </interface>
 

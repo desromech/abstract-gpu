@@ -144,6 +144,11 @@ AGPUCBindings >> createTexture_device: device description: description [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> createSampler_device: device description: description [
+	^ self ffiCall: #(agpu_sampler* agpuCreateSampler (agpu_device* device , agpu_sampler_description* description) )
+]
+
+{ #category : #'device' }
 AGPUCBindings >> createFence_device: device [
 	^ self ffiCall: #(agpu_fence* agpuCreateFence (agpu_device* device) )
 ]
@@ -713,6 +718,36 @@ AGPUCBindings >> getFullViewDescription_texture: texture result: result [
 	^ self ffiCall: #(agpu_error agpuGetTextureFullViewDescription (agpu_texture* texture , agpu_texture_view_description* result) )
 ]
 
+{ #category : #'texture' }
+AGPUCBindings >> createView_texture: texture description: description [
+	^ self ffiCall: #(agpu_texture_view* agpuCreateTextureView (agpu_texture* texture , agpu_texture_view_description* description) )
+]
+
+{ #category : #'texture_view' }
+AGPUCBindings >> addReference_texture_view: texture_view [
+	^ self ffiCall: #(agpu_error agpuAddTextureViewReference (agpu_texture_view* texture_view) )
+]
+
+{ #category : #'texture_view' }
+AGPUCBindings >> release_texture_view: texture_view [
+	^ self ffiCall: #(agpu_error agpuReleaseTextureView (agpu_texture_view* texture_view) )
+]
+
+{ #category : #'texture_view' }
+AGPUCBindings >> getTexture_texture_view: texture_view [
+	^ self ffiCall: #(agpu_texture* agpuGetTextureFromView (agpu_texture_view* texture_view) )
+]
+
+{ #category : #'sampler' }
+AGPUCBindings >> addReference_sampler: sampler [
+	^ self ffiCall: #(agpu_error agpuAddSamplerReference (agpu_sampler* sampler) )
+]
+
+{ #category : #'sampler' }
+AGPUCBindings >> release_sampler: sampler [
+	^ self ffiCall: #(agpu_error agpuReleasSampler (agpu_sampler* sampler) )
+]
+
 { #category : #'buffer' }
 AGPUCBindings >> addReference_buffer: buffer [
 	^ self ffiCall: #(agpu_error agpuAddBufferReference (agpu_buffer* buffer) )
@@ -949,23 +984,18 @@ AGPUCBindings >> bindStorageBufferRange_shader_resource_binding: shader_resource
 ]
 
 { #category : #'shader_resource_binding' }
-AGPUCBindings >> bindTexture_shader_resource_binding: shader_resource_binding location: location texture: texture startMiplevel: startMiplevel miplevels: miplevels lodclamp: lodclamp [
-	^ self ffiCall: #(agpu_error agpuBindTexture (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture* texture , agpu_uint startMiplevel , agpu_int miplevels , agpu_float lodclamp) )
+AGPUCBindings >> bindSampledTextureView_shader_resource_binding: shader_resource_binding location: location view: view [
+	^ self ffiCall: #(agpu_error agpuBindSampledTextureView (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture_view* view) )
 ]
 
 { #category : #'shader_resource_binding' }
-AGPUCBindings >> bindTextureArrayRange_shader_resource_binding: shader_resource_binding location: location texture: texture startMiplevel: startMiplevel miplevels: miplevels firstElement: firstElement numberOfElements: numberOfElements lodclamp: lodclamp [
-	^ self ffiCall: #(agpu_error agpuBindTextureArrayRange (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture* texture , agpu_uint startMiplevel , agpu_int miplevels , agpu_int firstElement , agpu_int numberOfElements , agpu_float lodclamp) )
+AGPUCBindings >> bindStorageImageView_shader_resource_binding: shader_resource_binding location: location view: view [
+	^ self ffiCall: #(agpu_error agpuBindStorageImageView (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture_view* view) )
 ]
 
 { #category : #'shader_resource_binding' }
-AGPUCBindings >> bindImage_shader_resource_binding: shader_resource_binding location: location texture: texture level: level layer: layer access: access format: format [
-	^ self ffiCall: #(agpu_error agpuBindImage (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture* texture , agpu_int level , agpu_int layer , agpu_mapping_access access , agpu_texture_format format) )
-]
-
-{ #category : #'shader_resource_binding' }
-AGPUCBindings >> createSampler_shader_resource_binding: shader_resource_binding location: location description: description [
-	^ self ffiCall: #(agpu_error agpuCreateSampler (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_sampler_description* description) )
+AGPUCBindings >> bindSampler_shader_resource_binding: shader_resource_binding location: location sampler: sampler [
+	^ self ffiCall: #(agpu_error agpuBindSampler (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_sampler* sampler) )
 ]
 
 { #category : #'fence' }
