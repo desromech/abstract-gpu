@@ -35,6 +35,8 @@ public:
     virtual agpu_error unmapLevel() override;
 
     virtual agpu_error getFullViewDescription(agpu_texture_view_description *viewDescription) override;
+	virtual agpu::texture_view_ptr createView(agpu_texture_view_description* description) override;
+	virtual agpu::texture_view_ptr getOrCreateFullView() override;
 
     virtual agpu_error readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
     virtual agpu_error uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
@@ -58,6 +60,7 @@ public:
     agpu_uint mappedArrayIndex;
     agpu_pointer mappedPointer;
     bool isCompressed;
+    agpu::texture_view_ref fullTextureView;
 
 private:
     static void allocateTexture(const agpu::device_ref &device, GLuint handle, GLenum target, agpu_texture_description *description);

@@ -21,14 +21,8 @@ agpu::swap_chain_ref GLSwapChain::create(const agpu::device_ref &device, const a
 {
     // Create the framebuffer objects.
     std::vector<agpu::framebuffer_ref> framebuffers(create_info->buffer_count);
-    bool failure = false;
     bool hasDepth = hasDepthComponent(create_info->depth_stencil_format);
     bool hasStencil = hasStencilComponent(create_info->depth_stencil_format);
-    agpu_texture_view_description colorViewDesc;
-    agpu_texture_view_description depthStencilViewDesc;
-    auto depthStencilViewDescPointer = &depthStencilViewDesc;
-    if (!hasDepth && !hasStencil)
-        depthStencilViewDescPointer = nullptr;
 
     agpu_texture_description colorAttachmentDescription = {};
     colorAttachmentDescription.type = AGPU_TEXTURE_2D;
@@ -42,25 +36,39 @@ agpu::swap_chain_ref GLSwapChain::create(const agpu::device_ref &device, const a
     colorAttachmentDescription.main_usage_mode = colorAttachmentDescription.usage_modes;
     colorAttachmentDescription.miplevels = 1;
 
+    // Create the depth buffer.
+    agpu::texture_ref depthStencilBuffer;
+    agpu::texture_view_ref depthStencilView;
+    if (hasDepth || hasStencil)
+    {
+        agpu_texture_description depthStencilAttachmentDescription = {};
+        depthStencilAttachmentDescription.type = AGPU_TEXTURE_2D;
+        depthStencilAttachmentDescription.width = create_info->width;
+        depthStencilAttachmentDescription.height = create_info->height;
+        depthStencilAttachmentDescription.depth = 1;
+        depthStencilAttachmentDescription.layers = 1;
+        depthStencilAttachmentDescription.format = create_info->depth_stencil_format;
+        depthStencilAttachmentDescription.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        depthStencilAttachmentDescription.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT);
+        if (hasStencil)
+            depthStencilAttachmentDescription.usage_modes = agpu_texture_usage_mode_mask(depthStencilAttachmentDescription.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+        depthStencilAttachmentDescription.main_usage_mode = depthStencilAttachmentDescription.usage_modes;
+        depthStencilAttachmentDescription.miplevels = 1;
 
-    agpu_texture_description depthStencilAttachmentDescription = {};
-    depthStencilAttachmentDescription.type = AGPU_TEXTURE_2D;
-    depthStencilAttachmentDescription.width = create_info->width;
-    depthStencilAttachmentDescription.height = create_info->height;
-    depthStencilAttachmentDescription.depth = 1;
-    depthStencilAttachmentDescription.layers = 1;
-    depthStencilAttachmentDescription.format = create_info->depth_stencil_format;
-    depthStencilAttachmentDescription.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-    depthStencilAttachmentDescription.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT);
-    if (hasStencil)
-        depthStencilAttachmentDescription.usage_modes = agpu_texture_usage_mode_mask(depthStencilAttachmentDescription.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
-    depthStencilAttachmentDescription.main_usage_mode = depthStencilAttachmentDescription.usage_modes;
-    depthStencilAttachmentDescription.miplevels = 1;
+        depthStencilBuffer = GLTexture::create(device, &depthStencilAttachmentDescription);
+        if (!depthStencilBuffer)
+        {
+            printError("Failed to create swap chain depth stencil buffer buffer.\n");
+            return agpu::swap_chain_ref();
+        }
+
+        depthStencilView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
+    }
 
     for(size_t i = 0; i < framebuffers.size(); ++i)
     {
         agpu::texture_ref colorBuffer;
-        agpu::texture_ref depthStencilBuffer;
+        agpu::texture_view_ref colorBufferView;
 
         // Create the color buffer.
         {
@@ -68,42 +76,22 @@ agpu::swap_chain_ref GLSwapChain::create(const agpu::device_ref &device, const a
             if (!colorBuffer)
             {
                 printError("Failed to create swap chain color buffer.\n");
-                failure = true;
-                break;
+                return agpu::swap_chain_ref();
             }
 
-            colorBuffer->getFullViewDescription(&colorViewDesc);
+            colorBufferView = agpu::texture_view_ref(colorBuffer->getOrCreateFullView());
         }
 
-        // Create the depth buffer.
-        if (hasDepth || hasStencil)
-        {
-            depthStencilBuffer = GLTexture::create(device, &depthStencilAttachmentDescription);
-            if (!depthStencilBuffer)
-            {
-                printError("Failed to create swap chain depth stencil buffer buffer.\n");
-                failure = true;
-                break;
-            }
-
-            depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
-        }
-
-        auto fb = GLFramebuffer::create(device, create_info->width, create_info->height, 1, &colorViewDesc, depthStencilViewDescPointer);
+        auto fb = GLFramebuffer::create(device, create_info->width, create_info->height, 1, &colorBufferView, depthStencilView);
         if(!fb)
         {
             printError("Failed to create swap chain framebuffer.\n");
-            failure = true;
-            break;
+            return agpu::swap_chain_ref();
         }
 
         // Store the framebuffer.
         framebuffers[i] = fb;
     }
-
-    // Check the failure
-    if(failure)
-        return agpu::swap_chain_ref();
 
     auto result = agpu::makeObject<GLSwapChain> ();
     auto chain = result.as<GLSwapChain> ();

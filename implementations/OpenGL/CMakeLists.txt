@@ -27,6 +27,8 @@ set(AGPU_OpenGL_SOURCES
     platform.cpp
     renderpass.cpp
     renderpass.hpp
+    sampler.cpp
+    sampler.hpp
     shader.cpp
     shader.hpp
     shader_resource_binding.cpp
@@ -40,6 +42,8 @@ set(AGPU_OpenGL_SOURCES
     texture.cpp
     texture.hpp
     texture_formats.hpp
+    texture_view.cpp
+    texture_view.hpp
     vertex_binding.cpp
     vertex_binding.hpp
     vertex_layout.cpp
