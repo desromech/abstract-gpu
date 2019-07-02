@@ -130,7 +130,7 @@ AGPUCBindings >> getPreferredHighLevelShaderLanguage_device: device [
 
 { #category : #'device' }
 AGPUCBindings >> createFrameBuffer_device: device width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView [
-	^ self ffiCall: #(agpu_framebuffer* agpuCreateFrameBuffer (agpu_device* device , agpu_uint width , agpu_uint height , agpu_uint colorCount , agpu_texture_view_description* colorViews , agpu_texture_view_description* depthStencilView) )
+	^ self ffiCall: #(agpu_framebuffer* agpuCreateFrameBuffer (agpu_device* device , agpu_uint width , agpu_uint height , agpu_uint colorCount , agpu_texture_view** colorViews , agpu_texture_view* depthStencilView) )
 ]
 
 { #category : #'device' }
@@ -723,6 +723,11 @@ AGPUCBindings >> createView_texture: texture description: description [
 	^ self ffiCall: #(agpu_texture_view* agpuCreateTextureView (agpu_texture* texture , agpu_texture_view_description* description) )
 ]
 
+{ #category : #'texture' }
+AGPUCBindings >> getOrCreateFullView_texture: texture [
+	^ self ffiCall: #(agpu_texture_view* agpuGetOrCreateFullTextureView (agpu_texture* texture) )
+]
+
 { #category : #'texture_view' }
 AGPUCBindings >> addReference_texture_view: texture_view [
 	^ self ffiCall: #(agpu_error agpuAddTextureViewReference (agpu_texture_view* texture_view) )
@@ -745,7 +750,7 @@ AGPUCBindings >> addReference_sampler: sampler [
 
 { #category : #'sampler' }
 AGPUCBindings >> release_sampler: sampler [
-	^ self ffiCall: #(agpu_error agpuReleasSampler (agpu_sampler* sampler) )
+	^ self ffiCall: #(agpu_error agpuReleaseSampler (agpu_sampler* sampler) )
 ]
 
 { #category : #'buffer' }

@@ -193,7 +193,7 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage ( agpu_
 	return (*dispatchTable)->agpuGetPreferredHighLevelShaderLanguage ( device );
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer ( agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view** colorViews, agpu_texture_view* depthStencilView )
 {
 	if (device == nullptr)
 		return (agpu_framebuffer*)0;
@@ -1145,6 +1145,14 @@ AGPU_EXPORT agpu_texture_view* agpuCreateTextureView ( agpu_texture* texture, ag
 	return (*dispatchTable)->agpuCreateTextureView ( texture, description );
 }
 
+AGPU_EXPORT agpu_texture_view* agpuGetOrCreateFullTextureView ( agpu_texture* texture )
+{
+	if (texture == nullptr)
+		return (agpu_texture_view*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuGetOrCreateFullTextureView ( texture );
+}
+
 AGPU_EXPORT agpu_error agpuAddTextureViewReference ( agpu_texture_view* texture_view )
 {
 	if (texture_view == nullptr)
@@ -1177,12 +1185,12 @@ AGPU_EXPORT agpu_error agpuAddSamplerReference ( agpu_sampler* sampler )
 	return (*dispatchTable)->agpuAddSamplerReference ( sampler );
 }
 
-AGPU_EXPORT agpu_error agpuReleasSampler ( agpu_sampler* sampler )
+AGPU_EXPORT agpu_error agpuReleaseSampler ( agpu_sampler* sampler )
 {
 	if (sampler == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (sampler);
-	return (*dispatchTable)->agpuReleasSampler ( sampler );
+	return (*dispatchTable)->agpuReleaseSampler ( sampler );
 }
 
 AGPU_EXPORT agpu_error agpuAddBufferReference ( agpu_buffer* buffer )

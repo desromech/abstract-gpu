@@ -153,7 +153,7 @@ AGPUCBindings >> getPreferredHighLevelShaderLanguage_device: device [
 
 { #category : #'device' }
 AGPUCBindings >> createFrameBuffer_device: device width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView [
-	<cdecl: void* 'agpuCreateFrameBuffer' (void* ulong ulong ulong AGPUTextureViewDescription* AGPUTextureViewDescription*)>
+	<cdecl: void* 'agpuCreateFrameBuffer' (void* ulong ulong ulong void** void*)>
 	^ self externalCallFailed
 ]
 
@@ -865,6 +865,12 @@ AGPUCBindings >> createView_texture: texture description: description [
 	^ self externalCallFailed
 ]
 
+{ #category : #'texture' }
+AGPUCBindings >> getOrCreateFullView_texture: texture [
+	<cdecl: void* 'agpuGetOrCreateFullTextureView' (void*)>
+	^ self externalCallFailed
+]
+
 { #category : #'texture_view' }
 AGPUCBindings >> addReference_texture_view: texture_view [
 	<cdecl: long 'agpuAddTextureViewReference' (void*)>
@@ -891,7 +897,7 @@ AGPUCBindings >> addReference_sampler: sampler [
 
 { #category : #'sampler' }
 AGPUCBindings >> release_sampler: sampler [
-	<cdecl: long 'agpuReleasSampler' (void*)>
+	<cdecl: long 'agpuReleaseSampler' (void*)>
 	^ self externalCallFailed
 ]
 

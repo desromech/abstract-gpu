@@ -139,9 +139,9 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_de
 	return asRef(agpu::device, self)->getPreferredHighLevelShaderLanguage();
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* self, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* self, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view** colorViews, agpu_texture_view* depthStencilView)
 {
-	return reinterpret_cast<agpu_framebuffer*> (asRef(agpu::device, self)->createFrameBuffer(width, height, colorCount, colorViews, depthStencilView));
+	return reinterpret_cast<agpu_framebuffer*> (asRef(agpu::device, self)->createFrameBuffer(width, height, colorCount, reinterpret_cast<agpu::texture_view_ref*> (colorViews), asRef(agpu::texture_view, depthStencilView)));
 }
 
 AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* self, agpu_renderpass_description* description)
@@ -863,6 +863,11 @@ AGPU_EXPORT agpu_texture_view* agpuCreateTextureView(agpu_texture* self, agpu_te
 	return reinterpret_cast<agpu_texture_view*> (asRef(agpu::texture, self)->createView(description));
 }
 
+AGPU_EXPORT agpu_texture_view* agpuGetOrCreateFullTextureView(agpu_texture* self)
+{
+	return reinterpret_cast<agpu_texture_view*> (asRef(agpu::texture, self)->getOrCreateFullView());
+}
+
 //==============================================================================
 // texture_view C dispatching functions.
 //==============================================================================
@@ -894,7 +899,7 @@ AGPU_EXPORT agpu_error agpuAddSamplerReference(agpu_sampler* self)
 	return asRefCounter(agpu::sampler, self)->retain();
 }
 
-AGPU_EXPORT agpu_error agpuReleasSampler(agpu_sampler* self)
+AGPU_EXPORT agpu_error agpuReleaseSampler(agpu_sampler* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRefCounter(agpu::sampler, self)->release();

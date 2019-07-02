@@ -530,7 +530,7 @@ public:
 	virtual agpu_shader_language getPreferredShaderLanguage() = 0;
 	virtual agpu_shader_language getPreferredIntermediateShaderLanguage() = 0;
 	virtual agpu_shader_language getPreferredHighLevelShaderLanguage() = 0;
-	virtual framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView) = 0;
+	virtual framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, texture_view_ref* colorViews, const texture_view_ref & depthStencilView) = 0;
 	virtual renderpass_ptr createRenderPass(agpu_renderpass_description* description) = 0;
 	virtual texture_ptr createTexture(agpu_texture_description* description) = 0;
 	virtual sampler_ptr createSampler(agpu_sampler_description* description) = 0;
@@ -703,6 +703,7 @@ public:
 	virtual agpu_error discardReadbackBuffer() = 0;
 	virtual agpu_error getFullViewDescription(agpu_texture_view_description* result) = 0;
 	virtual texture_view_ptr createView(agpu_texture_view_description* description) = 0;
+	virtual texture_view_ptr getOrCreateFullView() = 0;
 };
 
 

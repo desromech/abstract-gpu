@@ -675,7 +675,6 @@ typedef struct agpu_subresource_range {
 /* Structure agpu_texture_view_description. */
 typedef struct agpu_texture_view_description {
 	agpu_texture_type type;
-	agpu_texture* texture;
 	agpu_texture_format format;
 	agpu_uint sample_count;
 	agpu_components_swizzle components;
@@ -939,7 +938,7 @@ typedef agpu_command_list* (*agpuCreateCommandList_FUN) (agpu_device* device, ag
 typedef agpu_shader_language (*agpuGetPreferredShaderLanguage_FUN) (agpu_device* device);
 typedef agpu_shader_language (*agpuGetPreferredIntermediateShaderLanguage_FUN) (agpu_device* device);
 typedef agpu_shader_language (*agpuGetPreferredHighLevelShaderLanguage_FUN) (agpu_device* device);
-typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) (agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView);
+typedef agpu_framebuffer* (*agpuCreateFrameBuffer_FUN) (agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view** colorViews, agpu_texture_view* depthStencilView);
 typedef agpu_renderpass* (*agpuCreateRenderPass_FUN) (agpu_device* device, agpu_renderpass_description* description);
 typedef agpu_texture* (*agpuCreateTexture_FUN) (agpu_device* device, agpu_texture_description* description);
 typedef agpu_sampler* (*agpuCreateSampler_FUN) (agpu_device* device, agpu_sampler_description* description);
@@ -968,7 +967,7 @@ AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_c
 AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device);
 AGPU_EXPORT agpu_shader_language agpuGetPreferredIntermediateShaderLanguage(agpu_device* device);
 AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device);
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView);
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view** colorViews, agpu_texture_view* depthStencilView);
 AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_renderpass_description* description);
 AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description);
 AGPU_EXPORT agpu_sampler* agpuCreateSampler(agpu_device* device, agpu_sampler_description* description);
@@ -1208,6 +1207,7 @@ typedef agpu_error (*agpuDiscardTextureUploadBuffer_FUN) (agpu_texture* texture)
 typedef agpu_error (*agpuDiscardTextureReadbackBuffer_FUN) (agpu_texture* texture);
 typedef agpu_error (*agpuGetTextureFullViewDescription_FUN) (agpu_texture* texture, agpu_texture_view_description* result);
 typedef agpu_texture_view* (*agpuCreateTextureView_FUN) (agpu_texture* texture, agpu_texture_view_description* description);
+typedef agpu_texture_view* (*agpuGetOrCreateFullTextureView_FUN) (agpu_texture* texture);
 
 AGPU_EXPORT agpu_error agpuAddTextureReference(agpu_texture* texture);
 AGPU_EXPORT agpu_error agpuReleaseTexture(agpu_texture* texture);
@@ -1221,6 +1221,7 @@ AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* texture);
 AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* texture);
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description* result);
 AGPU_EXPORT agpu_texture_view* agpuCreateTextureView(agpu_texture* texture, agpu_texture_view_description* description);
+AGPU_EXPORT agpu_texture_view* agpuGetOrCreateFullTextureView(agpu_texture* texture);
 
 /* Methods for interface agpu_texture_view. */
 typedef agpu_error (*agpuAddTextureViewReference_FUN) (agpu_texture_view* texture_view);
@@ -1233,10 +1234,10 @@ AGPU_EXPORT agpu_texture* agpuGetTextureFromView(agpu_texture_view* texture_view
 
 /* Methods for interface agpu_sampler. */
 typedef agpu_error (*agpuAddSamplerReference_FUN) (agpu_sampler* sampler);
-typedef agpu_error (*agpuReleasSampler_FUN) (agpu_sampler* sampler);
+typedef agpu_error (*agpuReleaseSampler_FUN) (agpu_sampler* sampler);
 
 AGPU_EXPORT agpu_error agpuAddSamplerReference(agpu_sampler* sampler);
-AGPU_EXPORT agpu_error agpuReleasSampler(agpu_sampler* sampler);
+AGPU_EXPORT agpu_error agpuReleaseSampler(agpu_sampler* sampler);
 
 /* Methods for interface agpu_buffer. */
 typedef agpu_error (*agpuAddBufferReference_FUN) (agpu_buffer* buffer);
@@ -1755,11 +1756,12 @@ typedef struct _agpu_icd_dispatch {
 	agpuDiscardTextureReadbackBuffer_FUN agpuDiscardTextureReadbackBuffer;
 	agpuGetTextureFullViewDescription_FUN agpuGetTextureFullViewDescription;
 	agpuCreateTextureView_FUN agpuCreateTextureView;
+	agpuGetOrCreateFullTextureView_FUN agpuGetOrCreateFullTextureView;
 	agpuAddTextureViewReference_FUN agpuAddTextureViewReference;
 	agpuReleaseTextureView_FUN agpuReleaseTextureView;
 	agpuGetTextureFromView_FUN agpuGetTextureFromView;
 	agpuAddSamplerReference_FUN agpuAddSamplerReference;
-	agpuReleasSampler_FUN agpuReleasSampler;
+	agpuReleaseSampler_FUN agpuReleaseSampler;
 	agpuAddBufferReference_FUN agpuAddBufferReference;
 	agpuReleaseBuffer_FUN agpuReleaseBuffer;
 	agpuMapBuffer_FUN agpuMapBuffer;

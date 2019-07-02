@@ -3,6 +3,8 @@
 #include "buffer.hpp"
 #include "texture.hpp"
 #include "constants.hpp"
+#include "texture_view.hpp"
+#include "sampler.hpp"
 
 namespace AgpuVulkan
 {
@@ -113,35 +115,24 @@ agpu_error AVkShaderResourceBinding::bindStorageBufferRange(agpu_int location, c
     return AGPU_OK;
 }
 
-agpu_error AVkShaderResourceBinding::bindTexture(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+
+agpu_error AVkShaderResourceBinding::bindSampledTextureView(agpu_int location, const agpu::texture_view_ref &view)
 {
-    CHECK_POINTER(texture);
+    CHECK_POINTER(view);
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
 
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return AGPU_INVALID_OPERATION;
 
-    agpu_texture_view_description viewDesc;
-    auto myError = texture->getFullViewDescription(&viewDesc);
-    if (myError != AGPU_OK)
-        return myError;
+    auto avkView = view.as<AVkTextureView> ();
 
-    viewDesc.subresource_range.base_miplevel = startMiplevel;
-    if(miplevels >= 0)
-        viewDesc.subresource_range.level_count = miplevels;
-
-    auto view = AVkTexture::createImageView(device, &viewDesc);
-    if (!view)
-        return AGPU_ERROR;
-
-    VkDescriptorImageInfo imageInfo;
-    imageInfo.imageLayout = texture.as<AVkTexture> ()->initialLayout;
-    imageInfo.imageView = view;
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = avkView->imageLayout;
+    imageInfo.imageView = avkView->handle;
     imageInfo.sampler = VK_NULL_HANDLE;
 
-    VkWriteDescriptorSet write;
-    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
     write.descriptorType = bindingDescription->bindings[location].descriptorType;
@@ -150,54 +141,26 @@ agpu_error AVkShaderResourceBinding::bindTexture(agpu_int location, const agpu::
     write.pImageInfo = &imageInfo;
 
     vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
-
     return AGPU_OK;
 }
 
-agpu_error AVkShaderResourceBinding::bindTextureArrayRange(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+agpu_error AVkShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref &view)
 {
-    CHECK_POINTER(texture);
-    if (location < 0 || location >= (int)bindingDescription->types.size())
-        return AGPU_OUT_OF_BOUNDS;
-    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
-        return AGPU_INVALID_OPERATION;
-
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error AVkShaderResourceBinding::bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
-{
-    CHECK_POINTER(texture);
+    CHECK_POINTER(view);
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
 
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
         return AGPU_INVALID_OPERATION;
 
-    agpu_texture_view_description viewDesc;
-    auto myError = texture->getFullViewDescription(&viewDesc);
-    if (myError != AGPU_OK)
-        return myError;
+    auto avkView = view.as<AVkTextureView> ();
 
-    viewDesc.subresource_range.base_miplevel = level;
-    viewDesc.subresource_range.level_count = 1;
-    if(layer >= 0)
-    {
-        viewDesc.subresource_range.base_arraylayer = layer;
-        viewDesc.subresource_range.layer_count = 0;
-    }
-
-    auto view = AVkTexture::createImageView(device, &viewDesc);
-    if (!view)
-        return AGPU_ERROR;
-
-    VkDescriptorImageInfo imageInfo;
-    imageInfo.imageLayout = texture.as<AVkTexture> ()->initialLayout;
-    imageInfo.imageView = view;
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = avkView->imageLayout;
+    imageInfo.imageView = avkView->handle;
     imageInfo.sampler = VK_NULL_HANDLE;
 
-    VkWriteDescriptorSet write;
-    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
     write.descriptorType = bindingDescription->bindings[location].descriptorType;
@@ -209,47 +172,20 @@ agpu_error AVkShaderResourceBinding::bindImage(agpu_int location, const agpu::te
     return AGPU_OK;
 }
 
-agpu_error AVkShaderResourceBinding::createSampler(agpu_int location, agpu_sampler_description* description)
+agpu_error AVkShaderResourceBinding::bindSampler(agpu_int location, const agpu::sampler_ref &sampler)
 {
-    CHECK_POINTER(description);
+    CHECK_POINTER(sampler);
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
+
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLER)
         return AGPU_INVALID_OPERATION;
 
-    VkSamplerCreateInfo info;
-    memset(&info, 0, sizeof(info));
-    info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    info.minFilter = mapMinFilter(description->filter);
-    info.magFilter = mapMagFilter(description->filter);
-    info.mipmapMode = mapMipmapMode(description->filter);
-    info.addressModeU = mapAddressMode(description->address_u);
-    info.addressModeV = mapAddressMode(description->address_v);
-    info.addressModeW = mapAddressMode(description->address_w);
-    info.minLod = description->min_lod;
-    info.maxLod = description->max_lod;
-    info.anisotropyEnable = description->filter == AGPU_FILTER_ANISOTROPIC;
-    info.maxAnisotropy = description->maxanisotropy;
-    info.mipLodBias = description->mip_lod_bias;
-
-    info.compareEnable = description->comparison_enabled ? VK_TRUE : VK_FALSE;
-    info.compareOp = mapCompareFunction(description->comparison_function);
-    /*
-    TODO:
-    agpu_color4f border_color;
-    */
-
-    VkSampler sampler;
-    auto error = vkCreateSampler(deviceForVk->device, &info, nullptr, &sampler);
-    CONVERT_VULKAN_ERROR(error);
-
-    VkDescriptorImageInfo imageInfo;
-    memset(&imageInfo, 0, sizeof(imageInfo));
+    VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = VK_NULL_HANDLE;
-    imageInfo.sampler = sampler;
+    imageInfo.sampler = sampler.as<AVkSampler> ()->handle;
 
-    VkWriteDescriptorSet write;
-    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
     write.descriptorType = bindingDescription->bindings[location].descriptorType;

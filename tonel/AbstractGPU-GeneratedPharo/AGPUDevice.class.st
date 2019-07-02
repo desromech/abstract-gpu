@@ -119,7 +119,7 @@ AGPUDevice >> getPreferredHighLevelShaderLanguage [
 { #category : #'wrappers' }
 AGPUDevice >> createFrameBuffer: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance createFrameBuffer_device: (self validHandle) width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView.
+	resultValue_ := AGPUCBindings uniqueInstance createFrameBuffer_device: (self validHandle) width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: (self validHandleOf: depthStencilView).
 	^ AGPUFramebuffer forHandle: resultValue_
 ]
 

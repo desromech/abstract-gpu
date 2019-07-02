@@ -126,7 +126,6 @@
 
         <struct name="texture_view_description">
             <field name="type" type="texture_type" />
-            <field name="texture" type="texture*" />
             <field name="format" type="texture_format" />
             <field name="sample_count" type="uint" />
             <field name="components" type="components_swizzle" />
@@ -994,8 +993,8 @@
                 <arg name="width" type="uint" />
                 <arg name="height" type="uint" />
                 <arg name="colorCount" type="uint" />
-                <arg name="colorViews" type="texture_view_description*" />
-                <arg name="depthStencilView" type="texture_view_description*" />
+                <arg name="colorViews" type="texture_view**" />
+                <arg name="depthStencilView" type="texture_view*" />
             </method>
 
             <method name="createRenderPass" cname="CreateRenderPass" returnType="renderpass*">
@@ -1543,15 +1542,9 @@
             <method name="createView" cname="CreateTextureView" returnType="texture_view*">
                 <arg name="description" type="texture_view_description*" />
             </method>
-<!--
-            <method name="getLevelLayout" cname="GetTextureLevelLayout" returnType="error">
-                <arg name="level" type="uint" />
-                <arg name="w" type="int*" />
-                <arg name="h" type="int*" />
-                <arg name="pitch" type="int*" />
-                <arg name="slicePitch" type="int*" />
+
+            <method name="getOrCreateFullView" cname="GetOrCreateFullTextureView" returnType="texture_view*">
             </method>
--->
         </interface>
 
         <interface name="texture_view">
@@ -1569,7 +1562,7 @@
             <method name="addReference" cname="AddSamplerReference" returnType="error">
             </method>
 
-            <method name="release" cname="ReleasSampler" returnType="error">
+            <method name="release" cname="ReleaseSampler" returnType="error">
             </method>
         </interface>
 

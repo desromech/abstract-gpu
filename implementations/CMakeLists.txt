@@ -23,7 +23,7 @@ if(VULKAN_FOUND AND BUILD_VULKAN)
 endif()
 
 if(OPENGL_FOUND AND NOT APPLE AND BUILD_OPENGL)
-    add_subdirectory(OpenGL)
+    # add_subdirectory(OpenGL)
 endif()
 
 if(METAL_FOUND AND BUILD_METAL)

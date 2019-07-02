@@ -19,10 +19,9 @@ public:
     virtual agpu_error bindUniformBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size) override;
     virtual agpu_error bindStorageBuffer(agpu_int location, const agpu::buffer_ref &storage_buffer) override;
     virtual agpu_error bindStorageBufferRange(agpu_int location, const agpu::buffer_ref &storage_buffer, agpu_size offset, agpu_size size) override;
-    virtual agpu_error bindTexture(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp) override;
-    virtual agpu_error bindTextureArrayRange(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp) override;
-    virtual agpu_error bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format) override;
-    virtual agpu_error createSampler(agpu_int location, agpu_sampler_description* description) override;
+	virtual agpu_error bindSampledTextureView(agpu_int location, const agpu::texture_view_ref &view) override;
+	virtual agpu_error bindStorageImageView(agpu_int location, const agpu::texture_view_ref &view) override;
+	virtual agpu_error bindSampler(agpu_int location, const agpu::sampler_ref &sampler) override;
 
     agpu::device_ref device;
     agpu::shader_signature_ref signature;

@@ -255,9 +255,9 @@ public:
 		return agpuGetPreferredHighLevelShaderLanguage(this);
 	}
 
-	inline agpu_ref<agpu_framebuffer> createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+	inline agpu_ref<agpu_framebuffer> createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_ref<agpu_texture_view>* colorViews, const agpu_ref<agpu_texture_view>& depthStencilView)
 	{
-		return agpuCreateFrameBuffer(this, width, height, colorCount, colorViews, depthStencilView);
+		return agpuCreateFrameBuffer(this, width, height, colorCount, reinterpret_cast<agpu_texture_view**> (colorViews), depthStencilView.get());
 	}
 
 	inline agpu_ref<agpu_renderpass> createRenderPass(agpu_renderpass_description* description)
@@ -949,6 +949,11 @@ public:
 		return agpuCreateTextureView(this, description);
 	}
 
+	inline agpu_ref<agpu_texture_view> getOrCreateFullView()
+	{
+		return agpuGetOrCreateFullTextureView(this);
+	}
+
 };
 
 typedef agpu_ref<agpu_texture> agpu_texture_ref;
@@ -993,7 +998,7 @@ public:
 
 	inline void release()
 	{
-		agpuThrowIfFailed(agpuReleasSampler(this));
+		agpuThrowIfFailed(agpuReleaseSampler(this));
 	}
 
 };

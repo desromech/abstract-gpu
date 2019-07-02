@@ -91,7 +91,7 @@ public:
             shaderBindings->bindUniformBuffer(0, transformationBuffer);
 
             textureBindings = shaderSignature->createShaderResourceBinding(1);
-            textureBindings->bindTexture(0, diffuseTexture, 0, -1, 0.0f);
+            textureBindings->bindSampledTextureView(0, diffuseTexture->getOrCreateFullView());
 
             samplerBindings = shaderSignature->createShaderResourceBinding(2);
 
@@ -102,7 +102,8 @@ public:
             samplerDesc.address_v = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
             samplerDesc.address_w = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
             samplerDesc.max_lod = MaxLod;
-            samplerBindings->createSampler(0, &samplerDesc);
+            sampler = device->createSampler(&samplerDesc);
+            samplerBindings->bindSampler(0, sampler);
         }
 
         commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
@@ -221,6 +222,7 @@ public:
     agpu_command_list_ref commandList;
 
     agpu_texture_ref diffuseTexture;
+    agpu_sampler_ref sampler;
     agpu_renderpass_ref mainRenderPass;
 
     SampleMeshPtr cubeMesh;
