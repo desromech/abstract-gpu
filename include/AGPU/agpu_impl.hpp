@@ -415,6 +415,16 @@ typedef ref_counter<texture> *texture_ptr;
 typedef ref<texture> texture_ref;
 typedef weak_ref<texture> texture_weakref;
 
+struct texture_view;
+typedef ref_counter<texture_view> *texture_view_ptr;
+typedef ref<texture_view> texture_view_ref;
+typedef weak_ref<texture_view> texture_view_weakref;
+
+struct sampler;
+typedef ref_counter<sampler> *sampler_ptr;
+typedef ref<sampler> sampler_ref;
+typedef weak_ref<sampler> sampler_weakref;
+
 struct buffer;
 typedef ref_counter<buffer> *buffer_ptr;
 typedef ref<buffer> buffer_ref;
@@ -520,9 +530,10 @@ public:
 	virtual agpu_shader_language getPreferredShaderLanguage() = 0;
 	virtual agpu_shader_language getPreferredIntermediateShaderLanguage() = 0;
 	virtual agpu_shader_language getPreferredHighLevelShaderLanguage() = 0;
-	virtual framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView) = 0;
+	virtual framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, texture_view_ref* colorViews, const texture_view_ref & depthStencilView) = 0;
 	virtual renderpass_ptr createRenderPass(agpu_renderpass_description* description) = 0;
 	virtual texture_ptr createTexture(agpu_texture_description* description) = 0;
+	virtual sampler_ptr createSampler(agpu_sampler_description* description) = 0;
 	virtual fence_ptr createFence() = 0;
 	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) = 0;
 	virtual agpu_bool hasTopLeftNdcOrigin() = 0;
@@ -691,6 +702,25 @@ public:
 	virtual agpu_error discardUploadBuffer() = 0;
 	virtual agpu_error discardReadbackBuffer() = 0;
 	virtual agpu_error getFullViewDescription(agpu_texture_view_description* result) = 0;
+	virtual texture_view_ptr createView(agpu_texture_view_description* description) = 0;
+	virtual texture_view_ptr getOrCreateFullView() = 0;
+};
+
+
+// Interface wrapper for agpu_texture_view.
+struct texture_view : base_interface
+{
+public:
+	typedef texture_view main_interface;
+	virtual texture_ptr getTexture() = 0;
+};
+
+
+// Interface wrapper for agpu_sampler.
+struct sampler : base_interface
+{
+public:
+	typedef sampler main_interface;
 };
 
 
@@ -792,10 +822,9 @@ public:
 	virtual agpu_error bindUniformBufferRange(agpu_int location, const buffer_ref & uniform_buffer, agpu_size offset, agpu_size size) = 0;
 	virtual agpu_error bindStorageBuffer(agpu_int location, const buffer_ref & storage_buffer) = 0;
 	virtual agpu_error bindStorageBufferRange(agpu_int location, const buffer_ref & storage_buffer, agpu_size offset, agpu_size size) = 0;
-	virtual agpu_error bindTexture(agpu_int location, const texture_ref & texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp) = 0;
-	virtual agpu_error bindTextureArrayRange(agpu_int location, const texture_ref & texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp) = 0;
-	virtual agpu_error bindImage(agpu_int location, const texture_ref & texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format) = 0;
-	virtual agpu_error createSampler(agpu_int location, agpu_sampler_description* description) = 0;
+	virtual agpu_error bindSampledTextureView(agpu_int location, const texture_view_ref & view) = 0;
+	virtual agpu_error bindStorageImageView(agpu_int location, const texture_view_ref & view) = 0;
+	virtual agpu_error bindSampler(agpu_int location, const sampler_ref & sampler) = 0;
 };
 
 

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "texture.hpp"
 #include "texture_format.hpp"
+#include "texture_view.hpp"
 #include "buffer.hpp"
 
 namespace AgpuVulkan
@@ -301,6 +302,63 @@ agpu::texture_ref AVkTexture::createFromImage(const agpu::device_ref &device, ag
     return result;
 }
 
+
+agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* viewDescription)
+{
+    if(!viewDescription)
+        return nullptr;
+
+    VkImageViewCreateInfo createInfo;
+    memset(&createInfo, 0, sizeof(createInfo));
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image = image;
+    createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count);
+    createInfo.format = mapTextureFormat(viewDescription->format);
+
+    auto &components = createInfo.components;
+    components.r = mapComponentSwizzle(viewDescription->components.r);
+    components.g = mapComponentSwizzle(viewDescription->components.g);
+    components.b = mapComponentSwizzle(viewDescription->components.b);
+    components.a = mapComponentSwizzle(viewDescription->components.a);
+
+    auto &subresource = createInfo.subresourceRange;
+    subresource.baseMipLevel = viewDescription->subresource_range.base_miplevel;
+    subresource.levelCount = viewDescription->subresource_range.level_count;
+    subresource.baseArrayLayer = viewDescription->subresource_range.base_arraylayer;
+    subresource.layerCount = viewDescription->subresource_range.layer_count;
+    if(subresource.layerCount == 0)
+        subresource.layerCount = 1;
+    if(viewDescription->type == AGPU_TEXTURE_CUBE)
+        subresource.layerCount *= 6;
+
+    if((viewDescription->subresource_range.usage_mode & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) == 0)
+        subresource.aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
+    if (viewDescription->subresource_range.usage_mode & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT)
+        subresource.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    if (viewDescription->subresource_range.usage_mode & AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)
+        subresource.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    VkImageView viewHandle;
+    auto error = vkCreateImageView(deviceForVk->device, &createInfo, nullptr, &viewHandle);
+    if (error)
+        return VK_NULL_HANDLE;
+
+    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, initialLayout, *viewDescription).disown();
+}
+
+agpu::texture_view_ptr AVkTexture::getOrCreateFullView()
+{
+    if(!fullTextureView)
+    {
+        agpu_texture_view_description fullTextureViewDescription = {};
+        getFullViewDescription(&fullTextureViewDescription);
+        fullTextureView = agpu::texture_view_ref(createView(&fullTextureViewDescription));
+    }
+
+    return fullTextureView.disownedNewRef();
+}
+
+/*
 VkImageView AVkTexture::createImageView(const agpu::device_ref &device, agpu_texture_view_description *viewDescription)
 {
     if (!viewDescription || !viewDescription->texture)
@@ -344,6 +402,7 @@ VkImageView AVkTexture::createImageView(const agpu::device_ref &device, agpu_tex
 
     return view;
 }
+*/
 
 agpu_error AVkTexture::getDescription(agpu_texture_description* description)
 {
@@ -357,7 +416,6 @@ agpu_error AVkTexture::getFullViewDescription(agpu_texture_view_description *vie
     CHECK_POINTER(viewDescription);
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
-    viewDescription->texture = reinterpret_cast<agpu_texture*> (refFromThis().asPtrWithoutNewRef());
     viewDescription->format = description.format;
     viewDescription->sample_count = description.sample_count;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;

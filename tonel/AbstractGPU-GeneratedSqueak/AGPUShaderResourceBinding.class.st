@@ -47,30 +47,23 @@ AGPUShaderResourceBinding >> bindStorageBufferRange: location storage_buffer: st
 ]
 
 { #category : #'wrappers' }
-AGPUShaderResourceBinding >> bindTexture: location texture: texture startMiplevel: startMiplevel miplevels: miplevels lodclamp: lodclamp [
+AGPUShaderResourceBinding >> bindSampledTextureView: location view: view [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance bindTexture_shader_resource_binding: (self validHandle) location: location texture: (self validHandleOf: texture) startMiplevel: startMiplevel miplevels: miplevels lodclamp: lodclamp.
+	resultValue_ := AGPUCBindings uniqueInstance bindSampledTextureView_shader_resource_binding: (self validHandle) location: location view: (self validHandleOf: view).
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUShaderResourceBinding >> bindTextureArrayRange: location texture: texture startMiplevel: startMiplevel miplevels: miplevels firstElement: firstElement numberOfElements: numberOfElements lodclamp: lodclamp [
+AGPUShaderResourceBinding >> bindStorageImageView: location view: view [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance bindTextureArrayRange_shader_resource_binding: (self validHandle) location: location texture: (self validHandleOf: texture) startMiplevel: startMiplevel miplevels: miplevels firstElement: firstElement numberOfElements: numberOfElements lodclamp: lodclamp.
+	resultValue_ := AGPUCBindings uniqueInstance bindStorageImageView_shader_resource_binding: (self validHandle) location: location view: (self validHandleOf: view).
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUShaderResourceBinding >> bindImage: location texture: texture level: level layer: layer access: access format: format [
+AGPUShaderResourceBinding >> bindSampler: location sampler: sampler [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance bindImage_shader_resource_binding: (self validHandle) location: location texture: (self validHandleOf: texture) level: level layer: layer access: access format: format.
-	self checkErrorCode: resultValue_
-]
-
-{ #category : #'wrappers' }
-AGPUShaderResourceBinding >> createSampler: location description: description [
-	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance createSampler_shader_resource_binding: (self validHandle) location: location description: description.
+	resultValue_ := AGPUCBindings uniqueInstance bindSampler_shader_resource_binding: (self validHandle) location: location sampler: (self validHandleOf: sampler).
 	self checkErrorCode: resultValue_
 ]
 

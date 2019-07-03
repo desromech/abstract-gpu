@@ -1,4 +1,5 @@
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include "framebuffer.hpp"
 #include "../Common/texture_formats_common.hpp"
 #include <string.h>
@@ -20,8 +21,6 @@ MAP_ENUM_NAME(GL_FRAMEBUFFER_UNSUPPORTED)
 }
 GLFramebuffer::GLFramebuffer()
 {
-	memset(colorBuffers, 0, sizeof(colorBuffers));
-	memset(&depthStencil, 0, sizeof(depthStencil));
     changed = true;
 }
 
@@ -32,7 +31,7 @@ GLFramebuffer::~GLFramebuffer()
     });
 }
 
-agpu::framebuffer_ref GLFramebuffer::create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+agpu::framebuffer_ref GLFramebuffer::create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref* colorViews, const agpu::texture_view_ref &depthStencilView)
 {
     if (!colorViews && colorCount > 0)
         return agpu::framebuffer_ref();
@@ -49,43 +48,37 @@ agpu::framebuffer_ref GLFramebuffer::create(const agpu::device_ref &device, agpu
 	framebuffer->device = device;
 	framebuffer->width = width;
 	framebuffer->height = height;
-	framebuffer->renderTargetCount = colorCount;
-	framebuffer->hasDepth = depthStencilView != nullptr && hasDepthComponent(depthStencilView->format);
-	framebuffer->hasStencil = depthStencilView != nullptr && hasStencilComponent(depthStencilView->format);
 
-	if(colorViews)
-	{
-		for (agpu_size i = 0; i < colorCount; ++i)
-	        framebuffer->attachColorBuffer(i, &colorViews[i]);
-	}
 	if(depthStencilView)
-    	framebuffer->attachDepthStencilBuffer(depthStencilView);
+	{
+		auto depthStencilFormat = depthStencilView.as<GLAbstractTextureView> ()->description.format;
+		framebuffer->hasDepth = hasDepthComponent(depthStencilFormat);
+		framebuffer->hasStencil = hasStencilComponent(depthStencilFormat);
+
+	}
+	else
+	{
+		framebuffer->hasDepth = false;
+		framebuffer->hasStencil = false;
+	}
+
+	framebuffer->colorBufferViews.resize(colorCount);
+	framebuffer->colorBufferTextures.resize(colorCount);
+	for(size_t i = 0; i < colorCount; ++i)
+	{
+		auto &view = colorViews[i];
+		framebuffer->colorBufferViews[i] = view;
+		framebuffer->colorBufferTextures[i] = agpu::texture_ref(view->getTexture());
+
+	}
+
+	if(depthStencilView)
+	{
+		framebuffer->depthStencilView = depthStencilView;
+		framebuffer->depthStencilTexture = agpu::texture_ref(depthStencilView->getTexture());
+	}
 
 	return result;
-}
-
-agpu_error GLFramebuffer::attachColorBuffer( agpu_int index, agpu_texture_view_description* colorView)
-{
-    CHECK_POINTER(colorView);
-    CHECK_POINTER(colorView->texture);
-
-    colorBuffers[index] = *colorView;
-	colorBufferTextures[index] = agpu::texture_ref::import(colorView->texture);
-
-    changed = true;
-    return AGPU_OK;
-}
-
-agpu_error GLFramebuffer::attachDepthStencilBuffer(agpu_texture_view_description* depthStencilView)
-{
-    CHECK_POINTER(depthStencilView);
-    CHECK_POINTER(depthStencilView->texture);
-
-    depthStencil = *depthStencilView;
-	depthStencilTexture = agpu::texture_ref::import(depthStencilView->texture);
-
-    changed = true;
-    return AGPU_OK;
 }
 
 void GLFramebuffer::bind(GLenum target)
@@ -97,45 +90,33 @@ void GLFramebuffer::bind(GLenum target)
 
 void GLFramebuffer::updateAttachments(GLenum target)
 {
-    for(int i = 0; i < renderTargetCount; ++i)
-        attachTo(target, &colorBuffers[i], colorBufferTextures[i], GL_COLOR_ATTACHMENT0 + i);
+    for(size_t i = 0; i < colorBufferViews.size(); ++i)
+        attachTo(target, colorBufferViews[i], GL_COLOR_ATTACHMENT0 + i);
 
     if(hasDepth && hasStencil)
-        attachTo(target, &depthStencil, depthStencilTexture, GL_DEPTH_STENCIL_ATTACHMENT);
+        attachTo(target, depthStencilView, GL_DEPTH_STENCIL_ATTACHMENT);
     else if(hasDepth)
-        attachTo(target, &depthStencil, depthStencilTexture, GL_DEPTH_ATTACHMENT);
+        attachTo(target, depthStencilView, GL_DEPTH_ATTACHMENT);
     else if(hasStencil)
-        attachTo(target, &depthStencil, depthStencilTexture, GL_STENCIL_ATTACHMENT);
+        attachTo(target, depthStencilView, GL_STENCIL_ATTACHMENT);
 
     auto status = deviceForGL->glCheckFramebufferStatus(target);
     if(status != GL_FRAMEBUFFER_COMPLETE)
 	{
-        printError("Warning: %s incomplete framebuffer color: %d hasDepth: %d hasStencil: %d\n", framebufferStatusToString(status), renderTargetCount, hasDepth, hasStencil);
+        printError("Warning: %s incomplete framebuffer color: %d hasDepth: %d hasStencil: %d\n", framebufferStatusToString(status), (int)colorBufferViews.size(), hasDepth, hasStencil);
 	}
 	changed = false;
 }
 
-void GLFramebuffer::attachTo(GLenum target, agpu_texture_view_description *view, const agpu::texture_ref &texture, GLenum attachmentPoint)
+void GLFramebuffer::attachTo(GLenum target, const agpu::texture_view_ref &view, GLenum attachmentPoint)
 {
 	if(!view)
 		return;
 
-	auto glTexture = texture.as<GLTexture> ();
+	auto glView = view.as<GLAbstractTextureView> ();
 	//printf("texture width: %d height: %d\n", glTexture->description.width, glTexture->description.height);
 	//printf("view->subresource_range.base_miplevel: %d\n", view->subresource_range.base_miplevel);
-
-    switch(glTexture->description.type)
-    {
-    case AGPU_TEXTURE_2D:
-		if(glTexture->description.layers > 1)
-			deviceForGL->glFramebufferTextureLayer(target, attachmentPoint, glTexture->handle, view->subresource_range.base_miplevel, view->subresource_range.base_arraylayer);
-		else
-        	deviceForGL->glFramebufferTexture2D(target, attachmentPoint, glTexture->target, glTexture->handle, view->subresource_range.base_miplevel);
-        break;
-    default:
-        abort();
-    }
-
+	glView->attachToFramebuffer(target, attachmentPoint);
 }
 
 } // End of namespace AgpuGL

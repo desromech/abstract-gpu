@@ -14,6 +14,7 @@
 #include "vertex_layout.hpp"
 #include "vertex_binding.hpp"
 #include "texture.hpp"
+#include "sampler.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
 
@@ -145,7 +146,7 @@ agpu_shader_language AMtlDevice::getPreferredHighLevelShaderLanguage()
     return AGPU_SHADER_LANGUAGE_METAL;
 }
 
-agpu::framebuffer_ptr AMtlDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+agpu::framebuffer_ptr AMtlDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref *colorViews, const agpu::texture_view_ref &depthStencilView)
 {
     return AMtlFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
 }
@@ -158,6 +159,11 @@ agpu::renderpass_ptr AMtlDevice::createRenderPass(agpu_renderpass_description* d
 agpu::texture_ptr AMtlDevice::createTexture(agpu_texture_description* description)
 {
     return AMtlTexture::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::sampler_ptr AMtlDevice::createSampler(agpu_sampler_description* description)
+{
+    return AMtlSampler::create(refFromThis<agpu::device> (), description).disown();
 }
 
 agpu::fence_ptr AMtlDevice::createFence()

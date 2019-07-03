@@ -18,6 +18,7 @@
 #include "buffer.hpp"
 #include "fence.hpp"
 #include "vr_system.hpp"
+#include "sampler.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
 
@@ -793,7 +794,7 @@ agpu_shader_language AVkDevice::getPreferredHighLevelShaderLanguage()
     return AGPU_SHADER_LANGUAGE_NONE;
 }
 
-agpu::framebuffer_ptr AVkDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+agpu::framebuffer_ptr AVkDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref* colorViews, const agpu::texture_view_ref & depthStencilView)
 {
     return AVkFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
 }
@@ -806,6 +807,11 @@ agpu::renderpass_ptr AVkDevice::createRenderPass(agpu_renderpass_description* de
 agpu::texture_ptr AVkDevice::createTexture(agpu_texture_description* description)
 {
     return AVkTexture::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::sampler_ptr AVkDevice::createSampler(agpu_sampler_description* description)
+{
+    return AVkSampler::create(refFromThis<agpu::device> (), description).disown();
 }
 
 agpu::fence_ptr AVkDevice::createFence()

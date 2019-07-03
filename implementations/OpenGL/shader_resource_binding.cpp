@@ -1,64 +1,13 @@
 #include "shader_resource_binding.hpp"
 #include "shader_signature.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include "buffer.hpp"
+#include "sampler.hpp"
 #include "constants.hpp"
 
 namespace AgpuGL
 {
-
-inline GLenum mapMagFilter(agpu_filter filter)
-{
-    switch (filter)
-    {
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:
-        return GL_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:
-        return GL_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:
-        return GL_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:
-    case AGPU_FILTER_ANISOTROPIC:
-    default:
-        return GL_LINEAR;
-    }
-}
-
-inline GLenum mapMinFilter(agpu_filter filter)
-{
-    switch (filter)
-    {
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:    return GL_NEAREST_MIPMAP_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:     return GL_NEAREST_MIPMAP_LINEAR;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:     return GL_NEAREST_MIPMAP_NEAREST;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:      return GL_NEAREST_MIPMAP_LINEAR;
-
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:     return GL_LINEAR_MIPMAP_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:      return GL_LINEAR_MIPMAP_LINEAR;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:      return GL_LINEAR_MIPMAP_NEAREST;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:       return GL_LINEAR_MIPMAP_LINEAR;
-    case AGPU_FILTER_ANISOTROPIC:                               return GL_LINEAR_MIPMAP_LINEAR;
-    default:
-        return GL_NEAREST;
-    }
-}
-
-inline GLenum mapAddressMode(agpu_texture_address_mode mode)
-{
-    switch (mode)
-    {
-    default:
-    case AGPU_TEXTURE_ADDRESS_MODE_WRAP:    return GL_REPEAT;
-    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR:  return GL_MIRRORED_REPEAT;
-    case AGPU_TEXTURE_ADDRESS_MODE_CLAMP:   return GL_CLAMP_TO_EDGE;
-    case AGPU_TEXTURE_ADDRESS_MODE_BORDER:  return GL_CLAMP;
-    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return GL_MIRROR_CLAMP_TO_EDGE;
-    }
-}
 
 GLShaderResourceBinding::GLShaderResourceBinding()
 {
@@ -66,12 +15,6 @@ GLShaderResourceBinding::GLShaderResourceBinding()
 
 GLShaderResourceBinding::~GLShaderResourceBinding()
 {
-    if(!samplers.empty())
-    {
-        deviceForGL->onMainContextBlocking([&]{
-            deviceForGL->glDeleteSamplers((GLsizei)samplers.size(), &samplers[0]);
-        });
-    }
 }
 
 agpu::shader_resource_binding_ref GLShaderResourceBinding::create(const agpu::shader_signature_ref &signature, int elementIndex)
@@ -91,15 +34,9 @@ agpu::shader_resource_binding_ref GLShaderResourceBinding::create(const agpu::sh
         {
             binding->uniformBuffers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::UniformBuffer]);
             binding->storageBuffers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::StorageBuffer]);
-            binding->sampledImages.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::SampledImage]);
+            binding->sampledTextures.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::SampledImage]);
+            binding->storageTextures.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::StorageImage]);
             binding->samplers.resize(bank.elementTypeCounts[(int)OpenGLResourceBindingType::Sampler]);
-            if(!binding->samplers.empty())
-            {
-                const auto &device = binding->device;
-                deviceForGL->onMainContextBlocking([&]{
-                    deviceForGL->glGenSamplers((GLsizei)binding->samplers.size(), &binding->samplers[0]);
-                });
-            }
         }
         break;
     default:
@@ -165,9 +102,9 @@ agpu_error GLShaderResourceBinding::bindStorageBufferRange(agpu_int location, co
 	return AGPU_OK;
 }
 
-agpu_error GLShaderResourceBinding::bindTexture(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp)
+agpu_error GLShaderResourceBinding::bindSampledTextureView(agpu_int location, const agpu::texture_view_ref & view)
 {
-    CHECK_POINTER(texture);
+    CHECK_POINTER(view);
     if(location < 0)
         return AGPU_OK;
 
@@ -176,22 +113,32 @@ agpu_error GLShaderResourceBinding::bindTexture(agpu_int location, const agpu::t
         return AGPU_OUT_OF_BOUNDS;
 
     const auto &element = bank.elements[location];
-    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE &&
-       element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return AGPU_INVALID_OPERATION;
 
-    auto &binding = sampledImages[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::SampledImage]];
-    binding.texture = texture;
-
-    // Store some of the texture parameters.
-    binding.startMiplevel = startMiplevel;
-    binding.miplevels = miplevels;
-    binding.lodClamp = lodClamp;
-
+    sampledTextures[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::SampledImage]] = view;
     return AGPU_OK;
 }
 
-TextureBinding *GLShaderResourceBinding::getTextureBindingAt(agpu_int location)
+agpu_error GLShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref & view)
+{
+    CHECK_POINTER(view);
+    if(location < 0)
+        return AGPU_OK;
+
+    const auto &bank = signature.as<GLShaderSignature>()->elements[elementIndex];
+    if(location >= (agpu_int)bank.elements.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    const auto &element = bank.elements[location];
+    if(element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+        return AGPU_INVALID_OPERATION;
+
+    storageTextures[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::StorageImage]] = view;
+    return AGPU_OK;
+}
+
+GLAbstractTextureView *GLShaderResourceBinding::getTextureBindingAt(agpu_int location)
 {
     if(location < 0)
         return nullptr;
@@ -201,26 +148,14 @@ TextureBinding *GLShaderResourceBinding::getTextureBindingAt(agpu_int location)
         return nullptr;
 
     const auto &element = bank.elements[location];
-    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE &&
-       element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return nullptr;
 
-    return &sampledImages[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::SampledImage]];
+    return sampledTextures[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::SampledImage]].as<GLAbstractTextureView> ();
 }
 
-agpu_error GLShaderResourceBinding::bindTextureArrayRange(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp)
+agpu_error GLShaderResourceBinding::bindSampler(agpu_int location, const agpu::sampler_ref & sampler)
 {
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error GLShaderResourceBinding::bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
-{
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error GLShaderResourceBinding::createSampler(agpu_int location, agpu_sampler_description* description)
-{
-    CHECK_POINTER(description);
     if(location < 0)
         return AGPU_OK;
 
@@ -232,22 +167,9 @@ agpu_error GLShaderResourceBinding::createSampler(agpu_int location, agpu_sample
     if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
         return AGPU_INVALID_OPERATION;
 
-    auto sampler = samplers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::Sampler]];
-    auto glDevice = device.as<GLDevice> ();
-    glDevice->onMainContextBlocking([&]{
-        glDevice->glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, mapMagFilter(description->filter));
-        glDevice->glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, mapMinFilter(description->filter));
-        glDevice->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, mapAddressMode(description->address_u));
-        glDevice->glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, mapAddressMode(description->address_v));
-        glDevice->glSamplerParameterf(sampler, GL_TEXTURE_MIN_LOD, description->min_lod);
-        glDevice->glSamplerParameterf(sampler, GL_TEXTURE_MAX_LOD, description->max_lod);
-        glDevice->glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_MODE, description->comparison_enabled ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
-        glDevice->glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_FUNC, mapCompareFunction(description->comparison_function));
-    });
-
+    samplers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::Sampler]] = sampler;
     return AGPU_OK;
 }
-
 
 GLuint GLShaderResourceBinding::getSamplerAt(agpu_int location)
 {
@@ -309,19 +231,12 @@ void GLShaderResourceBinding::activateSampledImages()
 {
     const auto &bank = signature.as<GLShaderSignature> ()->elements[elementIndex];
     size_t baseIndex = bank.startIndices[(int)OpenGLResourceBindingType::SampledImage];
-    auto glDevice = device.as<GLDevice> ();
-
-    for (size_t i = 0; i < sampledImages.size(); ++i)
+    for (size_t i = 0; i < sampledTextures.size(); ++i)
     {
-        auto &binding = sampledImages[i];
-        if(!binding.texture)
-            continue;
-
+        auto &texture = sampledTextures[i];
         auto id = baseIndex + i;
 
-        auto target = binding.texture.as<GLTexture> ()->target;
-        glDevice->glActiveTexture(GLenum(GL_TEXTURE0 + id));
-        glBindTexture(target, binding.texture.as<GLTexture>()->handle);
+        texture.as<GLAbstractTextureView> ()->activateInSampledSlot(id);
     }
 }
 

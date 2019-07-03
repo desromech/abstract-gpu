@@ -15,7 +15,6 @@ AGPUTextureViewDescription class >> fieldsDesc [
 	"
     ^ #(
 		 agpu_texture_type type;
-		 agpu_texture* texture;
 		 agpu_texture_format format;
 		 agpu_uint sample_count;
 		 agpu_components_swizzle components;

@@ -8,6 +8,7 @@
 #include "buffer.hpp"
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
+#include "texture_view.hpp"
 
 namespace AgpuMetal
 {
@@ -475,18 +476,20 @@ agpu_error AMtlCommandList::resolveFramebuffer(const agpu::framebuffer_ref &dest
 
     if(!amtlSourceFramebuffer->ownedBySwapChain)
     {
-        auto &view = amtlSourceFramebuffer->colorBufferDescriptions[0];
-        passAttachment.level = view.subresource_range.base_miplevel;
-        passAttachment.slice = view.subresource_range.base_arraylayer;
+        auto &view = amtlSourceFramebuffer->colorBufferViews[0];
+        auto &viewDescription = view.as<AMtlTextureView> ()->description;
+        passAttachment.level = viewDescription.subresource_range.base_miplevel;
+        passAttachment.slice = viewDescription.subresource_range.base_arraylayer;
     }
 
     // Set the resolve attachment
     passAttachment.resolveTexture = destTexture;
     if(!amtlDestFramebuffer->ownedBySwapChain)
     {
-        auto &view = amtlDestFramebuffer->colorBufferDescriptions[0];
-        passAttachment.resolveLevel = view.subresource_range.base_miplevel;
-        passAttachment.resolveSlice = view.subresource_range.base_arraylayer;
+        auto &view = amtlDestFramebuffer->colorBufferViews[0];
+        auto &viewDescription = view.as<AMtlTextureView> () ->description;
+        passAttachment.resolveLevel = viewDescription.subresource_range.base_miplevel;
+        passAttachment.resolveSlice = viewDescription.subresource_range.base_arraylayer;
     }
 
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];

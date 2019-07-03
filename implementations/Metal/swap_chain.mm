@@ -68,80 +68,57 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
 
     window.contentView = amtlSwapChain->view;
 
-    // Depth stencil buffer descriptions.
-    agpu_texture_description depthStencilDesc = {};
-    depthStencilDesc.type = AGPU_TEXTURE_2D;
-    depthStencilDesc.width = createInfo->width;
-    depthStencilDesc.height = createInfo->height;
-    depthStencilDesc.depth = 1;
-    depthStencilDesc.layers = 1;
-    depthStencilDesc.format = createInfo->depth_stencil_format;
-    depthStencilDesc.miplevels = 1;
-
+    // Create the depth stencil buffer
+    agpu::texture_ref depthStencilBuffer;
+    agpu::texture_view_ref depthStencilBufferView;
     bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
     bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
-    depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-    if (hasDepth)
-        depthStencilDesc.usage_modes = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
-    if (hasStencil)
-        depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+    if(hasDepth || hasStencil)
+    {
+        // Depth stencil buffer descriptions.
+        agpu_texture_description depthStencilDesc = {};
+        depthStencilDesc.type = AGPU_TEXTURE_2D;
+        depthStencilDesc.width = createInfo->width;
+        depthStencilDesc.height = createInfo->height;
+        depthStencilDesc.depth = 1;
+        depthStencilDesc.layers = 1;
+        depthStencilDesc.format = createInfo->depth_stencil_format;
+        depthStencilDesc.miplevels = 1;
+        depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        if (hasDepth)
+            depthStencilDesc.usage_modes = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
+        if (hasStencil)
+            depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
 
-    agpu_texture_view_description depthStencilViewDesc;
-    memset(&depthStencilViewDesc, 0, sizeof(depthStencilViewDesc));
-    auto depthStencilViewPointer = &depthStencilViewDesc;
-    if (!hasDepth && !hasStencil)
-        depthStencilViewPointer = nullptr;
+        depthStencilBuffer = AMtlTexture::create(device, &depthStencilDesc);
+        if (!depthStencilBuffer)
+            return agpu::swap_chain_ref();
+
+        // Get the depth stencil buffer view description.
+        depthStencilBufferView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
+    }
 
     // Create the framebuffers
     amtlSwapChain->framebuffers.reserve(createInfo->buffer_count);
-    bool failure = false;
     for(agpu_uint i = 0; i < createInfo->buffer_count; ++i)
     {
-        // Create the depth stencil buffer
-        agpu::texture_ref depthStencilBuffer;
-        if(hasDepth || hasStencil)
-        {
-            depthStencilBuffer = AMtlTexture::create(device, &depthStencilDesc);
-            if (!depthStencilBuffer)
-            {
-                failure = true;
-                break;
-            }
-
-            // Get the depth stencil buffer view description.
-            depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
-        }
-
         // Create the framebuffer
-        auto framebuffer = AMtlFramebuffer::createForSwapChain(device, createInfo->width, createInfo->height, depthStencilViewPointer);
+        auto framebuffer = AMtlFramebuffer::createForSwapChain(device, createInfo->width, createInfo->height, depthStencilBufferView);
         if(!framebuffer)
-        {
-            failure = true;
-            break;
-        }
+            return agpu::swap_chain_ref();
 
         amtlSwapChain->framebuffers.push_back(framebuffer);
         amtlSwapChain->presentCommands.push_back(nil);
     }
 
     // Set the drawable of the first framebuffer
-    if(!failure)
-    {
-        auto drawable = [amtlSwapChain->metalLayer nextDrawable];
-        if(drawable)
-        {
-            amtlSwapChain->currentFramebufferIndex = 0;
-            const auto &fb = amtlSwapChain->framebuffers[amtlSwapChain->currentFramebufferIndex];
-            fb.as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
-        }
-        else
-        {
-            failure = true;
-        }
-    }
-
-    if(failure)
+    auto drawable = [amtlSwapChain->metalLayer nextDrawable];
+    if(!drawable)
         return agpu::swap_chain_ref();
+        
+    amtlSwapChain->currentFramebufferIndex = 0;
+    const auto &fb = amtlSwapChain->framebuffers[amtlSwapChain->currentFramebufferIndex];
+    fb.as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
 
     amtlSwapChain->presentQueue = presentQueue;
     return result;

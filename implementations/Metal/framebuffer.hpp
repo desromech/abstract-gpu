@@ -13,8 +13,8 @@ public:
     AMtlFramebuffer(const agpu::device_ref &device);
     ~AMtlFramebuffer();
 
-    static agpu::framebuffer_ref create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView);
-    static agpu::framebuffer_ref createForSwapChain(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_texture_view_description* depthStencilView);
+    static agpu::framebuffer_ref create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref *colorViews, const agpu::texture_view_ref &depthStencilView);
+    static agpu::framebuffer_ref createForSwapChain(const agpu::device_ref &device, agpu_uint width, agpu_uint height, const agpu::texture_view_ref &depthStencilView);
 
     void releaseDrawable();
     void setDrawable(id<MTLDrawable> drawable, id<MTLTexture> drawableTexture);
@@ -24,10 +24,10 @@ public:
     agpu_uint width;
     agpu_uint height;
     std::vector<agpu::texture_ref> colorBuffers;
-    std::vector<agpu_texture_view_description> colorBufferDescriptions;
+    std::vector<agpu::texture_view_ref> colorBufferViews;
     
     agpu::texture_ref depthStencilBuffer;
-    agpu_texture_view_description depthStencilBufferDescription;
+    agpu::texture_view_ref depthStencilBufferView;
     agpu_bool ownedBySwapChain;
     id<MTLDrawable> drawable;
     id<MTLTexture> drawableTexture;

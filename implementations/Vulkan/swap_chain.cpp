@@ -331,12 +331,6 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
     depthStencilDesc.main_usage_mode = depthStencilDesc.usage_modes;
 
-    agpu_texture_view_description colorViewDesc;
-    agpu_texture_view_description depthStencilViewDesc;
-    auto depthStencilViewPointer = &depthStencilViewDesc;
-    if (!hasDepth && !hasStencil)
-        depthStencilViewPointer = nullptr;
-
     // Create the semaphores
     VkSemaphoreCreateInfo semaphoreInfo;
     memset(&semaphoreInfo, 0, sizeof(semaphoreInfo));
@@ -353,6 +347,7 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
     // Since the depth stencil buffer is used exclusively on the GPU, there is
     // no need to use triple buffering on it.
     agpu::texture_ref depthStencilBuffer;
+    agpu::texture_view_ref depthStencilBufferView;
     if(hasDepth || hasStencil)
     {
         depthStencilBuffer = AVkTexture::create(device, &depthStencilDesc);
@@ -360,7 +355,7 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
             return false;
 
         // Get the depth stencil buffer view description.
-        depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
+        depthStencilBufferView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
     }
 
     VkClearColorValue clearColor;
@@ -387,12 +382,10 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
             avkColorBuffer->initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             avkColorBuffer->initialLayoutAccessBits = VK_ACCESS_MEMORY_READ_BIT;
             avkColorBuffer->imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-
-            // Get the color buffer view description.
-            colorBuffer->getFullViewDescription(&colorViewDesc);
         }
 
-        auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorViewDesc, depthStencilViewPointer);
+        auto colorBufferView = agpu::texture_view_ref(colorBuffer->getOrCreateFullView());
+        auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorBufferView, depthStencilBufferView);
         framebuffer.as<AVkFramebuffer> ()->swapChainFramebuffer = true;
         framebuffers[i] = framebuffer;
 

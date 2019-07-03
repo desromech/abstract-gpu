@@ -40,7 +40,7 @@ public:
 	virtual void setBaseInstance(agpu_uint base_instance) override;
 	void enableState(bool enabled, GLenum state);
 
-	virtual agpu_primitive_topology getPrimitiveTopology()
+	virtual agpu_primitive_topology getPrimitiveTopology() override
 	{
 		return primitiveTopology;
 	}

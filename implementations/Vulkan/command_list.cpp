@@ -3,6 +3,7 @@
 #include "framebuffer.hpp"
 #include "renderpass.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include "buffer.hpp"
 #include "vertex_binding.hpp"
 #include "pipeline_state.hpp"
@@ -379,7 +380,7 @@ agpu_error AVkCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
         VkImageSubresourceRange range;
         memset(&range, 0, sizeof(range));
 
-        auto &desc = avkCurrentFramebuffer->attachmentDescriptions[i];
+        auto &desc = avkCurrentFramebuffer->attachmentViews[i].as<AVkTextureView> ()->description;
         range.baseArrayLayer = desc.subresource_range.base_arraylayer;
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
@@ -394,7 +395,7 @@ agpu_error AVkCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
         auto depthStencilAttachment = avkCurrentFramebuffer->attachmentTextures.back().as<AVkTexture> ();
         if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
-            auto &desc = avkCurrentFramebuffer->attachmentDescriptions.back();
+            auto &desc = avkCurrentFramebuffer->attachmentViews.back().as<AVkTextureView> ()->description;;
             VkImageSubresourceRange range;
             memset(&range, 0, sizeof(range));
             range.baseArrayLayer = desc.subresource_range.base_arraylayer;
@@ -443,7 +444,7 @@ agpu_error AVkCommandList::endRenderPass()
     auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < avkCurrentFramebuffer->colorCount; ++i)
     {
-        auto &desc = avkCurrentFramebuffer->attachmentDescriptions.back();
+        auto &desc = avkCurrentFramebuffer->attachmentViews[i].as<AVkTextureView> ()->description;
         VkImageSubresourceRange range;
         memset(&range, 0, sizeof(range));
         range.baseArrayLayer = desc.subresource_range.base_arraylayer;
@@ -462,7 +463,7 @@ agpu_error AVkCommandList::endRenderPass()
         auto depthStencilAttachment = avkCurrentFramebuffer->attachmentTextures.back().as<AVkTexture> ();
         if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
-            auto &desc = avkCurrentFramebuffer->attachmentDescriptions.back();
+            auto &desc = avkCurrentFramebuffer->attachmentViews.back().as<AVkTextureView> ()->description;
             VkImageSubresourceRange range;
             memset(&range, 0, sizeof(range));
             range.baseArrayLayer = desc.subresource_range.base_arraylayer;

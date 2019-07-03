@@ -139,9 +139,9 @@ AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_de
 	return asRef(agpu::device, self)->getPreferredHighLevelShaderLanguage();
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* self, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* self, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view** colorViews, agpu_texture_view* depthStencilView)
 {
-	return reinterpret_cast<agpu_framebuffer*> (asRef(agpu::device, self)->createFrameBuffer(width, height, colorCount, colorViews, depthStencilView));
+	return reinterpret_cast<agpu_framebuffer*> (asRef(agpu::device, self)->createFrameBuffer(width, height, colorCount, reinterpret_cast<agpu::texture_view_ref*> (colorViews), asRef(agpu::texture_view, depthStencilView)));
 }
 
 AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* self, agpu_renderpass_description* description)
@@ -152,6 +152,11 @@ AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* self, agpu_render
 AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* self, agpu_texture_description* description)
 {
 	return reinterpret_cast<agpu_texture*> (asRef(agpu::device, self)->createTexture(description));
+}
+
+AGPU_EXPORT agpu_sampler* agpuCreateSampler(agpu_device* self, agpu_sampler_description* description)
+{
+	return reinterpret_cast<agpu_sampler*> (asRef(agpu::device, self)->createSampler(description));
 }
 
 AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* self)
@@ -853,6 +858,53 @@ AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* self, agp
 	return asRef(agpu::texture, self)->getFullViewDescription(result);
 }
 
+AGPU_EXPORT agpu_texture_view* agpuCreateTextureView(agpu_texture* self, agpu_texture_view_description* description)
+{
+	return reinterpret_cast<agpu_texture_view*> (asRef(agpu::texture, self)->createView(description));
+}
+
+AGPU_EXPORT agpu_texture_view* agpuGetOrCreateFullTextureView(agpu_texture* self)
+{
+	return reinterpret_cast<agpu_texture_view*> (asRef(agpu::texture, self)->getOrCreateFullView());
+}
+
+//==============================================================================
+// texture_view C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddTextureViewReference(agpu_texture_view* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::texture_view, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseTextureView(agpu_texture_view* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::texture_view, self)->release();
+}
+
+AGPU_EXPORT agpu_texture* agpuGetTextureFromView(agpu_texture_view* self)
+{
+	return reinterpret_cast<agpu_texture*> (asRef(agpu::texture_view, self)->getTexture());
+}
+
+//==============================================================================
+// sampler C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddSamplerReference(agpu_sampler* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::sampler, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseSampler(agpu_sampler* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::sampler, self)->release();
+}
+
 //==============================================================================
 // buffer C dispatching functions.
 //==============================================================================
@@ -1166,28 +1218,22 @@ AGPU_EXPORT agpu_error agpuBindStorageBufferRange(agpu_shader_resource_binding* 
 	return asRef(agpu::shader_resource_binding, self)->bindStorageBufferRange(location, asRef(agpu::buffer, storage_buffer), offset, size);
 }
 
-AGPU_EXPORT agpu_error agpuBindTexture(agpu_shader_resource_binding* self, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+AGPU_EXPORT agpu_error agpuBindSampledTextureView(agpu_shader_resource_binding* self, agpu_int location, agpu_texture_view* view)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::shader_resource_binding, self)->bindTexture(location, asRef(agpu::texture, texture), startMiplevel, miplevels, lodclamp);
+	return asRef(agpu::shader_resource_binding, self)->bindSampledTextureView(location, asRef(agpu::texture_view, view));
 }
 
-AGPU_EXPORT agpu_error agpuBindTextureArrayRange(agpu_shader_resource_binding* self, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+AGPU_EXPORT agpu_error agpuBindStorageImageView(agpu_shader_resource_binding* self, agpu_int location, agpu_texture_view* view)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::shader_resource_binding, self)->bindTextureArrayRange(location, asRef(agpu::texture, texture), startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
+	return asRef(agpu::shader_resource_binding, self)->bindStorageImageView(location, asRef(agpu::texture_view, view));
 }
 
-AGPU_EXPORT agpu_error agpuBindImage(agpu_shader_resource_binding* self, agpu_int location, agpu_texture* texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
+AGPU_EXPORT agpu_error agpuBindSampler(agpu_shader_resource_binding* self, agpu_int location, agpu_sampler* sampler)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::shader_resource_binding, self)->bindImage(location, asRef(agpu::texture, texture), level, layer, access, format);
-}
-
-AGPU_EXPORT agpu_error agpuCreateSampler(agpu_shader_resource_binding* self, agpu_int location, agpu_sampler_description* description)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::shader_resource_binding, self)->createSampler(location, description);
+	return asRef(agpu::shader_resource_binding, self)->bindSampler(location, asRef(agpu::sampler, sampler));
 }
 
 //==============================================================================

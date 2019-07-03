@@ -1,6 +1,6 @@
 #include "framebuffer.hpp"
 #include "texture.hpp"
-
+#include "texture_view.hpp"
 namespace AgpuMetal
 {
     
@@ -15,7 +15,7 @@ AMtlFramebuffer::~AMtlFramebuffer()
 {
 }
 
-agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView )
+agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref *colorViews, const agpu::texture_view_ref &depthStencilView)
 {
     if(colorCount > 0 && !colorViews)
         return agpu::framebuffer_ref();;
@@ -23,13 +23,9 @@ agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, ag
     // Check the presence of the color buffers.
     for(int i = 0; i < colorCount; ++i)
     {
-        if(!colorViews[0].texture)
+        if(!colorViews[0])
             return agpu::framebuffer_ref();
     }
-
-    // If there is a depth stencil view, it has to have a texture.
-    if(depthStencilView && !depthStencilView->texture)
-        return agpu::framebuffer_ref();
 
     // Create the framebuffer object.
     auto result = agpu::makeObject<AMtlFramebuffer> (device);
@@ -37,27 +33,27 @@ agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, ag
 
     // Add the color buffer references.
     framebuffer->colorBuffers.resize(colorCount);
-    framebuffer->colorBufferDescriptions.resize(colorCount);
+    framebuffer->colorBufferViews.resize(colorCount);
     for(int i = 0; i < colorCount; ++i)
     {
         auto &view = colorViews[i];
 
-        framebuffer->colorBuffers[i] = agpu::texture_ref::import(view.texture);
-        framebuffer->colorBufferDescriptions[i] = view;
+        framebuffer->colorBufferViews[i] = view;
+        framebuffer->colorBuffers[i] = agpu::texture_ref(view->getTexture());
     }
 
     // Add the depth stencil references.
     if(depthStencilView)
     {
         // TODO: Add the depth and the stencill attachments.
-        framebuffer->depthStencilBuffer = agpu::texture_ref::import(depthStencilView->texture);
-        framebuffer->depthStencilBufferDescription = *depthStencilView;
+        framebuffer->depthStencilBufferView = depthStencilView;
+        framebuffer->depthStencilBuffer = agpu::texture_ref(depthStencilView->getTexture());
     }
 
     return result;
 }
 
-agpu::framebuffer_ref AMtlFramebuffer::createForSwapChain(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_texture_view_description* depthStencilView)
+agpu::framebuffer_ref AMtlFramebuffer::createForSwapChain(const agpu::device_ref &device, agpu_uint width, agpu_uint height, const agpu::texture_view_ref &depthStencilView)
 {
     // Create the framebuffer object.
     auto result = agpu::makeObject<AMtlFramebuffer> (device);
@@ -67,8 +63,8 @@ agpu::framebuffer_ref AMtlFramebuffer::createForSwapChain(const agpu::device_ref
     if(depthStencilView)
     {
         // TODO: Add the depth and the stencill attachments.
-        framebuffer->depthStencilBuffer = agpu::texture_ref::import(depthStencilView->texture);
-        framebuffer->depthStencilBufferDescription = *depthStencilView;
+        framebuffer->depthStencilBufferView = depthStencilView;
+        framebuffer->depthStencilBuffer = agpu::texture_ref(depthStencilView->getTexture());
     }
 
     framebuffer->ownedBySwapChain = true;

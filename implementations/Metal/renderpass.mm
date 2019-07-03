@@ -1,6 +1,7 @@
 #include "renderpass.hpp"
 #include "framebuffer.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
 
 namespace AgpuMetal
 {
@@ -96,21 +97,23 @@ MTLRenderPassDescriptor *AMtlRenderPass::createDescriptor(const agpu::framebuffe
         dest.storeAction = mapStoreAction(source.end_action);
         if(!amtlFramebuffer->ownedBySwapChain)
         {
-            auto &view = amtlFramebuffer->colorBufferDescriptions[i];
-            dest.level = view.subresource_range.base_miplevel;
-            dest.slice = view.subresource_range.base_arraylayer;
+            auto &view = amtlFramebuffer->colorBufferViews[i];
+            auto &viewDescription = view.as<AMtlTextureView> ()->description;
+            dest.level = viewDescription.subresource_range.base_miplevel;
+            dest.slice = viewDescription.subresource_range.base_arraylayer;
         }
     }
 
     if(hasDepthStencil)
     {
-        auto &view = amtlFramebuffer->depthStencilBufferDescription;
+        auto &view = amtlFramebuffer->depthStencilBufferView;
+        auto &viewDescription = view.as<AMtlTextureView> ()->description;
 
         auto depthAttachment = descriptor.depthAttachment;
         auto depthStencilBufferHandle = amtlFramebuffer->depthStencilBuffer.as<AMtlTexture> ()->handle;
         depthAttachment.texture = depthStencilBufferHandle;
-        depthAttachment.level = view.subresource_range.base_miplevel;
-        depthAttachment.slice = view.subresource_range.base_arraylayer;
+        depthAttachment.level = viewDescription.subresource_range.base_miplevel;
+        depthAttachment.slice = viewDescription.subresource_range.base_arraylayer;
         depthAttachment.clearDepth = depthStencil.clear_value.depth;
         depthAttachment.loadAction = mapLoadAction(depthStencil.begin_action);
         depthAttachment.storeAction = mapStoreAction(depthStencil.end_action);
@@ -119,8 +122,8 @@ MTLRenderPassDescriptor *AMtlRenderPass::createDescriptor(const agpu::framebuffe
         {
             auto stencilAttachment = descriptor.stencilAttachment;
             stencilAttachment.texture = depthStencilBufferHandle;
-            stencilAttachment.level = view.subresource_range.base_miplevel;
-            stencilAttachment.slice = view.subresource_range.base_arraylayer;
+            stencilAttachment.level = viewDescription.subresource_range.base_miplevel;
+            stencilAttachment.slice = viewDescription.subresource_range.base_arraylayer;
             stencilAttachment.clearStencil = depthStencil.clear_value.stencil;
             stencilAttachment.loadAction = mapLoadAction(depthStencil.stencil_begin_action);
             stencilAttachment.storeAction = mapStoreAction(depthStencil.stencil_end_action);

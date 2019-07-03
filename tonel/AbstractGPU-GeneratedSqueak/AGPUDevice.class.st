@@ -119,7 +119,7 @@ AGPUDevice >> getPreferredHighLevelShaderLanguage [
 { #category : #'wrappers' }
 AGPUDevice >> createFrameBuffer: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance createFrameBuffer_device: (self validHandle) width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView.
+	resultValue_ := AGPUCBindings uniqueInstance createFrameBuffer_device: (self validHandle) width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: (self validHandleOf: depthStencilView).
 	^ AGPUFramebuffer forHandle: resultValue_
 ]
 
@@ -135,6 +135,13 @@ AGPUDevice >> createTexture: description [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance createTexture_device: (self validHandle) description: description.
 	^ AGPUTexture forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUDevice >> createSampler: description [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createSampler_device: (self validHandle) description: description.
+	^ AGPUSampler forHandle: resultValue_
 ]
 
 { #category : #'wrappers' }

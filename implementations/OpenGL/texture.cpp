@@ -3,6 +3,7 @@
 #include "buffer.hpp"
 #include "texture.hpp"
 #include "texture_formats.hpp"
+#include "texture_view.hpp"
 
 namespace AgpuGL
 {
@@ -402,7 +403,6 @@ agpu_error GLTexture::getFullViewDescription(agpu_texture_view_description *view
     CHECK_POINTER(viewDescription);
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
-    viewDescription->texture = reinterpret_cast<agpu_texture*> (refFromThis().asPtrWithoutNewRef());
     viewDescription->format = description.format;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
@@ -414,6 +414,24 @@ agpu_error GLTexture::getFullViewDescription(agpu_texture_view_description *view
     viewDescription->subresource_range.base_arraylayer = 0;
     viewDescription->subresource_range.layer_count = description.layers;
     return AGPU_OK;
+}
+
+
+agpu::texture_view_ptr GLTexture::createView(agpu_texture_view_description* description)
+{
+    return nullptr;
+}
+
+agpu::texture_view_ptr GLTexture::getOrCreateFullView()
+{
+    if(!fullTextureView)
+    {
+        agpu_texture_view_description descripton;
+        getFullViewDescription(&descripton);
+        fullTextureView = agpu::makeObject<GLFullTextureView> (device, refFromThis<agpu::texture> (), descripton);
+    }
+
+    return fullTextureView.disownedNewRef();
 }
 
 agpu_error GLTexture::getDescription(agpu_texture_description* description)

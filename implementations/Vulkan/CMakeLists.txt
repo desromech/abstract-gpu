@@ -26,19 +26,23 @@ set(AGPU_Vulkan_SOURCES
     platform.hpp
     renderpass.cpp
     renderpass.hpp
-    shader.cpp
-    shader.hpp
+    sampler.cpp
+    sampler.hpp
     shader_resource_binding.cpp
     shader_resource_binding.hpp
     shader_signature.cpp
     shader_signature.hpp
     shader_signature_builder.cpp
     shader_signature_builder.hpp
+    shader.cpp
+    shader.hpp
     swap_chain.cpp
     swap_chain.hpp
     texture.cpp
     texture.hpp
     texture_format.hpp
+    texture_view.cpp
+    texture_view.hpp
     vertex_binding.cpp
     vertex_binding.hpp
     vertex_layout.cpp

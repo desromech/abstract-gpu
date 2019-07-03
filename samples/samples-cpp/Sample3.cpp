@@ -104,7 +104,7 @@ public:
             shaderBindings->bindUniformBuffer(0, transformationBuffer);
 
             textureBindings = shaderSignature->createShaderResourceBinding(1);
-            textureBindings->bindTexture(0, diffuseTexture, 0, -1, 0.0f);
+            textureBindings->bindSampledTextureView(0, diffuseTexture->getOrCreateFullView());
 
             samplerBindings = shaderSignature->createShaderResourceBinding(2);
 
@@ -115,7 +115,8 @@ public:
             samplerDesc.address_v = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
             samplerDesc.address_w = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
             samplerDesc.max_lod = MaxLod;
-            samplerBindings->createSampler(0, &samplerDesc);
+            sampler = device->createSampler(&samplerDesc);
+            samplerBindings->bindSampler(0, sampler);
         }
 
         // Create the vertex buffer binding.
@@ -142,7 +143,7 @@ public:
 
         // Build the command list
         commandAllocator->reset();
-        commandList->reset(commandAllocator, pipeline);
+        commandList->reset(commandAllocator, nullptr);
 
         agpu_framebuffer_ref backBuffer = swapChain->getCurrentBackBuffer();
 
@@ -153,6 +154,7 @@ public:
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
         // Use the vertices and the indices.
+        commandList->usePipelineState(pipeline);
         commandList->useVertexBinding(vertexBinding);
         commandList->useIndexBuffer(indexBuffer);
         commandList->useShaderResources(shaderBindings);
@@ -192,6 +194,7 @@ public:
     agpu_command_list_ref commandList;
 
     agpu_texture_ref diffuseTexture;
+    agpu_sampler_ref sampler;
     agpu_renderpass_ref mainRenderPass;
 
     TransformationState transformationState;

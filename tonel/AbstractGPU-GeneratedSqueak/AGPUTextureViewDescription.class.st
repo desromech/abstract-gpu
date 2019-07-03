@@ -14,7 +14,6 @@ AGPUTextureViewDescription class >> fields [
 	"
     ^ #(
 		(type 'long')
-		(texture 'void*')
 		(format 'long')
 		(sample_count 'ulong')
 		(components 'AGPUComponentsSwizzle')

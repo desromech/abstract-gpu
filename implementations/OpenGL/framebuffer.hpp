@@ -13,16 +13,12 @@ public:
     GLFramebuffer();
     ~GLFramebuffer();
 
-    static agpu::framebuffer_ref create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorView, agpu_texture_view_description* depthStencilViews);
-
-    agpu_error attachColorBuffer ( agpu_int index, agpu_texture_view_description* colorView);
-    agpu_error attachDepthStencilBuffer (agpu_texture_view_description* depthStencilViews);
+    static agpu::framebuffer_ref create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref* colorViews, const agpu::texture_view_ref &depthStencilView);
 
 public:
-    static const int MaxRenderTargetCount = 9;
     void bind(GLenum target = GL_FRAMEBUFFER);
     void updateAttachments(GLenum target);
-    void attachTo(GLenum target, agpu_texture_view_description *view, const agpu::texture_ref &texture, GLenum attachmentPoint);
+    void attachTo(GLenum target, const agpu::texture_view_ref &view, GLenum attachmentPoint);
 
     agpu::device_ref device;
 
@@ -30,10 +26,9 @@ public:
     agpu_uint height;
     bool hasDepth;
     bool hasStencil;
-    int renderTargetCount;
-    agpu_texture_view_description colorBuffers[MaxRenderTargetCount];
-    agpu_texture_view_description depthStencil;
-    agpu::texture_ref colorBufferTextures[MaxRenderTargetCount];
+    std::vector<agpu::texture_view_ref> colorBufferViews;
+    std::vector<agpu::texture_ref> colorBufferTextures;
+    agpu::texture_view_ref depthStencilView;
     agpu::texture_ref depthStencilTexture;
 
     bool changed;

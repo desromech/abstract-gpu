@@ -29,6 +29,7 @@ Class {
 		'agpu_inheritance_info',
 		'agpu_color4f',
 		'agpu_float',
+		'agpu_texture_view',
 		'agpu_shader',
 		'agpu_double',
 		'agpu_blending_factor',
@@ -60,6 +61,7 @@ Class {
 		'agpu_cstring',
 		'agpu_buffer_binding_type',
 		'agpu_mapping_access',
+		'agpu_sampler',
 		'agpu_compare_function',
 		'agpu_size',
 		'agpu_device_open_flags',
@@ -154,6 +156,7 @@ AGPUTypes class >> initialize [
 	agpu_inheritance_info := AGPUInheritanceInfo.
 	agpu_color4f := AGPUColor4f.
 	agpu_float := #'float'.
+	agpu_texture_view := #'void'.
 	agpu_shader := #'void'.
 	agpu_double := #'double'.
 	agpu_blending_factor := #int.
@@ -185,6 +188,7 @@ AGPUTypes class >> initialize [
 	agpu_cstring := #'char*'.
 	agpu_buffer_binding_type := #int.
 	agpu_mapping_access := #int.
+	agpu_sampler := #'void'.
 	agpu_compare_function := #int.
 	agpu_size := #'uint'.
 	agpu_device_open_flags := #int.

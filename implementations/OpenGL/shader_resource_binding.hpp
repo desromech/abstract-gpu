@@ -18,15 +18,7 @@ struct BufferBinding
     size_t size;
 };
 
-struct TextureBinding
-{
-    TextureBinding() {}
-
-    agpu::texture_ref texture;
-    agpu_uint startMiplevel;
-    agpu_int miplevels;
-    agpu_float lodClamp;
-};
+class GLAbstractTextureView;
 
 struct GLShaderResourceBinding : public agpu::shader_resource_binding
 {
@@ -40,15 +32,13 @@ public:
     virtual agpu_error bindUniformBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size) override;
     virtual agpu_error bindStorageBuffer(agpu_int location, const agpu::buffer_ref &uniform_buffer) override;
     virtual agpu_error bindStorageBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size) override;
-    virtual agpu_error bindTexture(agpu_int location, const agpu::texture_ref& texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp) override;
-    virtual agpu_error bindTextureArrayRange(agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp) override;
-    virtual agpu_error bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format) override;
+	virtual agpu_error bindSampledTextureView(agpu_int location, const agpu::texture_view_ref & view) override;
+	virtual agpu_error bindStorageImageView(agpu_int location, const agpu::texture_view_ref & view) override;
+	virtual agpu_error bindSampler(agpu_int location, const agpu::sampler_ref & sampler) override;
 
-    TextureBinding *getTextureBindingAt(agpu_int location);
+    GLAbstractTextureView *getTextureBindingAt(agpu_int location);
+
     GLuint getSamplerAt(agpu_int location);
-
-    agpu_error createSampler ( agpu_int location, agpu_sampler_description* description );
-
 
 public:
     void activate();
@@ -68,8 +58,9 @@ private:
 
     std::vector<BufferBinding> uniformBuffers;
     std::vector<BufferBinding> storageBuffers;
-    std::vector<TextureBinding> sampledImages;
-    std::vector<GLuint> samplers;
+    std::vector<agpu::texture_view_ref> sampledTextures;
+    std::vector<agpu::texture_view_ref> storageTextures;
+    std::vector<agpu::sampler_ref> samplers;
 };
 
 } // End of namespace AgpuGL

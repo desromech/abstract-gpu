@@ -25,6 +25,8 @@ set(AGPU_Metal_SOURCES
     platform.hpp
     renderpass.hpp
     renderpass.mm
+    sampler.hpp
+    sampler.mm
     shader_signature_builder.hpp
     shader_signature_builder.mm
     shader_signature.hpp
@@ -37,6 +39,8 @@ set(AGPU_Metal_SOURCES
     swap_chain.mm
     texture.hpp
     texture.mm
+    texture_view.hpp
+    texture_view.mm
     vertex_binding.hpp
     vertex_binding.mm
     vertex_layout.hpp

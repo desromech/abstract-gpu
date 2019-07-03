@@ -4,6 +4,7 @@
 #include "command_list.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include <algorithm>
 
 namespace AgpuGL
@@ -150,8 +151,7 @@ void GLPipelineState::activateShaderResourcesOn(CommandListExecutionContext *con
         auto samplerBinding = samplerShaderResource.as<GLShaderResourceBinding> ()->getSamplerAt(combination.combination.samplerDescriptorBinding);
 
         // Activate the texture.
-        deviceForGL->glActiveTexture(GL_TEXTURE0 + combination.mappedTextureUnit);
-        glBindTexture(textureBinding->texture.as<GLTexture>()->target, textureBinding->texture.as<GLTexture>()->handle);
+		textureBinding->activateInSampledSlot(combination.mappedTextureUnit);
 
         // Activate the sampler.
         deviceForGL->glBindSampler(combination.mappedTextureUnit, samplerBinding);

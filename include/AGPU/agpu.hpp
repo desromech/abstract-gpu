@@ -255,9 +255,9 @@ public:
 		return agpuGetPreferredHighLevelShaderLanguage(this);
 	}
 
-	inline agpu_ref<agpu_framebuffer> createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+	inline agpu_ref<agpu_framebuffer> createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_ref<agpu_texture_view>* colorViews, const agpu_ref<agpu_texture_view>& depthStencilView)
 	{
-		return agpuCreateFrameBuffer(this, width, height, colorCount, colorViews, depthStencilView);
+		return agpuCreateFrameBuffer(this, width, height, colorCount, reinterpret_cast<agpu_texture_view**> (colorViews), depthStencilView.get());
 	}
 
 	inline agpu_ref<agpu_renderpass> createRenderPass(agpu_renderpass_description* description)
@@ -268,6 +268,11 @@ public:
 	inline agpu_ref<agpu_texture> createTexture(agpu_texture_description* description)
 	{
 		return agpuCreateTexture(this, description);
+	}
+
+	inline agpu_ref<agpu_sampler> createSampler(agpu_sampler_description* description)
+	{
+		return agpuCreateSampler(this, description);
 	}
 
 	inline agpu_ref<agpu_fence> createFence()
@@ -939,9 +944,66 @@ public:
 		agpuThrowIfFailed(agpuGetTextureFullViewDescription(this, result));
 	}
 
+	inline agpu_ref<agpu_texture_view> createView(agpu_texture_view_description* description)
+	{
+		return agpuCreateTextureView(this, description);
+	}
+
+	inline agpu_ref<agpu_texture_view> getOrCreateFullView()
+	{
+		return agpuGetOrCreateFullTextureView(this);
+	}
+
 };
 
 typedef agpu_ref<agpu_texture> agpu_texture_ref;
+
+// Interface wrapper for agpu_texture_view.
+struct _agpu_texture_view
+{
+private:
+	_agpu_texture_view() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddTextureViewReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseTextureView(this));
+	}
+
+	inline agpu_ref<agpu_texture> getTexture()
+	{
+		return agpuGetTextureFromView(this);
+	}
+
+};
+
+typedef agpu_ref<agpu_texture_view> agpu_texture_view_ref;
+
+// Interface wrapper for agpu_sampler.
+struct _agpu_sampler
+{
+private:
+	_agpu_sampler() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddSamplerReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseSampler(this));
+	}
+
+};
+
+typedef agpu_ref<agpu_sampler> agpu_sampler_ref;
 
 // Interface wrapper for agpu_buffer.
 struct _agpu_buffer
@@ -1273,24 +1335,19 @@ public:
 		agpuThrowIfFailed(agpuBindStorageBufferRange(this, location, storage_buffer.get(), offset, size));
 	}
 
-	inline void bindTexture(agpu_int location, const agpu_ref<agpu_texture>& texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
+	inline void bindSampledTextureView(agpu_int location, const agpu_ref<agpu_texture_view>& view)
 	{
-		agpuThrowIfFailed(agpuBindTexture(this, location, texture.get(), startMiplevel, miplevels, lodclamp));
+		agpuThrowIfFailed(agpuBindSampledTextureView(this, location, view.get()));
 	}
 
-	inline void bindTextureArrayRange(agpu_int location, const agpu_ref<agpu_texture>& texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
+	inline void bindStorageImageView(agpu_int location, const agpu_ref<agpu_texture_view>& view)
 	{
-		agpuThrowIfFailed(agpuBindTextureArrayRange(this, location, texture.get(), startMiplevel, miplevels, firstElement, numberOfElements, lodclamp));
+		agpuThrowIfFailed(agpuBindStorageImageView(this, location, view.get()));
 	}
 
-	inline void bindImage(agpu_int location, const agpu_ref<agpu_texture>& texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
+	inline void bindSampler(agpu_int location, const agpu_ref<agpu_sampler>& sampler)
 	{
-		agpuThrowIfFailed(agpuBindImage(this, location, texture.get(), level, layer, access, format));
-	}
-
-	inline void createSampler(agpu_int location, agpu_sampler_description* description)
-	{
-		agpuThrowIfFailed(agpuCreateSampler(this, location, description));
+		agpuThrowIfFailed(agpuBindSampler(this, location, sampler.get()));
 	}
 
 };

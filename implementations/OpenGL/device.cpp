@@ -16,6 +16,7 @@
 #include "renderpass.hpp"
 #include "swap_chain.hpp"
 #include "texture.hpp"
+#include "sampler.hpp"
 #include "fence.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
@@ -430,7 +431,7 @@ agpu_shader_language GLDevice::getPreferredHighLevelShaderLanguage()
     return AGPU_SHADER_LANGUAGE_NONE;
 }
 
-agpu::framebuffer_ptr GLDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
+agpu::framebuffer_ptr GLDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref* colorViews, const agpu::texture_view_ref & depthStencilView)
 {
 	return GLFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
 }
@@ -443,6 +444,11 @@ agpu::renderpass_ptr GLDevice::createRenderPass(agpu_renderpass_description* des
 agpu::texture_ptr GLDevice::createTexture(agpu_texture_description* description)
 {
 	return GLTexture::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::sampler_ptr GLDevice::createSampler(agpu_sampler_description* description)
+{
+	return GLSampler::create(refFromThis<agpu::device> (), description).disown();
 }
 
 agpu::fence_ptr GLDevice::createFence()
