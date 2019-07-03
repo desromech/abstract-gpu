@@ -99,8 +99,7 @@ AGPUMorph >> createFramebuffer [
 		sample_count: 1.
 	mainColorbuffer := device createTexture: colorBufferDesc.
 	
-	mainColorbufferView := AGPUTextureViewDescription new.
-	mainColorbuffer getFullViewDescription: mainColorbufferView.
+	mainColorbufferView := mainColorbuffer getOrCreateFullView.
 
 	mainDepthbufferView := nil.
 	(hasDepth or: [ hasStencil ]) ifTrue: [ 
@@ -123,11 +122,10 @@ AGPUMorph >> createFramebuffer [
 		].
 
 		mainDepthbuffer := device createTexture: depthStencilDesc.
-		mainDepthbufferView := AGPUTextureViewDescription new.
-		mainDepthbuffer getFullViewDescription: mainDepthbufferView.
+		mainDepthbufferView := mainDepthbuffer getOrCreateFullView.
 	].
 
-	mainFramebuffer := device createFrameBuffer: screenWidth height: screenHeight colorCount: 1 colorViews: mainColorbufferView depthStencilView: mainDepthbufferView.
+	mainFramebuffer := device createFrameBuffer: screenWidth height: screenHeight colorCount: 1 colorViews: (AGPU packListOfReferences: {mainColorbufferView}) depthStencilView: mainDepthbufferView.
 	mainFramebufferForm := Form extent: screenWidth@screenHeight depth: 32.
 		
 ]

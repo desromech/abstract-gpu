@@ -27,6 +27,20 @@ AGPU class >> mainPlatform [
 	^ self uniqueInstance mainPlatform
 ]
 
+{ #category : #utilties }
+AGPU class >> packListOfReferences: aListOfReferences [
+	| pointerSize packedList destIndex |
+	pointerSize := Smalltalk wordSize.
+	packedList := ByteArray new: pointerSize * aListOfReferences size.
+	destIndex := 1.
+	aListOfReferences do: [ :ref |
+		packedList pointerAt: destIndex put: ref validHandle getHandle.
+		destIndex := destIndex + pointerSize
+	].
+
+	^ packedList
+]
+
 { #category : #'platform querying' }
 AGPU class >> platforms [
 	^ self uniqueInstance platforms
