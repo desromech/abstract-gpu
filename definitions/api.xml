@@ -993,7 +993,7 @@
                 <arg name="width" type="uint" />
                 <arg name="height" type="uint" />
                 <arg name="colorCount" type="uint" />
-                <arg name="colorViews" type="texture_view**" />
+                <arg name="colorViews" type="texture_view**" pointerList="true"/>
                 <arg name="depthStencilView" type="texture_view*" />
             </method>
 

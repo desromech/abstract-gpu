@@ -130,7 +130,7 @@ AGPUCBindings >> getPreferredHighLevelShaderLanguage_device: device [
 
 { #category : #'device' }
 AGPUCBindings >> createFrameBuffer_device: device width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView [
-	^ self ffiCall: #(agpu_framebuffer* agpuCreateFrameBuffer (agpu_device* device , agpu_uint width , agpu_uint height , agpu_uint colorCount , agpu_texture_view** colorViews , agpu_texture_view* depthStencilView) )
+	^ self ffiCall: #(agpu_framebuffer* agpuCreateFrameBuffer (agpu_device* device , agpu_uint width , agpu_uint height , agpu_uint colorCount , agpu_texture_view* colorViews , agpu_texture_view* depthStencilView) )
 ]
 
 { #category : #'device' }

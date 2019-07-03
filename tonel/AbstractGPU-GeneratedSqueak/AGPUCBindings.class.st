@@ -153,7 +153,7 @@ AGPUCBindings >> getPreferredHighLevelShaderLanguage_device: device [
 
 { #category : #'device' }
 AGPUCBindings >> createFrameBuffer_device: device width: width height: height colorCount: colorCount colorViews: colorViews depthStencilView: depthStencilView [
-	<cdecl: void* 'agpuCreateFrameBuffer' (void* ulong ulong ulong void** void*)>
+	<cdecl: void* 'agpuCreateFrameBuffer' (void* ulong ulong ulong void* void*)>
 	^ self externalCallFailed
 ]
 
