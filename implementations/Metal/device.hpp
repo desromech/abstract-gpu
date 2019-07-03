@@ -31,9 +31,10 @@ public:
 	virtual agpu_shader_language getPreferredShaderLanguage() override;
 	virtual agpu_shader_language getPreferredIntermediateShaderLanguage() override;
 	virtual agpu_shader_language getPreferredHighLevelShaderLanguage() override;
-	virtual agpu::framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView) override;
+	virtual agpu::framebuffer_ptr createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref *colorViews, const agpu::texture_view_ref &depthStencilView) override;
 	virtual agpu::renderpass_ptr createRenderPass(agpu_renderpass_description* description) override;
 	virtual agpu::texture_ptr createTexture(agpu_texture_description* description) override;
+    virtual agpu::sampler_ptr createSampler(agpu_sampler_description* description) override;
 	virtual agpu::fence_ptr createFence() override;
 	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) override;
 	virtual agpu_bool hasTopLeftNdcOrigin() override;

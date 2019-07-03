@@ -2,74 +2,12 @@
 #include "shader_signature.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
+#include "sampler.hpp"
 #include "constants.hpp"
 
 namespace AgpuMetal
 {
-    
-inline MTLSamplerMinMagFilter mapMinFilter(agpu_filter filter)
-{
-    switch (filter)
-    {
-    default:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST:return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR: return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST: return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:  return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST: return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:  return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:  return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:   return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_ANISOTROPIC:                           return MTLSamplerMinMagFilterLinear;
-    }
-}
-
-inline MTLSamplerMinMagFilter mapMagFilter(agpu_filter filter)
-{
-    switch (filter)
-    {
-    default:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST: return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:  return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:  return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:   return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:  return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:   return MTLSamplerMinMagFilterNearest;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:   return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:    return MTLSamplerMinMagFilterLinear;
-    case AGPU_FILTER_ANISOTROPIC:                            return MTLSamplerMinMagFilterLinear;
-    }
-}
-
-inline MTLSamplerMipFilter mapMipmapMode(agpu_filter filter)
-{
-    switch (filter)
-    {
-    default:
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST: return MTLSamplerMipFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR:  return MTLSamplerMipFilterLinear;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST:  return MTLSamplerMipFilterNearest;
-    case AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR:   return MTLSamplerMipFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST:  return MTLSamplerMipFilterNearest;
-    case AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR:   return MTLSamplerMipFilterLinear;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST:   return MTLSamplerMipFilterNearest;
-    case AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR:    return MTLSamplerMipFilterLinear;
-    case AGPU_FILTER_ANISOTROPIC:                            return MTLSamplerMipFilterLinear;
-    }
-}
-
-inline MTLSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
-{
-    switch (mode)
-    {
-    default:
-    case AGPU_TEXTURE_ADDRESS_MODE_WRAP:    return MTLSamplerAddressModeRepeat;
-    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR:  return MTLSamplerAddressModeMirrorRepeat;
-    case AGPU_TEXTURE_ADDRESS_MODE_CLAMP:   return MTLSamplerAddressModeClampToEdge;
-    case AGPU_TEXTURE_ADDRESS_MODE_BORDER:  return MTLSamplerAddressModeClampToZero;
-    case AGPU_TEXTURE_ADDRESS_MODE_MIRROR_ONCE: return MTLSamplerAddressModeMirrorClampToEdge;
-    }
-}
 
 BufferBinding::~BufferBinding()
 {
@@ -105,7 +43,7 @@ agpu::shader_resource_binding_ref AMtlShaderResourceBinding::create(const agpu::
     case ShaderSignatureElementType::Bank:
         {
             binding->buffers.resize(bank.elementTypeCounts[(int)MetalResourceBindingType::Buffer]);
-            binding->textures.resize(bank.elementTypeCounts[(int)MetalResourceBindingType::Texture]);
+            binding->textureViews.resize(bank.elementTypeCounts[(int)MetalResourceBindingType::Texture]);
             binding->samplers.resize(bank.elementTypeCounts[(int)MetalResourceBindingType::Sampler]);
         }
         break;
@@ -171,9 +109,9 @@ agpu_error AMtlShaderResourceBinding::bindStorageBufferRange ( agpu_int location
     return AGPU_OK;
 }
 
-agpu_error AMtlShaderResourceBinding::bindTexture ( agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp )
+agpu_error AMtlShaderResourceBinding::bindSampledTextureView(agpu_int location, const agpu::texture_view_ref &view)
 {
-    CHECK_POINTER(texture);
+    CHECK_POINTER(view);
     if(location < 0)
         return AGPU_OK;
 
@@ -182,25 +120,16 @@ agpu_error AMtlShaderResourceBinding::bindTexture ( agpu_int location, const agp
         return AGPU_OUT_OF_BOUNDS;
 
     const auto &element = bank.elements[location];
-    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE &&
-       element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
+    if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
         return AGPU_INVALID_OPERATION;
 
-    auto &binding = textures[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Texture]];
-    binding = texture;
+    textureViews[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Texture]] = view;
     return AGPU_OK;
 }
 
-agpu_error AMtlShaderResourceBinding::bindTextureArrayRange ( agpu_int location, const agpu::texture_ref &texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp )
+agpu_error AMtlShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref &view)
 {
-    CHECK_POINTER(texture);
-
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error AMtlShaderResourceBinding::bindImage(agpu_int location, const agpu::texture_ref &texture, agpu_int level, agpu_int layer, agpu_mapping_access access, agpu_texture_format format)
-{
-    CHECK_POINTER(texture);
+    CHECK_POINTER(view);
     if(location < 0)
         return AGPU_OK;
 
@@ -212,14 +141,13 @@ agpu_error AMtlShaderResourceBinding::bindImage(agpu_int location, const agpu::t
     if(element.type != AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE)
         return AGPU_INVALID_OPERATION;
 
-    auto &binding = textures[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Texture]];
-    binding = texture;
+    textureViews[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Texture]] = view;
     return AGPU_OK;
 }
 
-agpu_error AMtlShaderResourceBinding::createSampler ( agpu_int location, agpu_sampler_description* description )
+agpu_error AMtlShaderResourceBinding::bindSampler(agpu_int location, const agpu::sampler_ref &sampler)
 {
-    CHECK_POINTER(description);
+    CHECK_POINTER(sampler);
     if(location < 0)
         return AGPU_OK;
     const auto &bank = signature.as<AMtlShaderSignature> ()->elements[elementIndex];
@@ -229,30 +157,8 @@ agpu_error AMtlShaderResourceBinding::createSampler ( agpu_int location, agpu_sa
     const auto &element = bank.elements[location];
     if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
         return AGPU_INVALID_OPERATION;
-
-    auto descriptor = [MTLSamplerDescriptor new];
-    descriptor.sAddressMode = mapAddressMode(description->address_u);
-    descriptor.tAddressMode = mapAddressMode(description->address_v);
-    descriptor.rAddressMode = mapAddressMode(description->address_w);
-    descriptor.minFilter = mapMinFilter(description->filter);
-    descriptor.magFilter = mapMinFilter(description->filter);
-    descriptor.mipFilter = mapMipmapMode(description->filter);
-    descriptor.lodMinClamp = description->min_lod;
-    descriptor.lodMaxClamp = description->max_lod;
-    descriptor.maxAnisotropy = std::max(1.0f, description->maxanisotropy);
-    descriptor.normalizedCoordinates = YES;
-    descriptor.compareFunction = mapCompareFunction(description->comparison_function);
-
-    auto sampler = [deviceForMetal->device newSamplerStateWithDescriptor: descriptor];
-    [descriptor release];
-    if(!sampler)
-        return AGPU_ERROR;
-
-    auto &binding = samplers[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Sampler]];
-    if(binding)
-        [binding release];
-    binding = sampler;
-
+        
+    samplers[element.startIndex - bank.startIndices[(int)MetalResourceBindingType::Sampler]] = sampler;
     return AGPU_OK;
 }
 
@@ -266,7 +172,7 @@ agpu_error AMtlShaderResourceBinding::activateOn(agpu_uint vertexBufferCount, id
             return error;
     }
 
-    if(!textures.empty())
+    if(!textureViews.empty())
     {
         error = activateTexturesOn(encoder);
         if(error != AGPU_OK)
@@ -310,10 +216,11 @@ agpu_error AMtlShaderResourceBinding::activateSamplersOn(id<MTLRenderCommandEnco
 
     for(size_t i = 0; i < samplers.size(); ++i)
     {
-        auto state = samplers[i];
-        if(!state)
+        auto &sampler = samplers[i];
+        if(!sampler)
             continue;
-
+            
+        auto state = sampler.as<AMtlSampler> ()->handle;
         [encoder setVertexSamplerState: state atIndex: baseIndex + i];
         [encoder setFragmentSamplerState: state atIndex: baseIndex + i];
     }
@@ -326,15 +233,13 @@ agpu_error AMtlShaderResourceBinding::activateTexturesOn(id<MTLRenderCommandEnco
     const auto &bank = signature.as<AMtlShaderSignature> ()->elements[elementIndex];
     size_t baseIndex = bank.startIndices[(int)MetalResourceBindingType::Texture];
 
-    for(size_t i = 0; i < textures.size(); ++i)
+    for(size_t i = 0; i < textureViews.size(); ++i)
     {
-        auto texture = textures[i];
-        if(!texture)
+        auto &view = textureViews[i];
+        if(!view)
             continue;
-
-        auto handle = texture.as<AMtlTexture> ()->handle;
-        [encoder setVertexTexture: handle atIndex: baseIndex + i];
-        [encoder setFragmentTexture: handle atIndex: baseIndex + i];
+    
+        view.as<AMtlTextureView> ()->activateOnRenderEncoder(encoder, baseIndex + i);
     }
 
     return AGPU_OK;
@@ -350,7 +255,7 @@ agpu_error AMtlShaderResourceBinding::activateComputeOn(id<MTLComputeCommandEnco
             return error;
     }
 
-    if(!textures.empty())
+    if(!textureViews.empty())
     {
         error = activateComputeTexturesOn(encoder);
         if(error != AGPU_OK)
@@ -393,10 +298,11 @@ agpu_error AMtlShaderResourceBinding::activateComputeSamplersOn(id<MTLComputeCom
 
     for(size_t i = 0; i < samplers.size(); ++i)
     {
-        auto state = samplers[i];
-        if(!state)
+        auto &sampler = samplers[i];
+        if(!sampler)
             continue;
-
+            
+        auto state = sampler.as<AMtlSampler> ()->handle;
         [encoder setSamplerState: state atIndex: baseIndex + i];
     }
 
@@ -408,14 +314,13 @@ agpu_error AMtlShaderResourceBinding::activateComputeTexturesOn(id<MTLComputeCom
     const auto &bank = signature.as<AMtlShaderSignature> ()->elements[elementIndex];
     size_t baseIndex = bank.startIndices[(int)MetalResourceBindingType::Texture];
 
-    for(size_t i = 0; i < textures.size(); ++i)
+    for(size_t i = 0; i < textureViews.size(); ++i)
     {
-        auto texture = textures[i];
-        if(!texture)
+        auto &view = textureViews[i];
+        if(!view)
             continue;
-
-        auto handle = texture.as<AMtlTexture> ()->handle;
-        [encoder setTexture: handle atIndex: baseIndex + i];
+    
+        view.as<AMtlTextureView> ()->activateOnComputeEncoder(encoder, baseIndex + i);
     }
 
     return AGPU_OK;

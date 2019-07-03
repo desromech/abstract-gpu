@@ -137,10 +137,11 @@ public:
 
         // Build the command list
         agpuResetCommandAllocator(commandAllocator);
-        agpuResetCommandList(commandList, commandAllocator, pipeline);
+        agpuResetCommandList(commandList, commandAllocator, nullptr);
         auto backBuffer = agpuGetCurrentBackBuffer(swapChain);
         agpuSetShaderSignature(commandList, shaderSignature);
         agpuBeginRenderPass(commandList, mainRenderPass, backBuffer, false);
+        agpuUsePipelineState(commandList, pipeline);
 
         // Set the viewport
         agpuSetViewport(commandList, 0, 0, screenWidth, screenHeight);

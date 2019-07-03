@@ -178,7 +178,7 @@ public:
 
         // Build the command list
         commandAllocator->reset();
-        commandList->reset(commandAllocator, pipeline);
+        commandList->reset(commandAllocator, nullptr);
 
         auto backBuffer = swapChain->getCurrentBackBuffer();
 
@@ -189,6 +189,7 @@ public:
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
         // Set the shader resource bindings
+        commandList->usePipelineState(pipeline);
         commandList->useShaderResources(shaderBindings);
         commandList->useShaderResources(textureBindings);
         commandList->useShaderResources(samplerBindings);

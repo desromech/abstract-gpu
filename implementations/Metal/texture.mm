@@ -1,4 +1,5 @@
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include "texture_format.hpp"
 #include "command_queue.hpp"
 
@@ -175,7 +176,6 @@ agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* 
     CHECK_POINTER(viewDescription);
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
-    viewDescription->texture = reinterpret_cast<agpu_texture*> (refFromThis().asPtrWithoutNewRef());
     viewDescription->format = description.format;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
@@ -190,6 +190,23 @@ agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* 
         viewDescription->subresource_range.layer_count = 0;
 
     return AGPU_OK;
+}
+
+agpu::texture_view_ptr AMtlTexture::createView(agpu_texture_view_description* description)
+{
+    return AMtlTextureView::create(device, refFromThis<agpu::texture> (), description).disown();
+}
+
+agpu::texture_view_ptr AMtlTexture::getOrCreateFullView()
+{
+    if(!fullTextureView)
+    {
+        agpu_texture_view_description fullViewDescription;
+        getFullViewDescription(&fullViewDescription);
+        fullTextureView = agpu::texture_view_ref(createView(&fullViewDescription));
+    }
+    
+    return fullTextureView.disownedNewRef();
 }
 
 } // End of namespace AgpuMetal

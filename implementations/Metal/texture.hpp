@@ -23,8 +23,11 @@ public:
     virtual agpu_error discardUploadBuffer() override;
     virtual agpu_error discardReadbackBuffer() override;
     virtual agpu_error getFullViewDescription(agpu_texture_view_description* result) override;
+    virtual agpu::texture_view_ptr createView(agpu_texture_view_description* description) override;
+	virtual agpu::texture_view_ptr getOrCreateFullView() override;
 
     agpu::device_ref device;
+    agpu::texture_view_ref fullTextureView;
     agpu_texture_description description;
 
     id<MTLTexture> handle;
