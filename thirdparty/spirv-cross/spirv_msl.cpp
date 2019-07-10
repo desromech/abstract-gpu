@@ -5548,7 +5548,7 @@ void CompilerMSL::entry_point_args_builtin(string &ep_args)
 		{
             if(get_execution_model() != ExecutionModelFragment)
             {
-                if(bi_type == BuiltInFragCoord)
+                if(bi_type == BuiltInFragCoord || bi_type == BuiltInFrontFacing)
                     return;
             }
 
