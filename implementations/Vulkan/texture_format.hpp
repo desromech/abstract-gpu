@@ -65,7 +65,7 @@ inline VkFormat mapTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_R16_TYPELESS:              return VK_FORMAT_R16_UINT;
     case AGPU_TEXTURE_FORMAT_R16_FLOAT:                 return VK_FORMAT_R16_SFLOAT;
     case AGPU_TEXTURE_FORMAT_D16_UNORM:                 return VK_FORMAT_D16_UNORM;
-    case AGPU_TEXTURE_FORMAT_R16_UNORM:                 return VK_FORMAT_R16_UINT;
+    case AGPU_TEXTURE_FORMAT_R16_UNORM:                 return VK_FORMAT_R16_UNORM;
     case AGPU_TEXTURE_FORMAT_R16_UINT:                  return VK_FORMAT_R16_UINT;
     case AGPU_TEXTURE_FORMAT_R16_SNORM:                 return VK_FORMAT_R16_SNORM;
     case AGPU_TEXTURE_FORMAT_R16_SINT:                  return VK_FORMAT_R16_SINT;
