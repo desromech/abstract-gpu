@@ -78,9 +78,30 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 
         immediateShaderLibrary->flatColorVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, flatColor_vert_spv, flatColor_vert_spv_len);
         immediateShaderLibrary->flatColorFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, flatColor_frag_spv, flatColor_frag_spv_len);
+        immediateShaderLibrary->flatTexturedVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, flatTextured_vert_spv, flatTextured_vert_spv_len);
+        immediateShaderLibrary->flatTexturedFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, flatTextured_frag_spv, flatTextured_frag_spv_len);
 
         immediateShaderLibrary->smoothColorVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, smoothColor_vert_spv, smoothColor_vert_spv_len);
         immediateShaderLibrary->smoothColorFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, smoothColor_frag_spv, smoothColor_frag_spv_len);
+        immediateShaderLibrary->smoothTexturedVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, smoothTextured_vert_spv, smoothTextured_vert_spv_len);
+        immediateShaderLibrary->smoothTexturedFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, smoothTextured_frag_spv, smoothTextured_frag_spv_len);
+    }
+
+    {
+        immediateSharedRenderingStates.reset(new ImmediateSharedRenderingStates());
+        if(!immediateSharedRenderingStates) return false;
+
+        agpu_sampler_description samplerDescription = {};
+        samplerDescription.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+        samplerDescription.max_lod = 1000.0f;
+        auto sampler = agpu::sampler_ref(device->createSampler(&samplerDescription));
+        if(!sampler) return false;
+
+        auto samplerBinding = agpu::shader_resource_binding_ref(immediateShaderSignature->createShaderResourceBinding(0));
+        samplerBinding->bindSampler(0, sampler);
+
+        immediateSharedRenderingStates->linearSampler.sampler = sampler;
+        immediateSharedRenderingStates->linearSampler.binding = samplerBinding;
     }
 
     // Create the immediate vertex layout.
@@ -104,6 +125,7 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
 {
     vertexBufferCapacity = 0;
     matrixBufferCapacity = 0;
+    usedTextureBindingCount = 0;
     activeMatrixStack = nullptr;
 
     auto impl = stateTrackerCache.as<StateTrackerCache> ();
@@ -111,6 +133,7 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
 
     immediateShaderSignature = impl->immediateShaderSignature;
     immediateShaderLibrary = impl->immediateShaderLibrary.get();
+    immediateSharedRenderingStates = impl->immediateSharedRenderingStates.get();
     immediateVertexLayout = impl->immediateVertexLayout;
 }
 
@@ -170,6 +193,11 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     currentRenderingState.flatShading = false;
     currentRenderingState.lightingEnabled = false;
     currentRenderingState.texturingEnabled = false;
+    currentRenderingState.activeTexture.reset();
+
+    // Reset the texture bindings.
+    usedTextureBindingMap.clear();
+    usedTextureBindingCount = 0;
 
     // Reset the vertices.
     lastDrawnVertexIndex = 0;
@@ -328,11 +356,42 @@ agpu_error ImmediateRenderer::setTexturingEnabled(agpu_bool enabled)
     currentRenderingState.texturingEnabled = enabled;
     return AGPU_OK;
 }
-
 agpu_error ImmediateRenderer::bindTexture(const agpu::texture_ref &texture)
 {
-    // TODO: Implement this.
+    currentRenderingState.activeTexture = texture;
     return AGPU_OK;
+}
+
+agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(const agpu::texture_ref &texture)
+{
+    if(!texture)
+    {
+        abort();
+    }
+
+    // Do we have an existing binding.
+    auto it = usedTextureBindingMap.find(texture);
+    if(it != usedTextureBindingMap.end())
+        return it->second;
+
+    // Get or create an available texture binding.
+    agpu::shader_resource_binding_ref textureBinding;
+    if(usedTextureBindingCount < allocatedTextureBindings.size())
+    {
+        textureBinding = allocatedTextureBindings[usedTextureBindingCount++];
+    }
+    else
+    {
+        textureBinding = agpu::shader_resource_binding_ref(stateTrackerCache.as<StateTrackerCache> ()->immediateShaderSignature->createShaderResourceBinding(2));
+        allocatedTextureBindings.push_back(textureBinding);
+        ++usedTextureBindingCount;
+    }
+
+    // Bind the texture on the binding point.
+    textureBinding->bindSampledTextureView(0, agpu::texture_view_ref(texture->getOrCreateFullView()));
+    usedTextureBindingMap[texture] = textureBinding;
+
+    return textureBinding;
 }
 
 agpu_error ImmediateRenderer::projectionMatrixMode()
@@ -604,19 +663,41 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
     currentStateTracker->setShaderSignature(immediateShaderSignature);
     if(state.flatShading)
     {
-        currentStateTracker->setVertexStage(immediateShaderLibrary->flatColorVertex, "main");
-        currentStateTracker->setFragmentStage(immediateShaderLibrary->flatColorFragment, "main");
+        if(state.texturingEnabled)
+        {
+            currentStateTracker->setVertexStage(immediateShaderLibrary->flatTexturedVertex, "main");
+            currentStateTracker->setFragmentStage(immediateShaderLibrary->flatTexturedFragment, "main");
+        }
+        else
+        {
+            currentStateTracker->setVertexStage(immediateShaderLibrary->flatColorVertex, "main");
+            currentStateTracker->setFragmentStage(immediateShaderLibrary->flatColorFragment, "main");
+        }
     }
     else
     {
-        currentStateTracker->setVertexStage(immediateShaderLibrary->smoothColorVertex, "main");
-        currentStateTracker->setFragmentStage(immediateShaderLibrary->smoothColorFragment, "main");
+        if(state.texturingEnabled)
+        {
+            currentStateTracker->setVertexStage(immediateShaderLibrary->smoothTexturedVertex, "main");
+            currentStateTracker->setFragmentStage(immediateShaderLibrary->smoothTexturedFragment, "main");
+        }
+        else
+        {
+            currentStateTracker->setVertexStage(immediateShaderLibrary->smoothColorVertex, "main");
+            currentStateTracker->setFragmentStage(immediateShaderLibrary->smoothColorFragment, "main");
+        }
     }
 
     currentStateTracker->setPrimitiveType(state.activePrimitiveTopology);
     currentStateTracker->setVertexLayout(immediateVertexLayout);
     currentStateTracker->useVertexBinding(vertexBinding);
     currentStateTracker->useShaderResources(uniformResourceBindings);
+    if(state.texturingEnabled)
+    {
+        currentStateTracker->useShaderResources(immediateSharedRenderingStates->linearSampler.binding);
+        currentStateTracker->useShaderResources(getValidTextureBindingFor(state.activeTexture));
+    }
+
     return AGPU_OK;
 }
 

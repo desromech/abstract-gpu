@@ -14,9 +14,26 @@ class ImmediateShaderLibrary
 public:
     agpu::shader_ref flatColorVertex;
     agpu::shader_ref flatColorFragment;
+    agpu::shader_ref flatTexturedVertex;
+    agpu::shader_ref flatTexturedFragment;
 
     agpu::shader_ref smoothColorVertex;
     agpu::shader_ref smoothColorFragment;
+    agpu::shader_ref smoothTexturedVertex;
+    agpu::shader_ref smoothTexturedFragment;
+};
+
+class ImmediateRendererSamplerState
+{
+public:
+    agpu::sampler_ref sampler;
+    agpu::shader_resource_binding_ref binding;
+};
+
+class ImmediateSharedRenderingStates
+{
+public:
+    ImmediateRendererSamplerState linearSampler;
 };
 
 /**
@@ -36,6 +53,8 @@ struct ImmediateRenderingState
     bool flatShading;
     bool lightingEnabled;
     bool texturingEnabled;
+
+    agpu::texture_ref activeTexture;
 };
 
 struct ImmediatePushConstants
@@ -122,6 +141,8 @@ private:
     agpu_error flushRenderingState(const ImmediateRenderingState &state);
     agpu_error flushRenderingData();
 
+    agpu::shader_resource_binding_ref getValidTextureBindingFor(const agpu::texture_ref &texture);
+
     template<typename FT>
     agpu_error delegateToStateTracker(const FT &f)
     {
@@ -138,6 +159,7 @@ private:
 
     agpu::shader_signature_ref immediateShaderSignature;
     ImmediateShaderLibrary *immediateShaderLibrary;
+    ImmediateSharedRenderingStates *immediateSharedRenderingStates;
     agpu::vertex_layout_ref immediateVertexLayout;
     agpu::vertex_binding_ref vertexBinding;
     agpu::shader_resource_binding_ref uniformResourceBindings;
@@ -169,6 +191,12 @@ private:
     agpu::buffer_ref matrixBuffer;
     size_t matrixBufferCapacity;
     std::vector<Matrix4F> matrixBufferData;
+
+    // Texture bindings
+    std::vector<agpu::shader_resource_binding_ref> allocatedTextureBindings;
+    std::unordered_map<agpu::texture_ref, agpu::shader_resource_binding_ref> usedTextureBindingMap;
+    size_t usedTextureBindingCount;
+
 
 };
 
