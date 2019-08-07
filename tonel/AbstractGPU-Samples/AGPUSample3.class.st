@@ -27,7 +27,7 @@ AGPUSample3 >> initializeForNewSession [
 		sample_count: 1;
 		format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
 		heap_type: AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-		usage_modes: AGPU_TEXTURE_USAGE_UPLOADED | AGPU_TEXTURE_USAGE_SAMPLED;
+		usage_modes: (AGPU_TEXTURE_USAGE_UPLOADED bitOr: AGPU_TEXTURE_USAGE_SAMPLED);
 		yourself.
 	texture := device createTexture: textureDescription.
 
