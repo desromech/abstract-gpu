@@ -1754,6 +1754,12 @@ AGPUCBindings >> modelViewMatrixMode_immediate_renderer: immediate_renderer [
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> textureMatrixMode_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuImmediateRendererTextureMatrixMode' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> loadIdentity_immediate_renderer: immediate_renderer [
 	<cdecl: long 'agpuImmediateRendererIdentity' (void*)>
 	^ self externalCallFailed
@@ -1768,6 +1774,30 @@ AGPUCBindings >> pushMatrix_immediate_renderer: immediate_renderer [
 { #category : #'immediate_renderer' }
 AGPUCBindings >> popMatrix_immediate_renderer: immediate_renderer [
 	<cdecl: long 'agpuImmediateRendererPopMatrix' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadMatrix_immediate_renderer: immediate_renderer elements: elements [
+	<cdecl: long 'agpuImmediateRendererLoadMatrix' (void* float*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadTransposeMatrix_immediate_renderer: immediate_renderer elements: elements [
+	<cdecl: long 'agpuImmediateRendererLoadTransposeMatrix' (void* float*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> multiplyMatrix_immediate_renderer: immediate_renderer elements: elements [
+	<cdecl: long 'agpuImmediateRendererMultiplyMatrix' (void* float*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> multiplyTransposeMatrix_immediate_renderer: immediate_renderer elements: elements [
+	<cdecl: long 'agpuImmediateRendererMultiplyTransposeMatrix' (void* float*)>
 	^ self externalCallFailed
 ]
 

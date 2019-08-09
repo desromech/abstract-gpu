@@ -145,6 +145,13 @@ AGPUImmediateRenderer >> modelViewMatrixMode [
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> textureMatrixMode [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance textureMatrixMode_immediate_renderer: (self validHandle).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> loadIdentity [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance loadIdentity_immediate_renderer: (self validHandle).
@@ -162,6 +169,34 @@ AGPUImmediateRenderer >> pushMatrix [
 AGPUImmediateRenderer >> popMatrix [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance popMatrix_immediate_renderer: (self validHandle).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> loadMatrix: elements [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance loadMatrix_immediate_renderer: (self validHandle) elements: elements.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> loadTransposeMatrix: elements [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance loadTransposeMatrix_immediate_renderer: (self validHandle) elements: elements.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> multiplyMatrix: elements [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance multiplyMatrix_immediate_renderer: (self validHandle) elements: elements.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> multiplyTransposeMatrix: elements [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance multiplyTransposeMatrix_immediate_renderer: (self validHandle) elements: elements.
 	self checkErrorCode: resultValue_
 ]
 

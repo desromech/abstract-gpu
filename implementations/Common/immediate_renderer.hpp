@@ -61,6 +61,7 @@ struct ImmediatePushConstants
 {
     uint32_t projectionMatrixIndex;
     uint32_t modelViewMatrixIndex;
+    uint32_t textureMatrixIndex;
 };
 
 /**
@@ -103,9 +104,14 @@ public:
     // Matrix stack
     virtual agpu_error projectionMatrixMode() override;
 	virtual agpu_error modelViewMatrixMode() override;
+	virtual agpu_error textureMatrixMode() override;
 	virtual agpu_error loadIdentity() override;
     virtual agpu_error pushMatrix() override;
 	virtual agpu_error popMatrix() override;
+	virtual agpu_error loadMatrix(agpu_float* elements) override;
+	virtual agpu_error loadTransposeMatrix(agpu_float* elements) override;
+	virtual agpu_error multiplyMatrix(agpu_float* elements) override;
+	virtual agpu_error multiplyTransposeMatrix(agpu_float* elements) override;
 
 	virtual agpu_error ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) override;
     virtual agpu_error frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) override;
@@ -185,6 +191,9 @@ private:
     MatrixStack modelViewMatrixStack;
     bool modelViewMatrixStackDirtyFlag;
 
+    MatrixStack textureMatrixStack;
+    bool textureMatrixStackDirtyFlag;
+    
     MatrixStack *activeMatrixStack;
     bool *activeMatrixStackDirtyFlag;
 

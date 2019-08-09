@@ -2255,6 +2255,9 @@
             <method name="modelViewMatrixMode" cname="ImmediateRendererModelViewMatrixMode" returnType="error">
             </method>
 
+            <method name="textureMatrixMode" cname="ImmediateRendererTextureMatrixMode" returnType="error">
+            </method>
+            
             <method name="loadIdentity" cname="ImmediateRendererIdentity" returnType="error">
             </method>
 
@@ -2264,6 +2267,22 @@
             <method name="popMatrix" cname="ImmediateRendererPopMatrix" returnType="error">
             </method>
 
+            <method name="loadMatrix" cname="ImmediateRendererLoadMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="loadTransposeMatrix" cname="ImmediateRendererLoadTransposeMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="multiplyMatrix" cname="ImmediateRendererMultiplyMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="multiplyTransposeMatrix" cname="ImmediateRendererMultiplyTransposeMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+            
             <method name="ortho" cname="ImmediateRendererOrtho" returnType="error">
                 <arg name="left" type="float" />
                 <arg name="right" type="float" />

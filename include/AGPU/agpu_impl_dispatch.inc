@@ -1798,6 +1798,12 @@ AGPU_EXPORT agpu_error agpuImmediateRendererModelViewMatrixMode(agpu_immediate_r
 	return asRef(agpu::immediate_renderer, self)->modelViewMatrixMode();
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererTextureMatrixMode(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->textureMatrixMode();
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererIdentity(agpu_immediate_renderer* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
@@ -1814,6 +1820,30 @@ AGPU_EXPORT agpu_error agpuImmediateRendererPopMatrix(agpu_immediate_renderer* s
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::immediate_renderer, self)->popMatrix();
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererLoadMatrix(agpu_immediate_renderer* self, agpu_float* elements)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->loadMatrix(elements);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererLoadTransposeMatrix(agpu_immediate_renderer* self, agpu_float* elements)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->loadTransposeMatrix(elements);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyMatrix(agpu_immediate_renderer* self, agpu_float* elements)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->multiplyMatrix(elements);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyTransposeMatrix(agpu_immediate_renderer* self, agpu_float* elements)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->multiplyTransposeMatrix(elements);
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererOrtho(agpu_immediate_renderer* self, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)

@@ -1865,6 +1865,11 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererModelViewMatrixMode(this));
 	}
 
+	inline void textureMatrixMode()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererTextureMatrixMode(this));
+	}
+
 	inline void loadIdentity()
 	{
 		agpuThrowIfFailed(agpuImmediateRendererIdentity(this));
@@ -1878,6 +1883,26 @@ public:
 	inline void popMatrix()
 	{
 		agpuThrowIfFailed(agpuImmediateRendererPopMatrix(this));
+	}
+
+	inline void loadMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererLoadMatrix(this, elements));
+	}
+
+	inline void loadTransposeMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererLoadTransposeMatrix(this, elements));
+	}
+
+	inline void multiplyMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererMultiplyMatrix(this, elements));
+	}
+
+	inline void multiplyTransposeMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererMultiplyTransposeMatrix(this, elements));
 	}
 
 	inline void ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)

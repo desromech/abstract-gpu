@@ -947,9 +947,14 @@ public:
 	virtual agpu_error setStencilReference(agpu_uint reference) = 0;
 	virtual agpu_error projectionMatrixMode() = 0;
 	virtual agpu_error modelViewMatrixMode() = 0;
+	virtual agpu_error textureMatrixMode() = 0;
 	virtual agpu_error loadIdentity() = 0;
 	virtual agpu_error pushMatrix() = 0;
 	virtual agpu_error popMatrix() = 0;
+	virtual agpu_error loadMatrix(agpu_float* elements) = 0;
+	virtual agpu_error loadTransposeMatrix(agpu_float* elements) = 0;
+	virtual agpu_error multiplyMatrix(agpu_float* elements) = 0;
+	virtual agpu_error multiplyTransposeMatrix(agpu_float* elements) = 0;
 	virtual agpu_error ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) = 0;
 	virtual agpu_error frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) = 0;
 	virtual agpu_error perspective(agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far) = 0;

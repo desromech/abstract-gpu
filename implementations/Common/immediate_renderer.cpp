@@ -17,8 +17,6 @@ agpu_vertex_attrib_description ImmediateVertexAttributes[] = {
     {0, 3, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, 1, offsetof(ImmediateRendererVertex, texcoord), 0},
 };
 
-
-
 inline size_t nextPowerOfTwo(size_t v)
 {
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
@@ -182,11 +180,16 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     modelViewMatrixStack.push_back(Matrix4F::identity());
     modelViewMatrixStackDirtyFlag = false;
 
+    textureMatrixStack.clear();
+    textureMatrixStack.push_back(Matrix4F::identity());
+    textureMatrixStackDirtyFlag = false;
+    
     matrixBufferData.clear();
     matrixBufferData.push_back(Matrix4F::identity());
 
     currentPushConstants.projectionMatrixIndex = 0;
     currentPushConstants.modelViewMatrixIndex = 0;
+    currentPushConstants.textureMatrixIndex = 0;
 
     // Reset the rendering state.
     currentRenderingState.activePrimitiveTopology = AGPU_POINTS;
@@ -408,6 +411,13 @@ agpu_error ImmediateRenderer::modelViewMatrixMode()
     return AGPU_OK;
 }
 
+agpu_error ImmediateRenderer::textureMatrixMode()
+{
+    activeMatrixStack = &textureMatrixStack;
+    activeMatrixStackDirtyFlag = &textureMatrixStackDirtyFlag;
+    return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::loadIdentity()
 {
     if(!activeMatrixStack)
@@ -433,6 +443,60 @@ agpu_error ImmediateRenderer::popMatrix()
         return AGPU_INVALID_OPERATION;
 
     activeMatrixStack->pop_back();
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::loadMatrix(agpu_float* elements)
+{
+    activeMatrixStack->back() = Matrix4F(
+        Vector4F(elements[0], elements[1], elements[2], elements[3]),
+        Vector4F(elements[4], elements[5], elements[6], elements[7]),
+        Vector4F(elements[8], elements[9], elements[10], elements[11]),
+        Vector4F(elements[12], elements[13], elements[14], elements[15])
+    );
+    
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::loadTransposeMatrix(agpu_float* elements)
+{
+    activeMatrixStack->back() = Matrix4F(
+        Vector4F(elements[0], elements[4], elements[8], elements[12]),
+        Vector4F(elements[1], elements[5], elements[9], elements[13]),
+        Vector4F(elements[2], elements[6], elements[10], elements[14]),
+        Vector4F(elements[3], elements[7], elements[11], elements[15])
+    );
+    
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::multiplyMatrix(agpu_float* elements)
+{
+    applyMatrix(Matrix4F(
+        Vector4F(elements[0], elements[1], elements[2], elements[3]),
+        Vector4F(elements[4], elements[5], elements[6], elements[7]),
+        Vector4F(elements[8], elements[9], elements[10], elements[11]),
+        Vector4F(elements[12], elements[13], elements[14], elements[15])
+    ));
+    return AGPU_OK;    
+}
+
+agpu_error ImmediateRenderer::multiplyTransposeMatrix(agpu_float* elements)
+{
+    printf("multiplyTransposeMatrix:\n");
+    for(int j = 0; j < 4; ++j)
+    {
+        for(int i = 0; i < 4; ++i)
+            printf("%f ", elements[j*4 + i]);
+        printf("\n");
+    }
+    
+    applyMatrix(Matrix4F(
+        Vector4F(elements[0], elements[4], elements[8], elements[12]),
+        Vector4F(elements[1], elements[5], elements[9], elements[13]),
+        Vector4F(elements[2], elements[6], elements[10], elements[14]),
+        Vector4F(elements[3], elements[7], elements[11], elements[15])
+    ));
     return AGPU_OK;
 }
 
@@ -470,7 +534,7 @@ agpu_error ImmediateRenderer::frustum(agpu_float left, agpu_float right, agpu_fl
 
     auto matrix = Matrix4F(
         Vector4F(2.0f*near / (right - left), 0.0f, 0.0f, 0.0f),
-        Vector4F(0.0f, 2.0*far / 0.0f, 0.0f),
+        Vector4F(0.0f, 2.0*far / (top - bottom), 0.0f, 0.0f),
         Vector4F(0.0f, 0.0f, -far/(far - near), -1.0f),
         Vector4F((right + left) / (right - left), (top + bottom) / (top - bottom),  -near * far / (far - near), 0.0f)
     );
@@ -571,7 +635,10 @@ agpu_error ImmediateRenderer::endPrimitives()
         pendingRenderingCommands.push_back([=]{
             auto error = flushRenderingState(stateToRender);
             if(!error)
+            {
+                printf("draw vertex start %d count %d\n", (int)vertexStart, (int)vertexCount);
                 currentStateTracker->drawArrays(vertexCount, 1, vertexStart, 0);
+            }
         });
     }
 

@@ -1464,6 +1464,11 @@ AGPUCBindings >> modelViewMatrixMode_immediate_renderer: immediate_renderer [
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> textureMatrixMode_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererTextureMatrixMode (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> loadIdentity_immediate_renderer: immediate_renderer [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererIdentity (agpu_immediate_renderer* immediate_renderer) )
 ]
@@ -1476,6 +1481,26 @@ AGPUCBindings >> pushMatrix_immediate_renderer: immediate_renderer [
 { #category : #'immediate_renderer' }
 AGPUCBindings >> popMatrix_immediate_renderer: immediate_renderer [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererPopMatrix (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererLoadMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadTransposeMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererLoadTransposeMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> multiplyMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererMultiplyMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> multiplyTransposeMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererMultiplyTransposeMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
 ]
 
 { #category : #'immediate_renderer' }

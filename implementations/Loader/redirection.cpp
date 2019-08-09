@@ -2329,6 +2329,14 @@ AGPU_EXPORT agpu_error agpuImmediateRendererModelViewMatrixMode ( agpu_immediate
 	return (*dispatchTable)->agpuImmediateRendererModelViewMatrixMode ( immediate_renderer );
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererTextureMatrixMode ( agpu_immediate_renderer* immediate_renderer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererTextureMatrixMode ( immediate_renderer );
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererIdentity ( agpu_immediate_renderer* immediate_renderer )
 {
 	if (immediate_renderer == nullptr)
@@ -2351,6 +2359,38 @@ AGPU_EXPORT agpu_error agpuImmediateRendererPopMatrix ( agpu_immediate_renderer*
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
 	return (*dispatchTable)->agpuImmediateRendererPopMatrix ( immediate_renderer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererLoadMatrix ( agpu_immediate_renderer* immediate_renderer, agpu_float* elements )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererLoadMatrix ( immediate_renderer, elements );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererLoadTransposeMatrix ( agpu_immediate_renderer* immediate_renderer, agpu_float* elements )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererLoadTransposeMatrix ( immediate_renderer, elements );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyMatrix ( agpu_immediate_renderer* immediate_renderer, agpu_float* elements )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererMultiplyMatrix ( immediate_renderer, elements );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyTransposeMatrix ( agpu_immediate_renderer* immediate_renderer, agpu_float* elements )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererMultiplyTransposeMatrix ( immediate_renderer, elements );
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererOrtho ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far )
