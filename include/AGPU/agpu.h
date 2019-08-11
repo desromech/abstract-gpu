@@ -151,6 +151,9 @@ typedef enum {
 	AGPU_TRIANGLE_STRIP = 7,
 	AGPU_TRIANGLE_STRIP_ADJACENCY = 8,
 	AGPU_PATCHES = 9,
+	AGPU_IMMEDIATE_TRIANGLE_FAN = 100,
+	AGPU_IMMEDIATE_QUADS = 101,
+	AGPU_IMMEDIATE_POLYGON = 102,
 } agpu_primitive_topology;
 
 typedef enum {
@@ -1570,6 +1573,12 @@ typedef agpu_error (*agpuSetImmediateRendererColor_FUN) (agpu_immediate_renderer
 typedef agpu_error (*agpuSetImmediateRendererTexcoord_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y);
 typedef agpu_error (*agpuSetImmediateRendererNormal_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
 typedef agpu_error (*agpuAddImmediateRendererVertex_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+typedef agpu_error (*agpuBeginImmediateRendererMeshWithVertices_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices);
+typedef agpu_error (*agpuSetImmediateRendererCurrentMeshColors_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer colors);
+typedef agpu_error (*agpuSetImmediateRendererCurrentMeshNormals_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer normals);
+typedef agpu_error (*agpuSetImmediateRendererCurrentMeshTexCoords_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer texcoords);
+typedef agpu_error (*agpuImmediateRendererDrawElementsWithIndices_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
+typedef agpu_error (*agpuEndImmediateRendererMesh_FUN) (agpu_immediate_renderer* immediate_renderer);
 
 AGPU_EXPORT agpu_error agpuAddImmediateRendererReference(agpu_immediate_renderer* immediate_renderer);
 AGPU_EXPORT agpu_error agpuReleaseImmediateRendererReference(agpu_immediate_renderer* immediate_renderer);
@@ -1618,6 +1627,12 @@ AGPU_EXPORT agpu_error agpuSetImmediateRendererColor(agpu_immediate_renderer* im
 AGPU_EXPORT agpu_error agpuSetImmediateRendererTexcoord(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y);
 AGPU_EXPORT agpu_error agpuSetImmediateRendererNormal(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
 AGPU_EXPORT agpu_error agpuAddImmediateRendererVertex(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererMeshWithVertices(agpu_immediate_renderer* immediate_renderer, agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshColors(agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer colors);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshNormals(agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer normals);
+AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshTexCoords(agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer texcoords);
+AGPU_EXPORT agpu_error agpuImmediateRendererDrawElementsWithIndices(agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
+AGPU_EXPORT agpu_error agpuEndImmediateRendererMesh(agpu_immediate_renderer* immediate_renderer);
 
 /* Installable client driver interface. */
 typedef struct _agpu_icd_dispatch {
@@ -1941,6 +1956,12 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetImmediateRendererTexcoord_FUN agpuSetImmediateRendererTexcoord;
 	agpuSetImmediateRendererNormal_FUN agpuSetImmediateRendererNormal;
 	agpuAddImmediateRendererVertex_FUN agpuAddImmediateRendererVertex;
+	agpuBeginImmediateRendererMeshWithVertices_FUN agpuBeginImmediateRendererMeshWithVertices;
+	agpuSetImmediateRendererCurrentMeshColors_FUN agpuSetImmediateRendererCurrentMeshColors;
+	agpuSetImmediateRendererCurrentMeshNormals_FUN agpuSetImmediateRendererCurrentMeshNormals;
+	agpuSetImmediateRendererCurrentMeshTexCoords_FUN agpuSetImmediateRendererCurrentMeshTexCoords;
+	agpuImmediateRendererDrawElementsWithIndices_FUN agpuImmediateRendererDrawElementsWithIndices;
+	agpuEndImmediateRendererMesh_FUN agpuEndImmediateRendererMesh;
 } agpu_icd_dispatch;
 
 

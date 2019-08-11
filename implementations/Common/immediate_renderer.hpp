@@ -13,12 +13,18 @@ class ImmediateShaderLibrary
 {
 public:
     agpu::shader_ref flatColorVertex;
+    agpu::shader_ref flatLightedColorVertex;
     agpu::shader_ref flatColorFragment;
+    
     agpu::shader_ref flatTexturedVertex;
+    agpu::shader_ref flatLightedTexturedVertex;
     agpu::shader_ref flatTexturedFragment;
 
+    agpu::shader_ref smoothLightedColorVertex;
     agpu::shader_ref smoothColorVertex;
     agpu::shader_ref smoothColorFragment;
+    
+    agpu::shader_ref smoothLightedTexturedVertex;
     agpu::shader_ref smoothTexturedVertex;
     agpu::shader_ref smoothTexturedFragment;
 };
@@ -62,8 +68,71 @@ struct ImmediatePushConstants
     uint32_t projectionMatrixIndex;
     uint32_t modelViewMatrixIndex;
     uint32_t textureMatrixIndex;
+    uint32_t lightingStateIndex;
 };
 
+struct LightState
+{
+    LightState();
+
+    size_t hash() const;
+    bool operator==(const LightState &other) const;
+
+    Vector4F ambientColor;
+    Vector4F diffuseColor;
+    Vector4F specularColor;
+    
+    Vector4F position;
+    Vector3F spotDirection;
+    float spotCosCutoff;
+
+    float spotExponent;
+    float constantAttenuation;
+    float linearAttenuation;
+    float quadraticAttenuation;
+};
+
+struct LightingState
+{
+    static constexpr size_t MaxLightCount = 8;
+
+    LightingState();
+
+    size_t hash() const;
+    bool operator==(const LightingState &other) const;
+    
+    Vector4F ambientLighting;
+    
+    uint32_t enabledLightMask;
+    uint32_t padding[3];
+    std::array<LightState, MaxLightCount> lights;
+};
+
+}
+
+namespace std
+{
+template<>
+struct hash<AgpuCommon::LightState>
+{
+    size_t operator()(const AgpuCommon::LightState &ref) const
+    {
+        return ref.hash();
+    }
+};
+
+template<>
+struct hash<AgpuCommon::LightingState>
+{
+    size_t operator()(const AgpuCommon::LightingState &ref) const
+    {
+        return ref.hash();
+    }
+};
+}
+
+namespace AgpuCommon
+{
 /**
  * I am an immediate renderer that emulates a classic OpenGL style
  * glBegin()/glEnd() rendering interface.
@@ -137,15 +206,26 @@ public:
 	virtual agpu_error normal(agpu_float x, agpu_float y, agpu_float z) override;
 	virtual agpu_error vertex(agpu_float x, agpu_float y, agpu_float z) override;
 
+    virtual agpu_error beginMeshWithVertices(agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices) override;
+	virtual agpu_error setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors) override;
+	virtual agpu_error setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals) override;
+	virtual agpu_error setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords) override;
+	virtual agpu_error drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) override;
+	virtual agpu_error endMesh() override;
+    
+
 private:
     typedef std::function<void ()> PendingRenderingCommand;
 
     void applyMatrix(const Matrix4F &matrix);
     void invalidateMatrix();
     agpu_error validateMatrices();
+    agpu_error validateLightingState();
+    agpu_error validateRenderingStates();
 
     agpu_error flushRenderingState(const ImmediateRenderingState &state);
     agpu_error flushRenderingData();
+    void uploadPushConstants();
 
     agpu::shader_resource_binding_ref getValidTextureBindingFor(const agpu::texture_ref &texture);
 
@@ -183,6 +263,16 @@ private:
     agpu::buffer_ref vertexBuffer;
     size_t vertexBufferCapacity;
     std::vector<ImmediateRendererVertex> vertices;
+    
+    // Indices
+    agpu::buffer_ref indexBuffer;
+    size_t indexBufferCapacity;
+    std::vector<uint32_t> indices;
+    
+    // Immediate mesh
+    bool renderingImmediateMesh;
+    size_t currentImmediateMeshBaseVertex;
+    size_t currentImmediateMeshVertexCount;
 
     // Matrices
     MatrixStack projectionMatrixStack;
@@ -206,6 +296,12 @@ private:
     std::unordered_map<agpu::texture_ref, agpu::shader_resource_binding_ref> usedTextureBindingMap;
     size_t usedTextureBindingCount;
 
+    // Lighting state
+    LightingState currentLightingState;
+    bool currentLightingStateDirty;
+    size_t lightingStateBufferCapacity;
+    std::vector<LightingState> lightingStateBufferData;
+    agpu::buffer_ref lightingStateBuffer;
 
 };
 

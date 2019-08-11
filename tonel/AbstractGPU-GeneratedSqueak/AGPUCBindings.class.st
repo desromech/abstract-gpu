@@ -1915,6 +1915,42 @@ AGPUCBindings >> vertex_immediate_renderer: immediate_renderer x: x y: y z: z [
 	^ self externalCallFailed
 ]
 
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> beginMeshWithVertices_immediate_renderer: immediate_renderer vertexCount: vertexCount stride: stride elementCount: elementCount vertices: vertices [
+	<cdecl: long 'agpuBeginImmediateRendererMeshWithVertices' (void* ulong ulong ulong void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCurrentMeshColors_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount colors: colors [
+	<cdecl: long 'agpuSetImmediateRendererCurrentMeshColors' (void* ulong ulong void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCurrentMeshNormals_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount normals: normals [
+	<cdecl: long 'agpuSetImmediateRendererCurrentMeshNormals' (void* ulong ulong void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCurrentMeshTexCoords_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount texcoords: texcoords [
+	<cdecl: long 'agpuSetImmediateRendererCurrentMeshTexCoords' (void* ulong ulong void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> drawElementsWithIndices_immediate_renderer: immediate_renderer mode: mode indices: indices index_count: index_count instance_count: instance_count first_index: first_index base_vertex: base_vertex base_instance: base_instance [
+	<cdecl: long 'agpuImmediateRendererDrawElementsWithIndices' (void* long void* ulong ulong ulong long ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> endMesh_immediate_renderer: immediate_renderer [
+	<cdecl: long 'agpuEndImmediateRendererMesh' (void*)>
+	^ self externalCallFailed
+]
+
 { #category : #'global c functions' }
 AGPUCBindings >> getPlatforms_numplatforms: numplatforms platforms: platforms ret_numplatforms: ret_numplatforms [
 	<cdecl: long 'agpuGetPlatforms' (ulong void* ulong*)>

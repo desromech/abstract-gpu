@@ -974,6 +974,12 @@ public:
 	virtual agpu_error texcoord(agpu_float x, agpu_float y) = 0;
 	virtual agpu_error normal(agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error vertex(agpu_float x, agpu_float y, agpu_float z) = 0;
+	virtual agpu_error beginMeshWithVertices(agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices) = 0;
+	virtual agpu_error setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors) = 0;
+	virtual agpu_error setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals) = 0;
+	virtual agpu_error setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords) = 0;
+	virtual agpu_error drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;
+	virtual agpu_error endMesh() = 0;
 };
 
 

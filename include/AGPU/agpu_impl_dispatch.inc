@@ -1960,6 +1960,42 @@ AGPU_EXPORT agpu_error agpuAddImmediateRendererVertex(agpu_immediate_renderer* s
 	return asRef(agpu::immediate_renderer, self)->vertex(x, y, z);
 }
 
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererMeshWithVertices(agpu_immediate_renderer* self, agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->beginMeshWithVertices(vertexCount, stride, elementCount, vertices);
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshColors(agpu_immediate_renderer* self, agpu_size stride, agpu_size elementCount, agpu_pointer colors)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setCurrentMeshColors(stride, elementCount, colors);
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshNormals(agpu_immediate_renderer* self, agpu_size stride, agpu_size elementCount, agpu_pointer normals)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setCurrentMeshNormals(stride, elementCount, normals);
+}
+
+AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshTexCoords(agpu_immediate_renderer* self, agpu_size stride, agpu_size elementCount, agpu_pointer texcoords)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setCurrentMeshTexCoords(stride, elementCount, texcoords);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererDrawElementsWithIndices(agpu_immediate_renderer* self, agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->drawElementsWithIndices(mode, indices, index_count, instance_count, first_index, base_vertex, base_instance);
+}
+
+AGPU_EXPORT agpu_error agpuEndImmediateRendererMesh(agpu_immediate_renderer* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->endMesh();
+}
+
 
 
 #undef asRef
