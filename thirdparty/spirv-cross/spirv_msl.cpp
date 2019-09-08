@@ -5398,6 +5398,7 @@ string CompilerMSL::func_type_decl(SPIRType &type)
 string CompilerMSL::get_argument_address_space(const SPIRVariable &argument)
 {
 	const auto &type = get<SPIRType>(argument.basetype);
+    auto &execution = get_entry_point();
 
 	switch (type.storage)
 	{
@@ -5411,6 +5412,10 @@ string CompilerMSL::get_argument_address_space(const SPIRVariable &argument)
 		bool readonly = false;
 		if (has_decoration(type.self, DecorationBlock))
 			readonly = ir.get_buffer_block_flags(argument).get(DecorationNonWritable);
+            
+        // HACK: Do not allow modifying them in non compute shaders.
+        if(execution.model != ExecutionModelGLCompute)
+            readonly = true;
 
 		return readonly ? "const device" : "device";
 	}
@@ -5424,6 +5429,9 @@ string CompilerMSL::get_argument_address_space(const SPIRVariable &argument)
 			if (ssbo)
 			{
 				bool readonly = ir.get_buffer_block_flags(argument).get(DecorationNonWritable);
+                if(execution.model != ExecutionModelGLCompute)
+                    readonly = true;
+
 				return readonly ? "const device" : "device";
 			}
 			else
