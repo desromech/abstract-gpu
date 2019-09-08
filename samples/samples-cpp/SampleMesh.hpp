@@ -34,6 +34,21 @@ public:
     {
     }
 
+    void drawWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer, size_t instanceCount = 1)
+    {
+        if(vertices.empty())
+            return;
+
+        immediateRenderer->beginMeshWithVertices(vertices.size(), sizeof(SampleVertex), 3, &vertices[0].position);
+        immediateRenderer->setCurrentMeshColors(sizeof(SampleVertex), 4, &vertices[0].color);
+        immediateRenderer->setCurrentMeshNormals(sizeof(SampleVertex), 3, &vertices[0].normal);
+        immediateRenderer->setCurrentMeshTexCoords(sizeof(SampleVertex), 2, &vertices[0].texcoord);
+
+        for(auto &submesh : submeshes)
+            immediateRenderer->drawElementsWithIndices(AGPU_TRIANGLES, &indices[0], submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+        immediateRenderer->endMesh();
+    }
+
     void drawWithStateTracker(const agpu_state_tracker_ref &stateTracker, size_t instanceCount = 1)
     {
         stateTracker->useVertexBinding(vertexBinding);
@@ -53,6 +68,8 @@ public:
     agpu_buffer_ref vertexBuffer;
     agpu_buffer_ref indexBuffer;
     agpu_vertex_binding_ref vertexBinding;
+    std::vector<SampleVertex> vertices;
+    std::vector<uint32_t> indices;
     std::vector<SampleSubmesh> submeshes;
 };
 typedef std::shared_ptr<SampleMesh> SampleMeshPtr;
@@ -156,19 +173,19 @@ public:
 
         // Back
         beginTriangles();
-        addVertexPNT(glm::vec3(min.x, min.y, min.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
-        addVertexPNT(glm::vec3(max.x, min.y, min.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
-        addVertexPNT(glm::vec3(max.x, max.y, min.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
-        addVertexPNT(glm::vec3(min.x, max.y, min.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        addVertexPNT(glm::vec3(min.x, min.y, min.z), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 1.0f));
+        addVertexPNT(glm::vec3(max.x, min.y, min.z), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 1.0f));
+        addVertexPNT(glm::vec3(max.x, max.y, min.z), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 0.0f));
+        addVertexPNT(glm::vec3(min.x, max.y, min.z), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f));
         addTriangle(1, 0, 2);
         addTriangle(3, 2, 0);
 
         // Front
         beginTriangles();
-        addVertexPNT(glm::vec3(min.x, min.y, max.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
-        addVertexPNT(glm::vec3(max.x, min.y, max.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
-        addVertexPNT(glm::vec3(max.x, max.y, max.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
-        addVertexPNT(glm::vec3(min.x, max.y, max.z), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        addVertexPNT(glm::vec3(min.x, min.y, max.z), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f));
+        addVertexPNT(glm::vec3(max.x, min.y, max.z), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f));
+        addVertexPNT(glm::vec3(max.x, max.y, max.z), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f));
+        addVertexPNT(glm::vec3(min.x, max.y, max.z), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
         addTriangle(0, 1, 2);
         addTriangle(2, 3, 0);
 
@@ -195,6 +212,8 @@ public:
         result->vertexBuffer = sampleBase->createImmutableVertexBuffer(vertices.size(), sizeof(SampleVertex), &vertices[0]);
         result->indexBuffer = sampleBase->createImmutableIndexBuffer(indices.size(), sizeof(uint32_t), &indices[0]);
         result->submeshes = submeshes;
+        result->vertices = vertices;
+        result->indices = indices;
         {
             result->vertexBinding = sampleBase->device->createVertexBinding(sampleBase->getSampleVertexLayout());
             result->vertexBinding->bindVertexBuffers(1, &result->vertexBuffer);

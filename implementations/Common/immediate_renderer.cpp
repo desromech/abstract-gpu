@@ -15,12 +15,12 @@ LightState::LightState()
     ambientColor(0.0f, 0.0f, 0.0f, 1.0f),
     diffuseColor(0.0f, 0.0f, 0.0f, 1.0f),
     specularColor(0.0f, 0.0f, 0.0f, 1.0f),
-    
+
     position(0.0f, 0.0f, 1.0f, 0.0f),
-    
+
     spotDirection(0.0f, 0.0f, -1.0f),
     spotCosCutoff(-1.0f),
-    
+
     spotExponent(0.0f),
     constantAttenuation(1.0f),
     linearAttenuation(0.0f),
@@ -30,7 +30,7 @@ LightState::LightState()
 
 size_t LightState::hash() const
 {
-    return 
+    return
         ambientColor.hash() ^
         diffuseColor.hash() ^
         specularColor.hash() ^
@@ -52,7 +52,7 @@ bool LightState::operator==(const LightState &other) const
         ambientColor == other.ambientColor &&
         diffuseColor == other.diffuseColor &&
         specularColor == other.specularColor &&
-    
+
         position == other.position &&
         spotDirection == other.spotDirection &&
         spotCosCutoff == other.spotCosCutoff &&
@@ -64,7 +64,7 @@ bool LightState::operator==(const LightState &other) const
 }
 
 LightingState::LightingState()
-    : ambientLighting(0.2f, 0.2f, 0.2f, 1.0f)
+    : ambientLighting(0.2f, 0.2f, 0.2f, 1.0f), enabledLightMask(1)
 {
     lights[0].diffuseColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
     lights[0].specularColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
@@ -83,6 +83,35 @@ bool LightingState::operator==(const LightingState &other) const
 {
     return ambientLighting == other.ambientLighting &&
         lights == other.lights;
+}
+
+MaterialState::MaterialState()
+    :
+    emission(0.0f, 0.0f, 0.0f, 1.0f),
+    ambient(0.2f, 0.2f, 0.2f, 1.0f),
+    diffuse(0.8f, 0.8f, 0.8f, 1.0f),
+    specular(0.0f, 0.0f, 0.0f, 1.0f),
+    shininess(0.0f)
+{}
+
+size_t MaterialState::hash() const
+{
+    return
+        emission.hash() ^
+        ambient.hash() ^
+        diffuse.hash() ^
+        specular.hash() ^
+        std::hash<float> ()(shininess);
+}
+
+bool MaterialState::operator==(const MaterialState &other) const
+{
+    return
+        emission == other.emission &&
+        ambient == other.ambient &&
+        diffuse == other.diffuse &&
+        specular == other.specular &&
+        shininess == other.shininess;
 }
 
 agpu_vertex_attrib_description ImmediateVertexAttributes[] = {
@@ -132,7 +161,7 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 2);
 
         builder->beginBindingBank(100);
-        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 2);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 3);
 
         builder->beginBindingBank(1000);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
@@ -206,6 +235,7 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
     indexBufferCapacity = 0;
     matrixBufferCapacity = 0;
     lightingStateBufferCapacity = 0;
+    materialStateBufferCapacity = 0;
     usedTextureBindingCount = 0;
     activeMatrixStack = nullptr;
 
@@ -266,7 +296,7 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     textureMatrixStack.clear();
     textureMatrixStack.push_back(Matrix4F::identity());
     textureMatrixStackDirtyFlag = false;
-    
+
     matrixBufferData.clear();
     matrixBufferData.push_back(Matrix4F::identity());
 
@@ -284,11 +314,16 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     // Reset the texture bindings.
     usedTextureBindingMap.clear();
     usedTextureBindingCount = 0;
-    
+
     // Reset the lighting state.
     currentLightingState = LightingState();
     currentLightingStateDirty = true;
     lightingStateBufferData.clear();
+
+    // Reset the material state.
+    currentMaterialState = MaterialState();
+    currentMaterialStateDirty = true;
+    materialStateBufferData.clear();
 
     // Reset the vertices.
     lastDrawnVertexIndex = 0;
@@ -296,10 +331,10 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     currentVertex.color = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
     currentVertex.normal = Vector3F(0.0f, 0.0f, 1.0f);
     currentVertex.texcoord = Vector2F(0.0f, 0.0f);
-    
+
     // Reset the indices.
     indices.clear();
-    
+
     // Reset the immediate meshes.
     renderingImmediateMesh = false;
     currentImmediateMeshBaseVertex = 0;
@@ -451,7 +486,7 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
 {
     if(index >= LightingState::MaxLightCount)
         return AGPU_OK;
-        
+
     uint32_t bit = 1<<index;
     if(enabled)
     {
@@ -469,7 +504,7 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
             light.spotCosCutoff = cos(state->spot_cutoff*M_PI/180.0);
             light.constantAttenuation = state->constant_attenuation;
             light.linearAttenuation = state->linear_attenuation;
-            light.quadraticAttenuation = state->quadratic_attenuation;            
+            light.quadraticAttenuation = state->quadratic_attenuation;
         }
     }
     else
@@ -581,7 +616,7 @@ agpu_error ImmediateRenderer::loadMatrix(agpu_float* elements)
         Vector4F(elements[8], elements[9], elements[10], elements[11]),
         Vector4F(elements[12], elements[13], elements[14], elements[15])
     );
-    
+
     return AGPU_OK;
 }
 
@@ -593,7 +628,7 @@ agpu_error ImmediateRenderer::loadTransposeMatrix(agpu_float* elements)
         Vector4F(elements[2], elements[6], elements[10], elements[14]),
         Vector4F(elements[3], elements[7], elements[11], elements[15])
     );
-    
+
     return AGPU_OK;
 }
 
@@ -605,7 +640,7 @@ agpu_error ImmediateRenderer::multiplyMatrix(agpu_float* elements)
         Vector4F(elements[8], elements[9], elements[10], elements[11]),
         Vector4F(elements[12], elements[13], elements[14], elements[15])
     ));
-    return AGPU_OK;    
+    return AGPU_OK;
 }
 
 agpu_error ImmediateRenderer::multiplyTransposeMatrix(agpu_float* elements)
@@ -617,7 +652,7 @@ agpu_error ImmediateRenderer::multiplyTransposeMatrix(agpu_float* elements)
             printf("%f ", elements[j*4 + i]);
         printf("\n");
     }*/
-    
+
     applyMatrix(Matrix4F(
         Vector4F(elements[0], elements[4], elements[8], elements[12]),
         Vector4F(elements[1], elements[5], elements[9], elements[13]),
@@ -758,7 +793,10 @@ agpu_error ImmediateRenderer::validateRenderingStates()
 
     error = validateLightingState();
     if(error) return error;
-    
+
+    error = validateMaterialState();
+    if(error) return error;
+
     return AGPU_OK;
 }
 
@@ -778,7 +816,7 @@ agpu_error ImmediateRenderer::endPrimitives()
                 currentStateTracker->drawArrays(vertexCount, 1, vertexStart, 0);
         });
     }
-    
+
     return AGPU_OK;
 }
 
@@ -832,13 +870,25 @@ void ImmediateRenderer::invalidateMatrix()
 
 agpu_error ImmediateRenderer::validateLightingState()
 {
-    if(currentRenderingState.lightingEnabled && currentLightingStateDirty)
+    if((currentRenderingState.lightingEnabled || lightingStateBufferData.empty()) && currentLightingStateDirty)
     {
         currentPushConstants.lightingStateIndex = lightingStateBufferData.size();
         lightingStateBufferData.push_back(currentLightingState);
         uploadPushConstants();
     }
-    
+
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::validateMaterialState()
+{
+    if((currentRenderingState.lightingEnabled || materialStateBufferData.empty()) && currentMaterialStateDirty)
+    {
+        currentPushConstants.materialStateIndex = materialStateBufferData.size();
+        materialStateBufferData.push_back(currentMaterialState);
+        uploadPushConstants();
+    }
+
     return AGPU_OK;
 }
 
@@ -963,7 +1013,7 @@ agpu_error ImmediateRenderer::flushRenderingData()
         if(error)
             return error;
     }
-    
+
     // Upload the indices.
     if(!indices.empty() && (!indexBuffer || indexBufferCapacity < indices.size()))
     {
@@ -1029,7 +1079,7 @@ agpu_error ImmediateRenderer::flushRenderingData()
         if(lightingStateBufferCapacity < 32)
             lightingStateBufferCapacity = 32;
 
-        auto requiredSize = matrixBufferCapacity*sizeof(LightingState);
+        auto requiredSize = lightingStateBufferCapacity*sizeof(LightingState);
         agpu_buffer_description bufferDescription = {};
         bufferDescription.size = requiredSize;
         bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
@@ -1051,7 +1101,37 @@ agpu_error ImmediateRenderer::flushRenderingData()
         if(error)
             return error;
     }
-    
+
+    // Upload the material states.
+    if(!materialStateBuffer || materialStateBufferCapacity < materialStateBufferData.size())
+    {
+        materialStateBufferCapacity = nextPowerOfTwo(materialStateBufferData.size());
+        if(materialStateBufferCapacity < 32)
+            materialStateBufferCapacity = 32;
+
+        auto requiredSize = materialStateBufferCapacity*sizeof(MaterialState);
+        agpu_buffer_description bufferDescription = {};
+        bufferDescription.size = requiredSize;
+        bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
+            ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+        bufferDescription.binding = AGPU_STORAGE_BUFFER;
+        bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
+        bufferDescription.stride = sizeof(MaterialState);
+
+        materialStateBuffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
+        if(!materialStateBuffer)
+            return AGPU_OUT_OF_MEMORY;
+
+        uniformResourceBindings->bindStorageBuffer(2, materialStateBuffer);
+    }
+
+    if(!materialStateBufferData.empty())
+    {
+        error = materialStateBuffer->uploadBufferData(0, materialStateBufferData.size()*sizeof(MaterialState), &materialStateBufferData[0]);
+        if(error)
+            return error;
+    }
+
     return AGPU_OK;
 }
 
@@ -1059,22 +1139,22 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
 {
     if(renderingImmediateMesh)
         return AGPU_INVALID_OPERATION;
-        
+
     auto error = validateRenderingStates();
     if(error) return error;
-    
+
     renderingImmediateMesh = true;
     currentImmediateMeshBaseVertex = vertices.size();
     currentImmediateMeshVertexCount = vertexCount;
     //printf("beginMeshWithVertices baseVertex %d\n", (int)currentImmediateMeshBaseVertex);
     vertices.reserve(vertexCount);
-    
+
     auto positionsBytes = reinterpret_cast<const uint8_t*> (positionsPointer);
     for(size_t i = 0; i < vertexCount; ++i)
     {
         auto vertexPositions = reinterpret_cast<const float*> (positionsBytes);
         vertices.push_back(this->currentVertex);
-        
+
         auto &destPositions = vertices.back().position;
         destPositions = Vector3F(vertexPositions[0]);
         if(elementCount > 1)
@@ -1085,7 +1165,7 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
         }
         positionsBytes += stride;
     }
-    
+
     auto stateToRender = currentRenderingState;
     pendingRenderingCommands.push_back([=]{
         auto error = flushRenderingState(stateToRender);
@@ -1094,7 +1174,7 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
             currentStateTracker->useIndexBuffer(indexBuffer);
         }
     });
-    
+
     return AGPU_OK;
 }
 
@@ -1119,10 +1199,10 @@ agpu_error ImmediateRenderer::setCurrentMeshColors(agpu_size stride, agpu_size e
                     destColor.w = colorValues[3];
             }
         }
-        
+
         colorBytes += stride;
     }
-    
+
     return AGPU_OK;
 }
 
@@ -1143,7 +1223,7 @@ agpu_error ImmediateRenderer::setCurrentMeshNormals(agpu_size stride, agpu_size 
             if(elementCount > 2)
                 destNormal.z = normalValues[2];
         }
-        
+
         normalBytes += stride;
     }
 
@@ -1154,7 +1234,7 @@ agpu_error ImmediateRenderer::setCurrentMeshTexCoords(agpu_size stride, agpu_siz
 {
     if(!renderingImmediateMesh)
         return AGPU_INVALID_OPERATION;
-        
+
     auto texcoordBytes = reinterpret_cast<const uint8_t*> (texcoords);
     for(size_t i = 0; i < currentImmediateMeshVertexCount; ++i)
     {
@@ -1163,7 +1243,7 @@ agpu_error ImmediateRenderer::setCurrentMeshTexCoords(agpu_size stride, agpu_siz
         destTexcoord = Vector2F(texcoordValues[0]);
         if(elementCount > 1)
             destTexcoord.y = texcoordValues[1];
-        
+
         texcoordBytes += stride;
     }
 
@@ -1174,7 +1254,7 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
 {
     if(!renderingImmediateMesh)
         return AGPU_INVALID_OPERATION;
-        
+
     size_t baseIndex = indices.size();
     auto indicesValues = reinterpret_cast<uint32_t*> (indicesPointer);
     auto actualBaseVertex = currentImmediateMeshBaseVertex + base_vertex;
@@ -1213,7 +1293,7 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
                 indices.push_back(indicesValues[i]);
                 convertedIndexCount += 3;
             }
-            
+
             pendingRenderingCommands.push_back([=]{
                 currentStateTracker->setPrimitiveType(AGPU_TRIANGLES);
                 currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
@@ -1240,16 +1320,16 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
                 indices.push_back(qi2);
                 indices.push_back(qi3);
                 indices.push_back(qi0);
-                
+
                 indicesValues += 4;
                 convertedIndexCount += 6;
             }
 
-            
+
             pendingRenderingCommands.push_back([=]{
                 currentStateTracker->setPrimitiveType(AGPU_TRIANGLES);
                 currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
-            });      
+            });
         }
         return AGPU_OK;
     default:

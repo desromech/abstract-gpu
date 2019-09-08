@@ -9,4 +9,5 @@ layout(std140, push_constant) uniform PushConstants
     uint modelViewMatrixIndex;
     uint textureMatrixIndex;
     uint lightingStateIndex;
+    uint materialStateIndex;
 };

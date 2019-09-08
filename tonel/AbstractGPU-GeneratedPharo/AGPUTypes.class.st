@@ -102,6 +102,7 @@ Class {
 		'agpu_fence',
 		'agpu_platform',
 		'agpu_command_list_type',
+		'agpu_immediate_renderer_vertex_attribute',
 		'agpu_bitfield',
 		'agpu_region3d',
 		'agpu_vr_tracked_device_role',
@@ -229,6 +230,7 @@ AGPUTypes class >> initialize [
 	agpu_fence := #'void'.
 	agpu_platform := #'void'.
 	agpu_command_list_type := #int.
+	agpu_immediate_renderer_vertex_attribute := #int.
 	agpu_bitfield := #'uint'.
 	agpu_region3d := AGPURegion3d.
 	agpu_vr_tracked_device_role := #int.

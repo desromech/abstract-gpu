@@ -604,6 +604,13 @@ typedef enum {
 	AGPU_VR_EVENT_TYPE_DUAL_ANALOG_CANCEL = 257,
 } agpu_vr_event_type;
 
+typedef enum {
+	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_POSITION = 0,
+	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_COLOR = 1,
+	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_NORMAL = 2,
+	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD = 3,
+} agpu_immediate_renderer_vertex_attribute;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
