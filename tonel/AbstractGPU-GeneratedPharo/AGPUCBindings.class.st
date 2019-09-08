@@ -1464,6 +1464,11 @@ AGPUCBindings >> modelViewMatrixMode_immediate_renderer: immediate_renderer [
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> textureMatrixMode_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererTextureMatrixMode (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> loadIdentity_immediate_renderer: immediate_renderer [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererIdentity (agpu_immediate_renderer* immediate_renderer) )
 ]
@@ -1476,6 +1481,26 @@ AGPUCBindings >> pushMatrix_immediate_renderer: immediate_renderer [
 { #category : #'immediate_renderer' }
 AGPUCBindings >> popMatrix_immediate_renderer: immediate_renderer [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererPopMatrix (agpu_immediate_renderer* immediate_renderer) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererLoadMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> loadTransposeMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererLoadTransposeMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> multiplyMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererMultiplyMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> multiplyTransposeMatrix_immediate_renderer: immediate_renderer elements: elements [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererMultiplyTransposeMatrix (agpu_immediate_renderer* immediate_renderer , agpu_float* elements) )
 ]
 
 { #category : #'immediate_renderer' }
@@ -1534,6 +1559,11 @@ AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index en
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setMaterial_immediate_renderer: immediate_renderer state: state [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetMaterial (agpu_immediate_renderer* immediate_renderer , agpu_immediate_renderer_material* state) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererSetTextureEnabled (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
 ]
@@ -1571,6 +1601,36 @@ AGPUCBindings >> normal_immediate_renderer: immediate_renderer x: x y: y z: z [
 { #category : #'immediate_renderer' }
 AGPUCBindings >> vertex_immediate_renderer: immediate_renderer x: x y: y z: z [
 	^ self ffiCall: #(agpu_error agpuAddImmediateRendererVertex (agpu_immediate_renderer* immediate_renderer , agpu_float x , agpu_float y , agpu_float z) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> beginMeshWithVertices_immediate_renderer: immediate_renderer vertexCount: vertexCount stride: stride elementCount: elementCount vertices: vertices [
+	^ self ffiCall: #(agpu_error agpuBeginImmediateRendererMeshWithVertices (agpu_immediate_renderer* immediate_renderer , agpu_size vertexCount , agpu_size stride , agpu_size elementCount , agpu_pointer vertices) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCurrentMeshColors_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount colors: colors [
+	^ self ffiCall: #(agpu_error agpuSetImmediateRendererCurrentMeshColors (agpu_immediate_renderer* immediate_renderer , agpu_size stride , agpu_size elementCount , agpu_pointer colors) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCurrentMeshNormals_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount normals: normals [
+	^ self ffiCall: #(agpu_error agpuSetImmediateRendererCurrentMeshNormals (agpu_immediate_renderer* immediate_renderer , agpu_size stride , agpu_size elementCount , agpu_pointer normals) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setCurrentMeshTexCoords_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount texcoords: texcoords [
+	^ self ffiCall: #(agpu_error agpuSetImmediateRendererCurrentMeshTexCoords (agpu_immediate_renderer* immediate_renderer , agpu_size stride , agpu_size elementCount , agpu_pointer texcoords) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> drawElementsWithIndices_immediate_renderer: immediate_renderer mode: mode indices: indices index_count: index_count instance_count: instance_count first_index: first_index base_vertex: base_vertex base_instance: base_instance [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererDrawElementsWithIndices (agpu_immediate_renderer* immediate_renderer , agpu_primitive_topology mode , agpu_pointer indices , agpu_uint index_count , agpu_uint instance_count , agpu_uint first_index , agpu_int base_vertex , agpu_uint base_instance) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> endMesh_immediate_renderer: immediate_renderer [
+	^ self ffiCall: #(agpu_error agpuEndImmediateRendererMesh (agpu_immediate_renderer* immediate_renderer) )
 ]
 
 { #category : #'global c functions' }

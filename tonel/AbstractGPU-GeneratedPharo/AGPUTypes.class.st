@@ -26,6 +26,7 @@ Class {
 		'agpu_renderpass_attachment_action',
 		'agpu_vr_event_type',
 		'agpu_depth_stencil_value',
+		'agpu_immediate_renderer_material',
 		'agpu_inheritance_info',
 		'agpu_color4f',
 		'agpu_float',
@@ -102,6 +103,7 @@ Class {
 		'agpu_fence',
 		'agpu_platform',
 		'agpu_command_list_type',
+		'agpu_immediate_renderer_vertex_attribute',
 		'agpu_bitfield',
 		'agpu_region3d',
 		'agpu_vr_tracked_device_role',
@@ -153,6 +155,7 @@ AGPUTypes class >> initialize [
 	agpu_renderpass_attachment_action := #int.
 	agpu_vr_event_type := #int.
 	agpu_depth_stencil_value := AGPUDepthStencilValue.
+	agpu_immediate_renderer_material := AGPUImmediateRendererMaterial.
 	agpu_inheritance_info := AGPUInheritanceInfo.
 	agpu_color4f := AGPUColor4f.
 	agpu_float := #'float'.
@@ -229,6 +232,7 @@ AGPUTypes class >> initialize [
 	agpu_fence := #'void'.
 	agpu_platform := #'void'.
 	agpu_command_list_type := #int.
+	agpu_immediate_renderer_vertex_attribute := #int.
 	agpu_bitfield := #'uint'.
 	agpu_region3d := AGPURegion3d.
 	agpu_vr_tracked_device_role := #int.

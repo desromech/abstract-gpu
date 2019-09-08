@@ -23,7 +23,7 @@ AGPUImplicitFrameSynchronization class >> for: aDevice [
 	^ self new initializeWithDevice: aDevice
 ]
 
-{ #category : #private }
+{ #category : #rendering }
 AGPUImplicitFrameSynchronization >> beginFrame [
 	currentStateTracker := stateTrackers at: frameBufferingIndex.
 	currentStateTracker beginRecordingCommands.
@@ -34,7 +34,7 @@ AGPUImplicitFrameSynchronization >> createImmediateRenderers [
 	^ (1 to: 3) collect: [ :i | stateTrackerCache createImmediateRenderer ]
 ]
 
-{ #category : #private }
+{ #category : #rendering }
 AGPUImplicitFrameSynchronization >> finishFrame [
 	currentStateTracker endRecordingAndFlushCommands.
 	currentStateTracker := nil.
@@ -76,6 +76,11 @@ AGPUImplicitFrameSynchronization >> renderFrameWith: aBlock [
 { #category : #accessing }
 AGPUImplicitFrameSynchronization >> stateTrackerCache [
 	^ stateTrackerCache
+]
+
+{ #category : #accessing }
+AGPUImplicitFrameSynchronization >> currentStateTracker [
+	^ currentStateTracker
 ]
 
 { #category : #rendering }

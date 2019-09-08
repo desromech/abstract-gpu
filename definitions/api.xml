@@ -324,6 +324,14 @@
             <field name="linear_attenuation" type="float" />
             <field name="quadratic_attenuation" type="float" />
         </struct>
+
+        <struct name="immediate_renderer_material">
+            <field name="emission" type="vector4f" />
+            <field name="ambient" type="vector4f" />
+            <field name="diffuse" type="vector4f" />
+            <field name="specular" type="vector4f" />
+            <field name="shininess" type="float" />
+        </struct>
 	</structs>
 
     <constants>
@@ -415,6 +423,10 @@
             <constant name="TriangleStripAdjacency" value="8" />
 
             <constant name="Patches" value="9" />
+
+            <constant name="ImmediateTriangleFan" value="100" />
+            <constant name="ImmediateQuads" value="101" />
+            <constant name="ImmediatePolygon" value="102" />
 		</enum>
 
         <enum name="polygon_mode">
@@ -890,6 +902,13 @@
             <constant name="VrEventTypeDualAnalogModeSwitch1" value="255" />
             <constant name="VrEventTypeDualAnalogModeSwitch2" value="256" />
             <constant name="VrEventTypeDualAnalogCancel" value="257" />
+        </enum>
+
+        <enum name="immediate_renderer_vertex_attribute">
+            <constant name="ImmediateRendererVertexAttributePosition" value="0" />
+            <constant name="ImmediateRendererVertexAttributeColor" value="1" />
+            <constant name="ImmediateRendererVertexAttributeNormal" value="2" />
+            <constant name="ImmediateRendererVertexAttributeTexcoord" value="3" />
         </enum>
     </constants>
 
@@ -2255,6 +2274,9 @@
             <method name="modelViewMatrixMode" cname="ImmediateRendererModelViewMatrixMode" returnType="error">
             </method>
 
+            <method name="textureMatrixMode" cname="ImmediateRendererTextureMatrixMode" returnType="error">
+            </method>
+
             <method name="loadIdentity" cname="ImmediateRendererIdentity" returnType="error">
             </method>
 
@@ -2262,6 +2284,22 @@
             </method>
 
             <method name="popMatrix" cname="ImmediateRendererPopMatrix" returnType="error">
+            </method>
+
+            <method name="loadMatrix" cname="ImmediateRendererLoadMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="loadTransposeMatrix" cname="ImmediateRendererLoadTransposeMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="multiplyMatrix" cname="ImmediateRendererMultiplyMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="multiplyTransposeMatrix" cname="ImmediateRendererMultiplyTransposeMatrix" returnType="error">
+                <arg name="elements" type="float*" />
             </method>
 
             <method name="ortho" cname="ImmediateRendererOrtho" returnType="error">
@@ -2333,6 +2371,10 @@
                 <arg name="state" type="immediate_renderer_light*" />
             </method>
 
+            <method name="setMaterial" cname="ImmediateRendererSetMaterial" returnType="error">
+                <arg name="state" type="immediate_renderer_material*" />
+            </method>
+
             <method name="setTexturingEnabled" cname="ImmediateRendererSetTextureEnabled" returnType="error">
                 <arg name="enabled" type="bool" />
             </method>
@@ -2371,6 +2413,44 @@
                 <arg name="x" type="float" />
                 <arg name="y" type="float" />
                 <arg name="z" type="float" />
+            </method>
+
+            <method name="beginMeshWithVertices" cname="BeginImmediateRendererMeshWithVertices" returnType="error">
+                <arg name="vertexCount" type="size" />
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="vertices" type="pointer" />
+            </method>
+
+            <method name="setCurrentMeshColors" cname="SetImmediateRendererCurrentMeshColors" returnType="error">
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="colors" type="pointer" />
+            </method>
+
+            <method name="setCurrentMeshNormals" cname="SetImmediateRendererCurrentMeshNormals" returnType="error">
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="normals" type="pointer" />
+            </method>
+
+            <method name="setCurrentMeshTexCoords" cname="SetImmediateRendererCurrentMeshTexCoords" returnType="error">
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="texcoords" type="pointer" />
+            </method>
+
+            <method name="drawElementsWithIndices" cname="ImmediateRendererDrawElementsWithIndices" returnType="error">
+                <arg name="mode" type="primitive_topology" />
+                <arg name="indices" type="pointer" />
+                <arg name="index_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_index" type="uint" />
+    			<arg name="base_vertex" type="int" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="endMesh" cname="EndImmediateRendererMesh" returnType="error">
             </method>
         </interface>
     </interfaces>

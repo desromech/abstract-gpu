@@ -1865,6 +1865,11 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererModelViewMatrixMode(this));
 	}
 
+	inline void textureMatrixMode()
+	{
+		agpuThrowIfFailed(agpuImmediateRendererTextureMatrixMode(this));
+	}
+
 	inline void loadIdentity()
 	{
 		agpuThrowIfFailed(agpuImmediateRendererIdentity(this));
@@ -1878,6 +1883,26 @@ public:
 	inline void popMatrix()
 	{
 		agpuThrowIfFailed(agpuImmediateRendererPopMatrix(this));
+	}
+
+	inline void loadMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererLoadMatrix(this, elements));
+	}
+
+	inline void loadTransposeMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererLoadTransposeMatrix(this, elements));
+	}
+
+	inline void multiplyMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererMultiplyMatrix(this, elements));
+	}
+
+	inline void multiplyTransposeMatrix(agpu_float* elements)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererMultiplyTransposeMatrix(this, elements));
 	}
 
 	inline void ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
@@ -1935,6 +1960,11 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererSetLight(this, index, enabled, state));
 	}
 
+	inline void setMaterial(agpu_immediate_renderer_material* state)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetMaterial(this, state));
+	}
+
 	inline void setTexturingEnabled(agpu_bool enabled)
 	{
 		agpuThrowIfFailed(agpuImmediateRendererSetTextureEnabled(this, enabled));
@@ -1973,6 +2003,36 @@ public:
 	inline void vertex(agpu_float x, agpu_float y, agpu_float z)
 	{
 		agpuThrowIfFailed(agpuAddImmediateRendererVertex(this, x, y, z));
+	}
+
+	inline void beginMeshWithVertices(agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices)
+	{
+		agpuThrowIfFailed(agpuBeginImmediateRendererMeshWithVertices(this, vertexCount, stride, elementCount, vertices));
+	}
+
+	inline void setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors)
+	{
+		agpuThrowIfFailed(agpuSetImmediateRendererCurrentMeshColors(this, stride, elementCount, colors));
+	}
+
+	inline void setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals)
+	{
+		agpuThrowIfFailed(agpuSetImmediateRendererCurrentMeshNormals(this, stride, elementCount, normals));
+	}
+
+	inline void setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords)
+	{
+		agpuThrowIfFailed(agpuSetImmediateRendererCurrentMeshTexCoords(this, stride, elementCount, texcoords));
+	}
+
+	inline void drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererDrawElementsWithIndices(this, mode, indices, index_count, instance_count, first_index, base_vertex, base_instance));
+	}
+
+	inline void endMesh()
+	{
+		agpuThrowIfFailed(agpuEndImmediateRendererMesh(this));
 	}
 
 };

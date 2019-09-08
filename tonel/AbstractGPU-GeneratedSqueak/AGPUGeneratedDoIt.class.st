@@ -45,6 +45,7 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrEventData defineFields.
 	AGPUVrEvent defineFields.
 	AGPUImmediateRendererLight defineFields.
+	AGPUImmediateRendererMaterial defineFields.
 ]
 
 { #category : #'initialization' }

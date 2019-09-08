@@ -947,9 +947,14 @@ public:
 	virtual agpu_error setStencilReference(agpu_uint reference) = 0;
 	virtual agpu_error projectionMatrixMode() = 0;
 	virtual agpu_error modelViewMatrixMode() = 0;
+	virtual agpu_error textureMatrixMode() = 0;
 	virtual agpu_error loadIdentity() = 0;
 	virtual agpu_error pushMatrix() = 0;
 	virtual agpu_error popMatrix() = 0;
+	virtual agpu_error loadMatrix(agpu_float* elements) = 0;
+	virtual agpu_error loadTransposeMatrix(agpu_float* elements) = 0;
+	virtual agpu_error multiplyMatrix(agpu_float* elements) = 0;
+	virtual agpu_error multiplyTransposeMatrix(agpu_float* elements) = 0;
 	virtual agpu_error ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) = 0;
 	virtual agpu_error frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) = 0;
 	virtual agpu_error perspective(agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far) = 0;
@@ -961,6 +966,7 @@ public:
 	virtual agpu_error clearLights() = 0;
 	virtual agpu_error setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a) = 0;
 	virtual agpu_error setLight(agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state) = 0;
+	virtual agpu_error setMaterial(agpu_immediate_renderer_material* state) = 0;
 	virtual agpu_error setTexturingEnabled(agpu_bool enabled) = 0;
 	virtual agpu_error bindTexture(const texture_ref & texture) = 0;
 	virtual agpu_error beginPrimitives(agpu_primitive_topology type) = 0;
@@ -969,6 +975,12 @@ public:
 	virtual agpu_error texcoord(agpu_float x, agpu_float y) = 0;
 	virtual agpu_error normal(agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error vertex(agpu_float x, agpu_float y, agpu_float z) = 0;
+	virtual agpu_error beginMeshWithVertices(agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices) = 0;
+	virtual agpu_error setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors) = 0;
+	virtual agpu_error setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals) = 0;
+	virtual agpu_error setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords) = 0;
+	virtual agpu_error drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;
+	virtual agpu_error endMesh() = 0;
 };
 
 
