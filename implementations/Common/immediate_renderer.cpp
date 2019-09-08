@@ -516,6 +516,19 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
     return AGPU_OK;
 }
 
+agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* state)
+{
+    if(!state)
+        return AGPU_NULL_POINTER;
+
+    currentMaterialState.emission = Vector4F(state->emission);
+    currentMaterialState.ambient = Vector4F(state->ambient);
+    currentMaterialState.diffuse = Vector4F(state->diffuse);
+    currentMaterialState.specular = Vector4F(state->specular);
+    currentMaterialState.shininess = state->shininess;
+    return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::setTexturingEnabled(agpu_bool enabled)
 {
     currentRenderingState.texturingEnabled = enabled;

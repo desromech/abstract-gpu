@@ -324,6 +324,14 @@
             <field name="linear_attenuation" type="float" />
             <field name="quadratic_attenuation" type="float" />
         </struct>
+
+        <struct name="immediate_renderer_material">
+            <field name="emission" type="vector4f" />
+            <field name="ambient" type="vector4f" />
+            <field name="diffuse" type="vector4f" />
+            <field name="specular" type="vector4f" />
+            <field name="shininess" type="float" />
+        </struct>
 	</structs>
 
     <constants>
@@ -2361,6 +2369,10 @@
                 <arg name="index" type="uint" />
                 <arg name="enabled" type="bool" />
                 <arg name="state" type="immediate_renderer_light*" />
+            </method>
+
+            <method name="setMaterial" cname="ImmediateRendererSetMaterial" returnType="error">
+                <arg name="state" type="immediate_renderer_material*" />
             </method>
 
             <method name="setTexturingEnabled" cname="ImmediateRendererSetTextureEnabled" returnType="error">

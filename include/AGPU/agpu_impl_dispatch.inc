@@ -1912,6 +1912,12 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetLight(agpu_immediate_renderer* se
 	return asRef(agpu::immediate_renderer, self)->setLight(index, enabled, state);
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial(agpu_immediate_renderer* self, agpu_immediate_renderer_material* state)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setMaterial(state);
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* self, agpu_bool enabled)
 {
 	if(!self) return AGPU_NULL_POINTER;

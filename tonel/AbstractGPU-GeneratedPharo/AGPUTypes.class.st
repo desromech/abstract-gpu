@@ -26,6 +26,7 @@ Class {
 		'agpu_renderpass_attachment_action',
 		'agpu_vr_event_type',
 		'agpu_depth_stencil_value',
+		'agpu_immediate_renderer_material',
 		'agpu_inheritance_info',
 		'agpu_color4f',
 		'agpu_float',
@@ -154,6 +155,7 @@ AGPUTypes class >> initialize [
 	agpu_renderpass_attachment_action := #int.
 	agpu_vr_event_type := #int.
 	agpu_depth_stencil_value := AGPUDepthStencilValue.
+	agpu_immediate_renderer_material := AGPUImmediateRendererMaterial.
 	agpu_inheritance_info := AGPUInheritanceInfo.
 	agpu_color4f := AGPUColor4f.
 	agpu_float := #'float'.

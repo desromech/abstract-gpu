@@ -907,6 +907,15 @@ typedef struct agpu_immediate_renderer_light {
 	agpu_float quadratic_attenuation;
 } agpu_immediate_renderer_light;
 
+/* Structure agpu_immediate_renderer_material. */
+typedef struct agpu_immediate_renderer_material {
+	agpu_vector4f emission;
+	agpu_vector4f ambient;
+	agpu_vector4f diffuse;
+	agpu_vector4f specular;
+	agpu_float shininess;
+} agpu_immediate_renderer_material;
+
 /* Global functions. */
 typedef agpu_error (*agpuGetPlatforms_FUN) (agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms);
 
@@ -1572,6 +1581,7 @@ typedef agpu_error (*agpuImmediateRendererSetLightingEnabled_FUN) (agpu_immediat
 typedef agpu_error (*agpuImmediateRendererClearLights_FUN) (agpu_immediate_renderer* immediate_renderer);
 typedef agpu_error (*agpuImmediateRendererSetAmbientLighting_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
 typedef agpu_error (*agpuImmediateRendererSetLight_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state);
+typedef agpu_error (*agpuImmediateRendererSetMaterial_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_material* state);
 typedef agpu_error (*agpuImmediateRendererSetTextureEnabled_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
 typedef agpu_error (*agpuImmediateRendererBindTexture_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
 typedef agpu_error (*agpuBeginImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
@@ -1626,6 +1636,7 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingEnabled(agpu_immediate_re
 AGPU_EXPORT agpu_error agpuImmediateRendererClearLights(agpu_immediate_renderer* immediate_renderer);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetAmbientLighting(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetLight(agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial(agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_material* state);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
 AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
@@ -1955,6 +1966,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuImmediateRendererClearLights_FUN agpuImmediateRendererClearLights;
 	agpuImmediateRendererSetAmbientLighting_FUN agpuImmediateRendererSetAmbientLighting;
 	agpuImmediateRendererSetLight_FUN agpuImmediateRendererSetLight;
+	agpuImmediateRendererSetMaterial_FUN agpuImmediateRendererSetMaterial;
 	agpuImmediateRendererSetTextureEnabled_FUN agpuImmediateRendererSetTextureEnabled;
 	agpuImmediateRendererBindTexture_FUN agpuImmediateRendererBindTexture;
 	agpuBeginImmediateRendererPrimitives_FUN agpuBeginImmediateRendererPrimitives;

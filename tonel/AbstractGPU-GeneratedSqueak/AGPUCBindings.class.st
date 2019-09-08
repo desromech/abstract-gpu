@@ -1868,6 +1868,12 @@ AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index en
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setMaterial_immediate_renderer: immediate_renderer state: state [
+	<cdecl: long 'agpuImmediateRendererSetMaterial' (void* AGPUImmediateRendererMaterial*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
 	<cdecl: long 'agpuImmediateRendererSetTextureEnabled' (void* long)>
 	^ self externalCallFailed

@@ -1960,6 +1960,11 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererSetLight(this, index, enabled, state));
 	}
 
+	inline void setMaterial(agpu_immediate_renderer_material* state)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetMaterial(this, state));
+	}
+
 	inline void setTexturingEnabled(agpu_bool enabled)
 	{
 		agpuThrowIfFailed(agpuImmediateRendererSetTextureEnabled(this, enabled));

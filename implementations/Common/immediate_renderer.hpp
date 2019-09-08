@@ -222,6 +222,7 @@ public:
     virtual agpu_error clearLights() override;
     virtual agpu_error setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a) override;
     virtual agpu_error setLight(agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state) override;
+    virtual agpu_error setMaterial(agpu_immediate_renderer_material* state) override;
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
 

@@ -278,6 +278,13 @@ AGPUImmediateRenderer >> setLight: index enabled: enabled state: state [
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> setMaterial: state [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setMaterial_immediate_renderer: (self validHandle) state: state.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> setTexturingEnabled: enabled [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setTexturingEnabled_immediate_renderer: (self validHandle) enabled: enabled.

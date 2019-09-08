@@ -966,6 +966,7 @@ public:
 	virtual agpu_error clearLights() = 0;
 	virtual agpu_error setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a) = 0;
 	virtual agpu_error setLight(agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state) = 0;
+	virtual agpu_error setMaterial(agpu_immediate_renderer_material* state) = 0;
 	virtual agpu_error setTexturingEnabled(agpu_bool enabled) = 0;
 	virtual agpu_error bindTexture(const texture_ref & texture) = 0;
 	virtual agpu_error beginPrimitives(agpu_primitive_topology type) = 0;

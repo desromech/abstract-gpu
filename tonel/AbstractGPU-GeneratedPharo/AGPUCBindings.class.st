@@ -1559,6 +1559,11 @@ AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index en
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setMaterial_immediate_renderer: immediate_renderer state: state [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetMaterial (agpu_immediate_renderer* immediate_renderer , agpu_immediate_renderer_material* state) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enabled: enabled [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererSetTextureEnabled (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
 ]

@@ -2481,6 +2481,14 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetLight ( agpu_immediate_renderer* 
 	return (*dispatchTable)->agpuImmediateRendererSetLight ( immediate_renderer, index, enabled, state );
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial ( agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_material* state )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetMaterial ( immediate_renderer, state );
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )
 {
 	if (immediate_renderer == nullptr)
