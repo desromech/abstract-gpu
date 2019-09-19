@@ -139,13 +139,22 @@ struct Matrix4F
         );
     }
 
+	Matrix4F transposed() const
+	{
+		return Matrix4F(
+			Vector4F(c1.x, c2.x, c3.x, c4.x),
+			Vector4F(c1.y, c2.y, c3.y, c4.y),
+			Vector4F(c1.z, c2.z, c3.z, c4.z),
+			Vector4F(c1.w, c2.w, c3.w, c4.w)
+		);
+	}
     Matrix4F operator*(const Matrix4F &o) const
     {
         return Matrix4F(
-            c1.x*o.c1 + c2.x*o.c1 + c3.x*o.c1 + c4.x*o.c1,
-            c1.y*o.c2 + c2.y*o.c2 + c3.y*o.c2 + c4.y*o.c2,
-            c1.z*o.c3 + c2.z*o.c3 + c3.z*o.c3 + c4.z*o.c3,
-            c1.w*o.c4 + c2.w*o.c4 + c3.w*o.c4 + c4.w*o.c4
+			c1*o.c1.x + c2*o.c1.y + c3*o.c1.z + c4*o.c1.w,
+			c1*o.c2.x + c2*o.c2.y + c3*o.c2.z + c4*o.c2.w,
+			c1*o.c3.x + c2*o.c3.y + c3*o.c3.z + c4*o.c3.w,
+			c1*o.c4.x + c2*o.c4.y + c3*o.c4.z + c4*o.c4.w
         );
     }
 
