@@ -161,7 +161,7 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 2);
 
         builder->beginBindingBank(100);
-        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 3);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 4);
 
         builder->beginBindingBank(1000);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
@@ -237,6 +237,7 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
     lightingStateBufferCapacity = 0;
     materialStateBufferCapacity = 0;
     usedTextureBindingCount = 0;
+    userClipPlaneBufferCapacity = 0;
     activeMatrixStack = nullptr;
 
     auto impl = stateTrackerCache.as<StateTrackerCache> ();
@@ -324,6 +325,11 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     currentMaterialState = MaterialState();
     currentMaterialStateDirty = true;
     materialStateBufferData.clear();
+
+    // Reset the user clip planes.
+    currentUserClipPlane = Vector4F();
+    currentUserClipPlaneDirty = true;
+    userClipPlaneBufferData.clear();
 
     // Reset the vertices.
     lastDrawnVertexIndex = 0;
@@ -516,6 +522,26 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
     return AGPU_OK;
 }
 
+agpu_error ImmediateRenderer::setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4)
+{
+    // We only support a single user clip plane, for now.
+    if(index > 0)
+        return AGPU_OK;
+
+    Vector4F newClipPlane;
+    if(enabled)
+    {
+        auto modelViewMatrix = modelViewMatrixStack.back();
+        auto inverseModelViewMatrix = modelViewMatrix.inverted();
+
+        newClipPlane = Vector4F(p1, p2, p3, p4)*inverseModelViewMatrix;
+    }
+
+    currentUserClipPlaneDirty = currentUserClipPlaneDirty || (currentUserClipPlane != newClipPlane);
+    currentUserClipPlane = newClipPlane;
+
+    return AGPU_OK;
+}
 agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* state)
 {
     if(!state)
@@ -810,6 +836,9 @@ agpu_error ImmediateRenderer::validateRenderingStates()
     error = validateMaterialState();
     if(error) return error;
 
+    error = validateUserClipPlaneState();
+    if(error) return error;
+
     return AGPU_OK;
 }
 
@@ -924,8 +953,29 @@ agpu_error ImmediateRenderer::validateMatrices()
         matricesChanged = true;
     }
 
+    if(textureMatrixStackDirtyFlag)
+    {
+        currentPushConstants.textureMatrixIndex = matrixBufferData.size();
+        matrixBufferData.push_back(textureMatrixStack.back());
+        textureMatrixStackDirtyFlag = false;
+        matricesChanged = true;
+    }
+
     if(matricesChanged)
         uploadPushConstants();
+
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::validateUserClipPlaneState()
+{
+    if(currentUserClipPlaneDirty)
+    {
+        currentPushConstants.clipPlaneIndex = userClipPlaneBufferData.size();
+        userClipPlaneBufferData.push_back(currentUserClipPlane);
+        currentUserClipPlaneDirty = false;
+        uploadPushConstants();
+    }
 
     return AGPU_OK;
 }
@@ -1141,6 +1191,36 @@ agpu_error ImmediateRenderer::flushRenderingData()
     if(!materialStateBufferData.empty())
     {
         error = materialStateBuffer->uploadBufferData(0, materialStateBufferData.size()*sizeof(MaterialState), &materialStateBufferData[0]);
+        if(error)
+            return error;
+    }
+
+    // Upload the user clip plane.
+    if(!userClipPlaneBuffer || userClipPlaneBufferCapacity < userClipPlaneBufferData.size())
+    {
+        userClipPlaneBufferCapacity = nextPowerOfTwo(userClipPlaneBufferData.size());
+        if(userClipPlaneBufferCapacity < 32)
+            userClipPlaneBufferCapacity = 32;
+
+        auto requiredSize = userClipPlaneBufferCapacity*sizeof(Vector4F);
+        agpu_buffer_description bufferDescription = {};
+        bufferDescription.size = requiredSize;
+        bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
+            ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+        bufferDescription.binding = AGPU_STORAGE_BUFFER;
+        bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
+        bufferDescription.stride = sizeof(Vector4F);
+
+        userClipPlaneBuffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
+        if(!userClipPlaneBuffer)
+            return AGPU_OUT_OF_MEMORY;
+
+        uniformResourceBindings->bindStorageBuffer(3, userClipPlaneBuffer);
+    }
+
+    if(!userClipPlaneBufferData.empty())
+    {
+        error = userClipPlaneBuffer->uploadBufferData(0, userClipPlaneBufferData.size()*sizeof(Vector4F), &userClipPlaneBufferData[0]);
         if(error)
             return error;
     }

@@ -24,6 +24,9 @@ AGPUSwapChainCreateInfo class >> fields [
 		(buffer_count 'ulong')
 		(sample_buffers 'long')
 		(samples 'long')
+		(flags 'long')
+		(x 'long')
+		(y 'long')
 	)
 ]
 

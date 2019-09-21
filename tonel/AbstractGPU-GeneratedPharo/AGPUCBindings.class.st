@@ -1030,12 +1030,12 @@ AGPUCBindings >> release_offline_shader_compiler: offline_shader_compiler [
 
 { #category : #'offline_shader_compiler' }
 AGPUCBindings >> isShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
-	^ self ffiCall: #(agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
+	^ self ffiCall: #(agpu_bool agpuIsShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
 ]
 
 { #category : #'offline_shader_compiler' }
 AGPUCBindings >> isTargetShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
-	^ self ffiCall: #(agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
+	^ self ffiCall: #(agpu_bool agpuIsTargetShaderLanguageSupportedByOfflineCompiler (agpu_offline_shader_compiler* offline_shader_compiler , agpu_shader_language language) )
 ]
 
 { #category : #'offline_shader_compiler' }
@@ -1571,6 +1571,11 @@ AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enab
 { #category : #'immediate_renderer' }
 AGPUCBindings >> bindTexture_immediate_renderer: immediate_renderer texture: texture [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererBindTexture (agpu_immediate_renderer* immediate_renderer , agpu_texture* texture) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setClipPlane_immediate_renderer: immediate_renderer index: index enabled: enabled p1: p1 p2: p2 p3: p3 p4: p4 [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetClipPlane (agpu_immediate_renderer* immediate_renderer , agpu_uint index , agpu_bool enabled , agpu_float p1 , agpu_float p2 , agpu_float p3 , agpu_float p4) )
 ]
 
 { #category : #'immediate_renderer' }

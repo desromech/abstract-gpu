@@ -18,7 +18,7 @@ Class {
 		'agpu_buffer_mapping_flags',
 		'agpu_size2d',
 		'agpu_renderpass_description',
-		'agpu_string_buffer',
+		'agpu_cstring_buffer',
 		'agpu_enum',
 		'agpu_shader_binding_type',
 		'agpu_shader_type',
@@ -73,6 +73,7 @@ Class {
 		'agpu_renderpass_color_attachment_description',
 		'agpu_pipeline_stage_flags',
 		'agpu_polygon_mode',
+		'agpu_swap_chain_flags',
 		'agpu_bool',
 		'agpu_pipeline_builder',
 		'agpu_shader_signature_builder',
@@ -97,7 +98,7 @@ Class {
 		'agpu_shader_language',
 		'agpu_vector4f',
 		'agpu_command_list',
-		'agpu_cstring_buffer',
+		'agpu_string_buffer',
 		'agpu_vertex_binding',
 		'agpu_swap_chain',
 		'agpu_fence',
@@ -147,7 +148,7 @@ AGPUTypes class >> initialize [
 	agpu_buffer_mapping_flags := #int.
 	agpu_size2d := AGPUSize2d.
 	agpu_renderpass_description := AGPURenderpassDescription.
-	agpu_string_buffer := #'char*'.
+	agpu_cstring_buffer := #'char*'.
 	agpu_enum := #'int'.
 	agpu_shader_binding_type := #int.
 	agpu_shader_type := #int.
@@ -202,6 +203,7 @@ AGPUTypes class >> initialize [
 	agpu_renderpass_color_attachment_description := AGPURenderpassColorAttachmentDescription.
 	agpu_pipeline_stage_flags := #int.
 	agpu_polygon_mode := #int.
+	agpu_swap_chain_flags := #int.
 	agpu_bool := #'int'.
 	agpu_pipeline_builder := #'void'.
 	agpu_shader_signature_builder := #'void'.
@@ -226,7 +228,7 @@ AGPUTypes class >> initialize [
 	agpu_shader_language := #int.
 	agpu_vector4f := AGPUVector4f.
 	agpu_command_list := #'void'.
-	agpu_cstring_buffer := #'char*'.
+	agpu_string_buffer := #'char*'.
 	agpu_vertex_binding := #'void'.
 	agpu_swap_chain := #'void'.
 	agpu_fence := #'void'.

@@ -70,6 +70,7 @@ struct ImmediatePushConstants
     uint32_t textureMatrixIndex;
     uint32_t lightingStateIndex;
     uint32_t materialStateIndex;
+    uint32_t clipPlaneIndex;
 };
 
 struct LightState
@@ -225,6 +226,7 @@ public:
     virtual agpu_error setMaterial(agpu_immediate_renderer_material* state) override;
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
+    virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) override;
 
     // Geometry
 	virtual agpu_error beginPrimitives(agpu_primitive_topology type) override;
@@ -251,6 +253,7 @@ private:
     agpu_error validateLightingState();
     agpu_error validateMaterialState();
     agpu_error validateRenderingStates();
+    agpu_error validateUserClipPlaneState();
 
     agpu_error flushRenderingState(const ImmediateRenderingState &state);
     agpu_error flushRenderingData();
@@ -338,6 +341,14 @@ private:
     size_t materialStateBufferCapacity;
     std::vector<MaterialState> materialStateBufferData;
     agpu::buffer_ref materialStateBuffer;
+
+    // User clip planes
+    Vector4F currentUserClipPlane;
+    bool currentUserClipPlaneDirty;
+    size_t userClipPlaneBufferCapacity;
+    std::vector<Vector4F> userClipPlaneBufferData;
+    agpu::buffer_ref userClipPlaneBuffer;
+
 };
 
 } // End of namespace AgpuCommon

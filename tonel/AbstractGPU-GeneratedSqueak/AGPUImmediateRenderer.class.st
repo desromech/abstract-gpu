@@ -299,6 +299,13 @@ AGPUImmediateRenderer >> bindTexture: texture [
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> setClipPlane: index enabled: enabled p1: p1 p2: p2 p3: p3 p4: p4 [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setClipPlane_immediate_renderer: (self validHandle) index: index enabled: enabled p1: p1 p2: p2 p3: p3 p4: p4.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> beginPrimitives: type [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance beginPrimitives_immediate_renderer: (self validHandle) type: type.

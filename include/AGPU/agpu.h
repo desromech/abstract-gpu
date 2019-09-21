@@ -90,6 +90,11 @@ typedef enum {
 } agpu_device_open_flags;
 
 typedef enum {
+	AGPU_SWAP_CHAIN_FLAG_NONE = 0,
+	AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW = 1,
+} agpu_swap_chain_flags;
+
+typedef enum {
 	AGPU_COMMAND_QUEUE_TYPE_GRAPHICS = 0,
 	AGPU_COMMAND_QUEUE_TYPE_COMPUTE = 1,
 	AGPU_COMMAND_QUEUE_TYPE_TRANSFER = 2,
@@ -638,6 +643,9 @@ typedef struct agpu_swap_chain_create_info {
 	agpu_uint buffer_count;
 	agpu_bool sample_buffers;
 	agpu_int samples;
+	agpu_swap_chain_flags flags;
+	agpu_int x;
+	agpu_int y;
 } agpu_swap_chain_create_info;
 
 /* Structure agpu_buffer_description. */
@@ -1397,8 +1405,8 @@ AGPU_EXPORT agpu_error agpuWaitOnClient(agpu_fence* fence);
 /* Methods for interface agpu_offline_shader_compiler. */
 typedef agpu_error (*agpuAddOfflineShaderCompilerReference_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
 typedef agpu_error (*agpuReleaseOfflineShaderCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
-typedef agpu_bool (*agpuisShaderLanguageSupportedByOfflineCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
-typedef agpu_bool (*agpuisTargetShaderLanguageSupportedByOfflineCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+typedef agpu_bool (*agpuIsShaderLanguageSupportedByOfflineCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+typedef agpu_bool (*agpuIsTargetShaderLanguageSupportedByOfflineCompiler_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
 typedef agpu_error (*agpuSetOfflineShaderCompilerSource_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength);
 typedef agpu_error (*agpuCompileOfflineShader_FUN) (agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options);
 typedef agpu_size (*agpuGetOfflineShaderCompilationLogLength_FUN) (agpu_offline_shader_compiler* offline_shader_compiler);
@@ -1409,8 +1417,8 @@ typedef agpu_shader* (*agpuGetOfflineShaderCompilerResultAsShader_FUN) (agpu_off
 
 AGPU_EXPORT agpu_error agpuAddOfflineShaderCompilerReference(agpu_offline_shader_compiler* offline_shader_compiler);
 AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler(agpu_offline_shader_compiler* offline_shader_compiler);
-AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
-AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+AGPU_EXPORT agpu_bool agpuIsShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
+AGPU_EXPORT agpu_bool agpuIsTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language);
 AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength);
 AGPU_EXPORT agpu_error agpuCompileOfflineShader(agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language target_language, agpu_cstring options);
 AGPU_EXPORT agpu_size agpuGetOfflineShaderCompilationLogLength(agpu_offline_shader_compiler* offline_shader_compiler);
@@ -1584,6 +1592,7 @@ typedef agpu_error (*agpuImmediateRendererSetLight_FUN) (agpu_immediate_renderer
 typedef agpu_error (*agpuImmediateRendererSetMaterial_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_material* state);
 typedef agpu_error (*agpuImmediateRendererSetTextureEnabled_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
 typedef agpu_error (*agpuImmediateRendererBindTexture_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
+typedef agpu_error (*agpuImmediateRendererSetClipPlane_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4);
 typedef agpu_error (*agpuBeginImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
 typedef agpu_error (*agpuEndImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer);
 typedef agpu_error (*agpuSetImmediateRendererColor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
@@ -1639,6 +1648,7 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetLight(agpu_immediate_renderer* im
 AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial(agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_material* state);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
 AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane(agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4);
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
 AGPU_EXPORT agpu_error agpuEndImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer);
 AGPU_EXPORT agpu_error agpuSetImmediateRendererColor(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
@@ -1860,8 +1870,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuWaitOnClient_FUN agpuWaitOnClient;
 	agpuAddOfflineShaderCompilerReference_FUN agpuAddOfflineShaderCompilerReference;
 	agpuReleaseOfflineShaderCompiler_FUN agpuReleaseOfflineShaderCompiler;
-	agpuisShaderLanguageSupportedByOfflineCompiler_FUN agpuisShaderLanguageSupportedByOfflineCompiler;
-	agpuisTargetShaderLanguageSupportedByOfflineCompiler_FUN agpuisTargetShaderLanguageSupportedByOfflineCompiler;
+	agpuIsShaderLanguageSupportedByOfflineCompiler_FUN agpuIsShaderLanguageSupportedByOfflineCompiler;
+	agpuIsTargetShaderLanguageSupportedByOfflineCompiler_FUN agpuIsTargetShaderLanguageSupportedByOfflineCompiler;
 	agpuSetOfflineShaderCompilerSource_FUN agpuSetOfflineShaderCompilerSource;
 	agpuCompileOfflineShader_FUN agpuCompileOfflineShader;
 	agpuGetOfflineShaderCompilationLogLength_FUN agpuGetOfflineShaderCompilationLogLength;
@@ -1969,6 +1979,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuImmediateRendererSetMaterial_FUN agpuImmediateRendererSetMaterial;
 	agpuImmediateRendererSetTextureEnabled_FUN agpuImmediateRendererSetTextureEnabled;
 	agpuImmediateRendererBindTexture_FUN agpuImmediateRendererBindTexture;
+	agpuImmediateRendererSetClipPlane_FUN agpuImmediateRendererSetClipPlane;
 	agpuBeginImmediateRendererPrimitives_FUN agpuBeginImmediateRendererPrimitives;
 	agpuEndImmediateRendererPrimitives_FUN agpuEndImmediateRendererPrimitives;
 	agpuSetImmediateRendererColor_FUN agpuSetImmediateRendererColor;

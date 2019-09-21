@@ -1233,13 +1233,13 @@ AGPUCBindings >> release_offline_shader_compiler: offline_shader_compiler [
 
 { #category : #'offline_shader_compiler' }
 AGPUCBindings >> isShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
-	<cdecl: long 'agpuisShaderLanguageSupportedByOfflineCompiler' (void* long)>
+	<cdecl: long 'agpuIsShaderLanguageSupportedByOfflineCompiler' (void* long)>
 	^ self externalCallFailed
 ]
 
 { #category : #'offline_shader_compiler' }
 AGPUCBindings >> isTargetShaderLanguageSupported_offline_shader_compiler: offline_shader_compiler language: language [
-	<cdecl: long 'agpuisTargetShaderLanguageSupportedByOfflineCompiler' (void* long)>
+	<cdecl: long 'agpuIsTargetShaderLanguageSupportedByOfflineCompiler' (void* long)>
 	^ self externalCallFailed
 ]
 
@@ -1882,6 +1882,12 @@ AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enab
 { #category : #'immediate_renderer' }
 AGPUCBindings >> bindTexture_immediate_renderer: immediate_renderer texture: texture [
 	<cdecl: long 'agpuImmediateRendererBindTexture' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setClipPlane_immediate_renderer: immediate_renderer index: index enabled: enabled p1: p1 p2: p2 p3: p3 p4: p4 [
+	<cdecl: long 'agpuImmediateRendererSetClipPlane' (void* ulong long float float float float)>
 	^ self externalCallFailed
 ]
 

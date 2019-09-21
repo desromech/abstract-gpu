@@ -1399,12 +1399,12 @@ public:
 
 	inline agpu_bool isShaderLanguageSupported(agpu_shader_language language)
 	{
-		return agpuisShaderLanguageSupportedByOfflineCompiler(this, language);
+		return agpuIsShaderLanguageSupportedByOfflineCompiler(this, language);
 	}
 
 	inline agpu_bool isTargetShaderLanguageSupported(agpu_shader_language language)
 	{
-		return agpuisTargetShaderLanguageSupportedByOfflineCompiler(this, language);
+		return agpuIsTargetShaderLanguageSupportedByOfflineCompiler(this, language);
 	}
 
 	inline void setShaderSource(agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength)
@@ -1973,6 +1973,11 @@ public:
 	inline void bindTexture(const agpu_ref<agpu_texture>& texture)
 	{
 		agpuThrowIfFailed(agpuImmediateRendererBindTexture(this, texture.get()));
+	}
+
+	inline void setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetClipPlane(this, index, enabled, p1, p2, p3, p4));
 	}
 
 	inline void beginPrimitives(agpu_primitive_topology type)

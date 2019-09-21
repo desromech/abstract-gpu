@@ -1633,20 +1633,20 @@ AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler ( agpu_offline_shader_co
 	return (*dispatchTable)->agpuReleaseOfflineShaderCompiler ( offline_shader_compiler );
 }
 
-AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
+AGPU_EXPORT agpu_bool agpuIsShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
 {
 	if (offline_shader_compiler == nullptr)
 		return (agpu_bool)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuisShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
+	return (*dispatchTable)->agpuIsShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
 }
 
-AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
+AGPU_EXPORT agpu_bool agpuIsTargetShaderLanguageSupportedByOfflineCompiler ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language )
 {
 	if (offline_shader_compiler == nullptr)
 		return (agpu_bool)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (offline_shader_compiler);
-	return (*dispatchTable)->agpuisTargetShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
+	return (*dispatchTable)->agpuIsTargetShaderLanguageSupportedByOfflineCompiler ( offline_shader_compiler, language );
 }
 
 AGPU_EXPORT agpu_error agpuSetOfflineShaderCompilerSource ( agpu_offline_shader_compiler* offline_shader_compiler, agpu_shader_language language, agpu_shader_type stage, agpu_string sourceText, agpu_string_length sourceTextLength )
@@ -2503,6 +2503,14 @@ AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture ( agpu_immediate_rendere
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
 	return (*dispatchTable)->agpuImmediateRendererBindTexture ( immediate_renderer, texture );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane ( agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4 )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetClipPlane ( immediate_renderer, index, enabled, p1, p2, p3, p4 );
 }
 
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives ( agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type )

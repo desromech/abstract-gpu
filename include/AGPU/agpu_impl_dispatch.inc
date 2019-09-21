@@ -1274,12 +1274,12 @@ AGPU_EXPORT agpu_error agpuReleaseOfflineShaderCompiler(agpu_offline_shader_comp
 	return asRefCounter(agpu::offline_shader_compiler, self)->release();
 }
 
-AGPU_EXPORT agpu_bool agpuisShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
+AGPU_EXPORT agpu_bool agpuIsShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
 {
 	return asRef(agpu::offline_shader_compiler, self)->isShaderLanguageSupported(language);
 }
 
-AGPU_EXPORT agpu_bool agpuisTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
+AGPU_EXPORT agpu_bool agpuIsTargetShaderLanguageSupportedByOfflineCompiler(agpu_offline_shader_compiler* self, agpu_shader_language language)
 {
 	return asRef(agpu::offline_shader_compiler, self)->isTargetShaderLanguageSupported(language);
 }
@@ -1928,6 +1928,12 @@ AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer*
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::immediate_renderer, self)->bindTexture(asRef(agpu::texture, texture));
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane(agpu_immediate_renderer* self, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setClipPlane(index, enabled, p1, p2, p3, p4);
 }
 
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* self, agpu_primitive_topology type)

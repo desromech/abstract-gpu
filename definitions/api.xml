@@ -84,6 +84,9 @@
             <field name="buffer_count" type="uint" />
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
+            <field name="flags" type="swap_chain_flags" />
+            <field name="x" type="int" />
+            <field name="y" type="int" />
         </struct>
 
 		<struct name="buffer_description">
@@ -354,6 +357,11 @@
         <enum name="device_open_flags">
             <constant name="DeviceOpenFlagNone" value="0" />
             <constant name="DeviceOpenFlagAllowVR" value="1" />
+        </enum>
+
+        <enum name="swap_chain_flags">
+            <constant name="SwapChainFlagNone" value="0" />
+            <constant name="SwapChainFlagOverlayWindow" value="1" />
         </enum>
 
         <enum name="command_queue_type">
@@ -1826,11 +1834,11 @@
             <method name="release" cname="ReleaseOfflineShaderCompiler" returnType="error">
             </method>
 
-            <method name="isShaderLanguageSupported" cname="isShaderLanguageSupportedByOfflineCompiler" returnType="bool">
+            <method name="isShaderLanguageSupported" cname="IsShaderLanguageSupportedByOfflineCompiler" returnType="bool">
                 <arg name="language" type="shader_language" />
             </method>
 
-            <method name="isTargetShaderLanguageSupported" cname="isTargetShaderLanguageSupportedByOfflineCompiler" returnType="bool">
+            <method name="isTargetShaderLanguageSupported" cname="IsTargetShaderLanguageSupportedByOfflineCompiler" returnType="bool">
                 <arg name="language" type="shader_language" />
             </method>
 
@@ -2381,6 +2389,15 @@
 
             <method name="bindTexture" cname="ImmediateRendererBindTexture" returnType="error">
                 <arg name="texture" type="texture*" />
+            </method>
+
+            <method name="setClipPlane" cname="ImmediateRendererSetClipPlane" returnType="error">
+                <arg name="index" type="uint" />
+                <arg name="enabled" type="bool" />
+                <arg name="p1" type="float" />
+                <arg name="p2" type="float" />
+                <arg name="p3" type="float" />
+                <arg name="p4" type="float" />
             </method>
 
             <!-- Geometry -->

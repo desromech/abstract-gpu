@@ -10,5 +10,7 @@ void main()
 {
     outColor = inColor;
 
-    gl_Position = matrices[projectionMatrixIndex] * (matrices[modelViewMatrixIndex] * vec4(inPosition, 1.0));
+    vec4 viewPosition = matrices[modelViewMatrixIndex] * vec4(inPosition, 1.0);
+    gl_ClipDistance[0] = dot(userClipPlanes[clipPlaneIndex], viewPosition);
+    gl_Position = matrices[projectionMatrixIndex] * viewPosition;
 }

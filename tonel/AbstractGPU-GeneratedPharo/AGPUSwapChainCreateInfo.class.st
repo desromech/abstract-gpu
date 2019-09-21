@@ -25,6 +25,9 @@ AGPUSwapChainCreateInfo class >> fieldsDesc [
 		 agpu_uint buffer_count;
 		 agpu_bool sample_buffers;
 		 agpu_int samples;
+		 agpu_swap_chain_flags flags;
+		 agpu_int x;
+		 agpu_int y;
 	)
 ]
 
