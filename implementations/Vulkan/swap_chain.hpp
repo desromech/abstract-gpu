@@ -3,6 +3,7 @@
 
 #include "device.hpp"
 #include "command_queue.hpp"
+#include "../Common/overlay_window.hpp"
 
 namespace AgpuVulkan
 {
@@ -42,6 +43,7 @@ public:
     uint32_t imageCount;
     uint32_t currentBackBufferIndex;
     uint32_t currentSemaphoreIndex;
+    AgpuCommon::OverlaySwapChainWindowPtr overlayWindow;
 private:
     bool getNextBackBufferIndex();
 };

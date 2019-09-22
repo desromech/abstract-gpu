@@ -11,6 +11,7 @@
 
 namespace AgpuVulkan
 {
+using namespace AgpuCommon;
 
 AVkSwapChain::AVkSwapChain(const agpu::device_ref &device)
     : device(device)
@@ -34,7 +35,7 @@ AVkSwapChain::~AVkSwapChain()
         vkDestroySurfaceKHR(deviceForVk->vulkanInstance, surface, nullptr);
 }
 
-static VkResult createXlibSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createXlibSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, const OverlaySwapChainWindowPtr& overlayWindow, VkSurfaceKHR *surface)
 {
 #ifdef __unix__
     if(!deviceForVk->displayHandle)
@@ -55,7 +56,7 @@ static VkResult createXlibSurface(const agpu::device_ref &device, const agpu::co
 #endif
 }
 
-static VkResult createXcbSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createXcbSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, const OverlaySwapChainWindowPtr& overlayWindow, VkSurfaceKHR *surface)
 {
 #ifdef __unix__
     if(!deviceForVk->displayHandle)
@@ -76,7 +77,7 @@ static VkResult createXcbSurface(const agpu::device_ref &device, const agpu::com
 #endif
 }
 
-static VkResult createWin32Surface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createWin32Surface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, const OverlaySwapChainWindowPtr &overlayWindow, VkSurfaceKHR *surface)
 {
 #ifdef _WIN32
     if (!createInfo->window)
@@ -86,6 +87,8 @@ static VkResult createWin32Surface(const agpu::device_ref &device, const agpu::c
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
     surfaceCreateInfo.hwnd = (HWND)createInfo->window;
+    if(overlayWindow)
+        surfaceCreateInfo.hwnd = (HWND)overlayWindow->getWindowHandle();
 
     return vkCreateWin32SurfaceKHR(deviceForVk->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
 #else
@@ -98,12 +101,12 @@ static VkResult createDisplaySurface(const agpu::device_ref &device, const agpu:
     return VK_INCOMPLETE;
 }
 
-static VkResult createDefaultSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, VkSurfaceKHR *surface)
+static VkResult createDefaultSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, const OverlaySwapChainWindowPtr &overlayWindow, VkSurfaceKHR *surface)
 {
 #if defined(_WIN32)
-    return createWin32Surface(device, graphicsCommandQueue, createInfo, surface);
+    return createWin32Surface(device, graphicsCommandQueue, createInfo, overlayWindow, surface);
 #elif defined(__unix__)
-    return createXlibSurface(device, graphicsCommandQueue, createInfo, surface);
+    return createXlibSurface(device, graphicsCommandQueue, createInfo, overlayWindow, surface);
 #else
 #error unsupported platform
 #endif
@@ -115,15 +118,23 @@ agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const 
     if (!graphicsCommandQueue || !createInfo)
         return agpu::swap_chain_ref();
 
+	OverlaySwapChainWindowPtr overlayWindow;
+    if((createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW) != 0)
+    {
+        overlayWindow = createOverlaySwapChainWindow(createInfo);
+        if(!overlayWindow)
+            return agpu::swap_chain_ref();
+    }
+
     VkResult error = VK_ERROR_FEATURE_NOT_PRESENT;
     if(!createInfo->window_system_name)
-        error = createDefaultSurface(device, graphicsCommandQueue, createInfo, &surface);
+        error = createDefaultSurface(device, graphicsCommandQueue, createInfo, overlayWindow , &surface);
     else if(!strcmp(createInfo->window_system_name, "xlib"))
-        error = createXlibSurface(device, graphicsCommandQueue, createInfo, &surface);
+        error = createXlibSurface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
     else if(!strcmp(createInfo->window_system_name, "xcb"))
-        error = createXcbSurface(device, graphicsCommandQueue, createInfo, &surface);
+        error = createXcbSurface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
     else if(!strcmp(createInfo->window_system_name, "win32"))
-        error = createWin32Surface(device, graphicsCommandQueue, createInfo, &surface);
+        error = createWin32Surface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
     else if(!strcmp(createInfo->window_system_name, "display"))
         error = createDisplaySurface(device, graphicsCommandQueue, createInfo, &surface);
 
@@ -161,6 +172,7 @@ agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const 
     // Create the swap chain object.
     auto result = agpu::makeObject<AVkSwapChain> (device);
     auto swapChain = result.as<AVkSwapChain> ();
+    swapChain->overlayWindow = overlayWindow;
     swapChain->surface = surface;
     swapChain->graphicsQueue = graphicsCommandQueue;
     swapChain->presentationQueue = presentationQueue;
