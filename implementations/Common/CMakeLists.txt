@@ -13,6 +13,9 @@ set(AgpuCommonHighLevelInterfaces_SOURCES
     state_tracker.hpp
     immediate_renderer.cpp
     immediate_renderer.hpp
+    overlay_window.hpp
+    overlay_window.cpp
+    overlay_window_win32.cpp
 )
 
 add_library(AgpuCommonHighLevelInterfaces OBJECT ${AgpuCommonHighLevelInterfaces_SOURCES})
