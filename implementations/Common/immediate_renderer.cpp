@@ -1394,7 +1394,7 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
         }
         return AGPU_OK;
     case AGPU_IMMEDIATE_QUADS:
-        if(index_count > 4)
+        if(index_count >= 4)
         {
             indicesValues += first_index;
             size_t quadCount = index_count / 4;
