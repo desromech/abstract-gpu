@@ -8,6 +8,12 @@
 
 namespace AgpuCommon
 {
+
+inline bool isSyntheticTopology(agpu_primitive_topology type)
+{
+	return type >= AGPU_IMMEDIATE_TRIANGLE_FAN;
+}
+
 #include "shaders/compiled.inc"
 
 LightState::LightState()
@@ -929,11 +935,78 @@ agpu_error ImmediateRenderer::endPrimitives()
     if(vertexCount > 0)
     {
         auto vertexStart = lastDrawnVertexIndex;
-        pendingRenderingCommands.push_back([=]{
-            auto error = flushImmediateVertexRenderingState();
-            if(!error)
-                currentStateTracker->drawArrays(vertexCount, 1, vertexStart, 0);
-        });
+		// In the case of synthetic primitive topologies, we need to generate the indices manually.
+		auto synthetic = isSyntheticTopology(currentRenderingState.activePrimitiveTopology);
+		if (synthetic)
+		{
+			auto firstIndex = indices.size();
+			auto baseVertex = lastDrawnVertexIndex;
+			switch (currentRenderingState.activePrimitiveTopology)
+			{
+			case AGPU_IMMEDIATE_POLYGON:
+			case AGPU_IMMEDIATE_TRIANGLE_FAN:
+				if (vertexCount >= 3)
+				{
+					for (size_t i = 2; i < vertexCount; ++i)
+					{
+						indices.push_back(0);
+						indices.push_back(i-1);
+						indices.push_back(i);
+					}
+				}
+				break;
+			case AGPU_IMMEDIATE_QUADS:
+				if (vertexCount >= 4)
+				{
+					size_t quadCount = vertexCount / 4;
+					auto quadBaseIndex = 0;
+					for (size_t i = 0; i < quadCount; ++i)
+					{
+						auto qi0 = quadBaseIndex;
+						auto qi1 = quadBaseIndex + 1;
+						auto qi2 = quadBaseIndex + 2;
+						auto qi3 = quadBaseIndex + 3;
+
+						indices.push_back(qi0);
+						indices.push_back(qi1);
+						indices.push_back(qi2);
+
+						indices.push_back(qi2);
+						indices.push_back(qi3);
+						indices.push_back(qi0);
+
+						quadBaseIndex += 4;
+					}
+				}
+				break;
+			default:
+				break;
+			}
+			auto indexCount = indices.size() - firstIndex;
+			if (indexCount > 0)
+			{
+				pendingRenderingCommands.push_back([=] {
+					auto error = flushImmediateVertexRenderingState();
+					if (!error)
+					{
+						currentStateTracker->useIndexBuffer(indexBuffer);
+						currentStateTracker->drawElements(indexCount, 1, firstIndex, baseVertex, 0);
+					}
+				});
+			}
+		}
+		else
+		{
+			pendingRenderingCommands.push_back([=] {
+				auto error = flushImmediateVertexRenderingState();
+				if (!error)
+				{
+					currentStateTracker->drawArrays(vertexCount, 1, vertexStart, 0);
+				}
+			});
+
+		}
+
     }
 
     return AGPU_OK;
@@ -1112,7 +1185,8 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
         }
     }
 
-    currentStateTracker->setPrimitiveType(state.activePrimitiveTopology);
+	
+    currentStateTracker->setPrimitiveType(isSyntheticTopology(state.activePrimitiveTopology) ? AGPU_TRIANGLES : state.activePrimitiveTopology);
     currentStateTracker->useShaderResources(uniformResourceBindings);
     if(state.texturingEnabled)
     {
@@ -1352,7 +1426,7 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
         break;
     case AGPU_IMMEDIATE_POLYGON:
     case AGPU_IMMEDIATE_TRIANGLE_FAN:
-        if(index_count > 2)
+        if(index_count >= 3)
         {
             indicesValues += first_index;
             auto i0 = indicesValues[0];

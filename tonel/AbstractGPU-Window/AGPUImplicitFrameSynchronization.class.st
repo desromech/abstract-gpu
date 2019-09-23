@@ -25,6 +25,9 @@ AGPUImplicitFrameSynchronization class >> for: aDevice [
 
 { #category : #rendering }
 AGPUImplicitFrameSynchronization >> beginFrame [
+	| fence |
+	(fences at: frameBufferingIndex) waitOnClient.
+
 	currentStateTracker := stateTrackers at: frameBufferingIndex.
 	currentStateTracker beginRecordingCommands.
 ]
@@ -35,12 +38,21 @@ AGPUImplicitFrameSynchronization >> createImmediateRenderers [
 ]
 
 { #category : #rendering }
-AGPUImplicitFrameSynchronization >> finishFrame [
+AGPUImplicitFrameSynchronization >> finishFrameDoing: aBlock [
 	currentStateTracker endRecordingAndFlushCommands.
 	currentStateTracker := nil.
-	
-	frameIndex := frameIndex + 1.
-	frameBufferingIndex := (frameIndex \\ 3) + 1.
+
+	aBlock ensure: [
+		commandQueue signalFence: (fences at: frameBufferingIndex).
+
+		frameIndex := frameIndex + 1.
+		frameBufferingIndex := (frameIndex \\ 3) + 1.
+	].
+]
+
+{ #category : #rendering }
+AGPUImplicitFrameSynchronization >> finishFrame [
+	self finishFrameDoing: []
 ]
 
 { #category : #accessing }
@@ -55,12 +67,20 @@ AGPUImplicitFrameSynchronization >> initializeWithDevice: aDevice [
 	device := aDevice.
 	frameIndex := 0.
 	frameBufferingIndex := 1.
-	
+
 	commandQueue := device getDefaultCommandQueue.
 	stateTrackerCache := device createStateTrackerCache: commandQueue.
-	
+
 	stateTrackers := (1 to: 3) collect: [ :i |
 		stateTrackerCache createStateTracker: AGPU_COMMAND_LIST_TYPE_DIRECT command_queue: commandQueue
+	].
+
+	"Create the fences, and make sure they are signaled."
+	fences := (1 to: 3) collect: [ :i |
+		| fence |
+		fence := device createFence.
+		commandQueue signalFence: fence.
+		fence
 	].
 	immediateRenderers := IdentityDictionary new.
 ]
