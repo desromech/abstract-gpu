@@ -34,7 +34,7 @@ public:
     {
     }
 
-    void drawWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer, size_t instanceCount = 1)
+    void beginDrawingWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer)
     {
         if(vertices.empty())
             return;
@@ -43,9 +43,21 @@ public:
         immediateRenderer->setCurrentMeshColors(sizeof(SampleVertex), 4, &vertices[0].color);
         immediateRenderer->setCurrentMeshNormals(sizeof(SampleVertex), 3, &vertices[0].normal);
         immediateRenderer->setCurrentMeshTexCoords(sizeof(SampleVertex), 2, &vertices[0].texcoord);
+    }
+
+    void drawWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer, size_t instanceCount = 1)
+    {
+        if(vertices.empty())
+            return;
 
         for(auto &submesh : submeshes)
             immediateRenderer->drawElementsWithIndices(AGPU_TRIANGLES, &indices[0], submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+    }
+
+    void endDrawingWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer)
+    {
+        if(vertices.empty())
+            return;
         immediateRenderer->endMesh();
     }
 

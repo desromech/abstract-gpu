@@ -1936,6 +1936,30 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane(agpu_immediate_renderer
 	return asRef(agpu::immediate_renderer, self)->setClipPlane(index, enabled, p1, p2, p3, p4);
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogMode(agpu_immediate_renderer* self, agpu_immediate_renderer_fog_mode mode)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setFogMode(mode);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogColor(agpu_immediate_renderer* self, agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setFogColor(r, g, b, a);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogDistances(agpu_immediate_renderer* self, agpu_float start, agpu_float end)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setFogDistances(start, end);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogDensity(agpu_immediate_renderer* self, agpu_float density)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setFogDensity(density);
+}
+
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* self, agpu_primitive_topology type)
 {
 	if(!self) return AGPU_NULL_POINTER;

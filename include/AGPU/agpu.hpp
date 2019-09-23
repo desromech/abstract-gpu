@@ -1980,6 +1980,26 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererSetClipPlane(this, index, enabled, p1, p2, p3, p4));
 	}
 
+	inline void setFogMode(agpu_immediate_renderer_fog_mode mode)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetFogMode(this, mode));
+	}
+
+	inline void setFogColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetFogColor(this, r, g, b, a));
+	}
+
+	inline void setFogDistances(agpu_float start, agpu_float end)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetFogDistances(this, start, end));
+	}
+
+	inline void setFogDensity(agpu_float density)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetFogDensity(this, density));
+	}
+
 	inline void beginPrimitives(agpu_primitive_topology type)
 	{
 		agpuThrowIfFailed(agpuBeginImmediateRendererPrimitives(this, type));

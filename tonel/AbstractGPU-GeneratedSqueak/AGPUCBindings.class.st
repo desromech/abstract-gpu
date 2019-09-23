@@ -1892,6 +1892,30 @@ AGPUCBindings >> setClipPlane_immediate_renderer: immediate_renderer index: inde
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setFogMode_immediate_renderer: immediate_renderer mode: mode [
+	<cdecl: long 'agpuImmediateRendererSetFogMode' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFogColor_immediate_renderer: immediate_renderer r: r g: g b: b a: a [
+	<cdecl: long 'agpuImmediateRendererSetFogColor' (void* float float float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFogDistances_immediate_renderer: immediate_renderer start: start end: end [
+	<cdecl: long 'agpuImmediateRendererSetFogDistances' (void* float float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFogDensity_immediate_renderer: immediate_renderer density: density [
+	<cdecl: long 'agpuImmediateRendererSetFogDensity' (void* float)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> beginPrimitives_immediate_renderer: immediate_renderer type: type [
 	<cdecl: long 'agpuBeginImmediateRendererPrimitives' (void* long)>
 	^ self externalCallFailed

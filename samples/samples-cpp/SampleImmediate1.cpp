@@ -133,7 +133,9 @@ public:
         // Draw the mesh.
         immediateRenderer->setTexturingEnabled(true);
         immediateRenderer->bindTexture(diffuseTexture);
+        cubeMesh->beginDrawingWithImmediateRenderer(immediateRenderer);
         cubeMesh->drawWithImmediateRenderer(immediateRenderer);
+        cubeMesh->endDrawingWithImmediateRenderer(immediateRenderer);
 
         // End rendering the frame.
         immediateRenderer->endRendering();

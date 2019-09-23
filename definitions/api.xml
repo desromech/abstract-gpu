@@ -918,6 +918,13 @@
             <constant name="ImmediateRendererVertexAttributeNormal" value="2" />
             <constant name="ImmediateRendererVertexAttributeTexcoord" value="3" />
         </enum>
+
+        <enum name="immediate_renderer_fog_mode">
+            <constant name="ImmediateRendererFogModeNone" value="0" />
+            <constant name="ImmediateRendererFogModeLinear" value="1" />
+            <constant name="ImmediateRendererFogModeExponential" value="2" />
+            <constant name="ImmediateRendererFogModeExponentialSquared" value="3" />
+        </enum>
     </constants>
 
     <globals>
@@ -2398,6 +2405,26 @@
                 <arg name="p2" type="float" />
                 <arg name="p3" type="float" />
                 <arg name="p4" type="float" />
+            </method>
+
+            <method name="setFogMode" cname="ImmediateRendererSetFogMode" returnType="error">
+                <arg name="mode" type="immediate_renderer_fog_mode" />
+            </method>
+
+            <method name="setFogColor" cname="ImmediateRendererSetFogColor" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="setFogDistances" cname="ImmediateRendererSetFogDistances" returnType="error">
+                <arg name="start" type="float" />
+                <arg name="end" type="float" />
+            </method>
+
+            <method name="setFogDensity" cname="ImmediateRendererSetFogDensity" returnType="error">
+                <arg name="density" type="float" />
             </method>
 
             <!-- Geometry -->
