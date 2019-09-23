@@ -55,6 +55,12 @@ struct ImmediateRendererVertex
 
 struct ImmediateRenderingState
 {
+    ImmediateRenderingState()
+        : activePrimitiveTopology(AGPU_POINTS),
+          flatShading(false),
+          lightingEnabled(false),
+          texturingEnabled(false) {}
+
     agpu_primitive_topology activePrimitiveTopology;
     bool flatShading;
     bool lightingEnabled;
@@ -65,12 +71,20 @@ struct ImmediateRenderingState
 
 struct ImmediatePushConstants
 {
+    ImmediatePushConstants()
+        : projectionMatrixIndex(0),
+          modelViewMatrixIndex(0),
+          textureMatrixIndex(0),
+          lightingStateIndex(0),
+          materialStateIndex(0),
+          extraRenderingStateIndex(0) {}
+
     uint32_t projectionMatrixIndex;
     uint32_t modelViewMatrixIndex;
     uint32_t textureMatrixIndex;
     uint32_t lightingStateIndex;
     uint32_t materialStateIndex;
-    uint32_t clipPlaneIndex;
+    uint32_t extraRenderingStateIndex;
 };
 
 struct LightState
@@ -102,6 +116,7 @@ struct LightingState
 
     size_t hash() const;
     bool operator==(const LightingState &other) const;
+    bool operator!=(const LightingState &other) const;
 
     Vector4F ambientLighting;
 
@@ -116,6 +131,7 @@ struct MaterialState
 
     size_t hash() const;
     bool operator==(const MaterialState &other) const;
+    bool operator!=(const MaterialState &other) const;
 
     Vector4F emission;
     Vector4F ambient;
@@ -124,6 +140,24 @@ struct MaterialState
 
     float shininess;
     uint32_t padding[3];
+};
+
+struct ExtraRenderingState
+{
+    ExtraRenderingState();
+
+    size_t hash() const;
+    bool operator==(const ExtraRenderingState &other) const;
+    bool operator!=(const ExtraRenderingState &other) const;
+
+    Vector4F userClipPlane;
+
+    uint32_t fogMode;
+    float fogStartDistance;
+    float fogEndDistance;
+    float fogDensity;
+
+    Vector4F fogColor;
 };
 
 }
@@ -157,7 +191,132 @@ struct hash<AgpuCommon::MaterialState>
     }
 };
 
+template<>
+struct hash<AgpuCommon::ExtraRenderingState>
+{
+    size_t operator()(const AgpuCommon::ExtraRenderingState &ref) const
+    {
+        return ref.hash();
+    }
+};
+
 }
+
+inline size_t nextPowerOfTwo(size_t v)
+{
+    // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+
+template<typename ST>
+class ImmediateStateBuffer
+{
+public:
+    static constexpr size_t GpuBufferDataThreshold = 1024*256;
+
+    typedef ST StateType;
+    typedef ImmediateStateBuffer<StateType> SelfType;
+
+    ImmediateStateBuffer()
+        : bufferCapacity(0)
+    {
+
+    }
+    ~ImmediateStateBuffer()
+    {
+    }
+
+    void reset()
+    {
+        currentState = StateType();
+        dirtyFlag = true;
+        bufferData.clear();
+    }
+
+    void makeDirty()
+    {
+        dirtyFlag = true;
+    }
+
+    bool isDirty() const
+    {
+        return dirtyFlag;
+    }
+
+    uint32_t validateCurrentState()
+    {
+        if(isDirty() || bufferData.empty())
+        {
+            bufferData.push_back(currentState);
+            dirtyFlag = false;
+        }
+        return bufferData.size() - 1;
+    }
+
+    uint32_t validateExplicitState(const StateType &state)
+    {
+        dirtyFlag = true;
+        bufferData.push_back(state);
+        return bufferData.size() - 1;
+    }
+
+    void setState(const StateType &newState)
+    {
+        if(currentState != newState)
+        {
+            currentState = newState;
+            dirtyFlag = true;
+        }
+    }
+
+    agpu_error uploadDataAndBindAsStorageBuffer(const agpu::device_ref &device, const agpu::shader_resource_binding_ref &resourceBindings, agpu_uint bindingSlot)
+    {
+        if(!buffer || bufferCapacity < bufferData.size())
+        {
+            bufferCapacity = nextPowerOfTwo(bufferData.size());
+            if(bufferCapacity < 32)
+                bufferCapacity = 32;
+
+            auto requiredSize = bufferCapacity*sizeof(StateType);
+            agpu_buffer_description bufferDescription = {};
+            bufferDescription.size = requiredSize;
+            bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
+                ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+            bufferDescription.binding = AGPU_STORAGE_BUFFER;
+            bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
+            bufferDescription.stride = sizeof(StateType);
+
+            buffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
+            if(!buffer)
+                return AGPU_OUT_OF_MEMORY;
+
+            resourceBindings->bindStorageBuffer(bindingSlot, buffer);
+        }
+
+        if(!bufferData.empty())
+        {
+            auto error = buffer->uploadBufferData(0, bufferData.size()*sizeof(StateType), &bufferData[0]);
+            if(error)
+                return error;
+        }
+
+        return AGPU_OK;
+    }
+
+    StateType currentState;
+    bool dirtyFlag;
+
+    size_t bufferCapacity;
+    std::vector<StateType> bufferData;
+    agpu::buffer_ref buffer;
+};
 
 namespace AgpuCommon
 {
@@ -169,8 +328,6 @@ class ImmediateRenderer : public agpu::immediate_renderer
 {
 public:
     typedef std::vector<Matrix4F> MatrixStack;
-
-    static constexpr size_t GpuBufferDataThreshold = 1024*256;
 
     ImmediateRenderer(const agpu::state_tracker_cache_ref &stateTrackerCache);
     ~ImmediateRenderer();
@@ -227,6 +384,10 @@ public:
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
     virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) override;
+    virtual agpu_error setFogMode(agpu_immediate_renderer_fog_mode mode) override;
+	virtual agpu_error setFogColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a) override;
+	virtual agpu_error setFogDistances(agpu_float start, agpu_float end) override;
+	virtual agpu_error setFogDensity(agpu_float density) override;
 
     // Geometry
 	virtual agpu_error beginPrimitives(agpu_primitive_topology type) override;
@@ -256,8 +417,10 @@ private:
     agpu_error validateUserClipPlaneState();
 
     agpu_error flushRenderingState(const ImmediateRenderingState &state);
+    agpu_error flushImmediateVertexRenderingState();
     agpu_error flushRenderingData();
-    void uploadPushConstants();
+    void invalidatePushConstants();
+    void validatePushConstants();
 
     agpu::shader_resource_binding_ref getValidTextureBindingFor(const agpu::texture_ref &texture);
 
@@ -290,6 +453,7 @@ private:
     std::vector<PendingRenderingCommand> pendingRenderingCommands;
 
     ImmediatePushConstants currentPushConstants;
+    bool currentPushConstantsDirty;
 
     // Vertices
     agpu::buffer_ref vertexBuffer;
@@ -319,9 +483,8 @@ private:
     MatrixStack *activeMatrixStack;
     bool *activeMatrixStackDirtyFlag;
 
-    agpu::buffer_ref matrixBuffer;
-    size_t matrixBufferCapacity;
-    std::vector<Matrix4F> matrixBufferData;
+    // Matrix buffer
+    ImmediateStateBuffer<Matrix4F> matrixBuffer;
 
     // Texture bindings
     std::vector<agpu::shader_resource_binding_ref> allocatedTextureBindings;
@@ -329,25 +492,13 @@ private:
     size_t usedTextureBindingCount;
 
     // Lighting state
-    LightingState currentLightingState;
-    bool currentLightingStateDirty;
-    size_t lightingStateBufferCapacity;
-    std::vector<LightingState> lightingStateBufferData;
-    agpu::buffer_ref lightingStateBuffer;
+    ImmediateStateBuffer<LightingState> lightingStateBuffer;
 
     // Material state.
-    MaterialState currentMaterialState;
-    bool currentMaterialStateDirty;
-    size_t materialStateBufferCapacity;
-    std::vector<MaterialState> materialStateBufferData;
-    agpu::buffer_ref materialStateBuffer;
+    ImmediateStateBuffer<MaterialState> materialStateBuffer;
 
-    // User clip planes
-    Vector4F currentUserClipPlane;
-    bool currentUserClipPlaneDirty;
-    size_t userClipPlaneBufferCapacity;
-    std::vector<Vector4F> userClipPlaneBufferData;
-    agpu::buffer_ref userClipPlaneBuffer;
+    // Extra rendering state
+    ImmediateStateBuffer<ExtraRenderingState> extraRenderingStateBuffer;
 
 };
 

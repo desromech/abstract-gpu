@@ -306,6 +306,34 @@ AGPUImmediateRenderer >> setClipPlane: index enabled: enabled p1: p1 p2: p2 p3: 
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> setFogMode: mode [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setFogMode_immediate_renderer: (self validHandle) mode: mode.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> setFogColor: r g: g b: b a: a [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setFogColor_immediate_renderer: (self validHandle) r: r g: g b: b a: a.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> setFogDistances: start end: end [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setFogDistances_immediate_renderer: (self validHandle) start: start end: end.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> setFogDensity: density [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setFogDensity_immediate_renderer: (self validHandle) density: density.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> beginPrimitives: type [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance beginPrimitives_immediate_renderer: (self validHandle) type: type.

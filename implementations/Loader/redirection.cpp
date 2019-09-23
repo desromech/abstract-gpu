@@ -2513,6 +2513,38 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane ( agpu_immediate_render
 	return (*dispatchTable)->agpuImmediateRendererSetClipPlane ( immediate_renderer, index, enabled, p1, p2, p3, p4 );
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogMode ( agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_fog_mode mode )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetFogMode ( immediate_renderer, mode );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogColor ( agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetFogColor ( immediate_renderer, r, g, b, a );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogDistances ( agpu_immediate_renderer* immediate_renderer, agpu_float start, agpu_float end )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetFogDistances ( immediate_renderer, start, end );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogDensity ( agpu_immediate_renderer* immediate_renderer, agpu_float density )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetFogDensity ( immediate_renderer, density );
+}
+
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives ( agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type )
 {
 	if (immediate_renderer == nullptr)

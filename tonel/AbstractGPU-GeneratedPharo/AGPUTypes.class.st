@@ -2,6 +2,7 @@ Class {
 	#name : #AGPUTypes,
 	#classVars : [
 		'agpu_matrix3x3f',
+		'agpu_immediate_renderer_fog_mode',
 		'agpu_field_type',
 		'agpu_buffer_description',
 		'agpu_matrix4x4f',
@@ -132,6 +133,7 @@ AGPUTypes class >> initialize [
 	super initialize.
 
 	agpu_matrix3x3f := AGPUMatrix3x3f.
+	agpu_immediate_renderer_fog_mode := #int.
 	agpu_field_type := #int.
 	agpu_buffer_description := AGPUBufferDescription.
 	agpu_matrix4x4f := AGPUMatrix4x4f.

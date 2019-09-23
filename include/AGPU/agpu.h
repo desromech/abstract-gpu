@@ -616,6 +616,13 @@ typedef enum {
 	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD = 3,
 } agpu_immediate_renderer_vertex_attribute;
 
+typedef enum {
+	AGPU_IMMEDIATE_RENDERER_FOG_MODE_NONE = 0,
+	AGPU_IMMEDIATE_RENDERER_FOG_MODE_LINEAR = 1,
+	AGPU_IMMEDIATE_RENDERER_FOG_MODE_EXPONENTIAL = 2,
+	AGPU_IMMEDIATE_RENDERER_FOG_MODE_EXPONENTIAL_SQUARED = 3,
+} agpu_immediate_renderer_fog_mode;
+
 
 /* Structure agpu_device_open_info. */
 typedef struct agpu_device_open_info {
@@ -1593,6 +1600,10 @@ typedef agpu_error (*agpuImmediateRendererSetMaterial_FUN) (agpu_immediate_rende
 typedef agpu_error (*agpuImmediateRendererSetTextureEnabled_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
 typedef agpu_error (*agpuImmediateRendererBindTexture_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
 typedef agpu_error (*agpuImmediateRendererSetClipPlane_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4);
+typedef agpu_error (*agpuImmediateRendererSetFogMode_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_fog_mode mode);
+typedef agpu_error (*agpuImmediateRendererSetFogColor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+typedef agpu_error (*agpuImmediateRendererSetFogDistances_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float start, agpu_float end);
+typedef agpu_error (*agpuImmediateRendererSetFogDensity_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float density);
 typedef agpu_error (*agpuBeginImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
 typedef agpu_error (*agpuEndImmediateRendererPrimitives_FUN) (agpu_immediate_renderer* immediate_renderer);
 typedef agpu_error (*agpuSetImmediateRendererColor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
@@ -1649,6 +1660,10 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial(agpu_immediate_renderer*
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled);
 AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer* immediate_renderer, agpu_texture* texture);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane(agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogMode(agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_fog_mode mode);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogColor(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogDistances(agpu_immediate_renderer* immediate_renderer, agpu_float start, agpu_float end);
+AGPU_EXPORT agpu_error agpuImmediateRendererSetFogDensity(agpu_immediate_renderer* immediate_renderer, agpu_float density);
 AGPU_EXPORT agpu_error agpuBeginImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type);
 AGPU_EXPORT agpu_error agpuEndImmediateRendererPrimitives(agpu_immediate_renderer* immediate_renderer);
 AGPU_EXPORT agpu_error agpuSetImmediateRendererColor(agpu_immediate_renderer* immediate_renderer, agpu_float r, agpu_float g, agpu_float b, agpu_float a);
@@ -1980,6 +1995,10 @@ typedef struct _agpu_icd_dispatch {
 	agpuImmediateRendererSetTextureEnabled_FUN agpuImmediateRendererSetTextureEnabled;
 	agpuImmediateRendererBindTexture_FUN agpuImmediateRendererBindTexture;
 	agpuImmediateRendererSetClipPlane_FUN agpuImmediateRendererSetClipPlane;
+	agpuImmediateRendererSetFogMode_FUN agpuImmediateRendererSetFogMode;
+	agpuImmediateRendererSetFogColor_FUN agpuImmediateRendererSetFogColor;
+	agpuImmediateRendererSetFogDistances_FUN agpuImmediateRendererSetFogDistances;
+	agpuImmediateRendererSetFogDensity_FUN agpuImmediateRendererSetFogDensity;
 	agpuBeginImmediateRendererPrimitives_FUN agpuBeginImmediateRendererPrimitives;
 	agpuEndImmediateRendererPrimitives_FUN agpuEndImmediateRendererPrimitives;
 	agpuSetImmediateRendererColor_FUN agpuSetImmediateRendererColor;

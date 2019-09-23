@@ -1579,6 +1579,26 @@ AGPUCBindings >> setClipPlane_immediate_renderer: immediate_renderer index: inde
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setFogMode_immediate_renderer: immediate_renderer mode: mode [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetFogMode (agpu_immediate_renderer* immediate_renderer , agpu_immediate_renderer_fog_mode mode) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFogColor_immediate_renderer: immediate_renderer r: r g: g b: b a: a [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetFogColor (agpu_immediate_renderer* immediate_renderer , agpu_float r , agpu_float g , agpu_float b , agpu_float a) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFogDistances_immediate_renderer: immediate_renderer start: start end: end [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetFogDistances (agpu_immediate_renderer* immediate_renderer , agpu_float start , agpu_float end) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setFogDensity_immediate_renderer: immediate_renderer density: density [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetFogDensity (agpu_immediate_renderer* immediate_renderer , agpu_float density) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> beginPrimitives_immediate_renderer: immediate_renderer type: type [
 	^ self ffiCall: #(agpu_error agpuBeginImmediateRendererPrimitives (agpu_immediate_renderer* immediate_renderer , agpu_primitive_topology type) )
 ]

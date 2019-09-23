@@ -85,6 +85,11 @@ bool LightingState::operator==(const LightingState &other) const
         lights == other.lights;
 }
 
+bool LightingState::operator!=(const LightingState &other) const
+{
+    return !(*this == other);
+}
+
 MaterialState::MaterialState()
     :
     emission(0.0f, 0.0f, 0.0f, 1.0f),
@@ -114,25 +119,53 @@ bool MaterialState::operator==(const MaterialState &other) const
         shininess == other.shininess;
 }
 
+bool MaterialState::operator!=(const MaterialState &other) const
+{
+    return !(*this == other);
+}
+
+ExtraRenderingState::ExtraRenderingState()
+    :
+    userClipPlane(0.0f, 0.0f, 0.0f, 0.0f),
+
+    fogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_NONE),
+    fogStartDistance(0.0f),
+    fogEndDistance(1.0f),
+    fogDensity(1.0),
+
+    fogColor(0.0f, 0.0f, 0.0f, 0.0f)
+{}
+
+size_t ExtraRenderingState::hash() const
+{
+    return
+        userClipPlane.hash() ^
+
+        std::hash<uint32_t> ()(fogMode) ^
+        std::hash<float> ()(fogStartDistance) ^
+        std::hash<float> ()(fogEndDistance) ^
+        std::hash<float> ()(fogDensity) ^
+
+        fogColor.hash();
+}
+
+bool ExtraRenderingState::operator==(const ExtraRenderingState &other) const
+{
+    return
+        userClipPlane == other.userClipPlane;
+}
+
+bool ExtraRenderingState::operator!=(const ExtraRenderingState &other) const
+{
+    return !(*this == other);
+}
+
 agpu_vertex_attrib_description ImmediateVertexAttributes[] = {
     {0, 0, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(ImmediateRendererVertex, position), 0},
     {0, 1, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(ImmediateRendererVertex, color), 0},
     {0, 2, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(ImmediateRendererVertex, normal), 0},
     {0, 3, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, 1, offsetof(ImmediateRendererVertex, texcoord), 0},
 };
-
-inline size_t nextPowerOfTwo(size_t v)
-{
-    // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v;
-}
 
 static agpu::shader_ref loadSpirVShader(const agpu::device_ref &device, agpu_shader_type shaderType, const uint8_t *data, size_t dataSize)
 {
@@ -233,11 +266,7 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
 {
     vertexBufferCapacity = 0;
     indexBufferCapacity = 0;
-    matrixBufferCapacity = 0;
-    lightingStateBufferCapacity = 0;
-    materialStateBufferCapacity = 0;
     usedTextureBindingCount = 0;
-    userClipPlaneBufferCapacity = 0;
     activeMatrixStack = nullptr;
 
     auto impl = stateTrackerCache.as<StateTrackerCache> ();
@@ -288,48 +317,37 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     // Reset the matrices.
     projectionMatrixStack.clear();
     projectionMatrixStack.push_back(Matrix4F::identity());
-    projectionMatrixStackDirtyFlag = false;
+    projectionMatrixStackDirtyFlag = true;
 
     modelViewMatrixStack.clear();
     modelViewMatrixStack.push_back(Matrix4F::identity());
-    modelViewMatrixStackDirtyFlag = false;
+    modelViewMatrixStackDirtyFlag = true;
 
     textureMatrixStack.clear();
     textureMatrixStack.push_back(Matrix4F::identity());
-    textureMatrixStackDirtyFlag = false;
+    textureMatrixStackDirtyFlag = true;
 
-    matrixBufferData.clear();
-    matrixBufferData.push_back(Matrix4F::identity());
+    matrixBuffer.reset();
 
-    currentPushConstants.projectionMatrixIndex = 0;
-    currentPushConstants.modelViewMatrixIndex = 0;
-    currentPushConstants.textureMatrixIndex = 0;
+    // Invalidate the push constans.
+    currentPushConstants = ImmediatePushConstants();
+    invalidatePushConstants();
 
     // Reset the rendering state.
-    currentRenderingState.activePrimitiveTopology = AGPU_POINTS;
-    currentRenderingState.flatShading = false;
-    currentRenderingState.lightingEnabled = false;
-    currentRenderingState.texturingEnabled = false;
-    currentRenderingState.activeTexture.reset();
+    currentRenderingState = ImmediateRenderingState();
 
     // Reset the texture bindings.
     usedTextureBindingMap.clear();
     usedTextureBindingCount = 0;
 
     // Reset the lighting state.
-    currentLightingState = LightingState();
-    currentLightingStateDirty = true;
-    lightingStateBufferData.clear();
+    lightingStateBuffer.reset();
 
     // Reset the material state.
-    currentMaterialState = MaterialState();
-    currentMaterialStateDirty = true;
-    materialStateBufferData.clear();
+    materialStateBuffer.reset();
 
-    // Reset the user clip planes.
-    currentUserClipPlane = Vector4F();
-    currentUserClipPlaneDirty = true;
-    userClipPlaneBufferData.clear();
+    // Reset the extra rendering state.
+    extraRenderingStateBuffer.reset();
 
     // Reset the vertices.
     lastDrawnVertexIndex = 0;
@@ -475,16 +493,22 @@ agpu_error ImmediateRenderer::setLightingEnabled(agpu_bool enabled)
 
 agpu_error ImmediateRenderer::clearLights()
 {
-    currentLightingState.lights = LightingState().lights;
-    currentLightingState.enabledLightMask = 0;
-    currentLightingStateDirty = true;
+    auto newState = lightingStateBuffer.currentState;
+    newState.lights = LightingState().lights;
+    newState.enabledLightMask = 0;
+    lightingStateBuffer.setState(newState);
     return AGPU_OK;
 }
 
 agpu_error ImmediateRenderer::setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
 {
-    currentLightingState.ambientLighting = Vector4F(r, g, b, a);
-    currentLightingStateDirty = true;
+    auto newAmbientLighting = Vector4F(r, g, b, a);
+    if(lightingStateBuffer.currentState.ambientLighting != newAmbientLighting)
+    {
+        lightingStateBuffer.currentState.ambientLighting = newAmbientLighting;
+        lightingStateBuffer.makeDirty();
+    }
+
     return AGPU_OK;
 }
 
@@ -496,11 +520,11 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
     uint32_t bit = 1<<index;
     if(enabled)
     {
-        currentLightingState.enabledLightMask |= bit;
+        lightingStateBuffer.currentState.enabledLightMask |= bit;
 
         if(state)
         {
-            auto &light = currentLightingState.lights[index];
+            auto &light = lightingStateBuffer.currentState.lights[index];
             light.ambientColor = Vector4F(state->ambient);
             light.diffuseColor = Vector4F(state->diffuse);
             light.specularColor = Vector4F(state->specular);
@@ -515,9 +539,9 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
     }
     else
     {
-        currentLightingState.enabledLightMask &= ~bit;
+        lightingStateBuffer.currentState.enabledLightMask &= ~bit;
     }
-    currentLightingStateDirty = true;
+    lightingStateBuffer.makeDirty();
 
     return AGPU_OK;
 }
@@ -528,7 +552,7 @@ agpu_error ImmediateRenderer::setClipPlane(agpu_uint index, agpu_bool enabled, a
     if(index > 0)
         return AGPU_OK;
 
-    Vector4F newClipPlane;
+    auto newClipPlane = Vector4F(0.0f, 0.0f, 0.0f, 0.0f);
     if(enabled)
     {
         auto modelViewMatrix = modelViewMatrixStack.back();
@@ -537,21 +561,73 @@ agpu_error ImmediateRenderer::setClipPlane(agpu_uint index, agpu_bool enabled, a
         newClipPlane = Vector4F(p1, p2, p3, p4)*inverseModelViewMatrix;
     }
 
-    currentUserClipPlaneDirty = currentUserClipPlaneDirty || (currentUserClipPlane != newClipPlane);
-    currentUserClipPlane = newClipPlane;
+    if(extraRenderingStateBuffer.currentState.userClipPlane != newClipPlane)
+    {
+        extraRenderingStateBuffer.currentState.userClipPlane = newClipPlane;
+        extraRenderingStateBuffer.makeDirty();
+    }
 
     return AGPU_OK;
 }
+
+agpu_error ImmediateRenderer::setFogMode(agpu_immediate_renderer_fog_mode mode)
+{
+    if(extraRenderingStateBuffer.currentState.fogMode != mode)
+    {
+        extraRenderingStateBuffer.currentState.fogMode = mode;
+        extraRenderingStateBuffer.makeDirty();
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::setFogColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a)
+{
+    auto color = Vector4F(r, g, b, a);
+
+    if(extraRenderingStateBuffer.currentState.fogColor != color)
+    {
+        extraRenderingStateBuffer.currentState.fogColor = color;
+        extraRenderingStateBuffer.makeDirty();
+    }
+
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::setFogDistances(agpu_float start, agpu_float end)
+{
+    if(extraRenderingStateBuffer.currentState.fogStartDistance != start ||
+       extraRenderingStateBuffer.currentState.fogEndDistance != end)
+    {
+        extraRenderingStateBuffer.currentState.fogStartDistance = start;
+        extraRenderingStateBuffer.currentState.fogEndDistance = end;
+        extraRenderingStateBuffer.makeDirty();
+    }
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::setFogDensity(agpu_float density)
+{
+    if(extraRenderingStateBuffer.currentState.fogDensity != density)
+    {
+        extraRenderingStateBuffer.currentState.fogDensity = density;
+        extraRenderingStateBuffer.makeDirty();
+    }
+    return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* state)
 {
     if(!state)
         return AGPU_NULL_POINTER;
 
-    currentMaterialState.emission = Vector4F(state->emission);
-    currentMaterialState.ambient = Vector4F(state->ambient);
-    currentMaterialState.diffuse = Vector4F(state->diffuse);
-    currentMaterialState.specular = Vector4F(state->specular);
-    currentMaterialState.shininess = state->shininess;
+    MaterialState newMaterialState;
+    newMaterialState.emission = Vector4F(state->emission);
+    newMaterialState.ambient = Vector4F(state->ambient);
+    newMaterialState.diffuse = Vector4F(state->diffuse);
+    newMaterialState.specular = Vector4F(state->specular);
+    newMaterialState.shininess = state->shininess;
+    materialStateBuffer.setState(newMaterialState);
     return AGPU_OK;
 }
 
@@ -644,6 +720,7 @@ agpu_error ImmediateRenderer::popMatrix()
         return AGPU_INVALID_OPERATION;
 
     activeMatrixStack->pop_back();
+    invalidateMatrix();
     return AGPU_OK;
 }
 
@@ -684,14 +761,6 @@ agpu_error ImmediateRenderer::multiplyMatrix(agpu_float* elements)
 
 agpu_error ImmediateRenderer::multiplyTransposeMatrix(agpu_float* elements)
 {
-    /*printf("multiplyTransposeMatrix:\n");
-    for(int j = 0; j < 4; ++j)
-    {
-        for(int i = 0; i < 4; ++i)
-            printf("%f ", elements[j*4 + i]);
-        printf("\n");
-    }*/
-
     applyMatrix(Matrix4F(
         Vector4F(elements[0], elements[4], elements[8], elements[12]),
         Vector4F(elements[1], elements[5], elements[9], elements[13]),
@@ -818,8 +887,15 @@ agpu_error ImmediateRenderer::beginPrimitives(agpu_primitive_topology type)
 
     auto error = validateRenderingStates();
     if(error) return error;
+
     currentRenderingState.activePrimitiveTopology = type;
     lastDrawnVertexIndex = vertices.size();
+
+    auto stateToRender = currentRenderingState;
+    pendingRenderingCommands.push_back([=]{
+        flushRenderingState(stateToRender);
+    });
+
 
     return AGPU_OK;
 }
@@ -839,6 +915,8 @@ agpu_error ImmediateRenderer::validateRenderingStates()
     error = validateUserClipPlaneState();
     if(error) return error;
 
+    validatePushConstants();
+
     return AGPU_OK;
 }
 
@@ -851,9 +929,8 @@ agpu_error ImmediateRenderer::endPrimitives()
     if(vertexCount > 0)
     {
         auto vertexStart = lastDrawnVertexIndex;
-        auto stateToRender = currentRenderingState;
         pendingRenderingCommands.push_back([=]{
-            auto error = flushRenderingState(stateToRender);
+            auto error = flushImmediateVertexRenderingState();
             if(!error)
                 currentStateTracker->drawArrays(vertexCount, 1, vertexStart, 0);
         });
@@ -912,11 +989,10 @@ void ImmediateRenderer::invalidateMatrix()
 
 agpu_error ImmediateRenderer::validateLightingState()
 {
-    if((currentRenderingState.lightingEnabled || lightingStateBufferData.empty()) && currentLightingStateDirty)
+    if(lightingStateBuffer.isDirty())
     {
-        currentPushConstants.lightingStateIndex = lightingStateBufferData.size();
-        lightingStateBufferData.push_back(currentLightingState);
-        uploadPushConstants();
+        currentPushConstants.lightingStateIndex = lightingStateBuffer.validateCurrentState();
+        invalidatePushConstants();
     }
 
     return AGPU_OK;
@@ -924,11 +1000,10 @@ agpu_error ImmediateRenderer::validateLightingState()
 
 agpu_error ImmediateRenderer::validateMaterialState()
 {
-    if((currentRenderingState.lightingEnabled || materialStateBufferData.empty()) && currentMaterialStateDirty)
+    if(materialStateBuffer.isDirty())
     {
-        currentPushConstants.materialStateIndex = materialStateBufferData.size();
-        materialStateBufferData.push_back(currentMaterialState);
-        uploadPushConstants();
+        currentPushConstants.materialStateIndex = materialStateBuffer.validateCurrentState();
+        invalidatePushConstants();
     }
 
     return AGPU_OK;
@@ -936,57 +1011,63 @@ agpu_error ImmediateRenderer::validateMaterialState()
 
 agpu_error ImmediateRenderer::validateMatrices()
 {
-    bool matricesChanged = false;
     if(projectionMatrixStackDirtyFlag)
     {
-        currentPushConstants.projectionMatrixIndex = matrixBufferData.size();
-        matrixBufferData.push_back(projectionMatrixStack.back());
+        currentPushConstants.projectionMatrixIndex = matrixBuffer.validateExplicitState(projectionMatrixStack.back());
         projectionMatrixStackDirtyFlag = false;
-        matricesChanged = true;
+        invalidatePushConstants();
     }
 
     if(modelViewMatrixStackDirtyFlag)
     {
-        currentPushConstants.modelViewMatrixIndex = matrixBufferData.size();
-        matrixBufferData.push_back(modelViewMatrixStack.back());
+        currentPushConstants.modelViewMatrixIndex = matrixBuffer.validateExplicitState(modelViewMatrixStack.back());
         modelViewMatrixStackDirtyFlag = false;
-        matricesChanged = true;
+        invalidatePushConstants();
     }
 
     if(textureMatrixStackDirtyFlag)
     {
-        currentPushConstants.textureMatrixIndex = matrixBufferData.size();
-        matrixBufferData.push_back(textureMatrixStack.back());
+        currentPushConstants.textureMatrixIndex = matrixBuffer.validateExplicitState(textureMatrixStack.back());
         textureMatrixStackDirtyFlag = false;
-        matricesChanged = true;
+        invalidatePushConstants();
     }
-
-    if(matricesChanged)
-        uploadPushConstants();
 
     return AGPU_OK;
 }
 
 agpu_error ImmediateRenderer::validateUserClipPlaneState()
 {
-    if(currentUserClipPlaneDirty)
+    if(extraRenderingStateBuffer.isDirty())
     {
-        currentPushConstants.clipPlaneIndex = userClipPlaneBufferData.size();
-        userClipPlaneBufferData.push_back(currentUserClipPlane);
-        currentUserClipPlaneDirty = false;
-        uploadPushConstants();
+        currentPushConstants.extraRenderingStateIndex = extraRenderingStateBuffer.validateCurrentState();
+        invalidatePushConstants();
+
     }
 
     return AGPU_OK;
 }
 
-void ImmediateRenderer::uploadPushConstants()
+void ImmediateRenderer::invalidatePushConstants()
 {
+    currentPushConstantsDirty = true;
+}
+
+void ImmediateRenderer::validatePushConstants()
+{
+    if(!currentPushConstantsDirty)
+        return;
     auto constantsToUpdate = currentPushConstants;
     pendingRenderingCommands.push_back([=]{
         currentStateTracker->setShaderSignature(immediateShaderSignature);
         currentStateTracker->pushConstants(0, sizeof(constantsToUpdate), (void*)&constantsToUpdate);
     });
+}
+
+agpu_error ImmediateRenderer::flushImmediateVertexRenderingState()
+{
+    currentStateTracker->setVertexLayout(immediateVertexLayout);
+    currentStateTracker->useVertexBinding(vertexBinding);
+    return AGPU_OK;
 }
 
 agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState &state)
@@ -1032,8 +1113,6 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
     }
 
     currentStateTracker->setPrimitiveType(state.activePrimitiveTopology);
-    currentStateTracker->setVertexLayout(immediateVertexLayout);
-    currentStateTracker->useVertexBinding(vertexBinding);
     currentStateTracker->useShaderResources(uniformResourceBindings);
     if(state.texturingEnabled)
     {
@@ -1046,7 +1125,10 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
 
 agpu_error ImmediateRenderer::flushRenderingData()
 {
+    static constexpr size_t GpuBufferDataThreshold = 1024*256;
+
     // Upload the vertices.
+    // TODO: Use an immediate state buffer for the vertices and the indices.
     agpu_error error = AGPU_OK;
     if(!vertexBuffer || vertexBufferCapacity < vertices.size())
     {
@@ -1105,125 +1187,18 @@ agpu_error ImmediateRenderer::flushRenderingData()
             return error;
     }
 
-    // Upload the matrices.
-    if(!matrixBuffer || matrixBufferCapacity < matrixBufferData.size())
-    {
-        matrixBufferCapacity = nextPowerOfTwo(matrixBufferData.size());
-        if(matrixBufferCapacity < 32)
-            matrixBufferCapacity = 32;
+    // Upload the immediate state buffers.
+    error = matrixBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 0);
+    if(error) return error;
 
-        auto requiredSize = matrixBufferCapacity*sizeof(Matrix4F);
-        agpu_buffer_description bufferDescription = {};
-        bufferDescription.size = requiredSize;
-        bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
-            ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-        bufferDescription.binding = AGPU_STORAGE_BUFFER;
-        bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
-        bufferDescription.stride = sizeof(Matrix4F);
+    error = lightingStateBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 1);
+    if(error) return error;
 
-        matrixBuffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
-        if(!matrixBuffer)
-            return AGPU_OUT_OF_MEMORY;
+    error = materialStateBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 2);
+    if(error) return error;
 
-        uniformResourceBindings->bindStorageBuffer(0, matrixBuffer);
-    }
-
-    if(!matrixBufferData.empty())
-    {
-        error = matrixBuffer->uploadBufferData(0, matrixBufferData.size()*sizeof(Matrix4F), &matrixBufferData[0]);
-        if(error)
-            return error;
-    }
-
-    // Upload the lighting states.
-    if(!lightingStateBuffer || lightingStateBufferCapacity < lightingStateBufferData.size())
-    {
-        lightingStateBufferCapacity = nextPowerOfTwo(lightingStateBufferData.size());
-        if(lightingStateBufferCapacity < 32)
-            lightingStateBufferCapacity = 32;
-
-        auto requiredSize = lightingStateBufferCapacity*sizeof(LightingState);
-        agpu_buffer_description bufferDescription = {};
-        bufferDescription.size = requiredSize;
-        bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
-            ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-        bufferDescription.binding = AGPU_STORAGE_BUFFER;
-        bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
-        bufferDescription.stride = sizeof(LightingState);
-
-        lightingStateBuffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
-        if(!lightingStateBuffer)
-            return AGPU_OUT_OF_MEMORY;
-
-        uniformResourceBindings->bindStorageBuffer(1, lightingStateBuffer);
-    }
-
-    if(!lightingStateBufferData.empty())
-    {
-        error = lightingStateBuffer->uploadBufferData(0, lightingStateBufferData.size()*sizeof(LightingState), &lightingStateBufferData[0]);
-        if(error)
-            return error;
-    }
-
-    // Upload the material states.
-    if(!materialStateBuffer || materialStateBufferCapacity < materialStateBufferData.size())
-    {
-        materialStateBufferCapacity = nextPowerOfTwo(materialStateBufferData.size());
-        if(materialStateBufferCapacity < 32)
-            materialStateBufferCapacity = 32;
-
-        auto requiredSize = materialStateBufferCapacity*sizeof(MaterialState);
-        agpu_buffer_description bufferDescription = {};
-        bufferDescription.size = requiredSize;
-        bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
-            ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-        bufferDescription.binding = AGPU_STORAGE_BUFFER;
-        bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
-        bufferDescription.stride = sizeof(MaterialState);
-
-        materialStateBuffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
-        if(!materialStateBuffer)
-            return AGPU_OUT_OF_MEMORY;
-
-        uniformResourceBindings->bindStorageBuffer(2, materialStateBuffer);
-    }
-
-    if(!materialStateBufferData.empty())
-    {
-        error = materialStateBuffer->uploadBufferData(0, materialStateBufferData.size()*sizeof(MaterialState), &materialStateBufferData[0]);
-        if(error)
-            return error;
-    }
-
-    // Upload the user clip plane.
-    if(!userClipPlaneBuffer || userClipPlaneBufferCapacity < userClipPlaneBufferData.size())
-    {
-        userClipPlaneBufferCapacity = nextPowerOfTwo(userClipPlaneBufferData.size());
-        if(userClipPlaneBufferCapacity < 32)
-            userClipPlaneBufferCapacity = 32;
-
-        auto requiredSize = userClipPlaneBufferCapacity*sizeof(Vector4F);
-        agpu_buffer_description bufferDescription = {};
-        bufferDescription.size = requiredSize;
-        bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
-            ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-        bufferDescription.binding = AGPU_STORAGE_BUFFER;
-        bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
-        bufferDescription.stride = sizeof(Vector4F);
-
-        userClipPlaneBuffer = agpu::buffer_ref(device->createBuffer(&bufferDescription, nullptr));
-        if(!userClipPlaneBuffer)
-            return AGPU_OUT_OF_MEMORY;
-
-        uniformResourceBindings->bindStorageBuffer(3, userClipPlaneBuffer);
-    }
-
-    if(!userClipPlaneBufferData.empty())
-    {
-        error = userClipPlaneBuffer->uploadBufferData(0, userClipPlaneBufferData.size()*sizeof(Vector4F), &userClipPlaneBufferData[0]);
-        if(error)
-            return error;
-    }
+    error = extraRenderingStateBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 3);
+    if(error) return error;
 
     return AGPU_OK;
 }
@@ -1232,9 +1207,6 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
 {
     if(renderingImmediateMesh)
         return AGPU_INVALID_OPERATION;
-
-    auto error = validateRenderingStates();
-    if(error) return error;
 
     renderingImmediateMesh = true;
     currentImmediateMeshBaseVertex = vertices.size();
@@ -1261,7 +1233,7 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
 
     auto stateToRender = currentRenderingState;
     pendingRenderingCommands.push_back([=]{
-        auto error = flushRenderingState(stateToRender);
+        auto error = flushImmediateVertexRenderingState();
         if(!error)
         {
             currentStateTracker->useIndexBuffer(indexBuffer);
@@ -1348,9 +1320,13 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
     if(!renderingImmediateMesh)
         return AGPU_INVALID_OPERATION;
 
+    auto error = validateRenderingStates();
+    if(error) return error;
+
     size_t baseIndex = indices.size();
     auto indicesValues = reinterpret_cast<uint32_t*> (indicesPointer);
     auto actualBaseVertex = currentImmediateMeshBaseVertex + base_vertex;
+    auto stateToRender = currentRenderingState;
     switch(mode)
     {
     // Directly supported modes. Just copy the data.
@@ -1366,9 +1342,11 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
 	case AGPU_PATCHES:
         {
             indices.insert(indices.end(), indicesValues, indicesValues + index_count);
+            stateToRender.activePrimitiveTopology = mode;
             pendingRenderingCommands.push_back([=]{
-                currentStateTracker->setPrimitiveType(mode);
-                currentStateTracker->drawElements(index_count, instance_count, baseIndex + first_index, actualBaseVertex, base_instance);
+                auto error = flushRenderingState(stateToRender);
+                if(!error)
+                    currentStateTracker->drawElements(index_count, instance_count, baseIndex + first_index, actualBaseVertex, base_instance);
             });
         }
         break;
@@ -1387,9 +1365,11 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
                 convertedIndexCount += 3;
             }
 
+            stateToRender.activePrimitiveTopology = AGPU_TRIANGLES;
             pendingRenderingCommands.push_back([=]{
-                currentStateTracker->setPrimitiveType(AGPU_TRIANGLES);
-                currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
+                auto error = flushRenderingState(stateToRender);
+                if(!error)
+                    currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
             });
         }
         return AGPU_OK;
@@ -1419,9 +1399,11 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
             }
 
 
+            stateToRender.activePrimitiveTopology = AGPU_TRIANGLES;
             pendingRenderingCommands.push_back([=]{
-                currentStateTracker->setPrimitiveType(AGPU_TRIANGLES);
-                currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
+                auto error = flushRenderingState(stateToRender);
+                if(!error)
+                    currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
             });
         }
         return AGPU_OK;

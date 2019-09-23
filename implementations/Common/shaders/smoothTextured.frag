@@ -1,7 +1,10 @@
 #version 450
 
+#include "fog.glsl"
+
 layout(location = 0) in vec4 inColor;
 layout(location = 1) in vec4 inTexcoord;
+layout(location = 2) in vec4 inPosition;
 
 layout(location = 0) out vec4 outColor;
 
@@ -10,5 +13,5 @@ layout(set=2, binding=0) uniform texture2D Texture0;
 
 void main()
 {
-    outColor = inColor*textureProj(sampler2D(Texture0, Sampler0), inTexcoord);
+    outColor = applyFog(inColor*textureProj(sampler2D(Texture0, Sampler0), inTexcoord), inPosition.xyz);
 }
