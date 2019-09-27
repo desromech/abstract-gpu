@@ -230,7 +230,8 @@ static void loadDriver(const std::string &path)
 
     // Get the driver platforms
     std::vector<agpu_platform*> platforms(platformCount);
-    getPlatforms(agpu_size(platforms.size()), &platforms[0], &platformCount);
+	if (platformCount > 0)
+		getPlatforms(agpu_size(platforms.size()), &platforms[0], &platformCount);
 
     // Ensure there is at least one platform defined.
     if (!platformCount)
@@ -272,7 +273,8 @@ static void loadDriver(const std::string &path)
 
     // Get the driver platforms
     std::vector<agpu_platform*> platforms(platformCount);
-    getPlatforms(platforms.size(), &platforms[0], &platformCount);
+	if(platformCount > 0)
+	    getPlatforms(platforms.size(), &platforms[0], &platformCount);
 
     // Ensure there is at least one platform defined.
     if(!platformCount)
