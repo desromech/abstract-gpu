@@ -224,8 +224,8 @@ public:
     typedef ST StateType;
     typedef ImmediateStateBuffer<StateType> SelfType;
 
-    ImmediateStateBuffer()
-        : bufferCapacity(0)
+	ImmediateStateBuffer()
+		: dirtyFlag(false), bufferCapacity(0)
     {
 
     }

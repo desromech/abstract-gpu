@@ -70,7 +70,7 @@ bool LightState::operator==(const LightState &other) const
 }
 
 LightingState::LightingState()
-    : ambientLighting(0.2f, 0.2f, 0.2f, 1.0f), enabledLightMask(1)
+    : ambientLighting(0.2f, 0.2f, 0.2f, 1.0f), enabledLightMask(1), padding()
 {
     lights[0].diffuseColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
     lights[0].specularColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
@@ -102,7 +102,8 @@ MaterialState::MaterialState()
     ambient(0.2f, 0.2f, 0.2f, 1.0f),
     diffuse(0.8f, 0.8f, 0.8f, 1.0f),
     specular(0.0f, 0.0f, 0.0f, 1.0f),
-    shininess(0.0f)
+    shininess(0.0f),
+	padding()
 {}
 
 size_t MaterialState::hash() const
@@ -539,7 +540,7 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
             light.position = modelViewMatrixStack.back()*Vector4F(state->position);
             light.spotDirection = modelViewMatrixStack.back().transformDirection3(Vector3F(state->spot_direction));
             light.spotExponent = state->spot_exponent;
-            light.spotCosCutoff = cos(state->spot_cutoff*M_PI/180.0);
+            light.spotCosCutoff = float(cos(state->spot_cutoff*M_PI/180.0));
             light.constantAttenuation = state->constant_attenuation;
             light.linearAttenuation = state->linear_attenuation;
             light.quadraticAttenuation = state->quadratic_attenuation;
@@ -812,7 +813,7 @@ agpu_error ImmediateRenderer::frustum(agpu_float left, agpu_float right, agpu_fl
 
     auto matrix = Matrix4F(
         Vector4F(2.0f*near / (right - left), 0.0f, 0.0f, 0.0f),
-        Vector4F(0.0f, 2.0*near / (top - bottom), 0.0f, 0.0f),
+        Vector4F(0.0f, 2.0f*near / (top - bottom), 0.0f, 0.0f),
         Vector4F(0.0f, 0.0f, -far/(far - near), -1.0f),
         Vector4F((right + left) / (right - left), (top + bottom) / (top - bottom),  -near * far / (far - near), 0.0f)
     );
@@ -830,8 +831,8 @@ agpu_error ImmediateRenderer::frustum(agpu_float left, agpu_float right, agpu_fl
 
 agpu_error ImmediateRenderer::perspective(agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far)
 {
-    auto radians = fovy*(M_PI/180.0f*0.5f);
-    auto top = near * tan(radians);
+    auto radians = fovy*float(M_PI/180.0f*0.5f);
+    auto top = near * float(tan(radians));
     auto right = top * aspect;
     return frustum(-right, right, -top, top, near, far);
 }
@@ -842,10 +843,10 @@ agpu_error ImmediateRenderer::rotate(agpu_float angle, agpu_float vx, agpu_float
         return AGPU_INVALID_OPERATION;
 
     auto radians = angle*M_PI/180.0f;
-    auto c = cos(radians);
-    auto s = sin(radians);
+    auto c = float(cos(radians));
+    auto s = float(sin(radians));
 
-    auto l = sqrt(vx*vx + vy*vy + vz*vz);
+    auto l = float(sqrt(vx*vx + vy*vy + vz*vz));
     auto x = vx / l;
     auto y = vy / l;
     auto z = vz / l;
