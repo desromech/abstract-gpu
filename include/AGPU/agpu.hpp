@@ -2035,6 +2035,21 @@ public:
 		agpuThrowIfFailed(agpuBeginImmediateRendererMeshWithVertices(this, vertexCount, stride, elementCount, vertices));
 	}
 
+	inline void beginMeshWithVertexBinding(const agpu_ref<agpu_vertex_layout>& layout, const agpu_ref<agpu_vertex_binding>& vertices)
+	{
+		agpuThrowIfFailed(agpuBeginImmediateRendererMeshWithVertexBinding(this, layout.get(), vertices.get()));
+	}
+
+	inline void useIndexBuffer(const agpu_ref<agpu_buffer>& index_buffer)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererUseIndexBuffer(this, index_buffer.get()));
+	}
+
+	inline void useIndexBufferAt(const agpu_ref<agpu_buffer>& index_buffer, agpu_size offset, agpu_size index_size)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererUseIndexBufferAt(this, index_buffer.get(), offset, index_size));
+	}
+
 	inline void setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors)
 	{
 		agpuThrowIfFailed(agpuSetImmediateRendererCurrentMeshColors(this, stride, elementCount, colors));
@@ -2048,6 +2063,21 @@ public:
 	inline void setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords)
 	{
 		agpuThrowIfFailed(agpuSetImmediateRendererCurrentMeshTexCoords(this, stride, elementCount, texcoords));
+	}
+
+	inline void setPrimitiveType(agpu_primitive_topology type)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetPrimitiveType(this, type));
+	}
+
+	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererDrawArrays(this, vertex_count, instance_count, first_vertex, base_instance));
+	}
+
+	inline void drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererDrawElements(this, index_count, instance_count, first_index, base_vertex, base_instance));
 	}
 
 	inline void drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)

@@ -183,7 +183,11 @@ GLuint GLShaderResourceBinding::getSamplerAt(agpu_int location)
     if(element.type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
         return 0;
 
-    return samplers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::Sampler]];
+    const auto &sampler = samplers[element.startIndex - bank.startIndices[(int)OpenGLResourceBindingType::Sampler]];
+    if(!sampler)
+        return 0;
+
+    return sampler.as<GLSampler> ()->handle;
 }
 
 void GLShaderResourceBinding::activate()
@@ -247,9 +251,11 @@ void GLShaderResourceBinding::activateSamplers()
     auto glDevice = device.as<GLDevice> ();
     for (size_t i = 0; i < samplers.size(); ++i)
     {
-        auto sampler = samplers[i];
+        const auto &sampler = samplers[i];
         if(sampler)
-            glDevice->glBindSampler(GLuint(baseIndex + i), sampler);
+        {
+            glDevice->glBindSampler(GLuint(baseIndex + i), sampler.as<GLSampler> ()->handle);
+        }
     }
 }
 

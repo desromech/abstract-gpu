@@ -10,6 +10,8 @@ AbstractStateTracker::AbstractStateTracker(const agpu::state_tracker_cache_ref &
     : device(device), cache(cache), commandListType(type), commandQueue(commandQueue)
 {
     isRecording = false;
+	isGraphicsPipelineDescriptionChanged = true;
+	isComputePipelineDescriptionChanged = true;
 }
 
 AbstractStateTracker::~AbstractStateTracker()

@@ -383,6 +383,27 @@ AGPUImmediateRenderer >> beginMeshWithVertices: vertexCount stride: stride eleme
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> beginMeshWithVertexBinding: layout vertices: vertices [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance beginMeshWithVertexBinding_immediate_renderer: (self validHandle) layout: (self validHandleOf: layout) vertices: (self validHandleOf: vertices).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> useIndexBuffer: index_buffer [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useIndexBuffer_immediate_renderer: (self validHandle) index_buffer: (self validHandleOf: index_buffer).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> useIndexBufferAt: index_buffer offset: offset index_size: index_size [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useIndexBufferAt_immediate_renderer: (self validHandle) index_buffer: (self validHandleOf: index_buffer) offset: offset index_size: index_size.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> setCurrentMeshColors: stride elementCount: elementCount colors: colors [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setCurrentMeshColors_immediate_renderer: (self validHandle) stride: stride elementCount: elementCount colors: colors.
@@ -400,6 +421,27 @@ AGPUImmediateRenderer >> setCurrentMeshNormals: stride elementCount: elementCoun
 AGPUImmediateRenderer >> setCurrentMeshTexCoords: stride elementCount: elementCount texcoords: texcoords [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setCurrentMeshTexCoords_immediate_renderer: (self validHandle) stride: stride elementCount: elementCount texcoords: texcoords.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> setPrimitiveType: type [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setPrimitiveType_immediate_renderer: (self validHandle) type: type.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> drawArrays: vertex_count instance_count: instance_count first_vertex: first_vertex base_instance: base_instance [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance drawArrays_immediate_renderer: (self validHandle) vertex_count: vertex_count instance_count: instance_count first_vertex: first_vertex base_instance: base_instance.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> drawElements: index_count instance_count: instance_count first_index: first_index base_vertex: base_vertex base_instance: base_instance [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance drawElements_immediate_renderer: (self validHandle) index_count: index_count instance_count: instance_count first_index: first_index base_vertex: base_vertex base_instance: base_instance.
 	self checkErrorCode: resultValue_
 ]
 

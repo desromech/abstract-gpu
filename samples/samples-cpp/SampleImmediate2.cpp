@@ -144,95 +144,20 @@ public:
         auto viewMatrix = glm::inverse(cameraModelMatrix());
         immediateRenderer->multiplyMatrix(&viewMatrix[0][0]);
 
-        // Begin drawing the mesh.
-        cubeMesh->beginDrawingWithImmediateRenderer(immediateRenderer);
-
-        // First row: without texture.
-        immediateRenderer->setTexturingEnabled(false);
+        // Draw the cubes with implicit rendering.
         {
             immediateRenderer->pushMatrix();
-            immediateRenderer->setLightingEnabled(false);
-            drawCubeMeshRow();
+            drawCubes(false);
             immediateRenderer->popMatrix();
         }
 
-        // Second row: with textures.
-        immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
+        // Draw the cube with explicit buffers.
         {
             immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -2.0f);
-            immediateRenderer->setLightingEnabled(false);
-            drawCubeMeshRow();
+            immediateRenderer->translate(0.0, 4.0, 0.0);
+            drawCubes(true);
             immediateRenderer->popMatrix();
         }
-
-        // Third row: without textures and fog.
-        immediateRenderer->setFogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_LINEAR);
-        immediateRenderer->setFogColor(0.0f, 0.0f, 0.0f, 0.0);
-        immediateRenderer->setFogDistances(0.0f, 10.0f);
-        immediateRenderer->setTexturingEnabled(false);
-        {
-            immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -4.0f);
-            drawCubeMeshRow();
-            immediateRenderer->popMatrix();
-        }
-
-        // Fourth row: with textures and fog
-        immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
-        {
-            immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -6.0f);
-            drawCubeMeshRow();
-            immediateRenderer->popMatrix();
-        }
-
-        // Fifth row: without textures and fog.
-        immediateRenderer->setFogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_EXPONENTIAL);
-        immediateRenderer->setFogDensity(0.1f);
-        immediateRenderer->setTexturingEnabled(false);
-        {
-            immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -8.0f);
-            drawCubeMeshRow();
-            immediateRenderer->popMatrix();
-        }
-
-        // Sixth row: with textures and fog
-        immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
-        {
-            immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -10.0f);
-            drawCubeMeshRow();
-            immediateRenderer->popMatrix();
-        }
-
-        // Seventh row: without textures and fog.
-        immediateRenderer->setFogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_EXPONENTIAL_SQUARED);
-        immediateRenderer->setFogDensity(0.1f);
-        immediateRenderer->setTexturingEnabled(false);
-        {
-            immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -12.0f);
-            drawCubeMeshRow();
-            immediateRenderer->popMatrix();
-        }
-
-        // Eight row: with textures and fog
-        immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
-        {
-            immediateRenderer->pushMatrix();
-            immediateRenderer->translate(0.0f, 0.0f, -14.0f);
-            drawCubeMeshRow();
-            immediateRenderer->popMatrix();
-        }
-
-        // End drawing the mesh.
-        cubeMesh->endDrawingWithImmediateRenderer(immediateRenderer);
 
         // End rendering the frame.
         immediateRenderer->endRendering();
@@ -247,7 +172,7 @@ public:
     {
     }
 
-    void drawCubeMeshMaterialRow()
+    void drawCubeMeshMaterialRow(bool explicitBuffers)
     {
         auto gap = 2.0f;
         auto currentX = -(CubeAlbedoCount * gap / 2.0);
@@ -266,26 +191,119 @@ public:
             immediateRenderer->pushMatrix();
             immediateRenderer->translate(currentX, 0.0f, 0.0f);
             immediateRenderer->setMaterial(&material);
-            cubeMesh->drawWithImmediateRenderer(immediateRenderer);
+            cubeMesh->drawWithImmediateRenderer(immediateRenderer, explicitBuffers);
 
             immediateRenderer->popMatrix();
         }
     }
 
-    void drawCubeMeshRow()
+    void drawCubeMeshRow(bool explicitBuffers)
     {
         // Bottom - unlighted
         immediateRenderer->pushMatrix();
         immediateRenderer->translate(0.0f, -2.0f, 0.0f);
         immediateRenderer->setLightingEnabled(false);
-        drawCubeMeshMaterialRow();
+        drawCubeMeshMaterialRow(explicitBuffers);
         immediateRenderer->popMatrix();
 
         // Center - lighted
         immediateRenderer->pushMatrix();
         immediateRenderer->setLightingEnabled(true);
-        drawCubeMeshMaterialRow();
+        drawCubeMeshMaterialRow(explicitBuffers);
         immediateRenderer->popMatrix();
+    }
+
+    void drawCubes(bool explicitBuffers)
+    {
+        // Begin drawing the mesh.
+        cubeMesh->beginDrawingWithImmediateRenderer(immediateRenderer, explicitBuffers);
+
+        // First row: without texture.
+        immediateRenderer->setTexturingEnabled(false);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->setLightingEnabled(false);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Second row: with textures.
+        immediateRenderer->setTexturingEnabled(true);
+        immediateRenderer->bindTexture(diffuseTexture);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -2.0f);
+            immediateRenderer->setLightingEnabled(false);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Third row: without textures and fog.
+        immediateRenderer->setFogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_LINEAR);
+        immediateRenderer->setFogColor(0.0f, 0.0f, 0.0f, 0.0);
+        immediateRenderer->setFogDistances(0.0f, 10.0f);
+        immediateRenderer->setTexturingEnabled(false);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -4.0f);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Fourth row: with textures and fog
+        immediateRenderer->setTexturingEnabled(true);
+        immediateRenderer->bindTexture(diffuseTexture);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -6.0f);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Fifth row: without textures and fog.
+        immediateRenderer->setFogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_EXPONENTIAL);
+        immediateRenderer->setFogDensity(0.1f);
+        immediateRenderer->setTexturingEnabled(false);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -8.0f);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Sixth row: with textures and fog
+        immediateRenderer->setTexturingEnabled(true);
+        immediateRenderer->bindTexture(diffuseTexture);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -10.0f);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Seventh row: without textures and fog.
+        immediateRenderer->setFogMode(AGPU_IMMEDIATE_RENDERER_FOG_MODE_EXPONENTIAL_SQUARED);
+        immediateRenderer->setFogDensity(0.1f);
+        immediateRenderer->setTexturingEnabled(false);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -12.0f);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // Eight row: with textures and fog
+        immediateRenderer->setTexturingEnabled(true);
+        immediateRenderer->bindTexture(diffuseTexture);
+        {
+            immediateRenderer->pushMatrix();
+            immediateRenderer->translate(0.0f, 0.0f, -14.0f);
+            drawCubeMeshRow(explicitBuffers);
+            immediateRenderer->popMatrix();
+        }
+
+        // End drawing the mesh.
+        cubeMesh->endDrawingWithImmediateRenderer(immediateRenderer);
     }
 
     agpu_state_tracker_cache_ref stateTrackerCache;

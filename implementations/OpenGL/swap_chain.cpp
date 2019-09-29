@@ -9,7 +9,7 @@ namespace AgpuGL
 {
 
 GLSwapChain::GLSwapChain()
-    : backBufferIndex(0)
+    : window(nullptr), width(0), height(0), backBufferIndex(0)
 {
 }
 

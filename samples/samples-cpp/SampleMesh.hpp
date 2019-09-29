@@ -34,24 +34,41 @@ public:
     {
     }
 
-    void beginDrawingWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer)
+    void beginDrawingWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer, bool explicitBuffers)
     {
         if(vertices.empty())
             return;
 
-        immediateRenderer->beginMeshWithVertices(vertices.size(), sizeof(SampleVertex), 3, &vertices[0].position);
-        immediateRenderer->setCurrentMeshColors(sizeof(SampleVertex), 4, &vertices[0].color);
-        immediateRenderer->setCurrentMeshNormals(sizeof(SampleVertex), 3, &vertices[0].normal);
-        immediateRenderer->setCurrentMeshTexCoords(sizeof(SampleVertex), 2, &vertices[0].texcoord);
+        if(explicitBuffers)
+        {
+            immediateRenderer->beginMeshWithVertexBinding(vertexLayout, vertexBinding);
+            immediateRenderer->useIndexBuffer(indexBuffer);
+        }
+        else
+        {
+            immediateRenderer->beginMeshWithVertices(vertices.size(), sizeof(SampleVertex), 3, &vertices[0].position);
+            immediateRenderer->setCurrentMeshColors(sizeof(SampleVertex), 4, &vertices[0].color);
+            immediateRenderer->setCurrentMeshNormals(sizeof(SampleVertex), 3, &vertices[0].normal);
+            immediateRenderer->setCurrentMeshTexCoords(sizeof(SampleVertex), 2, &vertices[0].texcoord);
+        }
     }
 
-    void drawWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer, size_t instanceCount = 1)
+    void drawWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer, bool explicitBuffers, size_t instanceCount = 1)
     {
         if(vertices.empty())
             return;
 
-        for(auto &submesh : submeshes)
-            immediateRenderer->drawElementsWithIndices(AGPU_TRIANGLES, &indices[0], submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+        if(explicitBuffers)
+        {
+            immediateRenderer->setPrimitiveType(AGPU_TRIANGLES);
+            for(auto &submesh : submeshes)
+                immediateRenderer->drawElements(submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+        }
+        else
+        {
+            for(auto &submesh : submeshes)
+                immediateRenderer->drawElementsWithIndices(AGPU_TRIANGLES, &indices[0], submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+        }
     }
 
     void endDrawingWithImmediateRenderer(const agpu_immediate_renderer_ref &immediateRenderer)
@@ -79,6 +96,7 @@ public:
 
     agpu_buffer_ref vertexBuffer;
     agpu_buffer_ref indexBuffer;
+    agpu_vertex_layout_ref vertexLayout;
     agpu_vertex_binding_ref vertexBinding;
     std::vector<SampleVertex> vertices;
     std::vector<uint32_t> indices;
@@ -227,7 +245,8 @@ public:
         result->vertices = vertices;
         result->indices = indices;
         {
-            result->vertexBinding = sampleBase->device->createVertexBinding(sampleBase->getSampleVertexLayout());
+            result->vertexLayout = sampleBase->getSampleVertexLayout();
+            result->vertexBinding = sampleBase->device->createVertexBinding(result->vertexLayout);
             result->vertexBinding->bindVertexBuffers(1, &result->vertexBuffer);
         }
 
