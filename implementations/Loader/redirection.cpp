@@ -2601,6 +2601,30 @@ AGPU_EXPORT agpu_error agpuBeginImmediateRendererMeshWithVertices ( agpu_immedia
 	return (*dispatchTable)->agpuBeginImmediateRendererMeshWithVertices ( immediate_renderer, vertexCount, stride, elementCount, vertices );
 }
 
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererMeshWithVertexBinding ( agpu_immediate_renderer* immediate_renderer, agpu_vertex_layout* layout, agpu_vertex_binding* vertices )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuBeginImmediateRendererMeshWithVertexBinding ( immediate_renderer, layout, vertices );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererUseIndexBuffer ( agpu_immediate_renderer* immediate_renderer, agpu_buffer* index_buffer )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererUseIndexBuffer ( immediate_renderer, index_buffer );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererUseIndexBufferAt ( agpu_immediate_renderer* immediate_renderer, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererUseIndexBufferAt ( immediate_renderer, index_buffer, offset, index_size );
+}
+
 AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshColors ( agpu_immediate_renderer* immediate_renderer, agpu_size stride, agpu_size elementCount, agpu_pointer colors )
 {
 	if (immediate_renderer == nullptr)
@@ -2623,6 +2647,30 @@ AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshTexCoords ( agpu_immed
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
 	return (*dispatchTable)->agpuSetImmediateRendererCurrentMeshTexCoords ( immediate_renderer, stride, elementCount, texcoords );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetPrimitiveType ( agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology type )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetPrimitiveType ( immediate_renderer, type );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererDrawArrays ( agpu_immediate_renderer* immediate_renderer, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererDrawArrays ( immediate_renderer, vertex_count, instance_count, first_vertex, base_instance );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererDrawElements ( agpu_immediate_renderer* immediate_renderer, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererDrawElements ( immediate_renderer, index_count, instance_count, first_index, base_vertex, base_instance );
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererDrawElementsWithIndices ( agpu_immediate_renderer* immediate_renderer, agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance )

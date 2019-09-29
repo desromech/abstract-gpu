@@ -367,6 +367,8 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
 
     // Reset the immediate meshes.
     renderingImmediateMesh = false;
+	haveExplicitVertexBinding = false;
+	haveExplicitIndexBuffer = false;
     currentImmediateMeshBaseVertex = 0;
     currentImmediateMeshVertexCount = 0;
 
@@ -1185,7 +1187,7 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
         }
     }
 
-	
+
     currentStateTracker->setPrimitiveType(isSyntheticTopology(state.activePrimitiveTopology) ? AGPU_TRIANGLES : state.activePrimitiveTopology);
     currentStateTracker->useShaderResources(uniformResourceBindings);
     if(state.texturingEnabled)
@@ -1283,6 +1285,8 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
         return AGPU_INVALID_OPERATION;
 
     renderingImmediateMesh = true;
+	haveExplicitVertexBinding = false;
+	haveExplicitIndexBuffer = false;
     currentImmediateMeshBaseVertex = vertices.size();
     currentImmediateMeshVertexCount = vertexCount;
     //printf("beginMeshWithVertices baseVertex %d\n", (int)currentImmediateMeshBaseVertex);
@@ -1305,7 +1309,6 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
         positionsBytes += stride;
     }
 
-    auto stateToRender = currentRenderingState;
     pendingRenderingCommands.push_back([=]{
         auto error = flushImmediateVertexRenderingState();
         if(!error)
@@ -1317,9 +1320,54 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
     return AGPU_OK;
 }
 
+agpu_error ImmediateRenderer::beginMeshWithVertexBinding(const agpu::vertex_layout_ref & layout, const agpu::vertex_binding_ref & vertices)
+{
+	if(renderingImmediateMesh)
+		return AGPU_INVALID_OPERATION;
+
+	renderingImmediateMesh = true;
+	haveExplicitVertexBinding = true;
+	haveExplicitIndexBuffer = false;
+	currentImmediateMeshBaseVertex = 0;
+    currentImmediateMeshVertexCount = 0;
+
+	pendingRenderingCommands.push_back([=]{
+		currentStateTracker->setVertexLayout(layout);
+		currentStateTracker->useVertexBinding(vertices);
+        currentStateTracker->useIndexBuffer(indexBuffer);
+    });
+
+	return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::useIndexBuffer(const agpu::buffer_ref & index_buffer)
+{
+	if(!index_buffer)
+        return AGPU_NULL_POINTER;
+
+	agpu_buffer_description description;
+	index_buffer->getDescription(&description);
+	return useIndexBufferAt(index_buffer, 0, description.stride);
+}
+
+agpu_error ImmediateRenderer::useIndexBufferAt(const agpu::buffer_ref & index_buffer, agpu_size offset, agpu_size index_size)
+{
+	if(!index_buffer)
+        return AGPU_NULL_POINTER;
+	if(!renderingImmediateMesh)
+        return AGPU_INVALID_OPERATION;
+
+	haveExplicitIndexBuffer = true;
+	pendingRenderingCommands.push_back([=]{
+        currentStateTracker->useIndexBufferAt(index_buffer, offset, index_size);
+    });
+
+	return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors)
 {
-    if(!renderingImmediateMesh)
+    if(!renderingImmediateMesh || haveExplicitVertexBinding)
         return AGPU_INVALID_OPERATION;
 
     auto colorBytes = reinterpret_cast<const uint8_t*> (colors);
@@ -1347,7 +1395,7 @@ agpu_error ImmediateRenderer::setCurrentMeshColors(agpu_size stride, agpu_size e
 
 agpu_error ImmediateRenderer::setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals)
 {
-    if(!renderingImmediateMesh)
+    if(!renderingImmediateMesh || haveExplicitVertexBinding)
         return AGPU_INVALID_OPERATION;
 
     auto normalBytes = reinterpret_cast<const uint8_t*> (normals);
@@ -1371,7 +1419,7 @@ agpu_error ImmediateRenderer::setCurrentMeshNormals(agpu_size stride, agpu_size 
 
 agpu_error ImmediateRenderer::setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords)
 {
-    if(!renderingImmediateMesh)
+    if(!renderingImmediateMesh || haveExplicitVertexBinding)
         return AGPU_INVALID_OPERATION;
 
     auto texcoordBytes = reinterpret_cast<const uint8_t*> (texcoords);
@@ -1391,7 +1439,7 @@ agpu_error ImmediateRenderer::setCurrentMeshTexCoords(agpu_size stride, agpu_siz
 
 agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indicesPointer, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
 {
-    if(!renderingImmediateMesh)
+    if(!renderingImmediateMesh || haveExplicitIndexBuffer)
         return AGPU_INVALID_OPERATION;
 
     auto error = validateRenderingStates();
@@ -1488,12 +1536,56 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
     return AGPU_OK;
 }
 
+agpu_error ImmediateRenderer::setPrimitiveType(agpu_primitive_topology type)
+{
+	currentRenderingState.activePrimitiveTopology = type;
+	return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+{
+	if(!renderingImmediateMesh)
+		return AGPU_INVALID_OPERATION;
+
+	auto error = validateRenderingStates();
+    if(error) return error;
+
+	auto stateToRender = currentRenderingState;
+	pendingRenderingCommands.push_back([=]{
+		auto error = flushRenderingState(stateToRender);
+		if(!error)
+			currentStateTracker->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
+	});
+
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+{
+	if(!renderingImmediateMesh || !haveExplicitIndexBuffer)
+		return AGPU_INVALID_OPERATION;
+
+	auto error = validateRenderingStates();
+    if(error) return error;
+
+	auto stateToRender = currentRenderingState;
+	pendingRenderingCommands.push_back([=]{
+		auto error = flushRenderingState(stateToRender);
+		if(!error)
+			currentStateTracker->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
+	});
+
+    return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::endMesh()
 {
     if(!renderingImmediateMesh)
         return AGPU_INVALID_OPERATION;
 
     renderingImmediateMesh = false;
+	haveExplicitVertexBinding = false;
+	haveExplicitIndexBuffer = false;
     return AGPU_OK;
 }
 

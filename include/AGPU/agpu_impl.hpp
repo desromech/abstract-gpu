@@ -192,7 +192,7 @@ public:
         return counter->object;
     }
 
-    operator bool() const
+    explicit operator bool() const
     {
         return counter != nullptr;
     }
@@ -200,6 +200,11 @@ public:
     bool operator==(const StrongRef &other) const
     {
         return counter == other.counter;
+    }
+
+    bool operator!=(const StrongRef &other) const
+    {
+        return counter != other.counter;
     }
 
     bool operator<(const StrongRef &other) const
@@ -284,6 +289,11 @@ public:
     bool operator==(const WeakRef &other) const
     {
         return counter == other.counter;
+    }
+
+    bool operator!=(const WeakRef &other) const
+    {
+        return counter != other.counter;
     }
 
     bool operator<(const WeakRef &other) const
@@ -981,9 +991,15 @@ public:
 	virtual agpu_error normal(agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error vertex(agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error beginMeshWithVertices(agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices) = 0;
+	virtual agpu_error beginMeshWithVertexBinding(const vertex_layout_ref & layout, const vertex_binding_ref & vertices) = 0;
+	virtual agpu_error useIndexBuffer(const buffer_ref & index_buffer) = 0;
+	virtual agpu_error useIndexBufferAt(const buffer_ref & index_buffer, agpu_size offset, agpu_size index_size) = 0;
 	virtual agpu_error setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors) = 0;
 	virtual agpu_error setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals) = 0;
 	virtual agpu_error setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords) = 0;
+	virtual agpu_error setPrimitiveType(agpu_primitive_topology type) = 0;
+	virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) = 0;
+	virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;
 	virtual agpu_error drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;
 	virtual agpu_error endMesh() = 0;
 };

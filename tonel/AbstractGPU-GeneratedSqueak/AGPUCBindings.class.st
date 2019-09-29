@@ -1958,6 +1958,24 @@ AGPUCBindings >> beginMeshWithVertices_immediate_renderer: immediate_renderer ve
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> beginMeshWithVertexBinding_immediate_renderer: immediate_renderer layout: layout vertices: vertices [
+	<cdecl: long 'agpuBeginImmediateRendererMeshWithVertexBinding' (void* void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> useIndexBuffer_immediate_renderer: immediate_renderer index_buffer: index_buffer [
+	<cdecl: long 'agpuImmediateRendererUseIndexBuffer' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> useIndexBufferAt_immediate_renderer: immediate_renderer index_buffer: index_buffer offset: offset index_size: index_size [
+	<cdecl: long 'agpuImmediateRendererUseIndexBufferAt' (void* void* ulong ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> setCurrentMeshColors_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount colors: colors [
 	<cdecl: long 'agpuSetImmediateRendererCurrentMeshColors' (void* ulong ulong void*)>
 	^ self externalCallFailed
@@ -1972,6 +1990,24 @@ AGPUCBindings >> setCurrentMeshNormals_immediate_renderer: immediate_renderer st
 { #category : #'immediate_renderer' }
 AGPUCBindings >> setCurrentMeshTexCoords_immediate_renderer: immediate_renderer stride: stride elementCount: elementCount texcoords: texcoords [
 	<cdecl: long 'agpuSetImmediateRendererCurrentMeshTexCoords' (void* ulong ulong void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setPrimitiveType_immediate_renderer: immediate_renderer type: type [
+	<cdecl: long 'agpuImmediateRendererSetPrimitiveType' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> drawArrays_immediate_renderer: immediate_renderer vertex_count: vertex_count instance_count: instance_count first_vertex: first_vertex base_instance: base_instance [
+	<cdecl: long 'agpuImmediateRendererDrawArrays' (void* ulong ulong ulong ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> drawElements_immediate_renderer: immediate_renderer index_count: index_count instance_count: instance_count first_index: first_index base_vertex: base_vertex base_instance: base_instance [
+	<cdecl: long 'agpuImmediateRendererDrawElements' (void* ulong ulong ulong long ulong)>
 	^ self externalCallFailed
 ]
 

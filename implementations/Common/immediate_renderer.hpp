@@ -398,9 +398,15 @@ public:
 	virtual agpu_error vertex(agpu_float x, agpu_float y, agpu_float z) override;
 
     virtual agpu_error beginMeshWithVertices(agpu_size vertexCount, agpu_size stride, agpu_size elementCount, agpu_pointer vertices) override;
+    virtual agpu_error beginMeshWithVertexBinding(const agpu::vertex_layout_ref & layout, const agpu::vertex_binding_ref & vertices) override;
+    virtual agpu_error useIndexBuffer(const agpu::buffer_ref & index_buffer) override;
+    virtual agpu_error useIndexBufferAt(const agpu::buffer_ref & index_buffer, agpu_size offset, agpu_size index_size) override;
 	virtual agpu_error setCurrentMeshColors(agpu_size stride, agpu_size elementCount, agpu_pointer colors) override;
 	virtual agpu_error setCurrentMeshNormals(agpu_size stride, agpu_size elementCount, agpu_pointer normals) override;
 	virtual agpu_error setCurrentMeshTexCoords(agpu_size stride, agpu_size elementCount, agpu_pointer texcoords) override;
+    virtual agpu_error setPrimitiveType(agpu_primitive_topology type) override;
+    virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) override;
+	virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) override;
 	virtual agpu_error drawElementsWithIndices(agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) override;
 	virtual agpu_error endMesh() override;
 
@@ -467,6 +473,8 @@ private:
 
     // Immediate mesh
     bool renderingImmediateMesh;
+    bool haveExplicitVertexBinding;
+    bool haveExplicitIndexBuffer;
     size_t currentImmediateMeshBaseVertex;
     size_t currentImmediateMeshVertexCount;
 

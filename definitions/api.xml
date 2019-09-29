@@ -2466,6 +2466,21 @@
                 <arg name="vertices" type="pointer" />
             </method>
 
+            <method name="beginMeshWithVertexBinding" cname="BeginImmediateRendererMeshWithVertexBinding" returnType="error">
+                <arg name="layout" type="vertex_layout*" />
+                <arg name="vertices" type="vertex_binding*" />
+            </method>
+
+            <method name="useIndexBuffer" cname="ImmediateRendererUseIndexBuffer" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="useIndexBufferAt" cname="ImmediateRendererUseIndexBufferAt" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="index_size" type="size" />
+            </method>
+
             <method name="setCurrentMeshColors" cname="SetImmediateRendererCurrentMeshColors" returnType="error">
                 <arg name="stride" type="size" />
                 <arg name="elementCount" type="size" />
@@ -2482,6 +2497,25 @@
                 <arg name="stride" type="size" />
                 <arg name="elementCount" type="size" />
                 <arg name="texcoords" type="pointer" />
+            </method>
+
+            <method name="setPrimitiveType" cname="ImmediateRendererSetPrimitiveType" returnType="error">
+                <arg name="type" type="primitive_topology" />
+            </method>
+
+            <method name="drawArrays" cname="ImmediateRendererDrawArrays" returnType="error">
+    			<arg name="vertex_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_vertex" type="uint" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawElements" cname="ImmediateRendererDrawElements" returnType="error">
+    			<arg name="index_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_index" type="uint" />
+    			<arg name="base_vertex" type="int" />
+    			<arg name="base_instance" type="uint" />
             </method>
 
             <method name="drawElementsWithIndices" cname="ImmediateRendererDrawElementsWithIndices" returnType="error">

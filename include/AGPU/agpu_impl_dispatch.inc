@@ -2002,6 +2002,24 @@ AGPU_EXPORT agpu_error agpuBeginImmediateRendererMeshWithVertices(agpu_immediate
 	return asRef(agpu::immediate_renderer, self)->beginMeshWithVertices(vertexCount, stride, elementCount, vertices);
 }
 
+AGPU_EXPORT agpu_error agpuBeginImmediateRendererMeshWithVertexBinding(agpu_immediate_renderer* self, agpu_vertex_layout* layout, agpu_vertex_binding* vertices)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->beginMeshWithVertexBinding(asRef(agpu::vertex_layout, layout), asRef(agpu::vertex_binding, vertices));
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererUseIndexBuffer(agpu_immediate_renderer* self, agpu_buffer* index_buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->useIndexBuffer(asRef(agpu::buffer, index_buffer));
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererUseIndexBufferAt(agpu_immediate_renderer* self, agpu_buffer* index_buffer, agpu_size offset, agpu_size index_size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->useIndexBufferAt(asRef(agpu::buffer, index_buffer), offset, index_size);
+}
+
 AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshColors(agpu_immediate_renderer* self, agpu_size stride, agpu_size elementCount, agpu_pointer colors)
 {
 	if(!self) return AGPU_NULL_POINTER;
@@ -2018,6 +2036,24 @@ AGPU_EXPORT agpu_error agpuSetImmediateRendererCurrentMeshTexCoords(agpu_immedia
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::immediate_renderer, self)->setCurrentMeshTexCoords(stride, elementCount, texcoords);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetPrimitiveType(agpu_immediate_renderer* self, agpu_primitive_topology type)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setPrimitiveType(type);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererDrawArrays(agpu_immediate_renderer* self, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererDrawElements(agpu_immediate_renderer* self, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererDrawElementsWithIndices(agpu_immediate_renderer* self, agpu_primitive_topology mode, agpu_pointer indices, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance)
