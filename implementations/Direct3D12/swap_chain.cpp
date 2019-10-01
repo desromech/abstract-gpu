@@ -4,38 +4,34 @@
 #include "texture_formats.hpp"
 #include "command_queue.hpp"
 
-_agpu_swap_chain::_agpu_swap_chain()
+namespace AgpuD3D12
 {
-    for (int i = 0; i < MaxFrameCount; ++i)
-        framebuffer[i] = nullptr;
 
+ADXSwapChain::ADXSwapChain(const agpu::device_ref &cdevice)
+    : device(cdevice)
+{
 }
 
-void _agpu_swap_chain::lostReferences()
+ADXSwapChain::~ADXSwapChain()
 {
-    for (int i = 0; i < MaxFrameCount; ++i)
-    {
-        auto fb = framebuffer[i];
-        if (fb)
-            fb->release();
-    }
 }
 
-_agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_queue *queue, agpu_swap_chain_create_info *createInfo)
+agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const agpu::command_queue_ref &queue, agpu_swap_chain_create_info *createInfo)
 {
-    std::unique_ptr<agpu_swap_chain> swapChain(new agpu_swap_chain());
+    auto swapChain = agpu::makeObject<ADXSwapChain> (device);
+    auto adxSwapChain = swapChain.as<ADXSwapChain> ();
 
-    swapChain->windowWidth = createInfo->width;
-    swapChain->windowHeight = createInfo->height;
+    adxSwapChain->windowWidth = createInfo->width;
+    adxSwapChain->windowHeight = createInfo->height;
 
-    swapChain->window = (HWND)createInfo->window;
-    swapChain->frameCount = createInfo->buffer_count;
+    adxSwapChain->window = (HWND)createInfo->window;
+    adxSwapChain->frameCount = createInfo->buffer_count;
 
     // Create the swap chain
     DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-    swapChainDesc.BufferCount = swapChain->frameCount;
-    swapChainDesc.BufferDesc.Width = swapChain->windowWidth;
-    swapChainDesc.BufferDesc.Height = swapChain->windowHeight;
+    swapChainDesc.BufferCount = adxSwapChain->frameCount;
+    swapChainDesc.BufferDesc.Width = adxSwapChain->windowWidth;
+    swapChainDesc.BufferDesc.Height = adxSwapChain->windowHeight;
     swapChainDesc.BufferDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format; // TODO: Pick a proper format
     swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
@@ -43,159 +39,115 @@ _agpu_swap_chain *_agpu_swap_chain::create(agpu_device *device, agpu_command_que
     swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = swapChain->window;
+    swapChainDesc.OutputWindow = adxSwapChain->window;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.Windowed = TRUE;
 
     ComPtr<IDXGIFactory4> factory;
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))))
-        return nullptr;
+        return agpu::swap_chain_ref();
 
     ComPtr<IDXGISwapChain> oldSwapChain;
-    if (FAILED(factory->CreateSwapChain(queue->queue.Get(), &swapChainDesc, &oldSwapChain)))
-        return nullptr;
+    if (FAILED(factory->CreateSwapChain(queue.as<ADXCommandQueue> ()->queue.Get(), &swapChainDesc, &oldSwapChain)))
+        return agpu::swap_chain_ref();
 
-    if (FAILED(oldSwapChain.As(&swapChain->swapChain)))
-        return nullptr;
+    if (FAILED(oldSwapChain.As(&adxSwapChain->swapChain)))
+        return agpu::swap_chain_ref();
 
-    auto &dxSwapChain = swapChain->swapChain;
-    swapChain->frameIndex = dxSwapChain->GetCurrentBackBufferIndex();
+    auto &dxSwapChain = adxSwapChain->swapChain;
+    adxSwapChain->frameIndex = dxSwapChain->GetCurrentBackBufferIndex();
 
+    // Color buffer description.
+    agpu_texture_description colorDesc = {};
+    colorDesc.type = AGPU_TEXTURE_2D;
+    colorDesc.width = createInfo->width;
+    colorDesc.height = createInfo->height;
+    colorDesc.depth = 1;
+    colorDesc.layers = 1;
+    colorDesc.format = createInfo->colorbuffer_format;
+    colorDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+    colorDesc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+    colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+    colorDesc.miplevels = 1;
+    colorDesc.sample_count = 1;
+
+    // Depth stencil buffer descriptions.
+    agpu_texture_description depthStencilDesc = {};
+    depthStencilDesc.type = AGPU_TEXTURE_2D;
+    depthStencilDesc.width = createInfo->width;
+    depthStencilDesc.height = createInfo->height;
+    depthStencilDesc.depth = 1;
+    depthStencilDesc.layers = 1;
+    depthStencilDesc.format = createInfo->depth_stencil_format;
+    depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+    depthStencilDesc.miplevels = 1;
+    depthStencilDesc.sample_count = 1;
     bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
     bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
+    if (hasDepth)
+        depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT);
+    if (hasStencil)
+        depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+    depthStencilDesc.main_usage_mode = depthStencilDesc.usage_modes;
 
-    agpu_texture_view_description colorViewDesc;
-    agpu_texture_view_description depthStencilViewDesc;
-    auto depthStencilViewPointer = &depthStencilViewDesc;
-    if (!hasDepth && !hasStencil)
-        depthStencilViewPointer = nullptr;
-
-    // Create the main frame buffer.
+    // Create the shared depth stencil buffer.
+    agpu::texture_ref depthStencilBuffer;
+    agpu::texture_view_ref depthStencilView;
+    if (hasDepth || hasStencil)
     {
-        bool hasDepthStencil = createInfo->depth_stencil_format != AGPU_TEXTURE_FORMAT_UNKNOWN;
-        bool failure = false;
-        for (int i = 0; i < swapChain->frameCount; ++i)
-        {
-            ComPtr<ID3D12Resource> colorBufferResource;
-            if (FAILED(dxSwapChain->GetBuffer(i, IID_PPV_ARGS(&colorBufferResource))))
-                return false;
+        depthStencilBuffer = ADXTexture::create(device, &depthStencilDesc);
+        if (!depthStencilBuffer)
+            return agpu::swap_chain_ref();
 
-            // Create the color buffer.
-            agpu_texture *colorBuffer = nullptr;
-            agpu_texture *depthStencilBuffer = nullptr;
-            {
-                agpu_texture_description desc;
-                memset(&desc, 0, sizeof(desc));
-                desc.type = AGPU_TEXTURE_2D;
-                desc.width = createInfo->width;
-                desc.height = createInfo->height;
-                desc.depthOrArraySize = 1;
-                desc.format = createInfo->colorbuffer_format;
-                desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_RENDER_TARGET | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
-                desc.miplevels = 1;
-                desc.sample_count = 1;
-                colorBuffer = agpu_texture::createFromResource(device, &desc, colorBufferResource);
-                if (!colorBuffer)
-                {
-                    failure = true;
-                    break;
-                }
-
-                // Get the color buffer view description.
-                colorBuffer->getFullViewDescription(&colorViewDesc);
-            }
-
-            // Create the depth buffer.
-            if (hasDepth || hasStencil)
-            {
-                agpu_texture_description desc;
-                memset(&desc, 0, sizeof(desc));
-                desc.type = AGPU_TEXTURE_2D;
-                desc.width = createInfo->width;
-                desc.height = createInfo->height;
-                desc.depthOrArraySize = 1;
-                desc.format = createInfo->depth_stencil_format;
-                desc.flags = agpu_texture_flags(AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL | AGPU_TEXTURE_FLAG_RENDERBUFFER_ONLY);
-                desc.miplevels = 1;
-                desc.sample_count = 1;
-                depthStencilBuffer = agpu_texture::create(device, &desc);
-                if (!depthStencilBuffer)
-                {
-                    failure = true;
-                    colorBuffer->release();
-                    break;
-                }
-
-                // Get the depth stencil buffer view description.
-                depthStencilBuffer->getFullViewDescription(&depthStencilViewDesc);
-            }
-
-            auto framebuffer = agpu_framebuffer::create(device, swapChain->windowWidth, swapChain->windowHeight, 1, &colorViewDesc, depthStencilViewPointer);
-            framebuffer->swapChainBuffer = true;
-            swapChain->framebuffer[i] = framebuffer;
-
-            // Release the references to the buffers.
-            colorBuffer->release();
-            depthStencilBuffer->release();
-        }
-
-        // Release the already created framebuffers.
-        if (failure)
-        {
-            for (int i = 0; i < swapChain->frameCount; ++i)
-            {
-                auto fb = swapChain->framebuffer[i];
-                if (fb)
-                    fb->release();
-            }
-
-            return nullptr;
-        }
+        // Get the depth stencil buffer view description.
+        depthStencilView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
     }
 
+    // Create the main frame buffers.
+    adxSwapChain->framebuffers.reserve(adxSwapChain->frameCount);
+    for (int i = 0; i < adxSwapChain->frameCount; ++i)
+    {
+        ComPtr<ID3D12Resource> colorBufferResource;
+        if (FAILED(dxSwapChain->GetBuffer(i, IID_PPV_ARGS(&colorBufferResource))))
+            return agpu::swap_chain_ref();
 
-    swapChain->device = device;
+        // Create the color buffer.
+        auto colorBuffer = ADXTexture::createFromResource(device, &colorDesc, colorBufferResource);
+        if (!colorBuffer)
+            return agpu::swap_chain_ref();
 
-    return swapChain.release();
+        // Get the color buffer view description.
+        auto colorBufferView = agpu::texture_view_ref(colorBuffer->getOrCreateFullView());
+
+        auto framebuffer = ADXFramebuffer::create(device, adxSwapChain->windowWidth, adxSwapChain->windowHeight, 1, &colorBufferView, depthStencilView);
+        framebuffer.as<ADXFramebuffer> ()->swapChainBuffer = true;
+        adxSwapChain->framebuffers.push_back(framebuffer);
+    }
+
+    return swapChain;
 }
 
-agpu_framebuffer* _agpu_swap_chain::getCurrentBackBuffer()
-{
-    auto fb = framebuffer[frameIndex];
-    fb->retain();
-    return fb;
-}
-
-agpu_error _agpu_swap_chain::swapBuffers()
+agpu_error ADXSwapChain::swapBuffers()
 {
     ERROR_IF_FAILED(swapChain->Present(1, 0));
     frameIndex = (frameIndex + 1) % frameCount;
     return AGPU_OK;
 }
 
-// The exported C interface.
-AGPU_EXPORT agpu_error agpuAddSwapChainReference(agpu_swap_chain* swap_chain)
+agpu::framebuffer_ptr ADXSwapChain::getCurrentBackBuffer()
 {
-    CHECK_POINTER(swap_chain);
-    return swap_chain->retain();
+	return framebuffers[frameIndex].disownedNewRef();
 }
 
-AGPU_EXPORT agpu_error agpuReleaseSwapChain(agpu_swap_chain* swap_chain)
+agpu_size ADXSwapChain::getCurrentBackBufferIndex()
 {
-    CHECK_POINTER(swap_chain);
-    return swap_chain->release();
+    return frameIndex;
 }
 
-AGPU_EXPORT agpu_error agpuSwapBuffers(agpu_swap_chain* swap_chain)
+agpu_size ADXSwapChain::getFramebufferCount()
 {
-    CHECK_POINTER(swap_chain);
-    return swap_chain->swapBuffers();
+    return framebuffers.size();
 }
 
-AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer(agpu_swap_chain* swap_chain)
-{
-    if (!swap_chain)
-        return nullptr;
-    return swap_chain->getCurrentBackBuffer();
-}
+} // End of namespace AgpuD3D12

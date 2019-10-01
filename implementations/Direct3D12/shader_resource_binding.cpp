@@ -3,7 +3,62 @@
 #include "buffer.hpp"
 #include "texture.hpp"
 
-_agpu_shader_resource_binding::_agpu_shader_resource_binding()
+namespace AgpuD3D12
+{
+
+ADXShaderResourceBinding::ADXShaderResourceBinding(const agpu::device_ref &cdevice, const agpu::shader_signature_ref &csignature)
+    : device(cdevice), signature(csignature)
+{
+}
+
+ADXShaderResourceBinding::~ADXShaderResourceBinding()
+{
+}
+
+agpu::shader_resource_binding_ref ADXShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex)
+{
+    auto resourceBinding = agpu::makeObject<ADXShaderResourceBinding> (device, signature);
+    auto adxResourceBinding = resourceBinding.as<ADXShaderResourceBinding> ();
+    adxResourceBinding->elementIndex = elementIndex;
+    return resourceBinding;
+}
+
+agpu_error ADXShaderResourceBinding::bindUniformBuffer(agpu_int location, const agpu::buffer_ref & uniform_buffer)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXShaderResourceBinding::bindUniformBufferRange(agpu_int location, const agpu::buffer_ref & uniform_buffer, agpu_size offset, agpu_size size)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXShaderResourceBinding::bindStorageBuffer(agpu_int location, const agpu::buffer_ref & storage_buffer)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXShaderResourceBinding::bindStorageBufferRange(agpu_int location, const agpu::buffer_ref & storage_buffer, agpu_size offset, agpu_size size)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXShaderResourceBinding::bindSampledTextureView(agpu_int location, const agpu::texture_view_ref & view)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref & view)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXShaderResourceBinding::bindSampler(agpu_int location, const agpu::sampler_ref & sampler)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+/*_agpu_shader_resource_binding::_agpu_shader_resource_binding()
 {
 }
 
@@ -37,7 +92,7 @@ agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_
     auto &elementDesc = signature->elementsDescription[element];
     binding->isBank = elementDesc.bank;
     binding->type = elementDesc.type;
-    
+
     if (binding->type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
     {
         binding->samplerCount = elementDesc.bindingPointCount;
@@ -85,7 +140,7 @@ agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int locati
     // Set the descriptor location
     auto desc = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
     desc.ptr += descriptorOffset + location*signature->shaderResourceViewDescriptorSize;
-    device->d3dDevice->CreateConstantBufferView(&view, desc);
+    deviceForDX->d3dDevice->CreateConstantBufferView(&view, desc);
 
     return AGPU_OK;
 }
@@ -203,7 +258,7 @@ agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int locatio
     // Set the descriptor.
     auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
     cpuHandle.ptr += descriptorOffset + location*signature->shaderResourceViewDescriptorSize;
-    device->d3dDevice->CreateShaderResourceView(texture->gpuResource.Get(), &view, cpuHandle);
+    deviceForDX->d3dDevice->CreateShaderResourceView(texture->gpuResource.Get(), &view, cpuHandle);
 
     return AGPU_OK;
 }
@@ -240,50 +295,9 @@ agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_
     // Set the descriptor.
     auto cpuHandle = signature->samplerHeap->GetCPUDescriptorHandleForHeapStart();
     cpuHandle.ptr += descriptorOffset + location*signature->samplerDescriptorSize;
-    device->d3dDevice->CreateSampler(&sampler, cpuHandle);
+    deviceForDX->d3dDevice->CreateSampler(&sampler, cpuHandle);
 
     return AGPU_OK;
 }
-
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderResourceBindingReference(agpu_shader_resource_binding* shader_resource_binding)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShaderResourceBinding(agpu_shader_resource_binding* shader_resource_binding)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->release();
-}
-
-AGPU_EXPORT agpu_error agpuBindUniformBuffer(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindUniformBuffer(location, uniform_buffer);
-}
-
-AGPU_EXPORT agpu_error agpuBindUniformBufferRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindUniformBufferRange(location, uniform_buffer, offset, size);
-}
-
-AGPU_EXPORT agpu_error agpuBindTexture(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodclamp)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindTexture(location, texture, startMiplevel, miplevels, lodclamp);
-}
-
-AGPU_EXPORT agpu_error agpuBindTextureArrayRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodclamp)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->bindTextureArrayRange(location, texture, startMiplevel, miplevels, firstElement, numberOfElements, lodclamp);
-}
-
-AGPU_EXPORT agpu_error agpuCreateSampler(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler_description* description)
-{
-    CHECK_POINTER(shader_resource_binding);
-    return shader_resource_binding->createSampler(location, description);
-}
+*/
+} // End of namespace AgpuD3D12

@@ -3,6 +3,9 @@
 
 #include "device.hpp"
 
+namespace AgpuD3D12
+{
+
 inline D3D12_COMMAND_LIST_TYPE mapCommandListType(agpu_command_list_type type)
 {
     switch (type)
@@ -15,49 +18,58 @@ inline D3D12_COMMAND_LIST_TYPE mapCommandListType(agpu_command_list_type type)
     }
 }
 
-struct _agpu_command_list : public Object<_agpu_command_list>
+class ADXCommandList : public agpu::command_list
 {
 public:
-    _agpu_command_list();
+    ADXCommandList(const agpu::device_ref &cdevice);
+    ~ADXCommandList();
 
-    void lostReferences();
+    static agpu::command_list_ref create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initialState);
 
-    static _agpu_command_list *create(agpu_device *device, agpu_command_list_type type, _agpu_command_allocator *allocator, agpu_pipeline_state *initialState);
+    virtual agpu_error setShaderSignature(const agpu::shader_signature_ref &signature) override;
 
-    agpu_error setShaderSignature(agpu_shader_signature *signature);
-
-    agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
-    agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h);
-    agpu_error usePipelineState(agpu_pipeline_state* pipeline);
-    agpu_error useVertexBinding(agpu_vertex_binding* vertex_binding);
-    agpu_error useIndexBuffer(agpu_buffer* index_buffer);
-    agpu_error setPrimitiveTopology(agpu_primitive_topology topology);
-    agpu_error useDrawIndirectBuffer(agpu_buffer* draw_buffer);
-    agpu_error useShaderResources(agpu_shader_resource_binding* binding);
-    agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
-    agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
-    agpu_error drawElementsIndirect(agpu_size offset);
-    agpu_error multiDrawElementsIndirect(agpu_size offset, agpu_size drawcount);
-    agpu_error setStencilReference(agpu_uint reference);
-    agpu_error executeBundle(agpu_command_list* bundle);
-    agpu_error close();
-    agpu_error reset(_agpu_command_allocator *allocator, agpu_pipeline_state* initial_pipeline_state);
-    agpu_error beginRenderPass(agpu_renderpass *renderpass, agpu_framebuffer* framebuffer, agpu_bool secondaryContent);
-    agpu_error endRenderPass();
-    agpu_error resolveFramebuffer(agpu_framebuffer* destFramebuffer, agpu_framebuffer* sourceFramebuffer);
+    virtual agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h) override;
+    virtual agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h) override;
+    virtual agpu_error usePipelineState(const agpu::pipeline_state_ref &pipeline) override;
+    virtual agpu_error useVertexBinding(const agpu::vertex_binding_ref &vertex_binding) override;
+    virtual agpu_error useIndexBuffer(const agpu::buffer_ref &index_buffer) override;
+    virtual agpu_error useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size) override;
+    virtual agpu_error useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer) override;
+    virtual agpu_error useComputeDispatchIndirectBuffer(const agpu::buffer_ref & buffer) override;
+    virtual agpu_error useShaderResources(const agpu::shader_resource_binding_ref &binding) override;
+    virtual agpu_error useComputeShaderResources(const agpu::shader_resource_binding_ref & binding) override;
+    virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) override;
+    virtual agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount) override;
+    virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) override;
+    virtual agpu_error drawElementsIndirect(agpu_size offset, agpu_size drawcount) override;
+    virtual agpu_error dispatchCompute(agpu_uint group_count_x, agpu_uint group_count_y, agpu_uint group_count_z) override;
+	virtual agpu_error dispatchComputeIndirect(agpu_size offset) override;
+    virtual agpu_error setStencilReference(agpu_uint reference) override;
+    virtual agpu_error executeBundle(const agpu::command_list_ref &bundle) override;
+    virtual agpu_error close() override;
+    virtual agpu_error reset(const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state) override;
+    virtual agpu_error resetBundle(const agpu::command_allocator_ref & allocator, const agpu::pipeline_state_ref & initial_pipeline_state, agpu_inheritance_info* inheritance_info) override;
+    virtual agpu_error beginRenderPass(const agpu::renderpass_ref &renderpass, const agpu::framebuffer_ref &framebuffer, agpu_bool secondaryContent) override;
+    virtual agpu_error endRenderPass() override;
+    virtual agpu_error resolveFramebuffer(const agpu::framebuffer_ref &destFramebuffer, const agpu::framebuffer_ref &sourceFramebuffer) override;
+    virtual agpu_error resolveTexture(const agpu::texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect) override;
+	virtual agpu_error pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values) override;
+	virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) override;
 
 public:
-    agpu_device *device;
+    agpu::device_ref device;
     ComPtr<ID3D12GraphicsCommandList> commandList;
 
     // Some flags
     agpu_command_list_type type;
 
     // Framebuffer
-    agpu_framebuffer *currentFramebuffer;
+    agpu::framebuffer_ref currentFramebuffer;
 
 private:
     agpu_error setCommonState();
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_COMMAND_LIST_HPP_

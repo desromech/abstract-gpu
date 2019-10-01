@@ -2,8 +2,8 @@
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
 
-#undef min
-#undef max
+namespace AgpuD3D12
+{
 
 DescriptorAllocator::DescriptorAllocator(int startIndex, int descriptorCount)
     : startIndex(startIndex), descriptorCount(descriptorCount)
@@ -36,20 +36,24 @@ int DescriptorAllocator::allocate()
     return freeList[--freeCount];
 }
 
-_agpu_shader_signature::_agpu_shader_signature()
+ADXShaderSignature::ADXShaderSignature(const agpu::device_ref &cdevice)
+    : device(cdevice)
 {
-    memset(descriptorAllocators, 0, sizeof(descriptorAllocators));
 }
 
-void _agpu_shader_signature::lostReferences()
+ADXShaderSignature::~ADXShaderSignature()
 {
-    for (int i = 0; i < 16; ++i)
-        delete descriptorAllocators[i];
 }
 
-_agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, const ComPtr<ID3D12RootSignature> &rootSignature, ShaderSignatureElementDescription elementsDescription[16], agpu_uint maxBindingsCount[AGPU_SHADER_BINDING_TYPE_COUNT])
+agpu::shader_signature_ref ADXShaderSignature::create(const agpu::device_ref &device, const ComPtr<ID3D12RootSignature> &rootSignature, ADXShaderSignatureBuilder* builder)
 {
-    UINT maxSrvDescriptorCount = 0;
+	auto result = agpu::makeObject<ADXShaderSignature> (device);
+	auto adxShaderSignature = result.as<ADXShaderSignature> ();
+	adxShaderSignature->rootSignature = rootSignature;
+	adxShaderSignature->banks = builder->banks;
+	adxShaderSignature->pushConstantCount = builder->pushConstantCount;
+    return result;
+    /*UINT maxSrvDescriptorCount = 0;
     UINT maxSamplerDescriptorCount = maxBindingsCount[AGPU_SHADER_BINDING_TYPE_SAMPLER];
     for (int i = 0; i < AGPU_SHADER_BINDING_TYPE_COUNT; ++i)
     {
@@ -58,15 +62,15 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
     }
 
     // Copy the parameters
-    std::unique_ptr<_agpu_shader_signature> signature(new _agpu_shader_signature());
+    std::unique_ptr<ADXShaderSignature> signature(new ADXShaderSignature());
     signature->device = device;
     signature->rootSignature = rootSignature;
     memcpy(signature->elementsDescription, elementsDescription, sizeof(elementsDescription[0])*16);
     memcpy(signature->maxBindingsCount, maxBindingsCount, sizeof(maxBindingsCount[0])*AGPU_SHADER_BINDING_TYPE_COUNT);
 
     // Get descriptor sizes
-    signature->shaderResourceViewDescriptorSize = device->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    signature->samplerDescriptorSize = device->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    signature->shaderResourceViewDescriptorSize = deviceForDX->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    signature->samplerDescriptorSize = deviceForDX->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
     agpu_uint maxDescriptorBindingPoints[AGPU_SHADER_BINDING_TYPE_COUNT];
     memset(maxDescriptorBindingPoints, 0, sizeof(maxDescriptorBindingPoints));
@@ -78,7 +82,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
 
         maxDescriptorBindingPoints[element.type] = std::max(maxDescriptorBindingPoints[element.type], element.bindingPointCount);
     }
-    
+
     auto nullSrvDescriptorCount = 0;
     for (int i = 0; i < AGPU_SHADER_BINDING_TYPE_COUNT; ++i)
     {
@@ -104,8 +108,8 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
         heapDesc.NumDescriptors = maxSrvDescriptorCount + nullSrvDescriptorCount;
         heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        
-        if (FAILED(device->d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&signature->shaderResourceViewHeap))))
+
+        if (FAILED(deviceForDX->d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&signature->shaderResourceViewHeap))))
             return nullptr;
     }
 
@@ -118,7 +122,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
         heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-        if (FAILED(device->d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&signature->samplerHeap))))
+        if (FAILED(deviceForDX->d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&signature->samplerHeap))))
             return nullptr;
     }
 
@@ -132,7 +136,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
         if (!element.valid)
             continue;
 
-    
+
         if (element.type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
         {
             signature->descriptorAllocators[i] = new DescriptorAllocator(samplerDescriptorCount, element.maxBindings);
@@ -162,7 +166,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
         auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
         cpuHandle.ptr += currentOffset;
 
-        device->d3dDevice->CreateConstantBufferView(&cbvDesc, cpuHandle);
+        deviceForDX->d3dDevice->CreateConstantBufferView(&cbvDesc, cpuHandle);
         currentOffset += signature->shaderResourceViewDescriptorSize;
     }
 
@@ -179,7 +183,7 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
             auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
             cpuHandle.ptr += currentOffset;
 
-            device->d3dDevice->CreateUnorderedAccessView(nullptr, nullptr, &uavDesc, cpuHandle);
+            deviceForDX->d3dDevice->CreateUnorderedAccessView(nullptr, nullptr, &uavDesc, cpuHandle);
             currentOffset += signature->shaderResourceViewDescriptorSize;
         }
 
@@ -199,17 +203,18 @@ _agpu_shader_signature *_agpu_shader_signature::create(agpu_device *device, cons
             auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
             cpuHandle.ptr += currentOffset;
 
-            device->d3dDevice->CreateShaderResourceView(nullptr, &srvDesc, cpuHandle);
+            deviceForDX->d3dDevice->CreateShaderResourceView(nullptr, &srvDesc, cpuHandle);
             currentOffset += signature->shaderResourceViewDescriptorSize;
         }
     }
 
-    return signature.release();
+    return signature.release();*/
 }
 
-agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBinding(agpu_uint element)
+agpu::shader_resource_binding_ptr ADXShaderSignature::createShaderResourceBinding(agpu_uint element)
 {
-    std::unique_lock<std::mutex> l(allocationMutex);
+    return nullptr;
+    /*std::unique_lock<std::mutex> l(allocationMutex);
     if (element >= 16)
         return nullptr;
 
@@ -229,25 +234,7 @@ agpu_shader_resource_binding* _agpu_shader_signature::createShaderResourceBindin
     else
         descriptorOffset = (startIndex + index*elementDesc.bindingPointCount)*shaderResourceViewDescriptorSize;
 
-    return agpu_shader_resource_binding::create(this, element, descriptorOffset);
+    return agpu_shader_resource_binding::create(this, element, descriptorOffset);*/
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderSignature(agpu_shader_signature* shader_signature)
-{
-    CHECK_POINTER(shader_signature);
-    return shader_signature->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShaderSignature(agpu_shader_signature* shader_signature)
-{
-    CHECK_POINTER(shader_signature);
-    return shader_signature->release();
-}
-
-AGPU_EXPORT agpu_shader_resource_binding* agpuCreateShaderResourceBinding(agpu_shader_signature* shader_signature, agpu_uint element)
-{
-    if (!shader_signature)
-        return nullptr;
-    return shader_signature->createShaderResourceBinding(element);
-}
+} // End of namespace AgpuD3D12

@@ -4,36 +4,31 @@
 #include <vector>
 #include "device.hpp"
 
-struct _agpu_shader_resource_binding : public Object<_agpu_shader_resource_binding>
+namespace AgpuD3D12
+{
+
+class ADXShaderResourceBinding : public agpu::shader_resource_binding
 {
 public:
-    _agpu_shader_resource_binding();
+    ADXShaderResourceBinding(const agpu::device_ref &cdevice, const agpu::shader_signature_ref &signature);
+    ~ADXShaderResourceBinding();
 
-    void lostReferences();
+    static agpu::shader_resource_binding_ref create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex);
 
-    static agpu_shader_resource_binding *create(agpu_shader_signature *signature, agpu_uint element, UINT descriptorOffset);
-
-    agpu_error bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer);
-    agpu_error bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size);
-
-    agpu_error bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp);
-    agpu_error bindTextureArrayRange (agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp);
-    agpu_error createSampler(agpu_int location, agpu_sampler_description* description);
+    virtual agpu_error bindUniformBuffer(agpu_int location, const agpu::buffer_ref & uniform_buffer) override;
+	virtual agpu_error bindUniformBufferRange(agpu_int location, const agpu::buffer_ref & uniform_buffer, agpu_size offset, agpu_size size) override;
+	virtual agpu_error bindStorageBuffer(agpu_int location, const agpu::buffer_ref & storage_buffer) override;
+	virtual agpu_error bindStorageBufferRange(agpu_int location, const agpu::buffer_ref & storage_buffer, agpu_size offset, agpu_size size) override;
+	virtual agpu_error bindSampledTextureView(agpu_int location, const agpu::texture_view_ref & view) override;
+	virtual agpu_error bindStorageImageView(agpu_int location, const agpu::texture_view_ref & view) override;
+	virtual agpu_error bindSampler(agpu_int location, const agpu::sampler_ref & sampler) override;
 
 public:
-    agpu_device *device;
-    agpu_shader_signature *signature;
-    agpu_shader_binding_type type;
-    bool isBank;
-    agpu_uint element;
-    UINT descriptorOffset;
-    std::vector<agpu_buffer*> buffers;
-    std::vector<agpu_texture*> textures;
-    agpu_int samplerCount;
-
-private:
-    std::mutex bindMutex;
-
+    agpu::device_ref device;
+    agpu::shader_signature_ref signature;
+    agpu_uint elementIndex;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_SHADER_RESOURCE_BINDING_HPP

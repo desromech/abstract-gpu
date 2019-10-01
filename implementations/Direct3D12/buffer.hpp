@@ -3,23 +3,30 @@
 
 #include "device.hpp"
 
-struct _agpu_buffer : public Object<_agpu_buffer>
+namespace AgpuD3D12
+{
+
+class ADXBuffer : public agpu::buffer
 {
 public:
-    _agpu_buffer();
+    ADXBuffer(const agpu::device_ref &device);
+    ~ADXBuffer();
 
-    void lostReferences();
+    static agpu::buffer_ref create(const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data);
 
-    static agpu_buffer* create(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data);
+    virtual agpu_pointer mapBuffer(agpu_mapping_access flags) override;
+    virtual agpu_error unmapBuffer() override;
+    virtual agpu_error getDescription(agpu_buffer_description* description) override;
 
-    agpu_pointer mapBuffer(agpu_mapping_access flags);
-    agpu_error unmapBuffer();
-    agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
-    agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data);
+    virtual agpu_error uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+    virtual agpu_error readBufferData(agpu_size offset, agpu_size size, agpu_pointer data) override;
+
+    virtual agpu_error flushWholeBuffer() override;
+	virtual agpu_error invalidateWholeBuffer() override;
 
 public:
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_buffer_description description;
 
     ComPtr<ID3D12Resource> uploadResource;
@@ -28,16 +35,17 @@ public:
 
     ID3D12Resource *getActualGpuBuffer();
 
-    union
-    {
-        D3D12_VERTEX_BUFFER_VIEW vertexBuffer;
-        D3D12_INDEX_BUFFER_VIEW indexBuffer;
-        D3D12_CONSTANT_BUFFER_VIEW_DESC constantBuffer;
-    } view;
+    D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress;
+    agpu_error createIndexBufferView(D3D12_INDEX_BUFFER_VIEW *outView, agpu_size offset, agpu_size index_size);
+    agpu_error createVertexBufferView(D3D12_VERTEX_BUFFER_VIEW *outView, agpu_size offset, agpu_size stride);
+    agpu_error createConstantBufferViewDescription(D3D12_CONSTANT_BUFFER_VIEW_DESC *outView, agpu_size offset, agpu_size size);
+    agpu_error createUAVDescription(D3D12_UNORDERED_ACCESS_VIEW_DESC *outView, agpu_size offset, agpu_size size);
 
 private:
     agpu_error createView();
     agpu_pointer *mappedPointer;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_BUFFER_HPP

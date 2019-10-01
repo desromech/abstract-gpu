@@ -2,74 +2,56 @@
 #include "vertex_layout.hpp"
 #include "buffer.hpp"
 
-_agpu_vertex_binding::_agpu_vertex_binding()
+namespace AgpuD3D12
 {
 
-}
-
-void _agpu_vertex_binding::lostReferences()
+ADXVertexBinding::ADXVertexBinding(const agpu::device_ref &cdevice, const agpu::vertex_layout_ref &clayout)
+    : device(cdevice), layout(clayout)
 {
-    // Release vertex buffer references.
-    for (auto buffer : vertexBuffers)
-    {
-        if (buffer)
-            buffer->release();
-    }
+    auto count = layout.as<ADXVertexLayout> ()->vertexBufferCount;
+    vertexBufferViews.resize(count);
+    vertexBuffers.resize(count);
 }
 
-agpu_vertex_binding* _agpu_vertex_binding::create(agpu_device* device, agpu_vertex_layout *layout)
+ADXVertexBinding::~ADXVertexBinding()
+{
+}
+
+agpu::vertex_binding_ref ADXVertexBinding::create(const agpu::device_ref &device, const agpu::vertex_layout_ref &layout)
 {
     if (!layout)
-        return nullptr;
+        return agpu::vertex_binding_ref();
 
-    auto binding  = new agpu_vertex_binding();
-    binding->device = device;
-    binding->layout = layout;
-    binding->vertexBufferViews.resize(layout->vertexBufferCount);
-    binding->vertexBuffers.resize(layout->vertexBufferCount);
-    return binding;
+    return agpu::makeObject<ADXVertexBinding> (device, layout);
 }
 
-agpu_error _agpu_vertex_binding::bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers)
+agpu_error ADXVertexBinding::bindVertexBuffers(agpu_uint count, agpu::buffer_ref* vertex_buffers)
+{
+    return bindVertexBuffersWithOffsets(count, vertex_buffers, nullptr);
+}
+
+agpu_error ADXVertexBinding::bindVertexBuffersWithOffsets(agpu_uint count, agpu::buffer_ref* vertex_buffers, agpu_size* offsets)
 {
     CHECK_POINTER(vertex_buffers);
-    if (count != layout->vertexBufferCount)
+    if (count != vertexBuffers.size())
         return AGPU_ERROR;
+
+    auto &strides = layout.as<ADXVertexLayout> ()->strides;
 
     for (agpu_uint i = 0; i < count; ++i)
     {
         auto buffer = vertex_buffers[i];
-        if (!buffer)
-            return AGPU_ERROR;
+        CHECK_POINTER(buffer);
 
         // Store a reference to the vertex buffer
-        buffer->retain();
-        if (vertexBuffers[i])
-            vertexBuffers[i]->release();
         vertexBuffers[i] = buffer;
 
         // Store the view.
-        vertexBufferViews[i] = buffer->view.vertexBuffer;
+        auto error = buffer.as<ADXBuffer> ()->createVertexBufferView(&vertexBufferViews[i], offsets ? offsets[i] : 0, strides[i]);
+        if(error) return error;
     }
 
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddVertexBindingReference(agpu_vertex_binding* vertex_binding)
-{
-    CHECK_POINTER(vertex_binding);
-    return vertex_binding->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseVertexBinding(agpu_vertex_binding* vertex_binding)
-{
-    CHECK_POINTER(vertex_binding);
-    return vertex_binding->release();
-}
-
-AGPU_EXPORT agpu_error agpuBindVertexBuffers(agpu_vertex_binding* vertex_binding, agpu_uint count, agpu_buffer** vertex_buffers)
-{
-    CHECK_POINTER(vertex_binding);
-    return vertex_binding->bindVertexBuffers(count, vertex_buffers);
-}
+} // End of namespace AgpuD3D12

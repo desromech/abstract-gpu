@@ -1,38 +1,45 @@
 #include "fence.hpp"
 
-_agpu_fence::_agpu_fence()
+namespace AgpuD3D12
+{
+
+ADXFence::ADXFence(const agpu::device_ref &cdevice)
+    : device(cdevice)
 {
     fenceValue = 1;
+    event = NULL;
 }
 
-void _agpu_fence::lostReferences()
+ADXFence::~ADXFence()
 {
-    CloseHandle(event);
+    if(event)
+        CloseHandle(event);
 }
 
-_agpu_fence *_agpu_fence::create(agpu_device *device)
+agpu::fence_ref ADXFence::create(const agpu::device_ref &device)
 {
-    std::unique_ptr<agpu_fence> fence(new agpu_fence());
-    fence->device = device;
+    auto result = agpu::makeObject<ADXFence> (device);
+    auto dxFence = result.as<ADXFence> ();
 
     // Create transfer synchronization fence.
-    if (FAILED(device->d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence->fence))))
-        return false;
+    if (FAILED(deviceForDX->d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&dxFence->fence))))
+        return agpu::fence_ref();
 
     // Create an event handle to use for frame synchronization.
-    fence->event = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-    if (fence->event == nullptr)
-        return false;
+    dxFence->event = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+    if (dxFence->event == nullptr)
+        return agpu::fence_ref();
 
-    return fence.release();
+    return result;
 }
 
-agpu_error _agpu_fence::waitOnClient()
+agpu_error ADXFence::waitOnClient()
 {
     UINT64 waitValue = 0;
 
+    // FIXME: Replace this mutex with atomic operations.
     {
-        std::unique_lock<std::mutex> (fenceMutex);
+        std::unique_lock<std::mutex> l(fenceMutex);
         waitValue = fenceValue - 1;
     }
 
@@ -45,21 +52,4 @@ agpu_error _agpu_fence::waitOnClient()
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddFenceReference(agpu_fence* fence)
-{
-    CHECK_POINTER(fence);
-    return fence->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseFenceReference(agpu_fence* fence)
-{
-    CHECK_POINTER(fence);
-    return fence->release();
-}
-
-AGPU_EXPORT agpu_error agpuWaitOnClient(agpu_fence* fence)
-{
-    CHECK_POINTER(fence);
-    return fence->waitOnClient();
-}
+} // End of namespace AgpuD3D12

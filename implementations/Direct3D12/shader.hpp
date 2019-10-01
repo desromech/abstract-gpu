@@ -5,6 +5,9 @@
 #include <vector>
 #include "device.hpp"
 
+namespace AgpuD3D12
+{
+
 struct ShaderVariableDesc
 {
     std::string name;
@@ -19,44 +22,35 @@ struct ShaderConstantBufferDesc
     std::vector<ShaderVariableDesc> variables;
 };
 
-struct _agpu_shader: public Object<_agpu_shader>
+class ADXShader: public agpu::shader
 {
 public:
-    _agpu_shader();
+    ADXShader(const agpu::device_ref &cdevice);
+    ~ADXShader();
 
-    void lostReferences();
+    static agpu::shader_ref create(const agpu::device_ref &device, agpu_shader_type type);
 
-    static _agpu_shader *create(agpu_device *device, agpu_shader_type type);
-
-    AGPU_EXPORT agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength);
-    AGPU_EXPORT agpu_error compileShader(agpu_cstring options);
-    AGPU_EXPORT agpu_size getShaderCompilationLogLength();
-    AGPU_EXPORT agpu_error getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer);
-
-    AGPU_EXPORT agpu_error bindAttributeLocation(agpu_cstring name, agpu_int location);
+    virtual agpu_error setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength) override;
+    virtual agpu_error compileShader(agpu_cstring options) override;
+    virtual agpu_size getCompilationLogLength() override;
+    virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
 
 public:
-    D3D12_SHADER_BYTECODE getShaderBytecode()
-    {
-        return {&objectCode[0], objectCode.size()};
-    }
+    agpu_error getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref &shaderSignature, agpu_shader_type type, agpu_cstring entry_point, D3D12_SHADER_BYTECODE *out);
 
     agpu_shader_type type;
     agpu_shader_language shaderLanguage;
-    agpu_device *device;
+    agpu::device_ref device;
 
     std::vector<char> sourceCode;
     std::vector<char> objectCode;
     std::string compilationLog;
 
-    D3D12_SHADER_DESC description;
-    std::map<std::string, ShaderConstantBufferDesc> constantBuffers;
-    int constantBufferBindings;
-
 private:
     agpu_error compileHlslShader(agpu_cstring options);
     const char *getHlslTarget();
-    agpu_error performReflection();
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_SHADER_HPP

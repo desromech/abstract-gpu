@@ -1,25 +1,30 @@
 #include "shader.hpp"
+#include <d3dcompiler.h>
 
-_agpu_shader::_agpu_shader()
+namespace AgpuD3D12
+{
+
+ADXShader::ADXShader(const agpu::device_ref &cdevice)
+    : device(cdevice)
 {
 
 }
 
-void _agpu_shader::lostReferences()
+ADXShader::~ADXShader()
 {
 
 }
 
-_agpu_shader *_agpu_shader::create(agpu_device *device, agpu_shader_type type)
+agpu::shader_ref ADXShader::create(const agpu::device_ref &device, agpu_shader_type type)
 {
-    auto shader = new agpu_shader;
-    shader->device = device;
-    shader->type = type;
-    shader->shaderLanguage = AGPU_SHADER_LANGUAGE_BINARY;
+    auto shader = agpu::makeObject<ADXShader> (device);
+    auto adxShader = shader.as<ADXShader> ();
+    adxShader->type = type;
+    adxShader->shaderLanguage = AGPU_SHADER_LANGUAGE_BINARY;
     return shader;
 }
 
-agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
+agpu_error ADXShader::setShaderSource(agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
 {
     CHECK_POINTER(sourceText);
 
@@ -51,10 +56,10 @@ agpu_error _agpu_shader::setShaderSource(agpu_shader_language language, agpu_str
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::compileShader(agpu_cstring options)
+agpu_error ADXShader::compileShader(agpu_cstring options)
 {
     if (shaderLanguage == AGPU_SHADER_LANGUAGE_BINARY)
-        return performReflection();
+        return AGPU_OK;
 
     if (shaderLanguage == AGPU_SHADER_LANGUAGE_HLSL)
         return compileHlslShader(options);
@@ -63,10 +68,10 @@ agpu_error _agpu_shader::compileShader(agpu_cstring options)
     return AGPU_UNSUPPORTED;
 }
 
-agpu_error _agpu_shader::compileHlslShader(agpu_cstring options)
+agpu_error ADXShader::compileHlslShader(agpu_cstring options)
 {
     UINT compileFlags = 0;
-    if (device->isDebugEnabled)
+    if (deviceForDX->isDebugEnabled)
         compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ComPtr<ID3DBlob> shaderBlob;
@@ -86,11 +91,10 @@ agpu_error _agpu_shader::compileHlslShader(agpu_cstring options)
     const char *rawObject = reinterpret_cast<const char*> (shaderBlob->GetBufferPointer());
     objectCode = std::vector<char> (rawObject, rawObject + shaderBlob->GetBufferSize());
 
-    // Perform reflection
-    return performReflection();
+    return AGPU_OK;
 }
 
-const char *_agpu_shader::getHlslTarget()
+const char *ADXShader::getHlslTarget()
 {
     switch (type)
     {
@@ -111,122 +115,23 @@ const char *_agpu_shader::getHlslTarget()
     }
 }
 
-agpu_error _agpu_shader::performReflection()
-{
-    // Get the reflection interface.
-    ComPtr<ID3D12ShaderReflection> reflection;
-    ERROR_IF_FAILED(D3DReflect(&objectCode[0], objectCode.size(), IID_PPV_ARGS(&reflection)));
-
-    // Get the shader description
-    ERROR_IF_FAILED(reflection->GetDesc(&description));
-
-    // Read the constant buffers
-    for (UINT i = 0; i < description.ConstantBuffers; ++i)
-    {
-        
-        // Get the buffer data.
-        D3D12_SHADER_BUFFER_DESC rawDesc;
-        auto bufferReflection = reflection->GetConstantBufferByIndex(i);
-        bufferReflection->GetDesc(&rawDesc);
-
-        ShaderConstantBufferDesc bufferDesc;
-        bufferDesc.type = rawDesc.Type;
-        bufferDesc.flags = rawDesc.uFlags;
-        bufferDesc.size = rawDesc.Size;
-        bufferDesc.variables.reserve(rawDesc.Variables);
-        bufferDesc.bindingPoint = -1;
-
-        for (UINT j = 0; j < rawDesc.Variables; ++j)
-        {
-            D3D12_SHADER_VARIABLE_DESC rawVarDesc;
-            auto var = bufferReflection->GetVariableByIndex(j);
-            var->GetDesc(&rawVarDesc);
-
-            ShaderVariableDesc variable;
-            variable.name = rawVarDesc.Name;
-            bufferDesc.variables.push_back(variable);
-        }
-
-        constantBuffers.insert(std::make_pair(rawDesc.Name, bufferDesc));
-    }
-
-    // Read the bound resources.
-    constantBufferBindings = 0;
-    for (UINT i = 0; i < description.BoundResources; ++i)
-    {
-        D3D12_SHADER_INPUT_BIND_DESC rawDesc;
-        ERROR_IF_FAILED(reflection->GetResourceBindingDesc(i, &rawDesc));
-
-        if (rawDesc.Type == D3D_CT_CBUFFER)
-        {
-            constantBuffers[rawDesc.Name].bindingPoint = int(rawDesc.BindPoint);
-            for (UINT i = 0; i < rawDesc.BindCount; ++i)
-            {
-                auto point = rawDesc.BindPoint + i;
-                constantBufferBindings |= 1 << point;
-            }
-        }
-    }
-
-    return AGPU_OK;
-}
-
-agpu_size _agpu_shader::getShaderCompilationLogLength()
+agpu_size ADXShader::getCompilationLogLength()
 {
     return compilationLog.size();
 }
 
-agpu_error _agpu_shader::getShaderCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
+agpu_error ADXShader::getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
     CHECK_POINTER(buffer);
     strncpy(buffer, compilationLog.c_str(), buffer_size);
     return AGPU_OK;
 }
 
-agpu_error _agpu_shader::bindAttributeLocation(agpu_cstring name, agpu_int location)
+agpu_error ADXShader::getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref &shaderSignature, agpu_shader_type type, agpu_cstring entry_point, D3D12_SHADER_BYTECODE *out)
 {
-    // Nothing to do.
+    out->pShaderBytecode = &objectCode[0];
+    out->BytecodeLength = objectCode.size();
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddShaderReference(agpu_shader* shader)
-{
-    CHECK_POINTER(shader);
-    return shader->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseShader(agpu_shader* shader)
-{
-    CHECK_POINTER(shader);
-    return shader->release();
-}
-
-AGPU_EXPORT agpu_error agpuSetShaderSource(agpu_shader* shader, agpu_shader_language language, agpu_string sourceText, agpu_string_length sourceTextLength)
-{
-    CHECK_POINTER(shader);
-    return shader->setShaderSource(language,sourceText, sourceTextLength);
-}
-
-AGPU_EXPORT agpu_error agpuCompileShader(agpu_shader* shader, agpu_cstring options)
-{
-    CHECK_POINTER(shader);
-    return shader->compileShader(options);
-}
-
-AGPU_EXPORT agpu_size agpuGetShaderCompilationLogLength(agpu_shader* shader)
-{
-    CHECK_POINTER(shader);
-    return shader->getShaderCompilationLogLength();
-}
-
-AGPU_EXPORT agpu_error agpuGetShaderCompilationLog(agpu_shader* shader, agpu_size buffer_size, agpu_string_buffer buffer)
-{
-    CHECK_POINTER(shader);
-    return shader->getShaderCompilationLog(buffer_size, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuBindAttributeLocation(agpu_shader* shader, agpu_cstring name, agpu_int location)
-{
-    return shader->bindAttributeLocation(name, location);
-}
+} // End of namespace AgpuD3D12

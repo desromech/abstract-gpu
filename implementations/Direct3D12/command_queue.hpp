@@ -3,23 +3,25 @@
 
 #include "device.hpp"
 
-struct _agpu_command_queue : public Object<_agpu_command_queue>
+namespace AgpuD3D12
+{
+
+class ADXCommandQueue : public agpu::command_queue
 {
 public:
-    _agpu_command_queue();
+    ADXCommandQueue(const agpu::device_ref &cdevice);
+    ~ADXCommandQueue();
 
-    void lostReferences();
+    static agpu::command_queue_ref createDefault(const agpu::device_ref &device);
 
-    static _agpu_command_queue *createDefault(agpu_device *device);
-
-    agpu_error addCommandList(agpu_command_list* command_list);
-    agpu_error finish();
-    agpu_error signalFence(agpu_fence* fence);
-    agpu_error waitFence(agpu_fence* fence);
+    virtual agpu_error addCommandList(const agpu::command_list_ref &command_list) override;
+    virtual agpu_error finishExecution() override;
+    virtual agpu_error signalFence(const agpu::fence_ref &fence) override;
+    virtual agpu_error waitFence(const agpu::fence_ref &fence) override;
 
 public:
 
-    agpu_device *device;
+    agpu::device_ref device;
     ComPtr<ID3D12CommandQueue> queue;
 
 private:
@@ -30,5 +32,7 @@ private:
     ComPtr<ID3D12Fence> finishFence;
     UINT64 finishFenceValue;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_COMMAND_QUEUE_HPP_

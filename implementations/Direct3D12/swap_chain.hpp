@@ -4,32 +4,36 @@
 #include <vector>
 #include "device.hpp"
 
-struct _agpu_swap_chain: public Object<_agpu_swap_chain>
+namespace AgpuD3D12
+{
+
+class ADXSwapChain : public agpu::swap_chain
 {
 public:
-    static const int MaxFrameCount = 3; // Triple buffering.
+    ADXSwapChain(const agpu::device_ref &cdevice);
+    ~ADXSwapChain();
 
-    _agpu_swap_chain();
+    static agpu::swap_chain_ref create(const agpu::device_ref &device, const agpu::command_queue_ref &queue, agpu_swap_chain_create_info *createInfo);
 
-    void lostReferences();
-
-    static _agpu_swap_chain *create(agpu_device *device, agpu_command_queue *queue, agpu_swap_chain_create_info *createInfo);
-
-    agpu_framebuffer* getCurrentBackBuffer();
-    agpu_error swapBuffers();
+    virtual agpu_error swapBuffers() override;
+    virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+    virtual agpu_size getCurrentBackBufferIndex() override;
+    virtual agpu_size getFramebufferCount() override;
 
 public:
-    agpu_device *device;
+    agpu::device_ref device;
 
     HWND window;
 
     // Frame buffers
     ComPtr<IDXGISwapChain3> swapChain;
-    agpu_framebuffer *framebuffer[MaxFrameCount];
+    std::vector<agpu::framebuffer_ref> framebuffers;
 
-    int frameIndex;
-    int frameCount;
-    int windowWidth, windowHeight;
+    size_t frameIndex;
+    size_t frameCount;
+    uint32_t windowWidth, windowHeight;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_VERTEX_LAYOUT_HPP

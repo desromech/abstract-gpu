@@ -1,6 +1,10 @@
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include "texture_formats.hpp"
 #include "common_commands.hpp"
+
+namespace AgpuD3D12
+{
 
 inline D3D12_RESOURCE_DIMENSION mapTextureDimension(agpu_texture_type type)
 {
@@ -16,19 +20,20 @@ inline D3D12_RESOURCE_DIMENSION mapTextureDimension(agpu_texture_type type)
 
     }
 }
-_agpu_texture::_agpu_texture()
-    : mapCount(0), mappedPointer(nullptr)
+
+ADXTexture::ADXTexture(const agpu::device_ref &cdevice)
+    : device(cdevice), mapCount(0), mappedPointer(nullptr)
 {
 }
 
-void _agpu_texture::lostReferences()
+ADXTexture::~ADXTexture()
 {
 }
 
-agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_description* description)
+agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_texture_description* description)
 {
     if (!description)
-        return nullptr;
+        return agpu::texture_ref();
 
     // The resource description.
     D3D12_RESOURCE_DESC desc;
@@ -37,7 +42,7 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     desc.Alignment = 0;
     desc.Width = description->width;
     desc.Height = description->height;
-    desc.DepthOrArraySize = description->depthOrArraySize;
+    desc.DepthOrArraySize = description->type == AGPU_TEXTURE_3D ? description->depth : description->layers;
     desc.MipLevels = description->miplevels;
     desc.Format = (DXGI_FORMAT)description->format;
     desc.SampleDesc.Count = description->sample_count;
@@ -45,21 +50,22 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    auto flags = description->flags;
-    if (flags & AGPU_TEXTURE_FLAG_RENDER_TARGET)
+    auto usageModes = description->usage_modes;
+    auto mainUsageMode = description->main_usage_mode;
+    if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    if (flags & AGPU_TEXTURE_FLAG_UNORDERED_ACCESS)
+    if (usageModes & AGPU_TEXTURE_USAGE_STORAGE)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    auto readedBack = (flags & AGPU_TEXTURE_FLAG_READED_BACK) != 0;
-    auto uploaded = (flags & AGPU_TEXTURE_FLAG_UPLOADED) != 0;
+    auto readedBack = (usageModes & AGPU_TEXTURE_USAGE_READED_BACK) != 0;
+    auto uploaded = (usageModes & AGPU_TEXTURE_USAGE_UPLOADED) != 0;
 
     // Get the transfer footprint
     UINT transferBufferNumRows;
     UINT64 transferBufferPitch;
     UINT64 transferBufferLength;
-    device->d3dDevice->GetCopyableFootprints(&desc, 0, 1, 0, nullptr, &transferBufferNumRows, &transferBufferPitch, &transferBufferLength);
+    deviceForDX->d3dDevice->GetCopyableFootprints(&desc, 0, 1, 0, nullptr, &transferBufferNumRows, &transferBufferPitch, &transferBufferLength);
 
     // Create the transfer resource description
     D3D12_RESOURCE_DESC transferDesc;
@@ -79,21 +85,21 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
     ComPtr<ID3D12Resource> uploadResource;
     ComPtr<ID3D12Resource> readbackResource;
 
-    std::unique_ptr<agpu_texture> texture(new agpu_texture());
-    texture->device = device;
-    texture->description = *description;
+    auto texture = agpu::makeObject<ADXTexture> (device);
+    auto adxTexture = texture.as<ADXTexture> ();
+    adxTexture->description = *description;
 
     // The clear value
     D3D12_CLEAR_VALUE clearValueData;
     memset(&clearValueData, 0, sizeof(clearValueData));
     clearValueData.Format = desc.Format;
     auto clearValuePtr = &clearValueData;
-    if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
     {
         clearValueData.DepthStencil.Depth = 1;
         clearValueData.DepthStencil.Stencil = 0;
     }
-    else if((flags & AGPU_TEXTURE_FLAG_RENDER_TARGET) == 0)
+    else if((usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT) == 0)
     {
         clearValuePtr = nullptr;
     }
@@ -107,8 +113,8 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
         heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         auto initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
 
-        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &transferDesc, initialState, nullptr, IID_PPV_ARGS(&uploadResource))))
-            return nullptr;
+        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &transferDesc, initialState, nullptr, IID_PPV_ARGS(&uploadResource))))
+            return agpu::texture_ref();
     }
 
     {
@@ -118,11 +124,11 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
         heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
         heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         auto initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
-        if (flags & (AGPU_TEXTURE_FLAG_DEPTH | AGPU_TEXTURE_FLAG_STENCIL))
+        if ((mainUsageMode & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT) != 0)
             initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 
-        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, clearValuePtr, IID_PPV_ARGS(&gpuResource))))
-            return nullptr;
+        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, clearValuePtr, IID_PPV_ARGS(&gpuResource))))
+            return agpu::texture_ref();
     }
 
     if (readedBack)
@@ -134,41 +140,47 @@ agpu_texture* _agpu_texture::create(agpu_device* device, agpu_texture_descriptio
         heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         auto initialState = D3D12_RESOURCE_STATE_COPY_DEST;
 
-        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &transferDesc, initialState, nullptr, IID_PPV_ARGS(&readbackResource))))
-            return nullptr;
+        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &transferDesc, initialState, nullptr, IID_PPV_ARGS(&readbackResource))))
+            return agpu::texture_ref();
     }
 
-    texture->resourceDescription = desc;
-    texture->transferResourceDescription = transferDesc;
-    texture->transferBufferPitch = transferBufferPitch;
-    texture->transferBufferNumRows = transferBufferNumRows;
-    texture->gpuResource = gpuResource;
-    texture->uploadResource = uploadResource;
-    texture->readbackResource = readbackResource;
-    return texture.release();
+    adxTexture->resourceDescription = desc;
+    adxTexture->transferResourceDescription = transferDesc;
+    adxTexture->transferBufferPitch = transferBufferPitch;
+    adxTexture->transferBufferNumRows = transferBufferNumRows;
+    adxTexture->gpuResource = gpuResource;
+    adxTexture->uploadResource = uploadResource;
+    adxTexture->readbackResource = readbackResource;
+    return texture;
 }
 
-agpu_texture* _agpu_texture::createFromResource(agpu_device* device, agpu_texture_description* description, const ComPtr<ID3D12Resource> &resource)
+agpu::texture_ref ADXTexture::createFromResource(const agpu::device_ref &device, agpu_texture_description* description, const ComPtr<ID3D12Resource> &resource)
 {
     if (!description)
-        return nullptr;
+        return agpu::texture_ref();
 
-    std::unique_ptr<agpu_texture> texture(new agpu_texture());
-    texture->device = device;
-    texture->description = *description;
-    texture->gpuResource = resource;
+    auto texture = agpu::makeObject<ADXTexture> (device);
+    auto adxTexture = texture.as<ADXTexture> ();
+    adxTexture->description = *description;
+    adxTexture->gpuResource = resource;
 
-    return texture.release();
+    return texture;
 }
 
-UINT _agpu_texture::subresourceIndexFor(agpu_uint level, agpu_uint arrayIndex)
+UINT ADXTexture::subresourceIndexFor(agpu_uint level, agpu_uint arrayIndex)
 {
     return level + description.miplevels*arrayIndex;
 }
 
-agpu_pointer _agpu_texture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags)
+agpu_error ADXTexture::getDescription(agpu_texture_description* description)
 {
-    std::unique_lock<std::mutex> l(mapMutex);
+    CHECK_POINTER(description);
+    *description = this->description;
+    return AGPU_OK;
+}
+
+agpu_pointer ADXTexture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region)
+{
     if (mappedPointer)
     {
         if (mappedLevel == level && mappedArrayIndex == arrayIndex)
@@ -188,11 +200,11 @@ agpu_pointer _agpu_texture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_m
     UINT subresource = subresourceIndexFor(level, arrayIndex);
     if ((isRead && !isWrite) && readbackResource)
     {
-        auto err = device->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
+        auto err = deviceForDX->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
             D3D12_TEXTURE_COPY_LOCATION dst;
             dst.pResource = readbackResource.Get();
             dst.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-            device->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &dst.PlacedFootprint, nullptr, nullptr, nullptr);
+            deviceForDX->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &dst.PlacedFootprint, nullptr, nullptr, nullptr);
 
             D3D12_TEXTURE_COPY_LOCATION src;
             src.pResource = gpuResource.Get();
@@ -204,7 +216,7 @@ agpu_pointer _agpu_texture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_m
 
             ID3D12CommandList *ptr = list.Get();
             queue->ExecuteCommandLists(1, &ptr);
-            return device->waitForMemoryTransfer();
+            return deviceForDX->waitForMemoryTransfer();
         });
         if (err < 0)
             return nullptr;
@@ -233,9 +245,8 @@ agpu_pointer _agpu_texture::mapLevel(agpu_int level, agpu_int arrayIndex, agpu_m
 
 }
 
-agpu_error _agpu_texture::unmapLevel()
+agpu_error ADXTexture::unmapLevel()
 {
-    std::unique_lock<std::mutex> l(mapMutex);
     if (!mappedPointer)
         return AGPU_INVALID_OPERATION;
 
@@ -253,7 +264,7 @@ agpu_error _agpu_texture::unmapLevel()
     {
         uploadResource->Unmap(subresource, nullptr);
         mappedPointer = nullptr;
-        return device->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
+        return deviceForDX->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
             D3D12_TEXTURE_COPY_LOCATION dst;
             dst.pResource = gpuResource.Get();
             dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
@@ -262,7 +273,7 @@ agpu_error _agpu_texture::unmapLevel()
             D3D12_TEXTURE_COPY_LOCATION src;
             src.pResource = uploadResource.Get();
             src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-            device->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &src.PlacedFootprint, nullptr, nullptr, nullptr);
+            deviceForDX->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &src.PlacedFootprint, nullptr, nullptr, nullptr);
 
             auto barrier = resourceTransitionBarrier(gpuResource, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST);
             list->ResourceBarrier(1, &barrier);
@@ -273,7 +284,7 @@ agpu_error _agpu_texture::unmapLevel()
 
             ID3D12CommandList *ptr = list.Get();
             queue->ExecuteCommandLists(1, &ptr);
-            return device->waitForMemoryTransfer();
+            return deviceForDX->waitForMemoryTransfer();
         });
     }
     else
@@ -285,9 +296,9 @@ agpu_error _agpu_texture::unmapLevel()
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
+agpu_error ADXTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
-    auto mappedPointer = mapLevel(level, arrayIndex, AGPU_READ_ONLY);
+    auto mappedPointer = mapLevel(level, arrayIndex, AGPU_READ_ONLY, nullptr);
     if (!mappedPointer)
         return AGPU_ERROR;
 
@@ -296,7 +307,7 @@ agpu_error _agpu_texture::readTextureData(agpu_int level, agpu_int arrayIndex, a
     D3D12_TEXTURE_COPY_LOCATION dst;
     dst.pResource = readbackResource.Get();
     dst.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-    device->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &dst.PlacedFootprint, nullptr, nullptr, nullptr);
+    deviceForDX->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &dst.PlacedFootprint, nullptr, nullptr, nullptr);
 
     UINT srcNumRows = dst.PlacedFootprint.Footprint.Height;
     UINT64 srcRowPitch = dst.PlacedFootprint.Footprint.RowPitch;
@@ -322,18 +333,18 @@ agpu_error _agpu_texture::readTextureData(agpu_int level, agpu_int arrayIndex, a
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
+agpu_error ADXTexture::uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 {
-    auto mappedPointer = mapLevel(level, arrayIndex, AGPU_WRITE_ONLY);
+    auto mappedPointer = mapLevel(level, arrayIndex, AGPU_WRITE_ONLY, nullptr);
     if(!mappedPointer)
         return AGPU_ERROR;
 
     UINT subresource = subresourceIndexFor(mappedLevel, mappedArrayIndex);
-    
+
     UINT dstNumRows;
     UINT64 dstRowPitch;
     UINT64 dstTotalBytes;
-    device->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, nullptr, &dstNumRows, &dstRowPitch, &dstTotalBytes);
+    deviceForDX->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, nullptr, &dstNumRows, &dstRowPitch, &dstTotalBytes);
 
     UINT64 dstSlicePitch = dstNumRows * dstRowPitch;
     if (dstRowPitch == pitch && dstSlicePitch == slicePitch)
@@ -352,14 +363,19 @@ agpu_error _agpu_texture::uploadTextureData(agpu_int level, agpu_int arrayIndex,
             dstRow += dstRowPitch;
         }
     }
-    
+
 
     unmapLevel();
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::discardUploadBuffer()
+agpu_error ADXTexture::uploadTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXTexture::discardUploadBuffer()
 {
     if (!gpuResource)
         return AGPU_INVALID_OPERATION;
@@ -367,13 +383,13 @@ agpu_error _agpu_texture::discardUploadBuffer()
     if (uploadResource)
     {
         uploadResource.Reset();
-        description.flags = agpu_texture_flags(description.flags & ~AGPU_TEXTURE_FLAG_UPLOADED);
+        description.usage_modes = agpu_texture_usage_mode_mask(description.usage_modes & ~AGPU_TEXTURE_USAGE_UPLOADED);
     }
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_texture::discardReadbackBuffer()
+agpu_error ADXTexture::discardReadbackBuffer()
 {
     if (!gpuResource)
         return AGPU_INVALID_OPERATION;
@@ -381,96 +397,57 @@ agpu_error _agpu_texture::discardReadbackBuffer()
     if (readbackResource)
     {
         readbackResource.Reset();
-        description.flags = agpu_texture_flags(description.flags & ~AGPU_TEXTURE_FLAG_READED_BACK);
+        description.usage_modes = agpu_texture_usage_mode_mask(description.usage_modes & ~AGPU_TEXTURE_USAGE_READED_BACK);
     }
 
     return AGPU_OK;
 }
 
-bool _agpu_texture::isArray()
+bool ADXTexture::isArray()
 {
-    return description.type != AGPU_TEXTURE_3D && description.type != AGPU_TEXTURE_BUFFER && description.depthOrArraySize > 1;
+    return description.type != AGPU_TEXTURE_3D && description.type != AGPU_TEXTURE_BUFFER && description.layers > 1;
 }
 
-agpu_error _agpu_texture::getFullViewDescription(agpu_texture_view_description *viewDescription)
+agpu_error ADXTexture::getFullViewDescription(agpu_texture_view_description *viewDescription)
 {
     CHECK_POINTER(viewDescription);
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
-    viewDescription->texture = this;
     viewDescription->format = description.format;
+    viewDescription->sample_count = description.sample_count;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_flags = description.flags;
+    viewDescription->subresource_range.usage_mode = description.usage_modes;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
-    viewDescription->subresource_range.layer_count = description.depthOrArraySize;
-
+    viewDescription->subresource_range.layer_count = description.layers;
+    if(viewDescription->subresource_range.layer_count == 1)
+        viewDescription->subresource_range.layer_count = 0;
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddTextureReference(agpu_texture* texture)
+
+agpu::texture_view_ptr ADXTexture::createView(agpu_texture_view_description* viewDescription)
 {
-    CHECK_POINTER(texture);
-    return texture->retain();
+	if (!viewDescription)
+		return nullptr;
+
+	return ADXTextureView::create(device, refFromThis<agpu::texture> (), *viewDescription).disown();
 }
 
-AGPU_EXPORT agpu_error agpuReleaseTexture(agpu_texture* texture)
+agpu::texture_view_ptr ADXTexture::getOrCreateFullView()
 {
-    CHECK_POINTER(texture);
-    return texture->release();
+	if (!fullTextureView)
+	{
+		agpu_texture_view_description fullTextureViewDescription = {};
+		getFullViewDescription(&fullTextureViewDescription);
+		fullTextureView = agpu::texture_view_ref(createView(&fullTextureViewDescription));
+	}
+
+	return fullTextureView.disownedNewRef();
 }
 
-AGPU_EXPORT agpu_error agpuGetTextureDescription(agpu_texture* texture, agpu_texture_description* description)
-{
-    CHECK_POINTER(texture);
-    *description = texture->description;
-    return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_error agpuReadTextureData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
-{
-    CHECK_POINTER(texture);
-    return texture->readTextureData(level, arrayIndex, pitch, slicePitch, buffer);
-}
-
-AGPU_EXPORT agpu_error agpuUploadTextureData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
-{
-    CHECK_POINTER(texture);
-    return texture->uploadTextureData(level, arrayIndex, pitch, slicePitch, data);
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* texture)
-{
-    CHECK_POINTER(texture);
-    return texture->discardUploadBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* texture)
-{
-    CHECK_POINTER(texture);
-    return texture->discardReadbackBuffer();
-}
-
-AGPU_EXPORT agpu_pointer agpuMapTextureLevel(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags)
-{
-    if (!texture)
-        return nullptr;
-    return texture->mapLevel(level, arrayIndex, flags);
-}
-
-AGPU_EXPORT agpu_error agpuUnmapTextureLevel(agpu_texture* texture)
-{
-    CHECK_POINTER(texture);
-    return texture->unmapLevel();
-}
-
-AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description *description)
-{
-    CHECK_POINTER(texture);
-    return texture->getFullViewDescription(description);
-}
+} // End of namespace AgpuD3D12

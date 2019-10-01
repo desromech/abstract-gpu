@@ -3,6 +3,9 @@
 
 #include "device.hpp"
 
+namespace AgpuD3D12
+{
+
 inline D3D12_RESOURCE_BARRIER resourceTransitionBarrier(const ComPtr<ID3D12Resource> &resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
 {
     D3D12_RESOURCE_BARRIER barrier;
@@ -16,5 +19,6 @@ inline D3D12_RESOURCE_BARRIER resourceTransitionBarrier(const ComPtr<ID3D12Resou
     return barrier;
 }
 
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_COMMON_COMMANDS_HPP_

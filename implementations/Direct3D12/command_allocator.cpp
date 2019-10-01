@@ -1,48 +1,33 @@
 #include "command_allocator.hpp"
 
-_agpu_command_allocator::_agpu_command_allocator()
+namespace AgpuD3D12
 {
-	
+
+ADXCommandAllocator::ADXCommandAllocator(const agpu::device_ref &cdevice)
+    : device(cdevice)
+{
 }
 
-void _agpu_command_allocator::lostReferences()
+ADXCommandAllocator::~ADXCommandAllocator()
 {
 }
 
-_agpu_command_allocator *_agpu_command_allocator::create(agpu_device *device, agpu_command_list_type type, agpu_command_queue *queue)
+agpu::command_allocator_ref ADXCommandAllocator::create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_queue_ref &queue)
 {
     // Create the command allocator.
     ComPtr<ID3D12CommandAllocator> allocator;
-    if (FAILED(device->d3dDevice->CreateCommandAllocator(mapCommandListType(type), IID_PPV_ARGS(&allocator))))
-        return nullptr;
+    if (FAILED(deviceForDX->d3dDevice->CreateCommandAllocator(mapCommandListType(type), IID_PPV_ARGS(&allocator))))
+        return agpu::command_allocator_ref();
 
-    auto res = new agpu_command_allocator();
-    res->device = device;
-    res->allocator = allocator;
+    auto res = agpu::makeObject<ADXCommandAllocator> (device);
+    res.as<ADXCommandAllocator>()->allocator = allocator;
     return res;
 }
 
-agpu_error _agpu_command_allocator::reset()
+agpu_error ADXCommandAllocator::reset()
 {
     ERROR_IF_FAILED(allocator->Reset());
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddCommandAllocatorReference(agpu_command_allocator* command_allocator)
-{
-    CHECK_POINTER(command_allocator);
-    return command_allocator->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseCommandAllocator(agpu_command_allocator* command_allocator)
-{
-    CHECK_POINTER(command_allocator);
-    return command_allocator->release();
-}
-
-AGPU_EXPORT agpu_error agpuResetCommandAllocator(agpu_command_allocator* command_allocator)
-{
-    CHECK_POINTER(command_allocator);
-    return command_allocator->reset();
-}
+} // End of namespace AgpuD3D12

@@ -1,6 +1,9 @@
 #include "buffer.hpp"
 #include "common_commands.hpp"
 
+namespace AgpuD3D12
+{
+
 DXGI_FORMAT mapIndexFormat(size_t indexSize)
 {
     switch (indexSize)
@@ -13,23 +16,24 @@ DXGI_FORMAT mapIndexFormat(size_t indexSize)
     }
 }
 
-_agpu_buffer::_agpu_buffer()
+ADXBuffer::ADXBuffer(const agpu::device_ref &device)
+    : device(device)
 {
 
 }
 
-void _agpu_buffer::lostReferences()
+ADXBuffer::~ADXBuffer()
 {
 
 }
 
-agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
+agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data)
 {
     if (!device || !description)
-        return nullptr;
+        return agpu::buffer_ref();
 
     // Try to determine whan kind of buffer is needed.
-    bool streaming = description->usage == AGPU_STREAM;
+    bool streaming = description->heap_type == AGPU_STREAM;
     bool canBeSubUpdated = (description->mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
     bool hasInitialData = initial_data != nullptr;
     bool canBeMapped = (description->mapping_flags & AGPU_MAP_READ_BIT) || (description->mapping_flags & AGPU_MAP_WRITE_BIT);
@@ -71,15 +75,15 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         auto initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
 
-        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, nullptr, IID_PPV_ARGS(&uploadResource))))
-            return nullptr;
+        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, nullptr, IID_PPV_ARGS(&uploadResource))))
+            return agpu::buffer_ref();
 
         // Upload the initial data.
         if (initial_data)
         {
             void *bufferBegin;
             if (FAILED(uploadResource->Map(0, &nullRange, &bufferBegin)))
-                return nullptr;
+                return agpu::buffer_ref();
 
             memcpy(bufferBegin, initial_data, description->size);
             uploadResource->Unmap(0, nullptr);
@@ -98,13 +102,13 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
         if (hasInitialData)
             initialState = D3D12_RESOURCE_STATE_COPY_DEST;
 
-        if (FAILED(device->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&gpuResource))))
-            return nullptr;
+        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&gpuResource))))
+            return agpu::buffer_ref();
 
         // Copy the initial data.
         if (hasInitialData)
         {
-            auto res = device->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
+            auto res = deviceForDX->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
                 list->CopyResource(gpuResource.Get(), uploadResource.Get());
                 auto barrier = resourceTransitionBarrier(gpuResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
                 list->ResourceBarrier(1, &barrier);
@@ -112,66 +116,93 @@ agpu_buffer* _agpu_buffer::create(agpu_device* device, agpu_buffer_description* 
 
                 ID3D12CommandList *ptr = list.Get();
                 queue->ExecuteCommandLists(1, &ptr);
-                return device->waitForMemoryTransfer();
+                return deviceForDX->waitForMemoryTransfer();
             });
 
             if (res < 0)
-                return nullptr;
+                return agpu::buffer_ref();
         }
     }
 
     // Create the buffer object
-    auto buffer = new agpu_buffer();
-    buffer->device = device;
-    buffer->description = *description;
-    buffer->gpuResource = gpuResource;
+    auto buffer = agpu::makeObject<ADXBuffer> (device);
+    auto dxBuffer = buffer.as<ADXBuffer> ();
+    dxBuffer->description = *description;
+    dxBuffer->gpuResource = gpuResource;
     if(keepUploadBuffer)
-        buffer->uploadResource = uploadResource;
-    
+        dxBuffer->uploadResource = uploadResource;
+
     // Create the buffer view.
-    if(buffer->createView() < 0)
-    {
-        buffer->release();
-        return nullptr;
-    }
+    // FIXME: Remove these views and move them to the respective bindings.
+    auto gpuBuffer = dxBuffer->getActualGpuBuffer();
+    dxBuffer->gpuVirtualAddress = gpuBuffer->GetGPUVirtualAddress();;
 
     return buffer;
 }
 
-ID3D12Resource *_agpu_buffer::getActualGpuBuffer()
+ID3D12Resource *ADXBuffer::getActualGpuBuffer()
 {
     if (gpuResource)
         return gpuResource.Get();
     return uploadResource.Get();
 }
 
-agpu_error _agpu_buffer::createView()
+agpu_error ADXBuffer::getDescription(agpu_buffer_description* description)
 {
-    auto gpuBuffer = getActualGpuBuffer();
-
-    switch (description.binding)
-    {
-    case AGPU_ARRAY_BUFFER:
-        view.vertexBuffer.BufferLocation = gpuBuffer->GetGPUVirtualAddress();
-        view.vertexBuffer.SizeInBytes = description.size;
-        view.vertexBuffer.StrideInBytes = description.stride;
-        return AGPU_OK;
-    case AGPU_ELEMENT_ARRAY_BUFFER:
-        view.indexBuffer.BufferLocation = gpuBuffer->GetGPUVirtualAddress();
-        view.indexBuffer.SizeInBytes = description.size;
-        view.indexBuffer.Format = mapIndexFormat(description.stride);
-        return AGPU_OK;
-    case AGPU_UNIFORM_BUFFER:
-        view.constantBuffer.BufferLocation = gpuBuffer->GetGPUVirtualAddress();
-        view.constantBuffer.SizeInBytes = (description.size + 255) & (~255);
-        return AGPU_OK;
-    case AGPU_DRAW_INDIRECT_BUFFER:
-    default:
-        return AGPU_UNSUPPORTED;
-    }
+	CHECK_POINTER(description);
+	*description = this->description;
+	return AGPU_OK;
 }
 
-agpu_pointer _agpu_buffer::mapBuffer(agpu_mapping_access flags)
+agpu_error ADXBuffer::createVertexBufferView(D3D12_VERTEX_BUFFER_VIEW *outView, agpu_size offset, agpu_size stride)
+{
+    if(offset > description.size)
+        return AGPU_OUT_OF_BOUNDS;
+
+    outView->BufferLocation = gpuVirtualAddress + offset;
+    outView->SizeInBytes = description.size - offset;
+    outView->StrideInBytes = stride;
+    return AGPU_OK;
+}
+
+agpu_error ADXBuffer::createIndexBufferView(D3D12_INDEX_BUFFER_VIEW *outView, agpu_size offset, agpu_size index_size)
+{
+    if(offset > description.size)
+        return AGPU_OUT_OF_BOUNDS;
+
+    outView->BufferLocation = gpuVirtualAddress + offset;
+    outView->SizeInBytes = description.size - offset;
+    outView->Format = mapIndexFormat(index_size);
+    return AGPU_OK;
+}
+
+
+agpu_error ADXBuffer::createConstantBufferViewDescription(D3D12_CONSTANT_BUFFER_VIEW_DESC *outView, agpu_size offset, agpu_size size)
+{
+    if(offset + size > description.size)
+        return AGPU_OUT_OF_BOUNDS;
+
+    outView->BufferLocation = gpuVirtualAddress + offset;
+    outView->SizeInBytes = size;
+    return AGPU_OK;
+}
+
+agpu_error ADXBuffer::createUAVDescription(D3D12_UNORDERED_ACCESS_VIEW_DESC *outView, agpu_size offset, agpu_size size)
+{
+    if(offset + size > description.size)
+        return AGPU_OUT_OF_BOUNDS;
+
+    memset(outView, 0, sizeof(D3D12_UNORDERED_ACCESS_VIEW_DESC));
+    outView->Format = DXGI_FORMAT_R32_TYPELESS;
+    outView->ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    outView->Buffer.FirstElement = offset;
+    outView->Buffer.NumElements = size;
+    outView->Buffer.StructureByteStride = 1;
+    outView->Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+    return AGPU_OK;
+}
+
+agpu_pointer ADXBuffer::mapBuffer(agpu_mapping_access flags)
 {
     bool canBeReaded = (description.mapping_flags & AGPU_MAP_READ_BIT) != 0;
     bool canBeWritten = (description.mapping_flags & AGPU_MAP_WRITE_BIT) != 0;
@@ -187,7 +218,7 @@ agpu_pointer _agpu_buffer::mapBuffer(agpu_mapping_access flags)
     return mappedPointer;
 }
 
-agpu_error _agpu_buffer::unmapBuffer()
+agpu_error ADXBuffer::unmapBuffer()
 {
     if (!mappedPointer)
         return AGPU_OK;
@@ -199,7 +230,7 @@ agpu_error _agpu_buffer::unmapBuffer()
     return AGPU_OK;
 }
 
-agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+agpu_error ADXBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
     bool canBeSubUpdated = (description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
     if (!canBeSubUpdated)
@@ -230,7 +261,7 @@ agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu
     if (!gpuResource)
         return AGPU_OK;
 
-    return device->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
+    return deviceForDX->withTransferQueueAndCommandList([&](const ComPtr<ID3D12CommandQueue> &queue, const ComPtr<ID3D12GraphicsCommandList> &list) -> agpu_error {
         auto barrier = resourceTransitionBarrier(gpuResource, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST);
         list->ResourceBarrier(1, &barrier);
         list->CopyBufferRegion(gpuResource.Get(), offset, uploadResource.Get(), offset, size);
@@ -240,11 +271,11 @@ agpu_error _agpu_buffer::uploadBufferData(agpu_size offset, agpu_size size, agpu
 
         ID3D12CommandList *ptr = list.Get();
         queue->ExecuteCommandLists(1, &ptr);
-        return device->waitForMemoryTransfer();
+        return deviceForDX->waitForMemoryTransfer();
     });
 }
 
-agpu_error _agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
+agpu_error ADXBuffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
     bool canBeSubUpdated = (description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
     if (!canBeSubUpdated)
@@ -268,47 +299,13 @@ agpu_error _agpu_buffer::readBufferData(agpu_size offset, agpu_size size, agpu_p
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddBufferReference(agpu_buffer* buffer)
+agpu_error ADXBuffer::flushWholeBuffer()
 {
-    CHECK_POINTER(buffer);
-    return buffer->retain();
+	return AGPU_UNIMPLEMENTED;
 }
 
-AGPU_EXPORT agpu_error agpuReleaseBuffer(agpu_buffer* buffer)
+agpu_error ADXBuffer::invalidateWholeBuffer()
 {
-    CHECK_POINTER(buffer);
-    return buffer->release();
+	return AGPU_UNIMPLEMENTED;
 }
-
-AGPU_EXPORT agpu_pointer agpuMapBuffer(agpu_buffer* buffer, agpu_mapping_access flags)
-{
-    if (!buffer)
-        return nullptr;
-    return buffer->mapBuffer(flags);
-}
-
-AGPU_EXPORT agpu_error agpuUnmapBuffer(agpu_buffer* buffer)
-{
-    CHECK_POINTER(buffer);
-    return buffer->unmapBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuGetBufferDescription(agpu_buffer* buffer, agpu_buffer_description* description)
-{
-    CHECK_POINTER(buffer);
-    *description = buffer->description;
-    return AGPU_OK;
-}
-
-AGPU_EXPORT agpu_error agpuUploadBufferData(agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data)
-{
-    CHECK_POINTER(buffer);
-    return buffer->uploadBufferData(offset, size, data);
-}
-
-AGPU_EXPORT agpu_error agpuReadBufferData(agpu_buffer* buffer, agpu_size offset, agpu_size size, agpu_pointer data)
-{
-    CHECK_POINTER(buffer);
-    return buffer->readBufferData(offset, size, data);
-}
+} // End of namespace AgpuD3D12

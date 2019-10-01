@@ -15,6 +15,12 @@
 #include "swap_chain.hpp"
 #include "texture.hpp"
 #include "fence.hpp"
+#include "platform.hpp"
+#include "../Common/offline_shader_compiler.hpp"
+#include "../Common/state_tracker_cache.hpp"
+
+namespace AgpuD3D12
+{
 
 void printError(const char *format, ...)
 {
@@ -30,37 +36,36 @@ void printError(const char *format, ...)
     va_end(args);
 }
 
-_agpu_device::_agpu_device()
+ADXDevice::ADXDevice()
 {
-    defaultCommandQueue = nullptr;
     isOpened = false;
 }
 
-void _agpu_device::lostReferences()
+ADXDevice::~ADXDevice()
 {
-
     if (isOpened)
     {
         CloseHandle(transferFenceEvent);
     }
-
-    if (defaultCommandQueue)
-        defaultCommandQueue->release();
 }
 
-agpu_device *_agpu_device::open(agpu_device_open_info* openInfo)
+bool ADXDevice::checkDirect3D12Implementation(Direct3D12Platform *platform)
 {
-    auto device = new agpu_device();
-    if (!device->initialize(openInfo))
-    {
-        device->release();
-        return nullptr;
-    }
+    // TODO: Implement this properly.
+    platform->gpuCount = 1;
+    return true;
+}
+
+agpu::device_ref ADXDevice::open(agpu_device_open_info* openInfo)
+{
+    auto device = agpu::makeObject<ADXDevice> ();
+    if (!device.as<ADXDevice> ()->initialize(openInfo))
+        return agpu::device_ref();
 
     return device;
 }
 
-bool _agpu_device::initialize(agpu_device_open_info* openInfo)
+bool ADXDevice::initialize(agpu_device_open_info* openInfo)
 {
     // Read some of the parameters.
     isDebugEnabled = openInfo->debug_layer;
@@ -80,7 +85,7 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
         return false;
 
     // Create the default command queue
-    defaultCommandQueue = agpu_command_queue::createDefault(this);
+    defaultCommandQueue = ADXCommandQueue::createDefault(refFromThis<agpu::device> ());
     if (!defaultCommandQueue)
         return false;
 
@@ -122,13 +127,13 @@ bool _agpu_device::initialize(agpu_device_open_info* openInfo)
     return true;
 }
 
-agpu_error _agpu_device::withTransferQueue(std::function<agpu_error (const ComPtr<ID3D12CommandQueue> &)> function)
+agpu_error ADXDevice::withTransferQueue(std::function<agpu_error (const ComPtr<ID3D12CommandQueue> &)> function)
 {
     std::unique_lock<std::mutex> l(transferMutex);
     return function(transferCommandQueue);
 }
 
-agpu_error _agpu_device::withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function)
+agpu_error ADXDevice::withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function)
 {
     std::unique_lock<std::mutex> l(transferMutex);
     transferCommandAllocator->Reset();
@@ -136,7 +141,7 @@ agpu_error _agpu_device::withTransferQueueAndCommandList(std::function<agpu_erro
     return function(transferCommandQueue, transferCommandList);
 }
 
-agpu_error _agpu_device::waitForMemoryTransfer()
+agpu_error ADXDevice::waitForMemoryTransfer()
 {
     // Signal the fence.
     auto fence = transferFenceValue;
@@ -153,7 +158,104 @@ agpu_error _agpu_device::waitForMemoryTransfer()
     return AGPU_OK;
 }
 
-agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
+agpu::command_queue_ptr ADXDevice::getDefaultCommandQueue()
+{
+    return defaultCommandQueue.disownedNewRef();
+}
+
+agpu::swap_chain_ptr ADXDevice::createSwapChain(const agpu::command_queue_ref & commandQueue, agpu_swap_chain_create_info* swapChainInfo)
+{
+    return ADXSwapChain::create(refFromThis<agpu::device> (), commandQueue, swapChainInfo).disown();
+}
+
+agpu::buffer_ptr ADXDevice::createBuffer(agpu_buffer_description* description, agpu_pointer initial_data)
+{
+    return ADXBuffer::create(refFromThis<agpu::device> (), description, initial_data).disown();
+}
+
+agpu::vertex_layout_ptr ADXDevice::createVertexLayout()
+{
+    return ADXVertexLayout::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::vertex_binding_ptr ADXDevice::createVertexBinding(const agpu::vertex_layout_ref & layout)
+{
+    return ADXVertexBinding::create(refFromThis<agpu::device> (), layout).disown();
+}
+
+agpu::shader_ptr ADXDevice::createShader(agpu_shader_type type)
+{
+    return ADXShader::create(refFromThis<agpu::device> (), type).disown();
+}
+
+agpu::shader_signature_builder_ptr ADXDevice::createShaderSignatureBuilder()
+{
+    return ADXShaderSignatureBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::pipeline_builder_ptr ADXDevice::createPipelineBuilder()
+{
+    return ADXPipelineBuilder::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::compute_pipeline_builder_ptr ADXDevice::createComputePipelineBuilder()
+{
+    // TODO: Implement this.
+    return nullptr;
+}
+
+agpu::command_allocator_ptr ADXDevice::createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue)
+{
+    return ADXCommandAllocator::create(refFromThis<agpu::device> (), type, queue).disown();
+}
+
+agpu::command_list_ptr ADXDevice::createCommandList(agpu_command_list_type type, const agpu::command_allocator_ref & allocator, const agpu::pipeline_state_ref & initial_pipeline_state)
+{
+    return ADXCommandList::create(refFromThis<agpu::device> (), type, allocator, initial_pipeline_state).disown();
+}
+
+agpu_shader_language ADXDevice::getPreferredShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_BINARY;
+}
+
+agpu_shader_language ADXDevice::getPreferredIntermediateShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_SPIR_V;
+}
+
+agpu_shader_language ADXDevice::getPreferredHighLevelShaderLanguage()
+{
+    return AGPU_SHADER_LANGUAGE_HLSL;
+}
+
+agpu::framebuffer_ptr ADXDevice::createFrameBuffer(agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref* colorViews, const agpu::texture_view_ref & depthStencilView)
+{
+    return ADXFramebuffer::create(refFromThis<agpu::device> (), width, height, colorCount, colorViews, depthStencilView).disown();
+}
+
+agpu::renderpass_ptr ADXDevice::createRenderPass(agpu_renderpass_description* description)
+{
+    return ADXRenderPass::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::texture_ptr ADXDevice::createTexture(agpu_texture_description* description)
+{
+    return ADXTexture::create(refFromThis<agpu::device> (), description).disown();
+}
+
+agpu::sampler_ptr ADXDevice::createSampler(agpu_sampler_description* description)
+{
+    // TODO: Implement this.
+    return nullptr;
+}
+
+agpu::fence_ptr ADXDevice::createFence()
+{
+    return ADXFence::create(refFromThis<agpu::device> ()).disown();
+}
+
+agpu_int ADXDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
 {
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS levels;
     memset(&levels, 0, sizeof(levels));
@@ -165,151 +267,45 @@ agpu_int _agpu_device::getMultiSampleQualityLevels(agpu_uint sample_count)
     return levels.NumQualityLevels;
 }
 
-// Exported C functions
-AGPU_EXPORT agpu_error agpuAddDeviceReference(agpu_device* device)
-{
-    CHECK_POINTER(device);
-    return device->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseDevice(agpu_device* device)
-{
-    CHECK_POINTER(device);
-    return device->release();
-}
-
-AGPU_EXPORT agpu_command_queue* agpuGetDefaultCommandQueue(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    device->defaultCommandQueue->retain();
-    return device->defaultCommandQueue;
-}
-
-AGPU_EXPORT agpu_swap_chain* agpuCreateSwapChain(agpu_device* device, agpu_command_queue* commandQueue, agpu_swap_chain_create_info* swapChainInfo)
-{
-    if (!device)
-        return nullptr;
-    return agpu_swap_chain::create(device, commandQueue, swapChainInfo);
-}
-
-AGPU_EXPORT agpu_buffer* agpuCreateBuffer(agpu_device* device, agpu_buffer_description* description, agpu_pointer initial_data)
-{
-    if (!device)
-        return nullptr;
-    return agpu_buffer::create(device, description, initial_data);
-}
-
-AGPU_EXPORT agpu_vertex_binding* agpuCreateVertexBinding(agpu_device* device, agpu_vertex_layout *layout)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_vertex_binding::create(device, layout);
-}
-
-AGPU_EXPORT agpu_vertex_layout* agpuCreateVertexLayout(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_vertex_layout::create(device);
-}
-
-AGPU_EXPORT agpu_shader* agpuCreateShader(agpu_device* device, agpu_shader_type type)
-{
-    if (!device)
-        return nullptr;
-    return agpu_shader::create(device, type);
-}
-
-AGPU_EXPORT agpu_shader_signature_builder* agpuCreateShaderSignatureBuilder(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-    return agpu_shader_signature_builder::create(device);
-}
-
-AGPU_EXPORT agpu_pipeline_builder* agpuCreatePipelineBuilder(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_pipeline_builder::create(device);
-}
-
-AGPU_EXPORT agpu_command_allocator* agpuCreateCommandAllocator(agpu_device* device, agpu_command_list_type type, agpu_command_queue *queue)
-{
-    if (!device)
-        return nullptr;
-    return agpu_command_allocator::create(device, type, queue);
-}
-
-AGPU_EXPORT agpu_command_list* agpuCreateCommandList(agpu_device* device, agpu_command_list_type type, agpu_command_allocator* allocator, agpu_pipeline_state* initial_pipeline_state)
-{
-    if (!device)
-        return nullptr;
-    return agpu_command_list::create(device, type, allocator, initial_pipeline_state);
-}
-
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_BINARY;
-}
-
-AGPU_EXPORT agpu_shader_language agpuGetPreferredHighLevelShaderLanguage(agpu_device* device)
-{
-    return AGPU_SHADER_LANGUAGE_HLSL;
-}
-
-AGPU_EXPORT agpu_framebuffer* agpuCreateFrameBuffer(agpu_device* device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu_texture_view_description* colorViews, agpu_texture_view_description* depthStencilView)
-{
-    if (!device)
-        return nullptr;
-    return agpu_framebuffer::create(device, width, height, colorCount, colorViews, depthStencilView);
-}
-
-AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_renderpass_description* description)
-{
-    if (!device)
-        return nullptr;
-    return agpu_renderpass::create(device, description);
-}
-
-AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_texture::create(device, description);
-}
-
-AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device)
-{
-    if (!device)
-        return nullptr;
-
-    return agpu_fence::create(device);
-}
-
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count)
-{
-    if (!device)
-        return 0;
-    return device->getMultiSampleQualityLevels(sample_count);
-}
-
-AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device *device)
+agpu_bool ADXDevice::hasTopLeftNdcOrigin()
 {
     return false;
 }
 
-AGPU_EXPORT agpu_bool agpuIsCommandListReuseSupported ( agpu_device* device )
-{
-    return true;
-}
-
-AGPU_EXPORT agpu_bool agpuisCommandListReuseEmulated ( agpu_device* device )
+agpu_bool ADXDevice::hasBottomLeftTextureCoordinates()
 {
     return false;
 }
+
+agpu_bool ADXDevice::isFeatureSupported(agpu_feature feature)
+{
+    switch (feature)
+	{
+	case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING: return true;
+	case AGPU_FEATURE_COHERENT_MEMORY_MAPPING: return true;
+	case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING: return true;
+	case AGPU_FEATURE_COMMAND_LIST_REUSE: return true;
+	case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: return true;
+    //case AGPU_FEATURE_VRDISPLAY: return isVRDisplaySupported;
+    //case AGPU_FEATURE_VRINPUT_DEVICES: return isVRInputDevicesSupported;
+	default: return false;
+	}
+}
+
+agpu::vr_system_ptr ADXDevice::getVRSystem()
+{
+    // TODO: Implement this with OpenVR, Windows Mixed Reality, and the HoloLens streaming API.
+    return nullptr;
+}
+
+agpu::offline_shader_compiler_ptr ADXDevice::createOfflineShaderCompiler()
+{
+	return AgpuCommon::GLSLangOfflineShaderCompiler::createForDevice(refFromThis<agpu::device> ()).disown();
+}
+
+agpu::state_tracker_cache_ptr ADXDevice::createStateTrackerCache(const agpu::command_queue_ref & command_queue_family)
+{
+	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
+}
+
+} // End of namespace AgpuD3D12

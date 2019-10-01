@@ -3,23 +3,27 @@
 
 #include "device.hpp"
 
-struct _agpu_fence : public Object<_agpu_fence>
+namespace AgpuD3D12
+{
+
+class ADXFence : public agpu::fence
 {
 public:
-    _agpu_fence();
+    ADXFence(const agpu::device_ref &cdevice);
+    ~ADXFence();
 
-    void lostReferences();
+    static agpu::fence_ref create(const agpu::device_ref &device);
 
-    static _agpu_fence *create(agpu_device *device);
-    
-    agpu_error waitOnClient();
+    virtual agpu_error waitOnClient() override;
 
 public:
     std::mutex fenceMutex;
-    agpu_device *device;
+    agpu::device_ref device;
     HANDLE event;
     ComPtr<ID3D12Fence> fence;
     UINT64 fenceValue;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_FENCE_HPP
