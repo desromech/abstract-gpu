@@ -2,9 +2,7 @@
 
 namespace AgpuD3D12
 {
-
-const int MaxVertexAttributes = 16;
-const char * const VertexAttributeSemantics[] = {
+const char * VertexAttributeSemantics[] = {
     "A",
     "B",
     "C",
@@ -22,6 +20,8 @@ const char * const VertexAttributeSemantics[] = {
     "O",
     "P",
 };
+
+size_t MaxVertexAttributes = sizeof(VertexAttributeSemantics) / sizeof(VertexAttributeSemantics[0]);
 
 ADXVertexLayout::ADXVertexLayout(const agpu::device_ref &cdevice)
     : device(cdevice)

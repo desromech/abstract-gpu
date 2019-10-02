@@ -187,7 +187,7 @@ void GraphicsPipelineStateDescription::reset()
     primitiveType = AGPU_POINTS;
     vertexLayout.reset();
     sampleCount = 1;
-    sampleQuality = 1;
+    sampleQuality = 0;
 }
 
 agpu_error GraphicsPipelineStateDescription::applyToBuilder(const agpu::pipeline_builder_ref &builder) const

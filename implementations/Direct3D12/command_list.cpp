@@ -82,8 +82,12 @@ agpu_error ADXCommandList::setShaderSignature(const agpu::shader_signature_ref &
         heaps[heapCount++] = adxSignature->shaderResourceViewHeap.Get();
     if (adxSignature->samplerHeap)
         heaps[heapCount++] = adxSignature->samplerHeap.Get();
-    if(heapCount)
-        commandList->SetDescriptorHeaps(heapCount, heaps);
+	if (heapCount > 0)
+	{
+		commandList->SetDescriptorHeaps(heapCount, heaps);
+		for (size_t i = 0; i < adxSignature->nullDescriptorTables.size(); ++i)
+			commandList->SetGraphicsRootDescriptorTable(i, adxSignature->nullDescriptorTables[i]);
+	}
 
     return AGPU_OK;
 }
@@ -171,20 +175,11 @@ agpu_error ADXCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_r
 
 agpu_error ADXCommandList::useShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
-    /*CHECK_POINTER(binding);
+    CHECK_POINTER(binding);
+
     auto adxBinding = binding.as<ADXShaderResourceBinding> ();
-
-    ID3D12DescriptorHeap *heap = nullptr;
-    if (adxBinding->type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
-        heap = adxBinding->signature.as<ADXSignatureBinding> ()->samplerHeap.Get();
-    else
-        heap = adxBinding->signature.as<ADXSignatureBinding> ()->shaderResourceViewHeap.Get();
-
-    auto desc = heap->GetGPUDescriptorHandleForHeapStart();
-    desc.ptr += adxBinding->descriptorOffset;
-    commandList->SetGraphicsRootDescriptorTable(adxBinding->element, desc);
-    return AGPU_OK;*/
-    return AGPU_UNIMPLEMENTED;
+	commandList->SetGraphicsRootDescriptorTable(adxBinding->bankIndex, adxBinding->gpuDescriptorTableHandle);
+    return AGPU_OK;
 }
 
 agpu_error ADXCommandList::useComputeShaderResources(const agpu::shader_resource_binding_ref &binding)

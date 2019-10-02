@@ -8,21 +8,21 @@
 namespace AgpuD3D12
 {
 
-class DescriptorAllocator
+class DescriptorTableMemoryAllocator
 {
 public:
-    DescriptorAllocator(int startIndex, int descriptorCount);
-    ~DescriptorAllocator();
+	DescriptorTableMemoryAllocator();
+    ~DescriptorTableMemoryAllocator();
 
-    int getStartIndex();
-    int allocate();
-    void free(int descriptorIndex);
+	void setup(uint32_t maxDescriptorCount);
+
+	int32_t allocate();
+    void free(int32_t descriptorTableIndex);
 
 private:
-    int startIndex;
-    int descriptorCount;
-    int freeCount;
-    std::vector<int> freeList;
+	uint32_t descriptorCount;
+	int32_t nextFreeItem;
+    std::vector<int32_t> freeList;
 };
 
 enum class ShaderResourceViewType
@@ -70,22 +70,15 @@ public:
 	std::vector<ShaderSignatureBindingBank> banks;
 	size_t pushConstantCount;
 
-    UINT shaderResourceViewDescriptorSize;
-    UINT samplerDescriptorSize;
-
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> descriptorTableHeapGPUBaseAddress;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> descriptorTableHeapCPUBaseAddress;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> nullDescriptorTables;
 private:
-    agpu_uint maxBindingsCount[AGPU_SHADER_BINDING_TYPE_COUNT];
-    DescriptorAllocator *descriptorAllocators[16];
-
-    UINT shaderResourceViewDescriptorReservedSize;
-    UINT samplerDescriptorReservedSize;
-
-    UINT nullCbvDescriptorOffset;
-    UINT nullUavDescriptorOffset[(int)UnorderedAccessViewType::Count];
-    UINT nullSrvDescriptorOffset[(int)ShaderResourceViewType::Count];
-    UINT nullSamplerDescriptorOffset;
+	bool constructDescriptorTableAllocators();
+	bool initializeDescriptorTable(const ShaderSignatureBindingBank &bank, const D3D12_CPU_DESCRIPTOR_HANDLE &tableHandle);
 
     std::mutex allocationMutex;
+	std::vector<DescriptorTableMemoryAllocator> descriptorAllocators;
 };
 
 } // End of namespace AgpuD3D12

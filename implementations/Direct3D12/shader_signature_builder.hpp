@@ -14,7 +14,10 @@ public:
 	~ShaderSignatureBindingBankElement();
 
     agpu_shader_binding_type type;
-    agpu_uint bindingPointCount;
+	agpu_uint baseDescriptorIndex;
+    agpu_uint arrayBindingPointCount;
+	size_t firstDescriptorOffset;
+	size_t descriptorRangeSize;
 };
 
 class ShaderSignatureBindingBank
@@ -24,6 +27,10 @@ public:
 	~ShaderSignatureBindingBank();
 	
 	agpu_uint maxBindings;
+	agpu_uint totalBindingPointCount;
+	bool isSamplersBank;
+	size_t descriptorSize;
+	size_t descriptorTableSize;
 	std::vector<ShaderSignatureBindingBankElement> elements;
 	std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRanges;
 };
@@ -41,15 +48,13 @@ public:
 	virtual agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings) override;
 	virtual agpu_error beginBindingBank(agpu_uint maxBindings) override;
 	virtual agpu_error addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount) override;
+	agpu_error addBindingBankArrayElement(agpu_shader_binding_type type, agpu_uint maxBindings, agpu_uint arraySize);
 
 public:
 	agpu::device_ref device;
 
 	std::vector<ShaderSignatureBindingBank> banks;
 	size_t pushConstantCount;
-
-	//agpu_uint baseRegisterCount[AGPU_SHADER_BINDING_TYPE_COUNT];
-    //agpu_uint maxBindingsCount[AGPU_SHADER_BINDING_TYPE_COUNT];
 };
 
 } // End of namespace AgpuD3D12

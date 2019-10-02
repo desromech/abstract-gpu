@@ -62,8 +62,13 @@ agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_d
     desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    D3D12_RANGE nullRange;
-    memset(&nullRange, 0, sizeof(nullRange));
+	// Uniform buffers require an alignment of 256 bytes.
+	if ((description->binding & AGPU_UNIFORM_BUFFER) != 0)
+	{
+		desc.Width = (desc.Width + 255) & (-256);
+	}
+
+	D3D12_RANGE nullRange = {};
 
     // Create the upload buffer.
     if (needsUploadBuffer)
@@ -102,7 +107,7 @@ agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_d
         if (hasInitialData)
             initialState = D3D12_RESOURCE_STATE_COPY_DEST;
 
-        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&gpuResource))))
+        if (FAILED(deviceForDX->d3dDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, initialState, nullptr, IID_PPV_ARGS(&gpuResource))))
             return agpu::buffer_ref();
 
         // Copy the initial data.
@@ -183,7 +188,7 @@ agpu_error ADXBuffer::createConstantBufferViewDescription(D3D12_CONSTANT_BUFFER_
         return AGPU_OUT_OF_BOUNDS;
 
     outView->BufferLocation = gpuVirtualAddress + offset;
-    outView->SizeInBytes = size;
+    outView->SizeInBytes = (size + 255) & (-256);
     return AGPU_OK;
 }
 

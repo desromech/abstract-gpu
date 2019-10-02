@@ -1,27 +1,54 @@
 #ifndef AGPU_D3D12_SHADER_HPP
 #define AGPU_D3D12_SHADER_HPP
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include "device.hpp"
 
 namespace AgpuD3D12
 {
 
-struct ShaderVariableDesc
+class ShaderStageInstanceName
 {
-    std::string name;
+public:
+	ShaderStageInstanceName()
+		: stageType(AGPU_LIBRARY_SHADER)
+	{}
+	ShaderStageInstanceName(const agpu::shader_signature_ref& csignature, agpu_shader_type cstageType, const std::string& centryPointName)
+		: signature(csignature), stageType(cstageType), entryPointName(centryPointName)
+	{}
+
+	bool operator==(const ShaderStageInstanceName& o) const
+	{
+		return signature == o.signature && stageType == o.stageType && entryPointName == o.entryPointName;
+	}
+
+	size_t hash() const
+	{
+		return signature.hash() ^ std::hash<agpu_shader_type>() (stageType) ^ std::hash<std::string>()(entryPointName);
+	}
+
+	agpu::shader_signature_weakref signature;
+	agpu_shader_type stageType;
+	std::string entryPointName;
 };
 
-struct ShaderConstantBufferDesc
-{
-    D3D_CBUFFER_TYPE type;
-    size_t size;
-    UINT flags;
-    int bindingPoint;
-    std::vector<ShaderVariableDesc> variables;
-};
+}
 
+namespace std
+{
+template<>
+struct hash<AgpuD3D12::ShaderStageInstanceName>
+{
+	size_t operator()(const AgpuD3D12::ShaderStageInstanceName& name) const
+	{
+		return name.hash();
+	}
+};
+} // End of namespace std
+
+namespace AgpuD3D12
+{
 class ADXShader: public agpu::shader
 {
 public:
@@ -36,7 +63,9 @@ public:
     virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
 
 public:
-    agpu_error getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref &shaderSignature, agpu_shader_type type, agpu_cstring entry_point, D3D12_SHADER_BYTECODE *out);
+    agpu_error getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref &shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog, D3D12_SHADER_BYTECODE *out);
+	agpu_error getConvertedSpirVBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out);
+	agpu_error convertSpirVIntoBytecode(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog);
 
     agpu_shader_type type;
     agpu_shader_language shaderLanguage;
@@ -47,8 +76,7 @@ public:
     std::string compilationLog;
 
 private:
-    agpu_error compileHlslShader(agpu_cstring options);
-    const char *getHlslTarget();
+	std::unordered_map<ShaderStageInstanceName, std::vector<char>> shaderStageInstances;
 };
 
 } // End of namespace AgpuD3D12

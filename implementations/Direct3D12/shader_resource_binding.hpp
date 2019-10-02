@@ -13,7 +13,7 @@ public:
     ADXShaderResourceBinding(const agpu::device_ref &cdevice, const agpu::shader_signature_ref &signature);
     ~ADXShaderResourceBinding();
 
-    static agpu::shader_resource_binding_ref create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex);
+    static agpu::shader_resource_binding_ref create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint bankIndex, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 
     virtual agpu_error bindUniformBuffer(agpu_int location, const agpu::buffer_ref & uniform_buffer) override;
 	virtual agpu_error bindUniformBufferRange(agpu_int location, const agpu::buffer_ref & uniform_buffer, agpu_size offset, agpu_size size) override;
@@ -26,7 +26,10 @@ public:
 public:
     agpu::device_ref device;
     agpu::shader_signature_ref signature;
-    agpu_uint elementIndex;
+    agpu_uint bankIndex;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorTableHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorTableHandle;
 };
 
 } // End of namespace AgpuD3D12

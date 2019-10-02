@@ -15,7 +15,8 @@ public:
     static agpu::texture_view_ref create(const agpu::device_ref &device, const agpu::texture_ref &texture, const agpu_texture_view_description &description);
 
     virtual agpu::texture_ptr getTexture() override;
-    agpu_error getColorAttachmentViewDescription(D3D12_RENDER_TARGET_VIEW_DESC *out);
+	agpu_error getSampledTextureViewDescription(D3D12_SHADER_RESOURCE_VIEW_DESC* out);
+	agpu_error getColorAttachmentViewDescription(D3D12_RENDER_TARGET_VIEW_DESC *out);
     agpu_error getDepthStencilViewDescription(D3D12_DEPTH_STENCIL_VIEW_DESC *out);
 
     agpu::device_ref device;

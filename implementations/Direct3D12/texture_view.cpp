@@ -22,6 +22,89 @@ agpu::texture_ptr ADXTextureView::getTexture()
     return texture.lock().disown();
 }
 
+agpu_error ADXTextureView::getSampledTextureViewDescription(D3D12_SHADER_RESOURCE_VIEW_DESC* out)
+{
+	memset(out, 0, sizeof(D3D12_SHADER_RESOURCE_VIEW_DESC));
+	out->Format = (DXGI_FORMAT)description.format;
+	out->Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	bool isArray = description.subresource_range.layer_count > 1 || description.subresource_range.base_arraylayer > 0;
+
+	auto lodClamp = float(description.subresource_range.base_miplevel);
+
+	switch (description.type)
+	{
+	case AGPU_TEXTURE_BUFFER:
+		return AGPU_UNIMPLEMENTED;
+		break;
+	case AGPU_TEXTURE_1D:
+		if (isArray)
+		{
+			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+			out->Texture1DArray.MostDetailedMip = description.subresource_range.base_miplevel;
+			out->Texture1DArray.MipLevels = description.subresource_range.level_count;
+			out->Texture1DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+			out->Texture1DArray.ArraySize = description.subresource_range.layer_count;
+			out->Texture1DArray.ResourceMinLODClamp = lodClamp;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+			out->Texture1D.MostDetailedMip = description.subresource_range.base_miplevel;
+			out->Texture1D.MipLevels = description.subresource_range.level_count;
+			out->Texture1D.ResourceMinLODClamp = lodClamp;
+		}
+		break;
+	case AGPU_TEXTURE_2D:
+		if (isArray)
+		{
+			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+			out->Texture2DArray.MostDetailedMip = description.subresource_range.base_miplevel;
+			out->Texture2DArray.MipLevels = description.subresource_range.level_count;
+			out->Texture2DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+			out->Texture2DArray.ArraySize = description.subresource_range.layer_count;
+			out->Texture2DArray.ResourceMinLODClamp = lodClamp;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			out->Texture2D.MostDetailedMip = description.subresource_range.base_miplevel;
+			out->Texture2D.MipLevels = description.subresource_range.level_count;
+			out->Texture2D.ResourceMinLODClamp = lodClamp;
+		}
+		break;
+	case AGPU_TEXTURE_CUBE:
+		isArray = description.subresource_range.layer_count > 6 || description.subresource_range.base_arraylayer > 0;
+		if (isArray)
+		{
+			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+			out->TextureCubeArray.MostDetailedMip = description.subresource_range.base_miplevel;
+			out->TextureCubeArray.MipLevels = description.subresource_range.level_count;
+			out->TextureCubeArray.First2DArrayFace = description.subresource_range.base_arraylayer;
+			out->TextureCubeArray.NumCubes = description.subresource_range.layer_count;
+			out->TextureCubeArray.ResourceMinLODClamp = lodClamp;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+			out->TextureCube.MostDetailedMip = description.subresource_range.base_miplevel;
+			out->TextureCube.MipLevels = description.subresource_range.level_count;
+			out->TextureCube.ResourceMinLODClamp = lodClamp;
+		}
+		break;
+	case AGPU_TEXTURE_3D:
+		out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		out->Texture3D.MostDetailedMip = description.subresource_range.base_miplevel;
+		out->Texture3D.MipLevels = description.subresource_range.level_count;
+		out->Texture3D.ResourceMinLODClamp = lodClamp;
+		break;
+	default:
+		abort();
+	}
+
+	return AGPU_OK;
+}
+
 agpu_error ADXTextureView::getColorAttachmentViewDescription(D3D12_RENDER_TARGET_VIEW_DESC *out)
 {
     memset(out, 0, sizeof(D3D12_RENDER_TARGET_VIEW_DESC));

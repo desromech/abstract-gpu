@@ -591,7 +591,11 @@ agpu::state_tracker_ref DirectStateTracker::create(const agpu::state_tracker_cac
 bool DirectStateTracker::createCommandList()
 {
     commandList = agpu::command_list_ref(device->createCommandList(commandListType, commandAllocator, agpu::pipeline_state_ref()));
-    return (bool)commandList;
+	if (!commandList)
+		return false;
+
+	commandList->close();
+    return true;
 }
 
 agpu_error DirectStateTracker::setupCommandListForRecordingCommands()

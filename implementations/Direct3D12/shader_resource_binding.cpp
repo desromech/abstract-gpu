@@ -2,12 +2,14 @@
 #include "shader_signature.hpp"
 #include "buffer.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
+#include "sampler.hpp"
 
 namespace AgpuD3D12
 {
 
 ADXShaderResourceBinding::ADXShaderResourceBinding(const agpu::device_ref &cdevice, const agpu::shader_signature_ref &csignature)
-    : device(cdevice), signature(csignature)
+    : device(cdevice), signature(csignature), bankIndex(0), cpuDescriptorTableHandle(), gpuDescriptorTableHandle()
 {
 }
 
@@ -15,37 +17,102 @@ ADXShaderResourceBinding::~ADXShaderResourceBinding()
 {
 }
 
-agpu::shader_resource_binding_ref ADXShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex)
+agpu::shader_resource_binding_ref ADXShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint bankIndex, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
     auto resourceBinding = agpu::makeObject<ADXShaderResourceBinding> (device, signature);
     auto adxResourceBinding = resourceBinding.as<ADXShaderResourceBinding> ();
-    adxResourceBinding->elementIndex = elementIndex;
+    adxResourceBinding->bankIndex = bankIndex;
+	adxResourceBinding->cpuDescriptorTableHandle = cpuHandle;
+	adxResourceBinding->gpuDescriptorTableHandle = gpuHandle;
     return resourceBinding;
 }
 
-agpu_error ADXShaderResourceBinding::bindUniformBuffer(agpu_int location, const agpu::buffer_ref & uniform_buffer)
+agpu_error ADXShaderResourceBinding::bindUniformBuffer(agpu_int location, const agpu::buffer_ref &uniform_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+	CHECK_POINTER(uniform_buffer);
+
+	auto adxBuffer = uniform_buffer.as<ADXBuffer> ();
+    return bindUniformBufferRange(location, uniform_buffer, 0, adxBuffer->description.size);
 }
 
 agpu_error ADXShaderResourceBinding::bindUniformBufferRange(agpu_int location, const agpu::buffer_ref & uniform_buffer, agpu_size offset, agpu_size size)
 {
-    return AGPU_UNIMPLEMENTED;
+	CHECK_POINTER(uniform_buffer);
+	if (location < 0)
+		return AGPU_OK;
+
+	auto& bank = signature.as<ADXShaderSignature>()->banks[bankIndex];
+	if (size_t(location) >= bank.elements.size())
+		return AGPU_OUT_OF_BOUNDS;
+
+	auto& element = bank.elements[location];
+	auto descriptorCpuHandle = cpuDescriptorTableHandle;
+	descriptorCpuHandle.ptr += element.firstDescriptorOffset;
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC viewDesc = {};
+	auto error = uniform_buffer.as<ADXBuffer>()->createConstantBufferViewDescription(&viewDesc, offset, size);
+	if (error) return error;
+
+	deviceForDX->d3dDevice->CreateConstantBufferView(&viewDesc, descriptorCpuHandle);
+
+	return AGPU_OK;
 }
 
 agpu_error ADXShaderResourceBinding::bindStorageBuffer(agpu_int location, const agpu::buffer_ref & storage_buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+	CHECK_POINTER(storage_buffer);
+
+	auto adxBuffer = storage_buffer.as<ADXBuffer>();
+	return bindStorageBufferRange(location, storage_buffer, 0, adxBuffer->description.size);
 }
 
 agpu_error ADXShaderResourceBinding::bindStorageBufferRange(agpu_int location, const agpu::buffer_ref & storage_buffer, agpu_size offset, agpu_size size)
 {
-    return AGPU_UNIMPLEMENTED;
+	CHECK_POINTER(storage_buffer);
+	if (location < 0)
+		return AGPU_OK;
+
+	auto& bank = signature.as<ADXShaderSignature>()->banks[bankIndex];
+	if (size_t(location) >= bank.elements.size())
+		return AGPU_OUT_OF_BOUNDS;
+
+	auto& element = bank.elements[location];
+	auto descriptorCpuHandle = cpuDescriptorTableHandle;
+	descriptorCpuHandle.ptr += element.firstDescriptorOffset;
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC viewDesc = {};
+	auto adxBuffer = storage_buffer.as<ADXBuffer> ();
+	auto error = adxBuffer->createUAVDescription(&viewDesc, offset, size);
+	if (error) return error;
+
+	deviceForDX->d3dDevice->CreateUnorderedAccessView(adxBuffer->getActualGpuBuffer(), nullptr, &viewDesc, descriptorCpuHandle);
+
+	return AGPU_OK;
 }
 
 agpu_error ADXShaderResourceBinding::bindSampledTextureView(agpu_int location, const agpu::texture_view_ref & view)
 {
-    return AGPU_UNIMPLEMENTED;
+	CHECK_POINTER(view);
+	if (location < 0)
+		return AGPU_OK;
+
+	auto& bank = signature.as<ADXShaderSignature>()->banks[bankIndex];
+	if (size_t(location) >= bank.elements.size())
+		return AGPU_OUT_OF_BOUNDS;
+
+	auto& element = bank.elements[location];
+	auto descriptorCpuHandle = cpuDescriptorTableHandle;
+	descriptorCpuHandle.ptr += element.firstDescriptorOffset;
+
+	auto adxTextureView = view.as<ADXTextureView>();
+	
+	D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc;
+	auto error = adxTextureView->getSampledTextureViewDescription(&viewDesc);
+	if (error) return error;
+	
+	deviceForDX->d3dDevice->CreateShaderResourceView(adxTextureView->texture.lock().as<ADXTexture> ()->gpuResource.Get(), &viewDesc, descriptorCpuHandle);
+
+	return AGPU_OK;
 }
 
 agpu_error ADXShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref & view)
@@ -55,214 +122,27 @@ agpu_error ADXShaderResourceBinding::bindStorageImageView(agpu_int location, con
 
 agpu_error ADXShaderResourceBinding::bindSampler(agpu_int location, const agpu::sampler_ref & sampler)
 {
-    return AGPU_UNIMPLEMENTED;
-}
+	CHECK_POINTER(sampler);
+	if (location < 0)
+		return AGPU_OK;
 
-/*_agpu_shader_resource_binding::_agpu_shader_resource_binding()
-{
-}
+	auto& bank = signature.as<ADXShaderSignature>()->banks[bankIndex];
+	if (size_t(location) >= bank.elements.size())
+		return AGPU_OUT_OF_BOUNDS;
 
-void _agpu_shader_resource_binding::lostReferences()
-{
-    if (signature)
-        signature->release();
+	auto& element = bank.elements[location];
+	auto descriptorCpuHandle = cpuDescriptorTableHandle;
+	descriptorCpuHandle.ptr += element.firstDescriptorOffset;
 
-    for (auto &buffer : buffers)
-    {
-        if (buffer)
-            buffer->release();
-    }
+	D3D12_SAMPLER_DESC samplerDesc;
+	auto error = sampler.as<ADXSampler>()->getSamplerDesc(&samplerDesc);
+	if (error) return error;
 
-    for (auto &texture : textures)
-    {
-        if (texture)
-            texture->release();
-    }
-}
-
-agpu_shader_resource_binding *_agpu_shader_resource_binding::create(agpu_shader_signature *signature, agpu_uint element, UINT descriptorOffset)
-{
-    std::unique_ptr<agpu_shader_resource_binding> binding(new agpu_shader_resource_binding());
-    binding->device = signature->device;
-    binding->signature = signature;
-    signature->retain();
-    binding->element= element;
-    binding->descriptorOffset = descriptorOffset;
-
-    auto &elementDesc = signature->elementsDescription[element];
-    binding->isBank = elementDesc.bank;
-    binding->type = elementDesc.type;
-
-    if (binding->type == AGPU_SHADER_BINDING_TYPE_SAMPLER)
-    {
-        binding->samplerCount = elementDesc.bindingPointCount;
-    }
-    else
-    {
-        binding->buffers.resize(elementDesc.bindingPointCount);
-        binding->textures.resize(elementDesc.bindingPointCount);
-    }
-
-    return binding.release();
-}
-
-agpu_error _agpu_shader_resource_binding::bindUniformBuffer(agpu_int location, agpu_buffer* uniform_buffer)
-{
-    CHECK_POINTER(uniform_buffer);
-    return bindUniformBufferRange(location, uniform_buffer, 0, uniform_buffer->view.constantBuffer.SizeInBytes);
-}
-
-agpu_error _agpu_shader_resource_binding::bindUniformBufferRange(agpu_int location, agpu_buffer* uniform_buffer, agpu_size offset, agpu_size size)
-{
-    std::unique_lock<std::mutex> (bindMutex);
-    if (type != AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER)
-        return AGPU_INVALID_OPERATION;
-
-    if (uniform_buffer->description.binding != AGPU_UNIFORM_BUFFER)
-        return AGPU_ERROR;
-
-    if (location < 0)
-        return AGPU_OK;
-    if (location >= (int)buffers.size())
-        return AGPU_OUT_OF_BOUNDS;
-
-    // Store the uniform buffer
-    uniform_buffer->retain();
-    if (buffers[location])
-        buffers[location]->release();
-    buffers[location] = uniform_buffer;
-
-    // Compute the actual view.
-    auto view = uniform_buffer->view.constantBuffer;
-    view.BufferLocation += offset,
-    view.SizeInBytes = (size + 255) & (~255);
-
-    // Set the descriptor location
-    auto desc = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
-    desc.ptr += descriptorOffset + location*signature->shaderResourceViewDescriptorSize;
-    deviceForDX->d3dDevice->CreateConstantBufferView(&view, desc);
+	deviceForDX->d3dDevice->CreateSampler(&samplerDesc, descriptorCpuHandle);
 
     return AGPU_OK;
 }
-
-agpu_error _agpu_shader_resource_binding::bindTexture(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_float lodClamp)
-{
-    return bindTextureArrayRange(location, texture, startMiplevel, miplevels, -1, -1, lodClamp);
-}
-
-agpu_error _agpu_shader_resource_binding::bindTextureArrayRange(agpu_int location, agpu_texture* texture, agpu_uint startMiplevel, agpu_int miplevels, agpu_int firstElement, agpu_int numberOfElements, agpu_float lodClamp)
-{
-    CHECK_POINTER(texture);
-
-    std::unique_lock<std::mutex> (bindMutex);
-    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
-        return AGPU_INVALID_OPERATION;
-
-    if (location < 0)
-        return AGPU_OK;
-    if (location >= (int)textures.size())
-        return AGPU_OUT_OF_BOUNDS;
-
-    if (texture->description.type == AGPU_TEXTURE_UNKNOWN)
-        return AGPU_UNSUPPORTED;
-
-    // Store the texture.
-    texture->retain();
-    if (textures[location])
-        textures[location]->release();
-    textures[location] = texture;
-
-    // Create the shader resource view
-    D3D12_SHADER_RESOURCE_VIEW_DESC view;
-    view.Format = texture->resourceDescription.Format;
-    view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    bool isArray = texture->isArray();
-    UINT actualFirstElement = firstElement < 0 ? 0 : numberOfElements;
-    UINT arraySize = numberOfElements < 0 ? texture->description.depthOrArraySize - actualFirstElement : numberOfElements;
-    if(lodClamp < 0)
-        lodClamp = 100000.0f;
-
-    memset(&view, 0, sizeof(view));
-    view.Format = texture->resourceDescription.Format;
-    view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    switch (texture->description.type)
-    {
-    case AGPU_TEXTURE_BUFFER:
-        return AGPU_UNIMPLEMENTED;
-        break;
-    case AGPU_TEXTURE_1D:
-        if (isArray)
-        {
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
-            view.Texture1DArray.MostDetailedMip = startMiplevel;
-            view.Texture1DArray.MipLevels = miplevels;
-            view.Texture1DArray.FirstArraySlice = actualFirstElement;
-            view.Texture1DArray.ArraySize = arraySize;
-            view.Texture1DArray.ResourceMinLODClamp = lodClamp;
-        }
-        else
-        {
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
-            view.Texture1D.MostDetailedMip = startMiplevel;
-            view.Texture1D.MipLevels = miplevels;
-            view.Texture1D.ResourceMinLODClamp = lodClamp;
-        }
-        break;
-    case AGPU_TEXTURE_2D:
-        if (isArray)
-        {
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-            view.Texture2DArray.MostDetailedMip = startMiplevel;
-            view.Texture2DArray.MipLevels = miplevels;
-            view.Texture2DArray.FirstArraySlice = actualFirstElement;
-            view.Texture2DArray.ArraySize = arraySize;
-            view.Texture2DArray.ResourceMinLODClamp = lodClamp;
-        }
-        else
-        {
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            view.Texture2D.MostDetailedMip = startMiplevel;
-            view.Texture2D.MipLevels = miplevels;
-            view.Texture2D.ResourceMinLODClamp = lodClamp;
-        }
-        break;
-    case AGPU_TEXTURE_CUBE:
-        if (isArray)
-        {
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
-            view.TextureCubeArray.MostDetailedMip = startMiplevel;
-            view.TextureCubeArray.MipLevels = miplevels;
-            view.TextureCubeArray.First2DArrayFace = actualFirstElement;
-            view.TextureCubeArray.NumCubes= arraySize;
-            view.TextureCubeArray.ResourceMinLODClamp = lodClamp;
-        }
-        else
-        {
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-            view.TextureCube.MostDetailedMip = startMiplevel;
-            view.TextureCube.MipLevels = miplevels;
-            view.TextureCube.ResourceMinLODClamp = lodClamp;
-        }
-        break;
-    case AGPU_TEXTURE_3D:
-        view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-        view.Texture3D.MostDetailedMip = startMiplevel;
-        view.Texture3D.MipLevels = miplevels;
-        view.Texture3D.ResourceMinLODClamp = lodClamp;
-        break;
-    default:
-        abort();
-    }
-
-    // Set the descriptor.
-    auto cpuHandle = signature->shaderResourceViewHeap->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += descriptorOffset + location*signature->shaderResourceViewDescriptorSize;
-    deviceForDX->d3dDevice->CreateShaderResourceView(texture->gpuResource.Get(), &view, cpuHandle);
-
-    return AGPU_OK;
-}
-
+/*
 agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
 {
     CHECK_POINTER(description);

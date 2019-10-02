@@ -126,7 +126,7 @@ ADXPipelineBuilder::ADXPipelineBuilder(const agpu::device_ref &cdevice)
     // Set default rasterizer state
     description.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     description.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    description.RasterizerState.FrontCounterClockwise = FALSE;
+    description.RasterizerState.FrontCounterClockwise = TRUE;
     description.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
     description.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
     description.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
@@ -171,6 +171,7 @@ ADXPipelineBuilder::~ADXPipelineBuilder()
 agpu_error ADXPipelineBuilder::setShaderSignature(const agpu::shader_signature_ref &signature)
 {
     CHECK_POINTER(signature);
+	this->shaderSignature = signature;
     rootSignature = signature.as<ADXShaderSignature> ()->rootSignature;
     description.pRootSignature = rootSignature.Get();
     return AGPU_OK;
@@ -200,7 +201,6 @@ agpu::pipeline_state_ptr ADXPipelineBuilder::build()
     adxPipeline->primitiveTopology = primitiveTopology;
     return pipeline.disown();
 }
-
 
 agpu_error ADXPipelineBuilder::attachShader(const agpu::shader_ref &shader)
 {
@@ -239,7 +239,7 @@ agpu_error ADXPipelineBuilder::attachShaderWithEntryPoint(const agpu::shader_ref
         return AGPU_INVALID_PARAMETER;
     }
 
-    return adxShader->getShaderBytecodeForEntryPoint(shaderSignature, type, entry_point, dest);
+    return adxShader->getShaderBytecodeForEntryPoint(shaderSignature, type, entry_point, buildingLog, dest);
 }
 
 agpu_size ADXPipelineBuilder::getBuildingLogLength()

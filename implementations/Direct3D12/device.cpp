@@ -16,6 +16,7 @@
 #include "texture.hpp"
 #include "fence.hpp"
 #include "platform.hpp"
+#include "sampler.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
 
@@ -37,8 +38,10 @@ void printError(const char *format, ...)
 }
 
 ADXDevice::ADXDevice()
+	: renderTargetViewDescriptorSize(0),
+	isOpened(false),
+	isDebugEnabled(false)
 {
-    isOpened = false;
 }
 
 ADXDevice::~ADXDevice()
@@ -246,8 +249,7 @@ agpu::texture_ptr ADXDevice::createTexture(agpu_texture_description* description
 
 agpu::sampler_ptr ADXDevice::createSampler(agpu_sampler_description* description)
 {
-    // TODO: Implement this.
-    return nullptr;
+    return ADXSampler::create(refFromThis<agpu::device> (), description).disown();
 }
 
 agpu::fence_ptr ADXDevice::createFence()
