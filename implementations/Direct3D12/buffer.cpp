@@ -68,6 +68,11 @@ agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_d
 		desc.Width = (desc.Width + 255) & (-256);
 	}
 
+	if ((description->binding & AGPU_STORAGE_BUFFER) != 0)
+	{
+		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
+
 	D3D12_RANGE nullRange = {};
 
     // Create the upload buffer.
@@ -198,11 +203,11 @@ agpu_error ADXBuffer::createUAVDescription(D3D12_UNORDERED_ACCESS_VIEW_DESC *out
         return AGPU_OUT_OF_BOUNDS;
 
     memset(outView, 0, sizeof(D3D12_UNORDERED_ACCESS_VIEW_DESC));
-    outView->Format = DXGI_FORMAT_R32_TYPELESS;
+	outView->Format = DXGI_FORMAT_UNKNOWN;//DXGI_FORMAT_R32_TYPELESS;
     outView->ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
     outView->Buffer.FirstElement = offset;
     outView->Buffer.NumElements = size;
-    outView->Buffer.StructureByteStride = 1;
+    outView->Buffer.StructureByteStride = 0;
     outView->Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
     return AGPU_OK;
 }

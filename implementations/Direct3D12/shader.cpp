@@ -153,23 +153,23 @@ agpu_error ADXShader::getCompilationLog(agpu_size buffer_size, agpu_string_buffe
 	return AGPU_OK;
 }
 
-agpu_error ADXShader::getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out)
+agpu_error ADXShader::getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, const std::string& entryPoint, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out)
 {
 	if (shaderLanguage == AGPU_SHADER_LANGUAGE_SPIR_V)
-		return getConvertedSpirVBytecodeForEntryPoint(shaderSignature, type, entry_point, outCompilationLog, out);
+		return getConvertedSpirVBytecodeForEntryPoint(shaderSignature, type, entryPoint, outCompilationLog, out);
 
 	out->pShaderBytecode = &objectCode[0];
 	out->BytecodeLength = objectCode.size();
 	return AGPU_OK;
 }
 
-agpu_error ADXShader::getConvertedSpirVBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out)
+agpu_error ADXShader::getConvertedSpirVBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, const std::string& entryPoint, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out)
 {
-	auto instanceName = ShaderStageInstanceName(shaderSignature, type, entry_point);
+	auto instanceName = ShaderStageInstanceName(shaderSignature, type, entryPoint);
 	auto it = shaderStageInstances.find(instanceName);
 	if (it == shaderStageInstances.end())
 	{
-		auto error = convertSpirVIntoBytecode(shaderSignature, type, entry_point, outCompilationLog);
+		auto error = convertSpirVIntoBytecode(shaderSignature, type, entryPoint, outCompilationLog);
 		if (error) return error;
 		it = shaderStageInstances.find(instanceName);
 	}
@@ -212,7 +212,7 @@ static agpu_error mapShaderResources(spirv_cross::CompilerHLSL& compiler,
 	return AGPU_OK;
 }
 
-agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type stageType, agpu_cstring entryPoint, std::string& errorMessage)
+agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type stageType, const std::string& entryPoint, std::string& errorMessage)
 {
 	uint32_t* rawData = reinterpret_cast<uint32_t*> (&sourceCode[0]);
 	size_t rawDataSize = sourceCode.size() / 4;
@@ -280,7 +280,7 @@ agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref&
 	try
 	{
 		compiled = hlsl.compile();
-		//printf("Compiled spirv -> hlsl:\n%s\n", compiled.c_str());
+		printf("Compiled spirv -> hlsl:\n%s\n", compiled.c_str());
 	}
 	catch (spirv_cross::CompilerError& compileError)
 	{

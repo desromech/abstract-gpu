@@ -63,9 +63,9 @@ public:
     virtual agpu_error getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer) override;
 
 public:
-    agpu_error getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref &shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog, D3D12_SHADER_BYTECODE *out);
-	agpu_error getConvertedSpirVBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out);
-	agpu_error convertSpirVIntoBytecode(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, agpu_cstring entry_point, std::string& outCompilationLog);
+    agpu_error getShaderBytecodeForEntryPoint(const agpu::shader_signature_ref &shaderSignature, agpu_shader_type type, const std::string & entryPoint, std::string& outCompilationLog, D3D12_SHADER_BYTECODE *out);
+	agpu_error getConvertedSpirVBytecodeForEntryPoint(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, const std::string& entryPoint, std::string& outCompilationLog, D3D12_SHADER_BYTECODE* out);
+	agpu_error convertSpirVIntoBytecode(const agpu::shader_signature_ref& shaderSignature, agpu_shader_type type, const std::string& entryPoint, std::string& outCompilationLog);
 
     agpu_shader_type type;
     agpu_shader_language shaderLanguage;

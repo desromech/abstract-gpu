@@ -8,6 +8,9 @@ set(AGPU_Direct3D12_SOURCES
     command_queue.cpp
     command_queue.hpp
     common.hpp
+	common_commands.hpp
+	compute_pipeline_builder.cpp
+	compute_pipeline_builder.hpp
     D3D12MemAlloc.cpp
     D3D12MemAlloc.h
     device.cpp

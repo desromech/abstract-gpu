@@ -194,8 +194,8 @@ agpu::pipeline_state_ptr ADXPipelineBuilder::build()
     }
 
     // Create the wrapper
-    auto pipeline = agpu::makeObject<ADXPipelineState> ();
-    auto adxPipeline = pipeline.as<ADXPipelineState> ();
+    auto pipeline = agpu::makeObject<ADXGraphicsPipelineState> ();
+    auto adxPipeline = pipeline.as<ADXGraphicsPipelineState> ();
     adxPipeline->device = device;
     adxPipeline->state = pipelineState;
     adxPipeline->primitiveTopology = primitiveTopology;

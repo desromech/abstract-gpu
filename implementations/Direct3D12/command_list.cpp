@@ -13,24 +13,6 @@
 namespace AgpuD3D12
 {
 
-inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topology)
-{
-    switch (topology)
-    {
-    case AGPU_POINTS: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-    case AGPU_LINES: return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-    case AGPU_LINES_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
-    case AGPU_LINE_STRIP: return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-    case AGPU_LINE_STRIP_ADJACENCY:return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
-    case AGPU_TRIANGLES: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    case AGPU_TRIANGLES_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
-    case AGPU_TRIANGLE_STRIP: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-    case AGPU_TRIANGLE_STRIP_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
-    default:
-        abort();
-    }
-}
-
 ADXCommandList::ADXCommandList(const agpu::device_ref &cdevice)
     : device(cdevice)
 {
@@ -50,13 +32,10 @@ agpu::command_list_ref ADXCommandList::create(const agpu::device_ref &device, ag
     }
 
     if (FAILED(deviceForDX->d3dDevice->CreateCommandList(0, mapCommandListType(type), allocator.as<ADXCommandAllocator> ()->allocator.Get(), state, IID_PPV_ARGS(&commandList))))
-        return agpu::command_list_ref();;
+        return agpu::command_list_ref();
 
     if (initialState)
-    {
-        auto adxInitialState = initialState.as<ADXPipelineState> ();
-        commandList->IASetPrimitiveTopology(mapPrimitiveTopology(adxInitialState->primitiveTopology));
-    }
+		initialState.as<ADXPipelineState> ()->activatedOnCommandList(commandList);
 
     auto result = agpu::makeObject<ADXCommandList> (device);
     auto adxList = result.as<ADXCommandList> ();
@@ -128,7 +107,7 @@ agpu_error ADXCommandList::usePipelineState(const agpu::pipeline_state_ref &pipe
     CHECK_POINTER(pipeline);
     auto adxPipeline = pipeline.as<ADXPipelineState> ();
     commandList->SetPipelineState(adxPipeline->state.Get());
-    commandList->IASetPrimitiveTopology(mapPrimitiveTopology(adxPipeline->primitiveTopology));
+	adxPipeline->activatedOnCommandList(commandList);
 
     return AGPU_OK;
 }
@@ -253,7 +232,7 @@ agpu_error ADXCommandList::reset(const agpu::command_allocator_ref &allocator, c
     ERROR_IF_FAILED(commandList->Reset(allocator.as<ADXCommandAllocator> ()->allocator.Get(), state));
 
     if (initial_pipeline_state)
-        commandList->IASetPrimitiveTopology(mapPrimitiveTopology(initial_pipeline_state.as<ADXPipelineState> ()->primitiveTopology));
+		initial_pipeline_state.as<ADXPipelineState> ()->activatedOnCommandList(commandList);
 
     return setCommonState();
 }

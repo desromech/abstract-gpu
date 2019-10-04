@@ -4,6 +4,7 @@
 #include "command_list.hpp"
 #include "pipeline_state.hpp"
 #include "pipeline_builder.hpp"
+#include "compute_pipeline_builder.hpp"
 #include "shader.hpp"
 #include "shader_signature_builder.hpp"
 #include "shader_resource_binding.hpp"
@@ -203,8 +204,7 @@ agpu::pipeline_builder_ptr ADXDevice::createPipelineBuilder()
 
 agpu::compute_pipeline_builder_ptr ADXDevice::createComputePipelineBuilder()
 {
-    // TODO: Implement this.
-    return nullptr;
+	return ADXComputePipelineBuilder::create(refFromThis<agpu::device>()).disown();
 }
 
 agpu::command_allocator_ptr ADXDevice::createCommandAllocator(agpu_command_list_type type, const agpu::command_queue_ref & queue)

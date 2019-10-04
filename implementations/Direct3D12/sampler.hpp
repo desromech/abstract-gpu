@@ -15,7 +15,7 @@ public:
 
 	agpu_error getSamplerDesc(D3D12_SAMPLER_DESC* out);
 
-    agpu_sampler_description description;
+	D3D12_SAMPLER_DESC d3dDescription;
 };
 } // End of namespace AgpuD3D12
 
