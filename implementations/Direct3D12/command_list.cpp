@@ -389,4 +389,55 @@ agpu_error ADXCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage,
     return AGPU_UNIMPLEMENTED;
 }
 
+agpu_error ADXCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
+{
+    // TODO: Implement this.
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+{
+    return memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
+agpu_error ADXCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+{
+    return memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
+agpu_error ADXCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error ADXCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 } // End of namespace AgpuD3D12

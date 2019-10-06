@@ -214,3 +214,66 @@ AGPUCommandList >> memoryBarrier: source_stage dest_stage: dest_stage source_acc
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUCommandList >> bufferMemoryBarrier: buffer source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses offset: offset size: size [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance bufferMemoryBarrier_command_list: (self validHandle) buffer: (self validHandleOf: buffer) source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses offset: offset size: size.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> textureMemoryBarrier: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance textureMemoryBarrier_command_list: (self validHandle) texture: (self validHandleOf: texture) source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> pushBufferTransitionBarrier: buffer new_usage: new_usage [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance pushBufferTransitionBarrier_command_list: (self validHandle) buffer: (self validHandleOf: buffer) new_usage: new_usage.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> pushTextureTransitionBarrier: texture new_usage: new_usage subresource_range: subresource_range [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance pushTextureTransitionBarrier_command_list: (self validHandle) texture: (self validHandleOf: texture) new_usage: new_usage subresource_range: subresource_range.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> popBufferTransitionBarrier: buffer [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance popBufferTransitionBarrier_command_list: (self validHandle) buffer: (self validHandleOf: buffer).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> popTextureTransitionBarrier: texture subresource_range: subresource_range [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance popTextureTransitionBarrier_command_list: (self validHandle) texture: (self validHandleOf: texture) subresource_range: subresource_range.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> copyBuffer: source_buffer source_offset: source_offset dest_buffer: dest_buffer dest_offset: dest_offset copy_size: copy_size [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance copyBuffer_command_list: (self validHandle) source_buffer: (self validHandleOf: source_buffer) source_offset: source_offset dest_buffer: (self validHandleOf: dest_buffer) dest_offset: dest_offset copy_size: copy_size.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> copyBufferToTexture: buffer texture: texture copy_region: copy_region [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance copyBufferToTexture_command_list: (self validHandle) buffer: (self validHandleOf: buffer) texture: (self validHandleOf: texture) copy_region: copy_region.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> copyTextureToBuffer: texture buffer: buffer copy_region: copy_region [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance copyTextureToBuffer_command_list: (self validHandle) texture: (self validHandleOf: texture) buffer: (self validHandleOf: buffer) copy_region: copy_region.
+	self checkErrorCode: resultValue_
+]
+

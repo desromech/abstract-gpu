@@ -21,7 +21,10 @@ public:
     agpu_buffer_ref createImmutableIndexBuffer(size_t capacity, size_t indexSize, void *initialData);
     agpu_buffer_ref createImmutableDrawBuffer(size_t capacity, void *initialData);
     agpu_buffer_ref createUploadableUniformBuffer(size_t capacity, void *initialData);
-	agpu_buffer_ref createMappableStorage(size_t capacity, void *initialData);
+    agpu_buffer_ref createMappableUploadBuffer(size_t capacity, void *initialData);
+    agpu_buffer_ref createMappableReadbackBuffer(size_t capacity, void *initialData);
+    agpu_buffer_ref createStorageBuffer(size_t capacity, size_t stride, void *initialData);
+
 
     agpu_pipeline_state_ref buildPipeline(const agpu_pipeline_builder_ref &builder);
     agpu_pipeline_state_ref buildComputePipeline(const agpu_compute_pipeline_builder_ref &builder);

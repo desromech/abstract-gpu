@@ -12,7 +12,7 @@
 
 namespace AgpuMetal
 {
-    
+
 inline MTLIndexType mapIndexType(agpu_size stride)
 {
     switch(stride)
@@ -71,7 +71,7 @@ agpu_error AMtlCommandList::setShaderSignature(const agpu::shader_signature_ref 
         activeShaderResourceBindings[i].reset();
     for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
         activeComputeShaderResourceBindings[i].reset();
-        
+
     if(oldPipeline)
         usePipelineState(oldPipeline);
 
@@ -116,7 +116,7 @@ agpu_error AMtlCommandList::usePipelineState(const agpu::pipeline_state_ref &pip
         if(renderEncoder)
             amtlPipeline->applyRenderCommands(renderEncoder);
         if(computeEncoder)
-            amtlPipeline->applyComputeCommands(computeEncoder);        
+            amtlPipeline->applyComputeCommands(computeEncoder);
     }
 
     return AGPU_OK;
@@ -147,7 +147,7 @@ agpu_error AMtlCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffe
     currentIndexBuffer = index_buffer;
     currentIndexBufferOffset = offset;
     currentIndexBufferStride = index_size;
-    return AGPU_OK;    
+    return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer)
@@ -222,7 +222,7 @@ void AMtlCommandList::activateShaderResourceBindings()
         auto activeBinding = activeShaderResourceBindings[i];
         if(!activeBinding)
             continue;
-            
+
         activeBinding.as<AMtlShaderResourceBinding> ()->activateOn(0, renderEncoder);
     }
 }
@@ -257,7 +257,7 @@ void AMtlCommandList::activateComputeShaderResourceBindings()
         auto activeBinding = activeComputeShaderResourceBindings[i];
         if(!activeBinding)
             continue;
-            
+
         activeBinding.as<AMtlShaderResourceBinding> ()->activateComputeOn(computeEncoder);
     }
 }
@@ -424,7 +424,7 @@ agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpa
     auto descriptor = renderpass.as<AMtlRenderPass> ()->createDescriptor(framebuffer);
     renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
     [descriptor release];
-    
+
     currentPipeline.reset();
     return AGPU_OK;
 }
@@ -443,10 +443,10 @@ agpu_error AMtlCommandList::resolveFramebuffer(const agpu::framebuffer_ref &dest
 {
     CHECK_POINTER(destFramebuffer);
     CHECK_POINTER(sourceFramebuffer);
-    
+
     auto amtlSourceFramebuffer = sourceFramebuffer.as<AMtlFramebuffer> ();
     auto amtlDestFramebuffer = destFramebuffer.as<AMtlFramebuffer> ();
-    
+
     auto sourceTexture = amtlSourceFramebuffer->getColorTexture(0);
     auto destTexture = amtlDestFramebuffer->getColorTexture(0);
     if(sourceTexture.sampleCount == destTexture.sampleCount)
@@ -521,7 +521,7 @@ agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage
     MTLBarrierScope scope = MTLBarrierScopeBuffers | MTLBarrierScopeTextures;
     if((source_stage & AGPU_PIPELINE_STAGE_COMPUTE_SHADER) != 0 && computeEncoder)
         [computeEncoder memoryBarrierWithScope: MTLBarrierScopeBuffers | MTLBarrierScopeTextures];
-        
+
     if(renderEncoder)
     {
         auto combinedAccesses = source_accesses | dest_accesses;
@@ -530,7 +530,7 @@ agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage
             AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ | AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE
         ))
             scope |= MTLBarrierScopeRenderTargets;
-        
+
         MTLRenderStages sourceStages = 0;
         MTLRenderStages destStages = 0;
         if(source_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
@@ -545,8 +545,8 @@ agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage
         if(dest_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
             destStages |= MTLRenderStageFragment;
         if(dest_stage & AGPU_PIPELINE_STAGE_TOP_OF_PIPE)
-            destStages = MTLRenderStageVertex | MTLRenderStageFragment;            
-            
+            destStages = MTLRenderStageVertex | MTLRenderStageFragment;
+
         [renderEncoder memoryBarrierWithScope: scope
             afterStages: sourceStages beforeStages: destStages];
     }
@@ -554,4 +554,48 @@ agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage
     return AGPU_OK;
 }
 
+agpu_error AMtlCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+{
+    return memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
+agpu_error AMtlCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+{
+    return memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
+agpu_error AMtlCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AMtlCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
+{
+    return AGPU_UNIMPLEMENTED;
+}
 } // End of namespace AgpuMetal

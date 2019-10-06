@@ -58,24 +58,24 @@ agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_d
     bufferDescription.size = description->size;
     bufferDescription.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-    if(description->binding & AGPU_ARRAY_BUFFER)
+    if(description->usage_modes & AGPU_ARRAY_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    if(description->binding & AGPU_ELEMENT_ARRAY_BUFFER)
+    if(description->usage_modes & AGPU_ELEMENT_ARRAY_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    if(description->binding & AGPU_UNIFORM_TEXEL_BUFFER)
+    if(description->usage_modes & AGPU_UNIFORM_TEXEL_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    if(description->binding & AGPU_STORAGE_TEXEL_BUFFER)
+    if(description->usage_modes & AGPU_STORAGE_TEXEL_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    if(description->binding & AGPU_DRAW_INDIRECT_BUFFER)
+    if(description->usage_modes & AGPU_DRAW_INDIRECT_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    if(description->binding & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
+    if(description->usage_modes & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    if(description->binding & AGPU_UNIFORM_BUFFER)
+    if(description->usage_modes & AGPU_UNIFORM_BUFFER)
     {
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
     }
-    if(description->binding & AGPU_STORAGE_BUFFER)
+    if(description->usage_modes & AGPU_STORAGE_BUFFER)
     {
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);

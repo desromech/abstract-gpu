@@ -15,7 +15,8 @@ AGPUBufferDescription class >> fields [
     ^ #(
 		(size 'ulong')
 		(heap_type 'long')
-		(binding 'long')
+		(usage_modes 'long')
+		(main_usage_mode 'long')
 		(mapping_flags 'ulong')
 		(stride 'ulong')
 	)

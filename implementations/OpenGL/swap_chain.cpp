@@ -147,4 +147,9 @@ agpu_size GLSwapChain::getFramebufferCount ()
     return (agpu_size)framebuffers.size();
 }
 
+agpu_error GLSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
+{
+    return AGPU_OK;
+}
+
 } // End of namespace AgpuGL

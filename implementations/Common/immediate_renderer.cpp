@@ -1267,7 +1267,7 @@ agpu_error ImmediateRenderer::flushRenderingData()
         bufferDescription.size = requiredSize;
         bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
             ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-        bufferDescription.binding = AGPU_ARRAY_BUFFER;
+        bufferDescription.usage_modes = bufferDescription.main_usage_mode = AGPU_ARRAY_BUFFER;
         bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
         bufferDescription.stride = sizeof(ImmediateRendererVertex);
 
@@ -1297,7 +1297,7 @@ agpu_error ImmediateRenderer::flushRenderingData()
         bufferDescription.size = requiredSize;
         bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
             ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-        bufferDescription.binding = AGPU_ELEMENT_ARRAY_BUFFER;
+        bufferDescription.usage_modes = bufferDescription.main_usage_mode = AGPU_ELEMENT_ARRAY_BUFFER;
         bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
         bufferDescription.stride = sizeof(uint32_t);
 

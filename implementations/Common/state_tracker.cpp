@@ -554,6 +554,61 @@ agpu_error AbstractStateTracker::memoryBarrier(agpu_pipeline_stage_flags source_
     return currentCommandList->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
 }
 
+agpu_error AbstractStateTracker::bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->bufferMemoryBarrier(buffer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size);
+}
+
+agpu_error AbstractStateTracker::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->textureMemoryBarrier(texture, source_stage, dest_stage, source_accesses, dest_accesses, subresource_range);
+}
+
+agpu_error AbstractStateTracker::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->pushBufferTransitionBarrier(buffer, new_usage);
+}
+
+agpu_error AbstractStateTracker::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->pushTextureTransitionBarrier(texture, new_usage, subresource_range);
+}
+
+agpu_error AbstractStateTracker::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->popBufferTransitionBarrier(buffer);
+}
+
+agpu_error AbstractStateTracker::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->popTextureTransitionBarrier(texture, subresource_range);
+}
+
+agpu_error AbstractStateTracker::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->copyBuffer(source_buffer, source_offset, dest_buffer, dest_offset, copy_size);
+}
+
+agpu_error AbstractStateTracker::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->copyBufferToTexture(buffer, texture, copy_region);
+}
+
+agpu_error AbstractStateTracker::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->copyTextureToBuffer(texture, buffer, copy_region);
+}
+
+
 //==============================================================================
 // DirectStateTracker
 //==============================================================================

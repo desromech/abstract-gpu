@@ -150,4 +150,9 @@ agpu_size ADXSwapChain::getFramebufferCount()
     return framebuffers.size();
 }
 
+agpu_error ADXSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 } // End of namespace AgpuD3D12

@@ -1172,4 +1172,9 @@ VkImageMemoryBarrier AVkDevice::barrierForImageLayoutTransition(VkImage image, V
     return barrier;
 }
 
+agpu_error AVkDevice::finishExecution()
+{
+    vkDeviceWaitIdle(device);
+    return AGPU_OK;
+}
 } // End of namespace AgpuVulkan

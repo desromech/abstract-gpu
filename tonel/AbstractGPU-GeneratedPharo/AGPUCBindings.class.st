@@ -188,6 +188,11 @@ AGPUCBindings >> createStateTrackerCache_device: device command_queue_family: co
 	^ self ffiCall: #(agpu_state_tracker_cache* agpuCreateStateTrackerCache (agpu_device* device , agpu_command_queue* command_queue_family) )
 ]
 
+{ #category : #'device' }
+AGPUCBindings >> finishExecution_device: device [
+	^ self ffiCall: #(agpu_error agpuFinishDeviceExecution (agpu_device* device) )
+]
+
 { #category : #'vr_system' }
 AGPUCBindings >> addReference_vr_system: vr_system [
 	^ self ffiCall: #(agpu_error agpuAddVRSystemReference (agpu_vr_system* vr_system) )
@@ -291,6 +296,11 @@ AGPUCBindings >> getCurrentBackBufferIndex_swap_chain: swap_chain [
 { #category : #'swap_chain' }
 AGPUCBindings >> getFramebufferCount_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_size agpuGetFramebufferCount (agpu_swap_chain* swap_chain) )
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> setOverlayPosition_swap_chain: swap_chain x: x y: y [
+	^ self ffiCall: #(agpu_error agpuSetSwapChainOverlayPosition (agpu_swap_chain* swap_chain , agpu_int x , agpu_int y) )
 ]
 
 { #category : #'compute_pipeline_builder' }
@@ -661,6 +671,51 @@ AGPUCBindings >> pushConstants_command_list: command_list offset: offset size: s
 { #category : #'command_list' }
 AGPUCBindings >> memoryBarrier_command_list: command_list source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses [
 	^ self ffiCall: #(agpu_error agpuMemoryBarrier (agpu_command_list* command_list , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> bufferMemoryBarrier_command_list: command_list buffer: buffer source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses offset: offset size: size [
+	^ self ffiCall: #(agpu_error agpuBufferMemoryBarrier (agpu_command_list* command_list , agpu_buffer* buffer , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses , agpu_size offset , agpu_size size) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> textureMemoryBarrier_command_list: command_list texture: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range [
+	^ self ffiCall: #(agpu_error agpuTextureMemoryBarrier (agpu_command_list* command_list , agpu_texture* texture , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses , agpu_subresource_range* subresource_range) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> pushBufferTransitionBarrier_command_list: command_list buffer: buffer new_usage: new_usage [
+	^ self ffiCall: #(agpu_error agpuPushBufferTransitionBarrier (agpu_command_list* command_list , agpu_buffer* buffer , agpu_buffer_usage_mask new_usage) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> pushTextureTransitionBarrier_command_list: command_list texture: texture new_usage: new_usage subresource_range: subresource_range [
+	^ self ffiCall: #(agpu_error agpuPushTextureTransitionBarrier (agpu_command_list* command_list , agpu_texture* texture , agpu_texture_usage_mode_mask new_usage , agpu_subresource_range* subresource_range) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> popBufferTransitionBarrier_command_list: command_list buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuPopBufferTransitionBarrier (agpu_command_list* command_list , agpu_buffer* buffer) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> popTextureTransitionBarrier_command_list: command_list texture: texture subresource_range: subresource_range [
+	^ self ffiCall: #(agpu_error agpuPopTextureTransitionBarrier (agpu_command_list* command_list , agpu_texture* texture , agpu_subresource_range* subresource_range) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> copyBuffer_command_list: command_list source_buffer: source_buffer source_offset: source_offset dest_buffer: dest_buffer dest_offset: dest_offset copy_size: copy_size [
+	^ self ffiCall: #(agpu_error agpuCopyBuffer (agpu_command_list* command_list , agpu_buffer* source_buffer , agpu_size source_offset , agpu_buffer* dest_buffer , agpu_size dest_offset , agpu_size copy_size) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> copyBufferToTexture_command_list: command_list buffer: buffer texture: texture copy_region: copy_region [
+	^ self ffiCall: #(agpu_error agpuCopyBufferToTexture (agpu_command_list* command_list , agpu_buffer* buffer , agpu_texture* texture , agpu_buffer_image_copy_region* copy_region) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> copyTextureToBuffer_command_list: command_list texture: texture buffer: buffer copy_region: copy_region [
+	^ self ffiCall: #(agpu_error agpuCopyTextureToBuffer (agpu_command_list* command_list , agpu_texture* texture , agpu_buffer* buffer , agpu_buffer_image_copy_region* copy_region) )
 ]
 
 { #category : #'texture' }
@@ -1361,6 +1416,51 @@ AGPUCBindings >> pushConstants_state_tracker: state_tracker offset: offset size:
 { #category : #'state_tracker' }
 AGPUCBindings >> memoryBarrier_state_tracker: state_tracker source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses [
 	^ self ffiCall: #(agpu_error agpuStateTrackerMemoryBarrier (agpu_state_tracker* state_tracker , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> bufferMemoryBarrier_state_tracker: state_tracker buffer: buffer source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses offset: offset size: size [
+	^ self ffiCall: #(agpu_error agpuStateTrackerBufferMemoryBarrier (agpu_state_tracker* state_tracker , agpu_buffer* buffer , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses , agpu_size offset , agpu_size size) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> textureMemoryBarrier_state_tracker: state_tracker texture: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range [
+	^ self ffiCall: #(agpu_error agpuStateTrackerTextureMemoryBarrier (agpu_state_tracker* state_tracker , agpu_texture* texture , agpu_pipeline_stage_flags source_stage , agpu_pipeline_stage_flags dest_stage , agpu_access_flags source_accesses , agpu_access_flags dest_accesses , agpu_subresource_range* subresource_range) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> pushBufferTransitionBarrier_state_tracker: state_tracker buffer: buffer new_usage: new_usage [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPushBufferTransitionBarrier (agpu_state_tracker* state_tracker , agpu_buffer* buffer , agpu_buffer_usage_mask new_usage) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> pushTextureTransitionBarrier_state_tracker: state_tracker texture: texture new_usage: new_usage subresource_range: subresource_range [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPushTextureTransitionBarrier (agpu_state_tracker* state_tracker , agpu_texture* texture , agpu_texture_usage_mode_mask new_usage , agpu_subresource_range* subresource_range) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> popBufferTransitionBarrier_state_tracker: state_tracker buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPopBufferTransitionBarrier (agpu_state_tracker* state_tracker , agpu_buffer* buffer) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> popTextureTransitionBarrier_state_tracker: state_tracker texture: texture subresource_range: subresource_range [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPopTextureTransitionBarrier (agpu_state_tracker* state_tracker , agpu_texture* texture , agpu_subresource_range* subresource_range) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> copyBuffer_state_tracker: state_tracker source_buffer: source_buffer source_offset: source_offset dest_buffer: dest_buffer dest_offset: dest_offset copy_size: copy_size [
+	^ self ffiCall: #(agpu_error agpuStateTrackerCopyBuffer (agpu_state_tracker* state_tracker , agpu_buffer* source_buffer , agpu_size source_offset , agpu_buffer* dest_buffer , agpu_size dest_offset , agpu_size copy_size) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> copyBufferToTexture_state_tracker: state_tracker buffer: buffer texture: texture copy_region: copy_region [
+	^ self ffiCall: #(agpu_error agpuStateTrackerCopyBufferToTexture (agpu_state_tracker* state_tracker , agpu_buffer* buffer , agpu_texture* texture , agpu_buffer_image_copy_region* copy_region) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> copyTextureToBuffer_state_tracker: state_tracker texture: texture buffer: buffer copy_region: copy_region [
+	^ self ffiCall: #(agpu_error agpuStateTrackerCopyTextureToBuffer (agpu_state_tracker* state_tracker , agpu_texture* texture , agpu_buffer* buffer , agpu_buffer_image_copy_region* copy_region) )
 ]
 
 { #category : #'immediate_renderer' }

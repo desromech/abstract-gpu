@@ -29,7 +29,7 @@ agpu_error AVkVertexBinding::bindVertexBuffersWithOffsets(agpu_uint count, agpu:
     for (size_t i = 0; i < count; ++i)
     {
         CHECK_POINTER(vertex_buffers[i]);
-        if ((vertex_buffers[i].as<AVkBuffer> ()->description.binding & AGPU_ARRAY_BUFFER) == 0)
+        if ((vertex_buffers[i].as<AVkBuffer> ()->description.usage_modes & AGPU_ARRAY_BUFFER) == 0)
             return AGPU_INVALID_PARAMETER;
     }
 

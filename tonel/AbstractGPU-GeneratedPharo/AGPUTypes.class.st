@@ -61,8 +61,9 @@ Class {
 		'agpu_vr_dual_analog_event',
 		'agpu_frustum_tangents',
 		'agpu_cstring',
-		'agpu_buffer_binding_type',
+		'agpu_vr_tracked_device_pose',
 		'agpu_mapping_access',
+		'agpu_buffer_image_copy_region',
 		'agpu_sampler',
 		'agpu_compare_function',
 		'agpu_size',
@@ -92,6 +93,7 @@ Class {
 		'agpu_command_queue_type',
 		'agpu_state_tracker_cache',
 		'agpu_vr_event',
+		'agpu_buffer_usage_mask',
 		'agpu_pointer',
 		'agpu_size3d',
 		'agpu_texture_address_mode',
@@ -112,7 +114,6 @@ Class {
 		'agpu_memory_heap_type',
 		'agpu_subresource_range',
 		'agpu_stencil_operation',
-		'agpu_vr_tracked_device_pose',
 		'agpu_command_queue',
 		'agpu_component_swizzle',
 		'agpu_command_allocator',
@@ -192,8 +193,9 @@ AGPUTypes class >> initialize [
 	agpu_vr_dual_analog_event := AGPUVrDualAnalogEvent.
 	agpu_frustum_tangents := AGPUFrustumTangents.
 	agpu_cstring := #'char*'.
-	agpu_buffer_binding_type := #int.
+	agpu_vr_tracked_device_pose := AGPUVrTrackedDevicePose.
 	agpu_mapping_access := #int.
+	agpu_buffer_image_copy_region := AGPUBufferImageCopyRegion.
 	agpu_sampler := #'void'.
 	agpu_compare_function := #int.
 	agpu_size := #'uint'.
@@ -223,6 +225,7 @@ AGPUTypes class >> initialize [
 	agpu_command_queue_type := #int.
 	agpu_state_tracker_cache := #'void'.
 	agpu_vr_event := AGPUVrEvent.
+	agpu_buffer_usage_mask := #int.
 	agpu_pointer := #'void*'.
 	agpu_size3d := AGPUSize3d.
 	agpu_texture_address_mode := #int.
@@ -243,7 +246,6 @@ AGPUTypes class >> initialize [
 	agpu_memory_heap_type := #int.
 	agpu_subresource_range := AGPUSubresourceRange.
 	agpu_stencil_operation := #int.
-	agpu_vr_tracked_device_pose := AGPUVrTrackedDevicePose.
 	agpu_command_queue := #'void'.
 	agpu_component_swizzle := #int.
 	agpu_command_allocator := #'void'.

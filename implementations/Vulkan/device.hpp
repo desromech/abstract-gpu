@@ -64,6 +64,8 @@ public:
     virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
     virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
 
+    virtual agpu_error finishExecution() override;
+
 public:
     std::vector<VkPhysicalDevice> physicalDevices;
     std::vector<VkLayerProperties> instanceLayerProperties;

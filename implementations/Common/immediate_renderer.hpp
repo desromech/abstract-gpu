@@ -365,7 +365,7 @@ public:
             bufferDescription.size = requiredSize;
             bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
                 ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-            bufferDescription.binding = AGPU_UNIFORM_BUFFER;
+            bufferDescription.usage_modes = bufferDescription.main_usage_mode = AGPU_UNIFORM_BUFFER;
             bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
             bufferDescription.stride = sizeof(StateType);
 

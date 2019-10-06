@@ -3,7 +3,7 @@
 namespace AgpuGL
 {
 
-inline GLenum mapBinding(agpu_buffer_binding_type binding)
+inline GLenum mapBinding(agpu_buffer_usage_mask binding)
 {
     switch(binding)
     {
@@ -37,7 +37,7 @@ agpu::buffer_ref GLBuffer::createBuffer(const agpu::device_ref &device, const ag
         return agpu::buffer_ref();
 
     GLuint handle;
-    auto binding = mapBinding(description.binding);
+    auto binding = mapBinding(description.main_usage_mode);
     auto mappingFlags = mapMappingFlags(description.mapping_flags);
 
     deviceForGL->onMainContextBlocking([&]{

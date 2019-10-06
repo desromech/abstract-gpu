@@ -248,7 +248,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
 
         agpu_buffer_description bufferDesc;
         memset(&bufferDesc, 0, sizeof(bufferDesc));
-        bufferDesc.binding = AGPU_GENERIC_DATA_BUFFER;
+        bufferDesc.usage_modes = bufferDesc.main_usage_mode = AGPU_GENERIC_DATA_BUFFER;
         bufferDesc.heap_type = AGPU_STREAM;
         bufferDesc.stride = 1;
         bufferDesc.size = (agpu_uint)transferLayout.size;

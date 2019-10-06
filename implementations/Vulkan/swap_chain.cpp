@@ -116,7 +116,9 @@ agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const 
 {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     if (!graphicsCommandQueue || !createInfo)
+    {
         return agpu::swap_chain_ref();
+    }
 
 	OverlaySwapChainWindowPtr overlayWindow;
     if((createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW) != 0)
@@ -491,6 +493,14 @@ agpu_size AVkSwapChain::getCurrentBackBufferIndex ( )
 agpu_size AVkSwapChain::getFramebufferCount ( )
 {
     return (agpu_size)framebuffers.size();
+}
+
+agpu_error AVkSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
+{
+    if(!overlayWindow)
+        return AGPU_OK;
+
+    return overlayWindow->setPosition(x, y);
 }
 
 } // End of namespace AgpuVulkan

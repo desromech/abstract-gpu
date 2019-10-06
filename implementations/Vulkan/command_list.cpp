@@ -230,7 +230,7 @@ agpu_error AVkCommandList::useIndexBuffer(const agpu::buffer_ref &index_buffer)
 agpu_error AVkCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size)
 {
     CHECK_POINTER(index_buffer);
-    if ((index_buffer.as<AVkBuffer> ()->description.binding & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
+    if ((index_buffer.as<AVkBuffer> ()->description.usage_modes & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
     vkCmdBindIndexBuffer(commandBuffer, index_buffer.as<AVkBuffer> ()->getDrawBuffer(), offset, indexTypeForStride(index_size));
@@ -240,7 +240,7 @@ agpu_error AVkCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer
 agpu_error AVkCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer)
 {
     CHECK_POINTER(draw_buffer);
-    if ((draw_buffer.as<AVkBuffer> ()->description.binding & AGPU_DRAW_INDIRECT_BUFFER) == 0)
+    if ((draw_buffer.as<AVkBuffer> ()->description.usage_modes & AGPU_DRAW_INDIRECT_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
     drawIndirectBuffer = draw_buffer;
@@ -250,7 +250,7 @@ agpu_error AVkCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_bu
 agpu_error AVkCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_ref &dispatch_buffer)
 {
     CHECK_POINTER(dispatch_buffer);
-    if ((dispatch_buffer.as<AVkBuffer> ()->description.binding & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER) == 0)
+    if ((dispatch_buffer.as<AVkBuffer> ()->description.usage_modes & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
     computeDispatchIndirectBuffer = dispatch_buffer;
@@ -588,8 +588,7 @@ agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTextur
 
 agpu_error AVkCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
 {
-    VkMemoryBarrier barrier;
-    memset(&barrier, 0, sizeof(barrier));
+    VkMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     barrier.srcAccessMask = VkAccessFlags(source_accesses);
     barrier.dstAccessMask = VkAccessFlags(dest_accesses);
@@ -598,5 +597,59 @@ agpu_error AVkCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage,
     return AGPU_OK;
 }
 
+agpu_error AVkCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AVkCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AVkCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
+{
+    // TODO: Emit the appropiate buffer memory barrier.
+    return AGPU_OK;
+}
+
+agpu_error AVkCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AVkCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+{
+    return AGPU_OK;
+}
+
+agpu_error AVkCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AVkCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+{
+    CHECK_POINTER(source_buffer);
+    CHECK_POINTER(dest_buffer);
+
+    VkBufferCopy region = {};
+    region.srcOffset = source_offset;
+    region.dstOffset = dest_offset;
+    region.size = copy_size;
+
+    vkCmdCopyBuffer(commandBuffer, source_buffer.as<AVkBuffer> ()->getDrawBuffer(), dest_buffer.as<AVkBuffer> ()->getDrawBuffer(), 1, &region);
+    return AGPU_OK;
+}
+
+agpu_error AVkCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
+agpu_error AVkCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
+{
+    return AGPU_UNIMPLEMENTED;
+}
 
 } // End of namespace AgpuVulkan

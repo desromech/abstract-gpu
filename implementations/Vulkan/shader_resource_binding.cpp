@@ -45,7 +45,7 @@ agpu_error AVkShaderResourceBinding::bindUniformBufferRange(agpu_int location, c
 {
     CHECK_POINTER(uniform_buffer);
 
-    if ((uniform_buffer.as<AVkBuffer> ()->description.binding & AGPU_UNIFORM_BUFFER) == 0)
+    if ((uniform_buffer.as<AVkBuffer> ()->description.usage_modes & AGPU_UNIFORM_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -88,7 +88,7 @@ agpu_error AVkShaderResourceBinding::bindStorageBufferRange(agpu_int location, c
 {
     CHECK_POINTER(storage_buffer);
 
-    if ((storage_buffer.as<AVkBuffer> ()->description.binding & AGPU_STORAGE_BUFFER) == 0)
+    if ((storage_buffer.as<AVkBuffer> ()->description.usage_modes & AGPU_STORAGE_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
     if (location < 0 || location >= (int)bindingDescription->types.size())
         return AGPU_OUT_OF_BOUNDS;
