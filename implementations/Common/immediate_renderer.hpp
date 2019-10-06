@@ -508,6 +508,7 @@ private:
     agpu_error validateRenderingStates();
     agpu_error validateExtraRenderingState();
 
+    agpu_error flushShadersForRenderingState(const ImmediateRenderingState &state);
     agpu_error flushRenderingState(const ImmediateRenderingState &state);
     agpu_error flushImmediateVertexRenderingState();
     agpu_error flushRenderingData();
@@ -539,6 +540,8 @@ private:
     ImmediateRendererVertex currentVertex;
     size_t lastDrawnVertexIndex;
 
+    ImmediateRenderingState lastFlushedRenderingState;
+    bool haveFlushedRenderingState;
     std::vector<PendingRenderingCommand> pendingRenderingCommands;
 
     // Vertices

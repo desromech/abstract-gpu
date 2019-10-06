@@ -307,6 +307,7 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
     indexBufferCapacity = 0;
     usedTextureBindingCount = 0;
     activeMatrixStack = nullptr;
+	haveFlushedRenderingState = false;
 
     auto impl = stateTrackerCache.as<StateTrackerCache> ();
     device = impl->device;
@@ -405,9 +406,15 @@ agpu_error ImmediateRenderer::endRendering()
         return AGPU_INVALID_OPERATION;
 
     flushRenderingData();
+	lastFlushedRenderingState = ImmediateRenderingState();
+	haveFlushedRenderingState = false;
     for(auto &command : pendingRenderingCommands)
+	{
         command();
+	}
 
+	lastFlushedRenderingState = ImmediateRenderingState();
+	haveFlushedRenderingState = false;
     pendingRenderingCommands.clear();
     currentStateTracker.reset();
     return AGPU_OK;
@@ -1142,10 +1149,22 @@ agpu_error ImmediateRenderer::flushImmediateVertexRenderingState()
     return AGPU_OK;
 }
 
-agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState &state)
+agpu_error ImmediateRenderer::flushShadersForRenderingState(const ImmediateRenderingState &state)
 {
-    currentStateTracker->setShaderSignature(immediateShaderSignature);
-    if(state.flatShading)
+	if(!haveFlushedRenderingState)
+	{
+		currentStateTracker->setShaderSignature(immediateShaderSignature);
+	}
+	else
+	{
+		// Do we need to flush this?
+		if(state.flatShading == lastFlushedRenderingState.flatShading &&
+			state.texturingEnabled == lastFlushedRenderingState.texturingEnabled &&
+			state.lightingEnabled == lastFlushedRenderingState.lightingEnabled)
+			return AGPU_OK;
+	}
+
+	if(state.flatShading)
     {
         if(state.texturingEnabled)
         {
@@ -1184,22 +1203,48 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
         }
     }
 
+	return AGPU_OK;
+}
 
-    currentStateTracker->setPrimitiveType(isSyntheticTopology(state.activePrimitiveTopology) ? AGPU_TRIANGLES : state.activePrimitiveTopology);
-	if(state.lightingStateBinding)
+agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState &state)
+{
+	flushShadersForRenderingState(state);
+
+	if(!haveFlushedRenderingState || state.activePrimitiveTopology != lastFlushedRenderingState.activePrimitiveTopology)
+    	currentStateTracker->setPrimitiveType(isSyntheticTopology(state.activePrimitiveTopology) ? AGPU_TRIANGLES : state.activePrimitiveTopology);
+
+	if(state.lightingStateBinding && (!haveFlushedRenderingState || state.lightingStateBinding != lastFlushedRenderingState.lightingStateBinding))
+	{
 		currentStateTracker->useShaderResources(state.lightingStateBinding);
-	if(state.extraRenderingStateBinding)
-		currentStateTracker->useShaderResources(state.extraRenderingStateBinding);
-	if(state.materialStateBinding)
-		currentStateTracker->useShaderResources(state.materialStateBinding);
-	if(state.transformationStateBinding)
-		currentStateTracker->useShaderResources(state.transformationStateBinding);
+	}
 
-    if(state.texturingEnabled)
-    {
-        currentStateTracker->useShaderResources(immediateSharedRenderingStates->linearSampler.binding);
+	if(state.extraRenderingStateBinding && (!haveFlushedRenderingState || state.extraRenderingStateBinding != lastFlushedRenderingState.extraRenderingStateBinding))
+	{
+		currentStateTracker->useShaderResources(state.extraRenderingStateBinding);
+	}
+
+	if(state.materialStateBinding && (!haveFlushedRenderingState || state.materialStateBinding != lastFlushedRenderingState.materialStateBinding))
+	{
+		currentStateTracker->useShaderResources(state.materialStateBinding);
+	}
+
+	if(state.transformationStateBinding && (!haveFlushedRenderingState || state.transformationStateBinding != lastFlushedRenderingState.transformationStateBinding))
+	{
+		currentStateTracker->useShaderResources(state.transformationStateBinding);
+	}
+
+	if(state.texturingEnabled && (!haveFlushedRenderingState || state.texturingEnabled != lastFlushedRenderingState.texturingEnabled))
+	{
+		currentStateTracker->useShaderResources(immediateSharedRenderingStates->linearSampler.binding);
+	}
+
+    if(state.texturingEnabled && (!haveFlushedRenderingState || state.activeTexture != lastFlushedRenderingState.activeTexture))
+	{
         currentStateTracker->useShaderResources(getValidTextureBindingFor(state.activeTexture));
-    }
+	}
+
+	lastFlushedRenderingState = state;
+	haveFlushedRenderingState = true;
 
     return AGPU_OK;
 }
