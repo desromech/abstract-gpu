@@ -80,7 +80,7 @@ public:
         // Copy the data into the readback buffer.
         {
             agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_SOURCE_BUFFER);
-            agpuCopyBuffer(commandList, storageBuffer, 0, uploadBuffer, 0, bufferByteSize);
+            agpuCopyBuffer(commandList, storageBuffer, 0, readbackBuffer, 0, bufferByteSize);
             agpuPopBufferTransitionBarrier(commandList, storageBuffer);
         }
 

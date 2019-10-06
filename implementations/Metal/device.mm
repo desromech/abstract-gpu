@@ -201,4 +201,9 @@ agpu::state_tracker_cache_ptr AMtlDevice::createStateTrackerCache(const agpu::co
 	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
+agpu_error AMtlDevice::finishExecution()
+{
+    return mainCommandQueue->finishExecution();
+}
+
 } // End of namespace AgpuMetal

@@ -586,7 +586,25 @@ agpu_error AMtlCommandList::popTextureTransitionBarrier(const agpu::texture_ref 
 
 agpu_error AMtlCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(source_buffer);
+    CHECK_POINTER(dest_buffer);
+    
+    // FIXME: Refactor this encoder dance.
+    if(computeEncoder)
+    {
+        [computeEncoder endEncoding];
+        computeEncoder = nil;
+    }
+    blitEncoder = [buffer blitCommandEncoder];
+    [blitEncoder copyFromBuffer: source_buffer.as<AMtlBuffer> ()->handle
+        sourceOffset: source_offset
+        toBuffer: dest_buffer.as<AMtlBuffer> ()->handle
+        destinationOffset: dest_offset
+        size: copy_size];
+    [blitEncoder endEncoding];
+    [blitEncoder release];
+    blitEncoder = nil;
+    return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
