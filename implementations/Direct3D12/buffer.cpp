@@ -63,12 +63,12 @@ agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_d
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	// Uniform buffers require an alignment of 256 bytes.
-	if ((description->binding & AGPU_UNIFORM_BUFFER) != 0)
+	if ((description->usage_modes & AGPU_UNIFORM_BUFFER) != 0)
 	{
 		desc.Width = (desc.Width + 255) & (-256);
 	}
 
-	if ((description->binding & AGPU_STORAGE_BUFFER) != 0)
+	if ((description->usage_modes & AGPU_STORAGE_BUFFER) != 0)
 	{
 		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	}
@@ -145,7 +145,8 @@ agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_d
     // Create the buffer view.
     // FIXME: Remove these views and move them to the respective bindings.
     auto gpuBuffer = dxBuffer->getActualGpuBuffer();
-    dxBuffer->gpuVirtualAddress = gpuBuffer->GetGPUVirtualAddress();;
+	if(gpuBuffer)
+		dxBuffer->gpuVirtualAddress = gpuBuffer->GetGPUVirtualAddress();
 
     return buffer;
 }
@@ -203,7 +204,7 @@ agpu_error ADXBuffer::createUAVDescription(D3D12_UNORDERED_ACCESS_VIEW_DESC *out
         return AGPU_OUT_OF_BOUNDS;
 
     memset(outView, 0, sizeof(D3D12_UNORDERED_ACCESS_VIEW_DESC));
-	outView->Format = DXGI_FORMAT_UNKNOWN;//DXGI_FORMAT_R32_TYPELESS;
+	outView->Format = DXGI_FORMAT_R32_TYPELESS;
     outView->ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
     outView->Buffer.FirstElement = offset;
     outView->Buffer.NumElements = size;

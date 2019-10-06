@@ -69,6 +69,8 @@ public:
 	virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
 	virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
 
+	virtual agpu_error finishExecution() override;
+
 public:
     agpu_error withTransferQueue(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &)> function);
     agpu_error withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function);

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "device.hpp"
+#include "../Common/overlay_window.hpp"
 
 namespace AgpuD3D12
 {
@@ -34,6 +35,7 @@ public:
     size_t frameIndex;
     size_t frameCount;
     uint32_t windowWidth, windowHeight;
+	AgpuCommon::OverlaySwapChainWindowPtr overlayWindow;
 };
 
 } // End of namespace AgpuD3D12

@@ -280,7 +280,7 @@ agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref&
 	try
 	{
 		compiled = hlsl.compile();
-		printf("Compiled spirv -> hlsl:\n%s\n", compiled.c_str());
+		//printf("Compiled spirv -> hlsl:\n%s\n", compiled.c_str());
 	}
 	catch (spirv_cross::CompilerError& compileError)
 	{

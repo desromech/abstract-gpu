@@ -131,7 +131,7 @@ agpu_error ADXCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer
 {
     CHECK_POINTER(index_buffer);
     auto adxIndexBuffer = index_buffer.as<ADXBuffer> ();
-    if ((adxIndexBuffer->description.binding & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
+    if ((adxIndexBuffer->description.usage_modes & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
     D3D12_INDEX_BUFFER_VIEW view = {};
@@ -386,12 +386,6 @@ agpu_error ADXCommandList::pushConstants(agpu_uint offset, agpu_uint size, agpu_
 
 agpu_error ADXCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
 {
-    return AGPU_UNIMPLEMENTED;
-}
-
-agpu_error ADXCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
-{
-    // TODO: Implement this.
     return AGPU_UNIMPLEMENTED;
 }
 

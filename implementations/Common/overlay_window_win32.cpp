@@ -21,6 +21,9 @@ public:
 	virtual void* getOwnerWindowHandle() override;
 	virtual void* getWindowHandle() override;
 
+	virtual agpu_error setSize(uint32_t newWidth, uint32_t newHeight) override;
+	virtual agpu_error setPosition(int32_t newX, int32_t newY) override;
+
     HWND parentWindowHandle;
     HWND windowHandle;
 };
@@ -92,6 +95,23 @@ void* OverlaySwapChainWin32Window::getWindowHandle()
 {
 	return windowHandle;
 }
+
+agpu_error OverlaySwapChainWin32Window::setSize(uint32_t newWidth, uint32_t newHeight)
+{
+	SetWindowPos(windowHandle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOMOVE |SWP_NOZORDER);
+	width = newWidth;
+	height = newHeight;
+	return AGPU_OK;
+}
+
+agpu_error OverlaySwapChainWin32Window::setPosition(int32_t newX, int32_t newY)
+{
+	SetWindowPos(windowHandle, HWND_TOP, newX, newY, width, height, SWP_NOSIZE|SWP_NOZORDER);
+	x = newX;
+	y = newY;
+	return AGPU_OK;
+}
+
 
 } // End of namespace AgpuCommon
 #endif //_WIN32

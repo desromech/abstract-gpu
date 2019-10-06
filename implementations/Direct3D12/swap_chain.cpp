@@ -8,7 +8,7 @@ namespace AgpuD3D12
 {
 
 ADXSwapChain::ADXSwapChain(const agpu::device_ref &cdevice)
-    : device(cdevice)
+    : device(cdevice), window(NULL), frameIndex(0), frameCount(0), windowWidth(0), windowHeight(0)
 {
 }
 
@@ -21,10 +21,15 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     auto swapChain = agpu::makeObject<ADXSwapChain> (device);
     auto adxSwapChain = swapChain.as<ADXSwapChain> ();
 
+	if (createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW)
+		adxSwapChain->overlayWindow = AgpuCommon::createOverlaySwapChainWindow(createInfo);
+
     adxSwapChain->windowWidth = createInfo->width;
     adxSwapChain->windowHeight = createInfo->height;
 
     adxSwapChain->window = (HWND)createInfo->window;
+	if (adxSwapChain->overlayWindow)
+		adxSwapChain->window = (HWND)adxSwapChain->overlayWindow->getWindowHandle();
     adxSwapChain->frameCount = createInfo->buffer_count;
 
     // Create the swap chain
@@ -152,7 +157,10 @@ agpu_size ADXSwapChain::getFramebufferCount()
 
 agpu_error ADXSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
 {
-    return AGPU_UNIMPLEMENTED;
+	if (!overlayWindow)
+		return AGPU_OK;
+
+	return overlayWindow->setPosition(x, y);
 }
 
 } // End of namespace AgpuD3D12

@@ -310,4 +310,10 @@ agpu::state_tracker_cache_ptr ADXDevice::createStateTrackerCache(const agpu::com
 	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
+agpu_error ADXDevice::finishExecution()
+{
+	// TODO: Finish the execution of all of the command queues.
+	return defaultCommandQueue->finishExecution();
+}
+
 } // End of namespace AgpuD3D12
