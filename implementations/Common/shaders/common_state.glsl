@@ -1,7 +1,12 @@
-layout(set=1, binding=0) buffer MatrixBuffer
+layout(set=4, binding=0) uniform TransformationStateBlock
 {
-    mat4 matrices[];
-};
+    mat4 projectionMatrix;
+
+    mat4 modelViewMatrix;
+    mat4 inverseModelViewMatrix;
+
+    mat4 textureMatrix;
+} TransformationState;
 
 const uint FogMode_None = 0;
 const uint FogMode_Linear = 1;
@@ -18,25 +23,9 @@ struct FogState
     vec4 color;
 };
 
-struct ExtraRenderingState
+layout(set=2, binding=0) uniform ExtraRenderingStateBlock
 {
     vec4 userClipPlane;
 
     FogState fogState;
-
-};
-
-layout(set=1, binding=3) buffer UserClipPlanesBuffer
-{
-    ExtraRenderingState extraRenderingStates[];
-};
-
-layout(std140, push_constant) uniform PushConstants
-{
-    uint projectionMatrixIndex;
-    uint modelViewMatrixIndex;
-    uint textureMatrixIndex;
-    uint lightingStateIndex;
-    uint materialStateIndex;
-    uint extraRenderingStateIndex;
-};
+} ExtraRenderingState;

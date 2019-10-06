@@ -3,6 +3,7 @@
 
 #include "state_tracker_cache.hpp"
 #include "vector_math.hpp"
+#include <assert.h>
 #include <vector>
 #include <functional>
 
@@ -66,26 +67,45 @@ struct ImmediateRenderingState
     bool lightingEnabled;
     bool texturingEnabled;
 
+    agpu::shader_resource_binding_ref lightingStateBinding;
+    agpu::shader_resource_binding_ref extraRenderingStateBinding;
+    agpu::shader_resource_binding_ref materialStateBinding;
+    agpu::shader_resource_binding_ref transformationStateBinding;
     agpu::texture_ref activeTexture;
 };
 
-struct ImmediatePushConstants
+struct TransformationState
 {
-    ImmediatePushConstants()
-        : projectionMatrixIndex(0),
-          modelViewMatrixIndex(0),
-          textureMatrixIndex(0),
-          lightingStateIndex(0),
-          materialStateIndex(0),
-          extraRenderingStateIndex(0) {}
+    TransformationState ()
+        :
+        projectionMatrix(Matrix4F::identity()),
+        modelViewMatrix(Matrix4F::identity()),
+        inverseModelViewMatrix(Matrix4F::identity()),
+        textureMatrix(Matrix4F::identity())
+    {};
+    TransformationState(const TransformationState &other)
+        :
+        projectionMatrix(other.projectionMatrix),
+        modelViewMatrix(other.modelViewMatrix),
+        inverseModelViewMatrix(other.inverseModelViewMatrix),
+        textureMatrix(other.textureMatrix)
+    {};
 
-    uint32_t projectionMatrixIndex;
-    uint32_t modelViewMatrixIndex;
-    uint32_t textureMatrixIndex;
-    uint32_t lightingStateIndex;
-    uint32_t materialStateIndex;
-    uint32_t extraRenderingStateIndex;
+    bool operator==(const TransformationState &other) const;
+    size_t hash() const;
+
+    // This normally does not change.
+    Matrix4F projectionMatrix;
+
+    // We need the inverse for transforming normals.
+    Matrix4F modelViewMatrix;
+    Matrix4F inverseModelViewMatrix;
+
+    // The texture matrix.
+    Matrix4F textureMatrix;
 };
+
+static_assert(sizeof(TransformationState) % 256 == 0, "TransformationState requires an aligned size of 256 bytes");
 
 struct LightState
 {
@@ -108,6 +128,8 @@ struct LightState
     float quadraticAttenuation;
 };
 
+static_assert(sizeof(LightState) == 96, "For manual alignment");
+
 struct LightingState
 {
     static constexpr size_t MaxLightCount = 8;
@@ -123,7 +145,10 @@ struct LightingState
     uint32_t enabledLightMask;
     uint32_t padding[3];
     std::array<LightState, MaxLightCount> lights;
+    uint8_t extraPadding[224];
 };
+
+static_assert(sizeof(LightingState) % 256 == 0, "LightingState requires an aligned size of 256 bytes");
 
 struct MaterialState
 {
@@ -140,7 +165,11 @@ struct MaterialState
 
     float shininess;
     uint32_t padding[3];
+
+    uint8_t extraPadding[176];
 };
+
+static_assert(sizeof(MaterialState) % 256 == 0, "MaterialState requires an aligned size of 256 bytes");
 
 struct ExtraRenderingState
 {
@@ -158,12 +187,24 @@ struct ExtraRenderingState
     float fogDensity;
 
     Vector4F fogColor;
+
+    uint8_t extraPadding[208];
 };
 
+static_assert(sizeof(ExtraRenderingState) % 256 == 0, "ExtraRenderingState requires an aligned size of 256 bytes");
 }
 
 namespace std
 {
+template<>
+struct hash<AgpuCommon::TransformationState>
+{
+    size_t operator()(const AgpuCommon::TransformationState &ref) const
+    {
+        return ref.hash();
+    }
+};
+
 template<>
 struct hash<AgpuCommon::LightState>
 {
@@ -215,17 +256,20 @@ inline size_t nextPowerOfTwo(size_t v)
     return v;
 }
 
-template<typename ST>
+template<typename ST, agpu_uint DS>
 class ImmediateStateBuffer
 {
 public:
     static constexpr size_t GpuBufferDataThreshold = 1024*256;
+    static constexpr agpu_uint DescriptorSetIndex = DS;
 
     typedef ST StateType;
-    typedef ImmediateStateBuffer<StateType> SelfType;
+    typedef ImmediateStateBuffer<StateType, DescriptorSetIndex> SelfType;
 
-	ImmediateStateBuffer()
-		: dirtyFlag(false), bufferCapacity(0)
+    static_assert(sizeof(StateType) % 256 == 0, "Uniform constant structures must be aligned to 256 bytes");
+
+	ImmediateStateBuffer(const agpu::shader_signature_ref &cshaderSignature)
+		: dirtyFlag(false), bufferCapacity(0), shaderSignature(cshaderSignature)
     {
 
     }
@@ -237,7 +281,9 @@ public:
     {
         currentState = StateType();
         dirtyFlag = true;
+        currentStateIndex = 0;
         bufferData.clear();
+        stateCache.clear();
     }
 
     void makeDirty()
@@ -250,21 +296,51 @@ public:
         return dirtyFlag;
     }
 
-    uint32_t validateCurrentState()
+    const agpu::shader_resource_binding_ref &validateCurrentState()
     {
         if(isDirty() || bufferData.empty())
         {
-            bufferData.push_back(currentState);
+            auto it = stateCache.find(currentState);
+            if(it != stateCache.end())
+            {
+                currentStateIndex = it->second;
+            }
+            else
+            {
+                bufferData.push_back(currentState);
+                ensureValidResourceBinding();
+                currentStateIndex = bufferData.size() - 1;
+                stateCache.insert(std::make_pair(currentState, currentStateIndex));
+            }
+
             dirtyFlag = false;
         }
-        return bufferData.size() - 1;
+
+        return resourceBindings[currentStateIndex];
     }
 
-    uint32_t validateExplicitState(const StateType &state)
+    void ensureValidResourceBinding()
     {
-        dirtyFlag = true;
-        bufferData.push_back(state);
-        return bufferData.size() - 1;
+        auto requestedIndex = bufferData.size() - 1;
+        if(requestedIndex < resourceBindings.size())
+            return;
+        assert(requestedIndex == resourceBindings.size());
+
+        auto newBinding = agpu::shader_resource_binding_ref(shaderSignature->createShaderResourceBinding(DescriptorSetIndex));
+        if(!newBinding)
+        {
+            fprintf(stderr, "Fatal error: failed to allocate a required shader resource binding\n");
+            abort();
+            return;
+        }
+
+        // Bind the descriptor to the buffer, only if it has the required capacity.
+        if(buffer && requestedIndex < bufferCapacity)
+        {
+            newBinding->bindUniformBufferRange(0, buffer, sizeof(StateType)*requestedIndex, sizeof(StateType));
+        }
+
+        resourceBindings.push_back(newBinding);
     }
 
     void setState(const StateType &newState)
@@ -276,7 +352,7 @@ public:
         }
     }
 
-    agpu_error uploadDataAndBindAsStorageBuffer(const agpu::device_ref &device, const agpu::shader_resource_binding_ref &resourceBindings, agpu_uint bindingSlot)
+    agpu_error uploadData(const agpu::device_ref &device)
     {
         if(!buffer || bufferCapacity < bufferData.size())
         {
@@ -289,7 +365,7 @@ public:
             bufferDescription.size = requiredSize;
             bufferDescription.heap_type = requiredSize >= GpuBufferDataThreshold
                 ? AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL : AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-            bufferDescription.binding = AGPU_STORAGE_BUFFER;
+            bufferDescription.binding = AGPU_UNIFORM_BUFFER;
             bufferDescription.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT;
             bufferDescription.stride = sizeof(StateType);
 
@@ -297,7 +373,13 @@ public:
             if(!buffer)
                 return AGPU_OUT_OF_MEMORY;
 
-            resourceBindings->bindStorageBuffer(bindingSlot, buffer);
+            size_t bindingSize = sizeof(StateType);
+            size_t bindingOffset = 0;
+            for(size_t i = 0; i < resourceBindings.size(); ++i)
+            {
+                resourceBindings[i]->bindUniformBufferRange(0, buffer, bindingOffset, bindingSize);
+                bindingOffset += bindingSize;
+            }
         }
 
         if(!bufferData.empty())
@@ -314,7 +396,11 @@ public:
     bool dirtyFlag;
 
     size_t bufferCapacity;
+    size_t currentStateIndex;
     std::vector<StateType> bufferData;
+    std::unordered_map<StateType, size_t> stateCache;
+    std::vector<agpu::shader_resource_binding_ref> resourceBindings;
+    const agpu::shader_signature_ref &shaderSignature;
     agpu::buffer_ref buffer;
 };
 
@@ -416,17 +502,15 @@ private:
 
     void applyMatrix(const Matrix4F &matrix);
     void invalidateMatrix();
-    agpu_error validateMatrices();
+    agpu_error validateTransformationState();
     agpu_error validateLightingState();
     agpu_error validateMaterialState();
     agpu_error validateRenderingStates();
-    agpu_error validateUserClipPlaneState();
+    agpu_error validateExtraRenderingState();
 
     agpu_error flushRenderingState(const ImmediateRenderingState &state);
     agpu_error flushImmediateVertexRenderingState();
     agpu_error flushRenderingData();
-    void invalidatePushConstants();
-    void validatePushConstants();
 
     agpu::shader_resource_binding_ref getValidTextureBindingFor(const agpu::texture_ref &texture);
 
@@ -449,7 +533,6 @@ private:
     ImmediateSharedRenderingStates *immediateSharedRenderingStates;
     agpu::vertex_layout_ref immediateVertexLayout;
     agpu::vertex_binding_ref vertexBinding;
-    agpu::shader_resource_binding_ref uniformResourceBindings;
 
     // The rendering state.
     ImmediateRenderingState currentRenderingState;
@@ -457,9 +540,6 @@ private:
     size_t lastDrawnVertexIndex;
 
     std::vector<PendingRenderingCommand> pendingRenderingCommands;
-
-    ImmediatePushConstants currentPushConstants;
-    bool currentPushConstantsDirty;
 
     // Vertices
     agpu::buffer_ref vertexBuffer;
@@ -491,23 +571,22 @@ private:
     MatrixStack *activeMatrixStack;
     bool *activeMatrixStackDirtyFlag;
 
-    // Matrix buffer
-    ImmediateStateBuffer<Matrix4F> matrixBuffer;
+    // Lighting state
+    ImmediateStateBuffer<LightingState, 1> lightingStateBuffer;
+
+    // Extra rendering state
+    ImmediateStateBuffer<ExtraRenderingState, 2> extraRenderingStateBuffer;
+
+    // Material state.
+    ImmediateStateBuffer<MaterialState, 3> materialStateBuffer;
+
+    // Transformation state buffer
+    ImmediateStateBuffer<TransformationState, 4> transformationStateBuffer;
 
     // Texture bindings
     std::vector<agpu::shader_resource_binding_ref> allocatedTextureBindings;
     std::unordered_map<agpu::texture_ref, agpu::shader_resource_binding_ref> usedTextureBindingMap;
     size_t usedTextureBindingCount;
-
-    // Lighting state
-    ImmediateStateBuffer<LightingState> lightingStateBuffer;
-
-    // Material state.
-    ImmediateStateBuffer<MaterialState> materialStateBuffer;
-
-    // Extra rendering state
-    ImmediateStateBuffer<ExtraRenderingState> extraRenderingStateBuffer;
-
 };
 
 } // End of namespace AgpuCommon

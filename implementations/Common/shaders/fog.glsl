@@ -27,5 +27,5 @@ vec4 applyFogWithState(in FogState fogState, vec4 cleanColor, vec3 inPosition)
 
 vec4 applyFog(vec4 cleanColor, vec3 inPosition)
 {
-    return applyFogWithState(extraRenderingStates[extraRenderingStateIndex].fogState, cleanColor, inPosition);
+    return applyFogWithState(ExtraRenderingState.fogState, cleanColor, inPosition);
 }

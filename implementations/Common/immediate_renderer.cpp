@@ -16,6 +16,22 @@ inline bool isSyntheticTopology(agpu_primitive_topology type)
 
 #include "shaders/compiled.inc"
 
+bool TransformationState::operator==(const TransformationState &other) const
+{
+	return projectionMatrix == other.projectionMatrix &&
+	    modelViewMatrix == other.modelViewMatrix &&
+	    inverseModelViewMatrix == other.inverseModelViewMatrix &&
+	    textureMatrix == other.textureMatrix;
+}
+
+size_t TransformationState::hash() const
+{
+	return projectionMatrix.hash() ^
+		modelViewMatrix.hash() ^
+		inverseModelViewMatrix.hash() ^
+		textureMatrix.hash();
+}
+
 LightState::LightState()
     :
     ambientColor(0.0f, 0.0f, 0.0f, 1.0f),
@@ -200,14 +216,25 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         builder->beginBindingBank(1);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 2);
 
-        builder->beginBindingBank(100);
-        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 4);
+		// Lighting state (Set 1)
+		builder->beginBindingBank(1000);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
 
+		// Extra rendering state (Set 2)
+		builder->beginBindingBank(1000);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
+
+		// Material state (Set 3)
+        builder->beginBindingBank(100000);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
+
+		// Transformation state (Set 4)
+        builder->beginBindingBank(100000);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
+
+		// Textures.
         builder->beginBindingBank(1000);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
-
-        for(size_t i = 0; i < sizeof(ImmediatePushConstants)/4; ++i)
-            builder->addBindingConstant();
 
         immediateShaderSignature = agpu::shader_signature_ref(builder->build());
         if(!immediateShaderSignature) return false;
@@ -269,7 +296,12 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 }
 
 ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateTrackerCache)
-    : stateTrackerCache(stateTrackerCache)
+    : stateTrackerCache(stateTrackerCache),
+	immediateShaderSignature(stateTrackerCache.as<StateTrackerCache> ()->immediateShaderSignature),
+	lightingStateBuffer(immediateShaderSignature),
+    extraRenderingStateBuffer(immediateShaderSignature),
+    materialStateBuffer(immediateShaderSignature),
+    transformationStateBuffer(immediateShaderSignature)
 {
     vertexBufferCapacity = 0;
     indexBufferCapacity = 0;
@@ -279,7 +311,6 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
     auto impl = stateTrackerCache.as<StateTrackerCache> ();
     device = impl->device;
 
-    immediateShaderSignature = impl->immediateShaderSignature;
     immediateShaderLibrary = impl->immediateShaderLibrary.get();
     immediateSharedRenderingStates = impl->immediateSharedRenderingStates.get();
     immediateVertexLayout = impl->immediateVertexLayout;
@@ -299,13 +330,8 @@ agpu::immediate_renderer_ref ImmediateRenderer::create(const agpu::state_tracker
     if(!vertexBinding)
         return agpu::immediate_renderer_ref();
 
-    auto uniformResourceBindings = agpu::shader_resource_binding_ref(cacheImpl->immediateShaderSignature->createShaderResourceBinding(1));
-    if(!uniformResourceBindings)
-        return agpu::immediate_renderer_ref();
-
     auto result = agpu::makeObject<ImmediateRenderer> (cache);
     result.as<ImmediateRenderer> ()->vertexBinding = vertexBinding;
-    result.as<ImmediateRenderer> ()->uniformResourceBindings = uniformResourceBindings;
 
     return result;
 }
@@ -334,11 +360,8 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
     textureMatrixStack.push_back(Matrix4F::identity());
     textureMatrixStackDirtyFlag = true;
 
-    matrixBuffer.reset();
-
-    // Invalidate the push constans.
-    currentPushConstants = ImmediatePushConstants();
-    invalidatePushConstants();
+	// Reset the transformation state buffer.
+    transformationStateBuffer.reset();
 
     // Reset the rendering state.
     currentRenderingState = ImmediateRenderingState();
@@ -671,7 +694,7 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
     }
     else
     {
-        textureBinding = agpu::shader_resource_binding_ref(stateTrackerCache.as<StateTrackerCache> ()->immediateShaderSignature->createShaderResourceBinding(2));
+        textureBinding = agpu::shader_resource_binding_ref(stateTrackerCache.as<StateTrackerCache> ()->immediateShaderSignature->createShaderResourceBinding(5));
         allocatedTextureBindings.push_back(textureBinding);
         ++usedTextureBindingCount;
     }
@@ -912,7 +935,7 @@ agpu_error ImmediateRenderer::beginPrimitives(agpu_primitive_topology type)
 
 agpu_error ImmediateRenderer::validateRenderingStates()
 {
-    auto error = validateMatrices();
+    auto error = validateTransformationState();
     if(error) return error;
 
     error = validateLightingState();
@@ -921,10 +944,8 @@ agpu_error ImmediateRenderer::validateRenderingStates()
     error = validateMaterialState();
     if(error) return error;
 
-    error = validateUserClipPlaneState();
+    error = validateExtraRenderingState();
     if(error) return error;
-
-    validatePushConstants();
 
     return AGPU_OK;
 }
@@ -1066,10 +1087,7 @@ void ImmediateRenderer::invalidateMatrix()
 agpu_error ImmediateRenderer::validateLightingState()
 {
     if(lightingStateBuffer.isDirty())
-    {
-        currentPushConstants.lightingStateIndex = lightingStateBuffer.validateCurrentState();
-        invalidatePushConstants();
-    }
+		currentRenderingState.lightingStateBinding =lightingStateBuffer.validateCurrentState();
 
     return AGPU_OK;
 }
@@ -1077,67 +1095,45 @@ agpu_error ImmediateRenderer::validateLightingState()
 agpu_error ImmediateRenderer::validateMaterialState()
 {
     if(materialStateBuffer.isDirty())
-    {
-        currentPushConstants.materialStateIndex = materialStateBuffer.validateCurrentState();
-        invalidatePushConstants();
-    }
+        currentRenderingState.materialStateBinding = materialStateBuffer.validateCurrentState();
 
     return AGPU_OK;
 }
 
-agpu_error ImmediateRenderer::validateMatrices()
+agpu_error ImmediateRenderer::validateTransformationState()
 {
     if(projectionMatrixStackDirtyFlag)
     {
-        currentPushConstants.projectionMatrixIndex = matrixBuffer.validateExplicitState(projectionMatrixStack.back());
-        projectionMatrixStackDirtyFlag = false;
-        invalidatePushConstants();
+		transformationStateBuffer.currentState.projectionMatrix = projectionMatrixStack.back();
+		transformationStateBuffer.makeDirty();
     }
 
     if(modelViewMatrixStackDirtyFlag)
     {
-        currentPushConstants.modelViewMatrixIndex = matrixBuffer.validateExplicitState(modelViewMatrixStack.back());
-        modelViewMatrixStackDirtyFlag = false;
-        invalidatePushConstants();
+		transformationStateBuffer.currentState.modelViewMatrix = modelViewMatrixStack.back();
+		transformationStateBuffer.makeDirty();
     }
 
     if(textureMatrixStackDirtyFlag)
     {
-        currentPushConstants.textureMatrixIndex = matrixBuffer.validateExplicitState(textureMatrixStack.back());
-        textureMatrixStackDirtyFlag = false;
-        invalidatePushConstants();
+		transformationStateBuffer.currentState.textureMatrix = textureMatrixStack.back();
+		transformationStateBuffer.makeDirty();
     }
+
+	if(transformationStateBuffer.isDirty())
+		currentRenderingState.transformationStateBinding = transformationStateBuffer.validateCurrentState();
 
     return AGPU_OK;
 }
 
-agpu_error ImmediateRenderer::validateUserClipPlaneState()
+agpu_error ImmediateRenderer::validateExtraRenderingState()
 {
     if(extraRenderingStateBuffer.isDirty())
-    {
-        currentPushConstants.extraRenderingStateIndex = extraRenderingStateBuffer.validateCurrentState();
-        invalidatePushConstants();
-
-    }
+		currentRenderingState.extraRenderingStateBinding = extraRenderingStateBuffer.validateCurrentState();
 
     return AGPU_OK;
 }
 
-void ImmediateRenderer::invalidatePushConstants()
-{
-    currentPushConstantsDirty = true;
-}
-
-void ImmediateRenderer::validatePushConstants()
-{
-    if(!currentPushConstantsDirty)
-        return;
-    auto constantsToUpdate = currentPushConstants;
-    pendingRenderingCommands.push_back([=]{
-        currentStateTracker->setShaderSignature(immediateShaderSignature);
-        currentStateTracker->pushConstants(0, sizeof(constantsToUpdate), (void*)&constantsToUpdate);
-    });
-}
 
 agpu_error ImmediateRenderer::flushImmediateVertexRenderingState()
 {
@@ -1190,7 +1186,15 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
 
 
     currentStateTracker->setPrimitiveType(isSyntheticTopology(state.activePrimitiveTopology) ? AGPU_TRIANGLES : state.activePrimitiveTopology);
-    currentStateTracker->useShaderResources(uniformResourceBindings);
+	if(state.lightingStateBinding)
+		currentStateTracker->useShaderResources(state.lightingStateBinding);
+	if(state.extraRenderingStateBinding)
+		currentStateTracker->useShaderResources(state.extraRenderingStateBinding);
+	if(state.materialStateBinding)
+		currentStateTracker->useShaderResources(state.materialStateBinding);
+	if(state.transformationStateBinding)
+		currentStateTracker->useShaderResources(state.transformationStateBinding);
+
     if(state.texturingEnabled)
     {
         currentStateTracker->useShaderResources(immediateSharedRenderingStates->linearSampler.binding);
@@ -1265,16 +1269,16 @@ agpu_error ImmediateRenderer::flushRenderingData()
     }
 
     // Upload the immediate state buffers.
-    error = matrixBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 0);
+    error = transformationStateBuffer.uploadData(device);
     if(error) return error;
 
-    error = lightingStateBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 1);
+    error = lightingStateBuffer.uploadData(device);
     if(error) return error;
 
-    error = materialStateBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 2);
+    error = materialStateBuffer.uploadData(device);
     if(error) return error;
 
-    error = extraRenderingStateBuffer.uploadDataAndBindAsStorageBuffer(device, uniformResourceBindings, 3);
+    error = extraRenderingStateBuffer.uploadData(device);
     if(error) return error;
 
     return AGPU_OK;
@@ -1469,7 +1473,9 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
             pendingRenderingCommands.push_back([=]{
                 auto error = flushRenderingState(stateToRender);
                 if(!error)
+				{
                     currentStateTracker->drawElements(index_count, instance_count, baseIndex + first_index, actualBaseVertex, base_instance);
+				}
             });
         }
         break;
@@ -1492,7 +1498,9 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
             pendingRenderingCommands.push_back([=]{
                 auto error = flushRenderingState(stateToRender);
                 if(!error)
+				{
                     currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
+				}
             });
         }
         return AGPU_OK;
@@ -1526,7 +1534,9 @@ agpu_error ImmediateRenderer::drawElementsWithIndices(agpu_primitive_topology mo
             pendingRenderingCommands.push_back([=]{
                 auto error = flushRenderingState(stateToRender);
                 if(!error)
+				{
                     currentStateTracker->drawElements(convertedIndexCount, instance_count, baseIndex, actualBaseVertex, base_instance);
+				}
             });
         }
         return AGPU_OK;
@@ -1555,7 +1565,9 @@ agpu_error ImmediateRenderer::drawArrays(agpu_uint vertex_count, agpu_uint insta
 	pendingRenderingCommands.push_back([=]{
 		auto error = flushRenderingState(stateToRender);
 		if(!error)
+		{
 			currentStateTracker->drawArrays(vertex_count, instance_count, first_vertex, base_instance);
+		}
 	});
 
     return AGPU_OK;
@@ -1573,7 +1585,9 @@ agpu_error ImmediateRenderer::drawElements(agpu_uint index_count, agpu_uint inst
 	pendingRenderingCommands.push_back([=]{
 		auto error = flushRenderingState(stateToRender);
 		if(!error)
+		{
 			currentStateTracker->drawElements(index_count, instance_count, first_index, base_vertex, base_instance);
+		}
 	});
 
     return AGPU_OK;

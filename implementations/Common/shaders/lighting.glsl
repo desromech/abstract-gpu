@@ -15,7 +15,7 @@ struct LightState
     float quadraticAttenuation;
 };
 
-struct LightingState
+layout(std140, set=1, binding=0) uniform LightingStateBlock
 {
     vec4 ambientLighting;
 
@@ -25,14 +25,9 @@ struct LightingState
     uint padding3;
 
     LightState lights[8];
-};
+} LightingState;
 
-layout(std140, set=1, binding=1) buffer LightingStateBuffer
-{
-    LightingState lightingStates[];
-};
-
-struct MaterialState
+layout(std140, set=3, binding=0) uniform MaterialStateBlock
 {
     vec4 emission;
     vec4 ambient;
@@ -43,12 +38,7 @@ struct MaterialState
     uint padding1;
     uint padding2;
     uint padding3;
-};
-
-layout(std140, set=1, binding=2) buffer MaterialStateBuffer
-{
-    MaterialState materialStates[];
-};
+} MaterialState;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec4 inColor;
@@ -61,10 +51,10 @@ struct LightingParameters
     vec3 N;
 };
 
-vec4 computeLightContributionWith(in MaterialState material, in LightState light, in LightingParameters parameters)
+vec4 computeLightContributionWith(in LightState light, in LightingParameters parameters)
 {
     // Compute the ambient contribution.
-    vec4 lightContribution = material.ambient*light.ambientColor;
+    vec4 lightContribution = MaterialState.ambient*light.ambientColor;
 
     vec3 P = parameters.P;
     vec3 V = parameters.V;
@@ -92,14 +82,14 @@ vec4 computeLightContributionWith(in MaterialState material, in LightState light
         {
             float lightDistance = length(lightVector);
             float attenuation = spotEffect/(light.constantAttenuation + lightDistance*(light.linearAttenuation + lightDistance*light.quadraticAttenuation));
-            lightContribution += (attenuation*NdotL) * material.diffuse * light.diffuseColor;
+            lightContribution += (attenuation*NdotL) * MaterialState.diffuse * light.diffuseColor;
 
             // Compute the specular contribution.
             vec3 H = normalize(V + L);
             float NdotH = max(dot(N, H), 0.0);
             if(NdotH > 0.0)
             {
-                lightContribution += (attenuation * pow(NdotH, material.shininess)) * material.specular * light.specularColor;
+                lightContribution += (attenuation * pow(NdotH, MaterialState.shininess)) * MaterialState.specular * light.specularColor;
             }
         }
     }
@@ -107,18 +97,18 @@ vec4 computeLightContributionWith(in MaterialState material, in LightState light
     return lightContribution;
 }
 
-vec4 computingLightingWith(in MaterialState material, in LightingState lighting, in LightingParameters parameters)
+vec4 computingLightingWith(in LightingParameters parameters)
 {
-    vec4 color = material.emission +
-        material.ambient*lighting.ambientLighting;
+    vec4 color = MaterialState.emission +
+        MaterialState.ambient*LightingState.ambientLighting;
 
-    uint enabledLightMask = lighting.enabledLightMask;
+    uint enabledLightMask = LightingState.enabledLightMask;
     for(int i = 0; i < 8 && (enabledLightMask != 0); ++i, enabledLightMask >>=1)
     {
         if((enabledLightMask & 1u) == 0)
             continue;
 
-        color += computeLightContributionWith(material, lighting.lights[i], parameters);
+        color += computeLightContributionWith(LightingState.lights[i], parameters);
     }
 
     return clamp(color, 0.0, 1.0);
@@ -127,8 +117,8 @@ vec4 computingLightingWith(in MaterialState material, in LightingState lighting,
 vec4 computingLighting()
 {
     LightingParameters parameters;
-    parameters.P = (matrices[modelViewMatrixIndex] * vec4(inPosition, 1.0)).xyz;
+    parameters.P = (TransformationState.modelViewMatrix * vec4(inPosition, 1.0)).xyz;
     parameters.V = normalize(-parameters.P);
-    parameters.N = normalize((matrices[modelViewMatrixIndex] * vec4(inNormal, 0.0)).xyz);
-    return computingLightingWith(materialStates[materialStateIndex], lightingStates[lightingStateIndex], parameters);
+    parameters.N = normalize((TransformationState.modelViewMatrix * vec4(inNormal, 0.0)).xyz);
+    return computingLightingWith(parameters);
 }

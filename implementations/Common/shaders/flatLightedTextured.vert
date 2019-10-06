@@ -12,9 +12,9 @@ layout(location = 2) out vec4 outPosition;
 void main()
 {
     outColor = computingLighting();
-    outTexcoord = matrices[textureMatrixIndex]*vec4(inTexcoord, 0.0, 1.0);
+    outTexcoord = TransformationState.textureMatrix*vec4(inTexcoord, 0.0, 1.0);
 
-    outPosition = matrices[modelViewMatrixIndex] * vec4(inPosition, 1.0);
-    gl_ClipDistance[0] = dot(extraRenderingStates[extraRenderingStateIndex].userClipPlane, outPosition);
-    gl_Position = matrices[projectionMatrixIndex] * outPosition;
+    outPosition = TransformationState.modelViewMatrix * vec4(inPosition, 1.0);
+    gl_ClipDistance[0] = dot(ExtraRenderingState.userClipPlane, outPosition);
+    gl_Position = TransformationState.projectionMatrix * outPosition;
 }
