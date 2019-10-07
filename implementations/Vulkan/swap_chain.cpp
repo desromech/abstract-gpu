@@ -320,8 +320,8 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
     colorDesc.depth = 1;
     colorDesc.layers = 1;
     colorDesc.format = agpuFormat;
-    colorDesc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
-    colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+    colorDesc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT | AGPU_TEXTURE_USAGE_PRESENT);
+    colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_PRESENT;
     colorDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     colorDesc.miplevels = 1;
     colorDesc.sample_count = 1;
@@ -372,18 +372,25 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         depthStencilBufferView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
     }
 
-    VkClearColorValue clearColor;
-    memset(&clearColor, 0, sizeof(clearColor));
+    VkClearColorValue clearColor = {};
     framebuffers.resize(imageCount);
     for (size_t i = 0; i < imageCount; ++i)
     {
         auto colorImage = swapChainImages[i];
-        VkImageSubresourceRange range;
-        memset(&range, 0, sizeof(range));
+        VkImageSubresourceRange range = {};
         range.layerCount = 1;
         range.levelCount = 1;
-        if (!deviceForVk->clearImageWithColor(colorImage, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor))
-            return false;
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        bool clearResult = false;
+        deviceForVk->withSetupCommandListDo([&](AVkImplicitResourceSetupCommandList &setupList) {
+            //clearResult = setupList.clearImageWithColor(colorImage, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor);
+            clearResult =
+                setupList.setupCommandBuffer() &&
+                setupList.transitionImageUsageMode(colorImage, colorDesc.usage_modes, AGPU_TEXTURE_USAGE_NONE, AGPU_TEXTURE_USAGE_COPY_DESTINATION, range) &&
+                setupList.clearImageWithColor(colorImage, range, colorDesc.usage_modes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearColor) &&
+                setupList.transitionImageUsageMode(colorImage, colorDesc.usage_modes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, AGPU_TEXTURE_USAGE_PRESENT, range) &&
+                setupList.submitCommandBuffer();
+        });
 
         agpu::texture_ref colorBuffer;
 
@@ -393,8 +400,6 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
                 return false;
 
             auto avkColorBuffer = colorBuffer.as<AVkTexture> ();
-            avkColorBuffer->initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            avkColorBuffer->initialLayoutAccessBits = VK_ACCESS_MEMORY_READ_BIT;
             avkColorBuffer->imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 

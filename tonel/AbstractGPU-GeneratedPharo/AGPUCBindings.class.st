@@ -759,16 +759,6 @@ AGPUCBindings >> uploadTextureSubData_texture: texture level: level arrayIndex: 
 ]
 
 { #category : #'texture' }
-AGPUCBindings >> discardUploadBuffer_texture: texture [
-	^ self ffiCall: #(agpu_error agpuDiscardTextureUploadBuffer (agpu_texture* texture) )
-]
-
-{ #category : #'texture' }
-AGPUCBindings >> discardReadbackBuffer_texture: texture [
-	^ self ffiCall: #(agpu_error agpuDiscardTextureReadbackBuffer (agpu_texture* texture) )
-]
-
-{ #category : #'texture' }
 AGPUCBindings >> getFullViewDescription_texture: texture result: result [
 	^ self ffiCall: #(agpu_error agpuGetTextureFullViewDescription (agpu_texture* texture , agpu_texture_view_description* result) )
 ]

@@ -6,10 +6,8 @@ namespace AgpuVulkan
 AVkBuffer::AVkBuffer(const agpu::device_ref &device)
     : weakDevice(device)
 {
-    uploadBuffer = VK_NULL_HANDLE;
-    uploadBufferMemory = VK_NULL_HANDLE;
-    gpuBuffer = VK_NULL_HANDLE;
-    gpuBufferMemory = VK_NULL_HANDLE;
+    handle = VK_NULL_HANDLE;
+    allocation = VK_NULL_HANDLE;
     mapCount = 0;
 }
 
@@ -18,212 +16,103 @@ AVkBuffer::~AVkBuffer()
     auto device = weakDevice.lock();
     if(device)
     {
-        if (uploadBuffer)
-            vkDestroyBuffer(deviceForVk->device, uploadBuffer, nullptr);
-        if (uploadBufferMemory)
-            vkFreeMemory(deviceForVk->device, uploadBufferMemory, nullptr);
-        if (gpuBuffer)
-            vkDestroyBuffer(deviceForVk->device, gpuBuffer, nullptr);
-        if (gpuBufferMemory)
-            vkFreeMemory(deviceForVk->device, gpuBufferMemory, nullptr);
+        if (handle)
+            vmaDestroyBuffer(deviceForVk->memoryAllocator, handle, allocation);
     }
 }
 
-agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data)
+agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_description* originalDescription, agpu_pointer initial_data)
 {
-    if (!description)
+    if (!originalDescription)
         return agpu::buffer_ref();
 
-    // Try to determine whan kind of buffer is needed.
-    bool streaming = description->heap_type == AGPU_STREAM;
-    bool canBeSubUpdated = (description->mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
-    bool hasInitialData = initial_data != nullptr;
-    bool canBeMapped = (description->mapping_flags & AGPU_MAP_READ_BIT) || (description->mapping_flags & AGPU_MAP_WRITE_BIT);
-    bool canBeReaded = description->mapping_flags & AGPU_MAP_READ_BIT;
-    bool hasCoherentMapping = (description->mapping_flags & AGPU_MAP_COHERENT_BIT) != 0;
+    auto description = *originalDescription;
 
-    bool keepUploadBuffer = canBeMapped || canBeSubUpdated;
-    bool needsUploadBuffer = keepUploadBuffer || hasInitialData;
-    bool needsDefaultBuffer = !hasCoherentMapping && !streaming && !canBeReaded;
-
-    VkFlags defaultMemoryTypeRequirements = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkFlags uploadMemoryTypeRequirements = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    if (hasCoherentMapping)
-        uploadMemoryTypeRequirements |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-
-    VkBufferCreateInfo bufferDescription;
-    memset(&bufferDescription, 0, sizeof(bufferDescription));
+    VkBufferCreateInfo bufferDescription = {};
     bufferDescription.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferDescription.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferDescription.size = description->size;
+    bufferDescription.size = description.size;
     bufferDescription.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-    if(description->usage_modes & AGPU_ARRAY_BUFFER)
+    if(description.usage_modes & AGPU_ARRAY_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    if(description->usage_modes & AGPU_ELEMENT_ARRAY_BUFFER)
+    if(description.usage_modes & AGPU_ELEMENT_ARRAY_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    if(description->usage_modes & AGPU_UNIFORM_TEXEL_BUFFER)
+    if(description.usage_modes & AGPU_UNIFORM_TEXEL_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    if(description->usage_modes & AGPU_STORAGE_TEXEL_BUFFER)
+    if(description.usage_modes & AGPU_STORAGE_TEXEL_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    if(description->usage_modes & AGPU_DRAW_INDIRECT_BUFFER)
+    if(description.usage_modes & AGPU_DRAW_INDIRECT_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    if(description->usage_modes & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
+    if(description.usage_modes & AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER)
         bufferDescription.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    if(description->usage_modes & AGPU_UNIFORM_BUFFER)
+    if(description.usage_modes & AGPU_UNIFORM_BUFFER)
     {
         bufferDescription.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
     }
-    if(description->usage_modes & AGPU_STORAGE_BUFFER)
+    if(description.usage_modes & AGPU_STORAGE_BUFFER)
     {
         bufferDescription.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         bufferDescription.size = alignedTo(size_t(bufferDescription.size), 256);
     }
 
-    VkBuffer mainBuffer = VK_NULL_HANDLE;
-    auto error = vkCreateBuffer(deviceForVk->device, &bufferDescription, nullptr, &mainBuffer);
-    if (error)
-        return agpu::buffer_ref();
-
-    VkBuffer uploadBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory uploadBufferMemory = VK_NULL_HANDLE;
-    VkBuffer defaultBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory defaultBufferMemory = VK_NULL_HANDLE;
-
-    if (needsUploadBuffer)
+    VmaAllocationCreateInfo allocationInfo = {};
+    allocationInfo.usage = mapHeapType(description.heap_type);
+    if(description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT)
     {
-        uploadBuffer = mainBuffer;
-        mainBuffer = VK_NULL_HANDLE;
-
-        VkMemoryRequirements memoryRequirements;
-        vkGetBufferMemoryRequirements(deviceForVk->device, uploadBuffer, &memoryRequirements);
-
-        VkMemoryAllocateInfo allocateInfo;
-        memset(&allocateInfo, 0, sizeof(allocateInfo));
-        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocateInfo.allocationSize = memoryRequirements.size;
-        if (!deviceForVk->findMemoryType(memoryRequirements.memoryTypeBits, uploadMemoryTypeRequirements, &allocateInfo.memoryTypeIndex))
-            goto failure;
-
-        error = vkAllocateMemory(deviceForVk->device, &allocateInfo, nullptr, &uploadBufferMemory);
-        if (error)
-            goto failure;
-
-        error = vkBindBufferMemory(deviceForVk->device, uploadBuffer, uploadBufferMemory, 0);
-        if (error)
-            goto failure;
-
-        // Upload the initial data.
-        if (initial_data)
-        {
-            void *mappedBuffer;
-            error = vkMapMemory(deviceForVk->device, uploadBufferMemory, 0, description->size, 0, &mappedBuffer);
-            if (error)
-                goto failure;
-            memcpy(mappedBuffer, initial_data, description->size);
-            vkUnmapMemory(deviceForVk->device, uploadBufferMemory);
-        }
+        if(description.heap_type == AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE)
+            description.mapping_flags |= AGPU_MAP_WRITE_BIT;
+        else if(description.heap_type == AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST)
+            description.mapping_flags |= AGPU_MAP_READ_BIT;
     }
 
-    if (needsDefaultBuffer)
+    if((description.mapping_flags & AGPU_MAP_READ_BIT) || (description.mapping_flags & AGPU_MAP_WRITE_BIT))
+        allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    // Is coherent mapping required?
+    if((description.mapping_flags & AGPU_MAP_COHERENT_BIT) != 0)
+        allocationInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VkBuffer bufferHandle;
+    VmaAllocation allocationHandle;
+    auto error = vmaCreateBuffer(deviceForVk->memoryAllocator, &bufferDescription, &allocationInfo, &bufferHandle, &allocationHandle, nullptr);
+    if(error) return agpu::buffer_ref();
+
+    // Create the buffer object.
+    auto result = agpu::makeObject<AVkBuffer> (device);
+    auto avkBuffer = result.as<AVkBuffer> ();
+    avkBuffer->handle = bufferHandle;
+    avkBuffer->allocation = allocationHandle;
+    avkBuffer->description = description;
+
+    // Upload the buffer initial data.
+    if(initial_data)
     {
-        // Allocate the default buffer if needed.
-        if (mainBuffer)
-        {
-            printf("Needs default buffer, had main\n");
-            defaultBuffer = mainBuffer;
-            mainBuffer = VK_NULL_HANDLE;
-        }
-        else
-        {
-            auto error = vkCreateBuffer(deviceForVk->device, &bufferDescription, nullptr, &defaultBuffer);
-            if (error)
-                goto failure;
-        }
+        // We need the at least temporarily the AGPU_MAP_DYNAMIC_STORAGE_BIT mapping here.
+        avkBuffer->description.mapping_flags |= AGPU_MAP_DYNAMIC_STORAGE_BIT;
+        result->uploadBufferData(0, description.size, initial_data);
 
-        // Default buffer requirements
-        VkMemoryRequirements memoryRequirements;
-        vkGetBufferMemoryRequirements(deviceForVk->device, defaultBuffer, &memoryRequirements);
-
-        // Allocate the memory for the default buffer.
-        VkMemoryAllocateInfo allocateInfo;
-        memset(&allocateInfo, 0, sizeof(allocateInfo));
-        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocateInfo.allocationSize = memoryRequirements.size;
-        if (!deviceForVk->findMemoryType(memoryRequirements.memoryTypeBits, defaultMemoryTypeRequirements, &allocateInfo.memoryTypeIndex))
-            goto failure;
-
-        error = vkAllocateMemory(deviceForVk->device, &allocateInfo, nullptr, &defaultBufferMemory);
-        if (error)
-            goto failure;
-
-        error = vkBindBufferMemory(deviceForVk->device, defaultBuffer, defaultBufferMemory, 0);
-        if (error)
-            goto failure;
+        if((description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) == 0)
+            avkBuffer->description.mapping_flags &= ~AGPU_MAP_DYNAMIC_STORAGE_BIT;
     }
 
-    // Copy the initial data.
-    if (initial_data && needsUploadBuffer && needsDefaultBuffer)
-    {
-        VkBufferCopy copyRegion;
-        copyRegion.size = description->size;
-        copyRegion.dstOffset = copyRegion.srcOffset = 0;
-        if (!deviceForVk->copyBuffer(uploadBuffer, defaultBuffer, 1, &copyRegion))
-            goto failure;
-    }
-
-    // Destroy the upload buffer.
-    if (!keepUploadBuffer && uploadBuffer != VK_NULL_HANDLE)
-    {
-        if (uploadBuffer)
-            vkDestroyBuffer(deviceForVk->device, uploadBuffer, nullptr);
-        if (uploadBufferMemory)
-            vkFreeMemory(deviceForVk->device, uploadBufferMemory, nullptr);
-        uploadBuffer = VK_NULL_HANDLE;
-        uploadBufferMemory = VK_NULL_HANDLE;
-    }
-
-    {
-        auto result = agpu::makeObject<AVkBuffer> (device);
-        auto buffer = result.as<AVkBuffer> ();
-        buffer->description = *description;
-        buffer->gpuBuffer = defaultBuffer;
-        buffer->gpuBufferMemory = defaultBufferMemory;
-        buffer->uploadBuffer = uploadBuffer;
-        buffer->uploadBufferMemory = uploadBufferMemory;
-        return result;
-    }
-
-failure:
-    if(mainBuffer)
-        vkDestroyBuffer(deviceForVk->device, mainBuffer, nullptr);
-    if(uploadBuffer)
-        vkDestroyBuffer(deviceForVk->device, uploadBuffer, nullptr);
-    if(uploadBufferMemory)
-        vkFreeMemory(deviceForVk->device, uploadBufferMemory, nullptr);
-    if (defaultBuffer)
-        vkDestroyBuffer(deviceForVk->device, defaultBuffer, nullptr);
-    if (defaultBufferMemory)
-        vkFreeMemory(deviceForVk->device, defaultBufferMemory, nullptr);
-    return agpu::buffer_ref();
+    return result;
 }
 
 agpu_pointer AVkBuffer::mapBuffer(agpu_mapping_access flags)
 {
-    // The upload buffer must be available.
-    if (!uploadBufferMemory)
+    if (!allocation)
         return nullptr;
 
     auto device = weakDevice.lock();
     if(!device)
         return nullptr;
 
-    std::unique_lock<std::mutex> l(mapMutex);
-
+    std::unique_lock<Spinlock> l(mappingLock);
     if (mapCount == 0)
     {
-        auto error = vkMapMemory(deviceForVk->device, uploadBufferMemory, 0, VK_WHOLE_SIZE, 0, &mappedPointer);
+        auto error = vmaMapMemory(deviceForVk->memoryAllocator, allocation, &mappedPointer);
         if (error)
         {
             return nullptr;
@@ -235,19 +124,18 @@ agpu_pointer AVkBuffer::mapBuffer(agpu_mapping_access flags)
 
 agpu_error AVkBuffer::unmapBuffer()
 {
-    // The upload buffer must be available.
-    if (!uploadBufferMemory)
+    if (!allocation)
         return AGPU_INVALID_OPERATION;
 
     auto device = weakDevice.lock();
     if(!device)
         return AGPU_INVALID_OPERATION;
 
-    std::unique_lock<std::mutex> l(mapMutex);
+    std::unique_lock<Spinlock> l(mappingLock);
     --mapCount;
     if (mapCount == 0)
     {
-        vkUnmapMemory(deviceForVk->device, uploadBufferMemory);
+        vmaUnmapMemory(deviceForVk->memoryAllocator, allocation);
         mappedPointer = nullptr;
     }
 
@@ -263,7 +151,7 @@ agpu_error AVkBuffer::getDescription(agpu_buffer_description* description)
 
 agpu_error AVkBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
-    bool canBeSubUpdated = (description.mapping_flags & AGPU_MAP_DYNAMIC_STORAGE_BIT) != 0;
+    bool canBeSubUpdated = (description.mapping_flags & (AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT)) != 0;
     if (!canBeSubUpdated)
         return AGPU_UNSUPPORTED;
 
@@ -271,76 +159,115 @@ agpu_error AVkBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_po
     if (offset + size > description.size)
         return AGPU_ERROR;
 
+    // Do we have data to upload?
+    if(size == 0)
+        return AGPU_OK;
+
+    // If we can map the buffer, then just perform a memcpy onto it.
+    if(description.mapping_flags & AGPU_MAP_WRITE_BIT)
+    {
+        auto uploadPointer = reinterpret_cast<uint8_t*> (mapBuffer(AGPU_WRITE_ONLY)) + offset;
+        if(!uploadPointer)
+            return AGPU_ERROR;
+
+        memcpy(uploadPointer, data, size);
+        return unmapBuffer();
+    }
+
     auto device = weakDevice.lock();
     if(!device)
         return AGPU_INVALID_OPERATION;
 
-    // Check the data.
-    CHECK_POINTER(data);
+    bool uploadResult = false;
+    deviceForVk->withUploadCommandListDo(size, 1, [&](AVkImplicitResourceUploadCommandList &uploadList) {
+        // Do we need to stream the buffer upload?.
+        if(size <= uploadList.currentStagingBufferSize)
+        {
+            memcpy(uploadList.currentStagingBufferPointer, data, size);
+            uploadResult = uploadList.setupCommandBuffer()
+                && uploadList.uploadBufferData(handle, offset, size)
+                && uploadList.submitCommandBuffer();
+        }
+        else
+        {
+            abort();
+        }
+    });
 
-    // Map the upload buffer.
-    void *mappedBuffer;
-    auto error = vkMapMemory(deviceForVk->device, uploadBufferMemory, offset, size, 0, &mappedBuffer);
-    CONVERT_VULKAN_ERROR(error);
-
-    // Copy and unmap
-    memcpy(mappedBuffer, data, size);
-    vkUnmapMemory(deviceForVk->device, uploadBufferMemory);
-
-    // Transfer the data to the gpu buffer.
-    if (!gpuBuffer)
-        return AGPU_OK;
-
-    VkBufferCopy region;
-    region.srcOffset = region.dstOffset = offset;
-    region.size = size;
-
-    if (!deviceForVk->copyBuffer(uploadBuffer, gpuBuffer, 1, &region))
-        return AGPU_ERROR;
-
-    return AGPU_OK;
+    return uploadResult ? AGPU_OK : AGPU_ERROR;
 }
 
 agpu_error AVkBuffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer data)
 {
-    return AGPU_UNIMPLEMENTED;
+    bool canBeSubReaded = (description.mapping_flags & (AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_READ_BIT)) != 0;
+    if (!canBeSubReaded)
+        return AGPU_UNSUPPORTED;
+
+    // Check the limits
+    if (offset + size > description.size)
+        return AGPU_ERROR;
+
+    // Do we have data to upload?
+    if(size == 0)
+        return AGPU_OK;
+
+    // If we can map the buffer, then just perform a memcpy from it.
+    if(description.mapping_flags & AGPU_MAP_READ_BIT)
+    {
+        auto readbackPointer = reinterpret_cast<uint8_t*> (mapBuffer(AGPU_READ_ONLY)) + offset;
+        if(!readbackPointer)
+            return AGPU_ERROR;
+
+        memcpy(readbackPointer, data, size);
+        return unmapBuffer();
+    }
+
+    auto device = weakDevice.lock();
+    if(!device)
+        return AGPU_INVALID_OPERATION;
+
+    bool readbackResult = false;
+    deviceForVk->withReadbackCommandListDo(size, 1, [&](AVkImplicitResourceReadbackCommandList &readbackList) {
+        // Do we need to stream the buffer upload?.
+        if(size <= readbackList.currentStagingBufferSize)
+        {
+            readbackResult = readbackList.setupCommandBuffer()
+                && readbackList.readbackBufferData(handle, offset, size)
+                && readbackList.submitCommandBuffer();
+            memcpy(data, readbackList.currentStagingBufferPointer, size);
+        }
+        else
+        {
+            abort();
+        }
+    });
+
+    return readbackResult ? AGPU_OK : AGPU_ERROR;
 }
 
 agpu_error AVkBuffer::flushWholeBuffer()
 {
-    if(!uploadBufferMemory)
+    if(!allocation)
         return AGPU_OK;
 
     auto device = weakDevice.lock();
     if(!device)
         return AGPU_INVALID_OPERATION;
 
-    VkMappedMemoryRange range;
-    memset(&range, 0, sizeof(range));
-    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    range.memory = uploadBufferMemory;
-    range.size = VK_WHOLE_SIZE;
-    auto error = vkFlushMappedMemoryRanges(deviceForVk->device, 1, &range);
-    CONVERT_VULKAN_ERROR(error);
+    vmaFlushAllocation(deviceForVk->memoryAllocator, allocation, 0, description.size);
     return AGPU_OK;
 }
 
 agpu_error AVkBuffer::invalidateWholeBuffer()
 {
-    if(!uploadBufferMemory)
+    if(!allocation)
         return AGPU_OK;
 
     auto device = weakDevice.lock();
     if(!device)
         return AGPU_INVALID_OPERATION;
 
-    VkMappedMemoryRange range;
-    memset(&range, 0, sizeof(range));
-    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    range.memory = uploadBufferMemory;
-    range.size = VK_WHOLE_SIZE;
-    auto error = vkInvalidateMappedMemoryRanges(deviceForVk->device, 1, &range);
-    CONVERT_VULKAN_ERROR(error);
+    vmaInvalidateAllocation(deviceForVk->memoryAllocator, allocation, 0, description.size);
     return AGPU_OK;
 }
 

@@ -507,8 +507,11 @@
             <constant name="TextureUsageDepthAttachment" value="4" />
             <constant name="TextureUsageStencilAttachment" value="8" />
             <constant name="TextureUsageStorage" value="16" />
+            <constant name="TextureUsageCopySource" value="32" />
+            <constant name="TextureUsageCopyDestination" value="64" />
             <constant name="TextureUsageReadedBack" value="32" />
             <constant name="TextureUsageUploaded" value="64" />
+            <constant name="TextureUsagePresent" value="128" />
         </enum>
 
 		<enum name="shader_type">
@@ -1640,12 +1643,6 @@
                 <arg name="sourceSize" type="size3d*" />
                 <arg name="destRegion" type="region3d*" />
                 <arg name="data" type="pointer" />
-            </method>
-
-            <method name="discardUploadBuffer" cname="DiscardTextureUploadBuffer" returnType="error">
-            </method>
-
-            <method name="discardReadbackBuffer" cname="DiscardTextureReadbackBuffer" returnType="error">
             </method>
 
             <method name="getFullViewDescription" cname="GetTextureFullViewDescription" returnType="error">

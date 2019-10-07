@@ -42,9 +42,6 @@ public:
     virtual agpu_error uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
     virtual agpu_error uploadTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data) override;
 
-    virtual agpu_error discardUploadBuffer() override;
-    virtual agpu_error discardReadbackBuffer() override;
-
     virtual agpu_error getDescription(agpu_texture_description* description) override;
 
 

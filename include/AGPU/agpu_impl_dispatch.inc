@@ -906,18 +906,6 @@ AGPU_EXPORT agpu_error agpuUploadTextureSubData(agpu_texture* self, agpu_int lev
 	return asRef(agpu::texture, self)->uploadTextureSubData(level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data);
 }
 
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* self)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::texture, self)->discardUploadBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* self)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::texture, self)->discardReadbackBuffer();
-}
-
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* self, agpu_texture_view_description* result)
 {
 	if(!self) return AGPU_NULL_POINTER;

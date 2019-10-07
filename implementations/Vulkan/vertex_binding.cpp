@@ -41,7 +41,7 @@ agpu_error AVkVertexBinding::bindVertexBuffersWithOffsets(agpu_uint count, agpu:
     {
         auto buffer = vertex_buffers[i];
         this->vertexBuffers[i] = buffer;
-        this->vulkanBuffers[i] = buffer.as<AVkBuffer> ()->getDrawBuffer();
+        this->vulkanBuffers[i] = buffer.as<AVkBuffer> ()->handle;
         this->offsets[i] = offsets ? offsets[i] : 0;
     }
 

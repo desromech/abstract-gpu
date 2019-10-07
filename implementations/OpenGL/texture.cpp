@@ -388,16 +388,6 @@ agpu_error GLTexture::uploadTextureSubData ( agpu_int level, agpu_int arrayIndex
     return AGPU_OK;
 }
 
-agpu_error GLTexture::discardUploadBuffer()
-{
-    return AGPU_OK;
-}
-
-agpu_error GLTexture::discardReadbackBuffer()
-{
-    return AGPU_OK;
-}
-
 agpu_error GLTexture::getFullViewDescription(agpu_texture_view_description *viewDescription)
 {
     CHECK_POINTER(viewDescription);

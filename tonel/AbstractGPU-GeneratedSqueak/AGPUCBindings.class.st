@@ -908,18 +908,6 @@ AGPUCBindings >> uploadTextureSubData_texture: texture level: level arrayIndex: 
 ]
 
 { #category : #'texture' }
-AGPUCBindings >> discardUploadBuffer_texture: texture [
-	<cdecl: long 'agpuDiscardTextureUploadBuffer' (void*)>
-	^ self externalCallFailed
-]
-
-{ #category : #'texture' }
-AGPUCBindings >> discardReadbackBuffer_texture: texture [
-	<cdecl: long 'agpuDiscardTextureReadbackBuffer' (void*)>
-	^ self externalCallFailed
-]
-
-{ #category : #'texture' }
 AGPUCBindings >> getFullViewDescription_texture: texture result: result [
 	<cdecl: long 'agpuGetTextureFullViewDescription' (void* AGPUTextureViewDescription*)>
 	^ self externalCallFailed

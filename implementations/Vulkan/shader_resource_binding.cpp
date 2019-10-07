@@ -54,7 +54,7 @@ agpu_error AVkShaderResourceBinding::bindUniformBufferRange(agpu_int location, c
 
     // Align the size to 256 Kb
     VkDescriptorBufferInfo bufferInfo;
-    bufferInfo.buffer = uniform_buffer.as<AVkBuffer> ()->getDrawBuffer();
+    bufferInfo.buffer = uniform_buffer.as<AVkBuffer> ()->handle;
     bufferInfo.offset = offset;
     bufferInfo.range = (size + 255) & (~255);
 
@@ -97,7 +97,7 @@ agpu_error AVkShaderResourceBinding::bindStorageBufferRange(agpu_int location, c
 
     // Align the size to 256 Kb
     VkDescriptorBufferInfo bufferInfo;
-    bufferInfo.buffer = storage_buffer.as<AVkBuffer> ()->getDrawBuffer();
+    bufferInfo.buffer = storage_buffer.as<AVkBuffer> ()->handle;
     bufferInfo.offset = offset;
     bufferInfo.range = (size + 255) & (~255);
 

@@ -61,20 +61,6 @@ AGPUTexture >> uploadTextureSubData: level arrayIndex: arrayIndex pitch: pitch s
 ]
 
 { #category : #'wrappers' }
-AGPUTexture >> discardUploadBuffer [
-	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance discardUploadBuffer_texture: (self validHandle).
-	self checkErrorCode: resultValue_
-]
-
-{ #category : #'wrappers' }
-AGPUTexture >> discardReadbackBuffer [
-	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance discardReadbackBuffer_texture: (self validHandle).
-	self checkErrorCode: resultValue_
-]
-
-{ #category : #'wrappers' }
 AGPUTexture >> getFullViewDescription: result [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getFullViewDescription_texture: (self validHandle) result: result.

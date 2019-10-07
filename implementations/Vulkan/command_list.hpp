@@ -63,7 +63,7 @@ public:
 
 private:
     void resetState();
-    agpu_error setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask);
+    agpu_error transitionImageUsageMode(VkImage image, agpu_texture_usage_mode_mask allowedUsages, agpu_texture_usage_mode_mask sourceUsage, agpu_texture_usage_mode_mask destUsage, VkImageSubresourceRange range);
 
     agpu::framebuffer_ref currentFramebuffer;
     agpu_bool isClosed;

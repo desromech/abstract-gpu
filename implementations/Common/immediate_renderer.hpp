@@ -3,6 +3,7 @@
 
 #include "state_tracker_cache.hpp"
 #include "vector_math.hpp"
+#include "utility.hpp"
 #include <assert.h>
 #include <vector>
 #include <functional>
@@ -243,18 +244,8 @@ struct hash<AgpuCommon::ExtraRenderingState>
 
 }
 
-inline size_t nextPowerOfTwo(size_t v)
+namespace AgpuCommon
 {
-    // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v;
-}
 
 template<typename ST, agpu_uint DS>
 class ImmediateStateBuffer
@@ -404,8 +395,6 @@ public:
     agpu::buffer_ref buffer;
 };
 
-namespace AgpuCommon
-{
 /**
  * I am an immediate renderer that emulates a classic OpenGL style
  * glBegin()/glEnd() rendering interface.

@@ -984,16 +984,6 @@ public:
 		agpuThrowIfFailed(agpuUploadTextureSubData(this, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data));
 	}
 
-	inline void discardUploadBuffer()
-	{
-		agpuThrowIfFailed(agpuDiscardTextureUploadBuffer(this));
-	}
-
-	inline void discardReadbackBuffer()
-	{
-		agpuThrowIfFailed(agpuDiscardTextureReadbackBuffer(this));
-	}
-
 	inline void getFullViewDescription(agpu_texture_view_description* result)
 	{
 		agpuThrowIfFailed(agpuGetTextureFullViewDescription(this, result));

@@ -419,8 +419,8 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const
     // Do the textures have the required image layout? if so, then just submit them.
     auto leftEyeTexture = left_eye.as<AVkTexture> ();
     auto rightEyeTexture = right_eye.as<AVkTexture> ();
-    if(leftEyeTexture->initialLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL &&
-       rightEyeTexture->initialLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+    if(leftEyeTexture->description.main_usage_mode == AGPU_TEXTURE_USAGE_COPY_SOURCE &&
+       rightEyeTexture->description.main_usage_mode == AGPU_TEXTURE_USAGE_COPY_SOURCE)
         return doSubmissionOfEyeTextures(left_eye, right_eye);
 
     auto device = weakDevice.lock();
@@ -438,13 +438,10 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const
         CONVERT_VULKAN_ERROR(error);
     }
 
-    VkImageSubresourceRange imageRange;
-    memset(&imageRange, 0, sizeof(imageRange));
+    VkImageSubresourceRange imageRange = {};
     imageRange.layerCount = 1;
     imageRange.levelCount = 1;
-
-    auto leftSourceLayout = leftEyeTexture->initialLayout;
-    auto rightSourceLayout = rightEyeTexture->initialLayout;
+    imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Before submission command buffer
     {
@@ -452,19 +449,19 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const
         if(agpuError)
             return agpuError;
 
-        if(leftSourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        if(leftEyeTexture->description.main_usage_mode != AGPU_TEXTURE_USAGE_COPY_SOURCE)
         {
-            VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = deviceForVk->barrierForImageLayoutTransition(leftEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, leftSourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, leftEyeTexture->initialLayoutAccessBits, srcStages, destStages);
+            VkPipelineStageFlags srcStages = 0;
+            VkPipelineStageFlags destStages = 0;
+            auto barrier = barrierForImageUsageTransition(leftEyeTexture->image, imageRange, leftEyeTexture->description.usage_modes, leftEyeTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, srcStages, destStages);
             vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
-        if(rightSourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        if(rightEyeTexture->description.main_usage_mode != AGPU_TEXTURE_USAGE_COPY_SOURCE)
         {
-            VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = deviceForVk->barrierForImageLayoutTransition(rightEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, rightSourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rightEyeTexture->initialLayoutAccessBits, srcStages, destStages);
+            VkPipelineStageFlags srcStages = 0;
+            VkPipelineStageFlags destStages = 0;
+            auto barrier = barrierForImageUsageTransition(rightEyeTexture->image, imageRange, rightEyeTexture->description.usage_modes, leftEyeTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, srcStages, destStages);
             vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
@@ -478,20 +475,20 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const
         if(agpuError)
             return agpuError;
 
-        if(leftSourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        if(leftEyeTexture->description.main_usage_mode != AGPU_TEXTURE_USAGE_COPY_SOURCE)
         {
-            VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = deviceForVk->barrierForImageLayoutTransition(leftEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, leftSourceLayout, 0, srcStages, destStages);
-            vkCmdPipelineBarrier(afterSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            VkPipelineStageFlags srcStages = 0;
+            VkPipelineStageFlags destStages = 0;
+            auto barrier = barrierForImageUsageTransition(leftEyeTexture->image, imageRange, leftEyeTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, leftEyeTexture->description.main_usage_mode, srcStages, destStages);
+            vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
-        if(rightSourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        if(rightEyeTexture->description.main_usage_mode != AGPU_TEXTURE_USAGE_COPY_SOURCE)
         {
-            VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            auto barrier = deviceForVk->barrierForImageLayoutTransition(rightEyeTexture->image, imageRange, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, rightSourceLayout, 0, srcStages, destStages);
-            vkCmdPipelineBarrier(afterSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            VkPipelineStageFlags srcStages = 0;
+            VkPipelineStageFlags destStages = 0;
+            auto barrier = barrierForImageUsageTransition(rightEyeTexture->image, imageRange, rightEyeTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, leftEyeTexture->description.main_usage_mode, srcStages, destStages);
+            vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
         auto error = vkEndCommandBuffer(afterSubmissionCommandList);

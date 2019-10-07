@@ -1201,22 +1201,6 @@ AGPU_EXPORT agpu_error agpuUploadTextureSubData ( agpu_texture* texture, agpu_in
 	return (*dispatchTable)->agpuUploadTextureSubData ( texture, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data );
 }
 
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer ( agpu_texture* texture )
-{
-	if (texture == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
-	return (*dispatchTable)->agpuDiscardTextureUploadBuffer ( texture );
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer ( agpu_texture* texture )
-{
-	if (texture == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
-	return (*dispatchTable)->agpuDiscardTextureReadbackBuffer ( texture );
-}
-
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription ( agpu_texture* texture, agpu_texture_view_description* result )
 {
 	if (texture == nullptr)

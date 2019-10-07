@@ -40,8 +40,7 @@ agpu::command_list_ref AVkCommandList::create(const agpu::device_ref &device, ag
     if (!allocator)
         return agpu::command_list_ref();
 
-    VkCommandBufferAllocateInfo info;
-    memset(&info, 0, sizeof(info));
+    VkCommandBufferAllocateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     info.commandBufferCount = 1;
     info.commandPool = allocator.as<AVkCommandAllocator> ()->commandPool;
@@ -54,12 +53,10 @@ agpu::command_list_ref AVkCommandList::create(const agpu::device_ref &device, ag
     if (error)
         return agpu::command_list_ref();
 
-    VkCommandBufferInheritanceInfo commandBufferInheritance;
-    memset(&commandBufferInheritance, 0, sizeof(commandBufferInheritance));
+    VkCommandBufferInheritanceInfo commandBufferInheritance = {};
     commandBufferInheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 
-    VkCommandBufferBeginInfo bufferBeginInfo;
-    memset(&bufferBeginInfo, 0, sizeof(bufferBeginInfo));
+    VkCommandBufferBeginInfo bufferBeginInfo = {};
     bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bufferBeginInfo.pInheritanceInfo = &commandBufferInheritance;
 
@@ -101,12 +98,10 @@ agpu_error AVkCommandList::reset(const agpu::command_allocator_ref &newAllocator
     auto error = vkResetCommandBuffer(commandBuffer, 0);
     CONVERT_VULKAN_ERROR(error);
 
-    VkCommandBufferInheritanceInfo commandBufferInheritance;
-    memset(&commandBufferInheritance, 0, sizeof(commandBufferInheritance));
+    VkCommandBufferInheritanceInfo commandBufferInheritance = {};
     commandBufferInheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 
-    VkCommandBufferBeginInfo bufferBeginInfo;
-    memset(&bufferBeginInfo, 0, sizeof(bufferBeginInfo));
+    VkCommandBufferBeginInfo bufferBeginInfo = {};
     bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bufferBeginInfo.pInheritanceInfo = &commandBufferInheritance;
 
@@ -132,12 +127,10 @@ agpu_error AVkCommandList::resetBundle (const agpu::command_allocator_ref &newAl
     auto error = vkResetCommandBuffer(commandBuffer, 0);
     CONVERT_VULKAN_ERROR(error);
 
-    VkCommandBufferInheritanceInfo commandBufferInheritance;
-    memset(&commandBufferInheritance, 0, sizeof(commandBufferInheritance));
+    VkCommandBufferInheritanceInfo commandBufferInheritance = {};
     commandBufferInheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 
-    VkCommandBufferBeginInfo bufferBeginInfo;
-    memset(&bufferBeginInfo, 0, sizeof(bufferBeginInfo));
+    VkCommandBufferBeginInfo bufferBeginInfo = {};
     bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bufferBeginInfo.pInheritanceInfo = &commandBufferInheritance;
     bufferBeginInfo.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -233,7 +226,7 @@ agpu_error AVkCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer
     if ((index_buffer.as<AVkBuffer> ()->description.usage_modes & AGPU_ELEMENT_ARRAY_BUFFER) == 0)
         return AGPU_INVALID_PARAMETER;
 
-    vkCmdBindIndexBuffer(commandBuffer, index_buffer.as<AVkBuffer> ()->getDrawBuffer(), offset, indexTypeForStride(index_size));
+    vkCmdBindIndexBuffer(commandBuffer, index_buffer.as<AVkBuffer> ()->handle, offset, indexTypeForStride(index_size));
     return AGPU_OK;
 }
 
@@ -301,7 +294,7 @@ agpu_error AVkCommandList::drawArraysIndirect(agpu_size offset, agpu_size drawco
     if (!drawIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    vkCmdDrawIndirect(commandBuffer, drawIndirectBuffer.as<AVkBuffer> ()->getDrawBuffer(), offset, drawcount, drawIndirectBuffer.as<AVkBuffer> ()->description.stride);
+    vkCmdDrawIndirect(commandBuffer, drawIndirectBuffer.as<AVkBuffer> ()->handle, offset, drawcount, drawIndirectBuffer.as<AVkBuffer> ()->description.stride);
     return AGPU_OK;
 }
 
@@ -316,7 +309,7 @@ agpu_error AVkCommandList::drawElementsIndirect(agpu_size offset, agpu_size draw
     if (!drawIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer.as<AVkBuffer> ()->getDrawBuffer(), offset, drawcount, drawIndirectBuffer.as<AVkBuffer> ()->description.stride);
+    vkCmdDrawIndexedIndirect(commandBuffer, drawIndirectBuffer.as<AVkBuffer> ()->handle, offset, drawcount, drawIndirectBuffer.as<AVkBuffer> ()->description.stride);
     return AGPU_OK;
 }
 
@@ -331,7 +324,7 @@ agpu_error AVkCommandList::dispatchComputeIndirect ( agpu_size offset )
     if (!computeDispatchIndirectBuffer)
         return AGPU_INVALID_OPERATION;
 
-    vkCmdDispatchIndirect(commandBuffer, computeDispatchIndirectBuffer.as<AVkBuffer> ()->getDrawBuffer(), offset);
+    vkCmdDispatchIndirect(commandBuffer, computeDispatchIndirectBuffer.as<AVkBuffer> ()->handle, offset);
     return AGPU_OK;
 }
 
@@ -352,11 +345,14 @@ agpu_error AVkCommandList::executeBundle(const agpu::command_list_ref &bundle)
     return AGPU_OK;
 }
 
-agpu_error AVkCommandList::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask)
+agpu_error AVkCommandList::transitionImageUsageMode(VkImage image, agpu_texture_usage_mode_mask allowedUsages, agpu_texture_usage_mode_mask sourceUsage, agpu_texture_usage_mode_mask destUsage, VkImageSubresourceRange range)
 {
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    auto barrier = deviceForVk->barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
+    if(sourceUsage == destUsage)
+        return AGPU_OK;
+
+    VkPipelineStageFlags srcStages = 0;
+    VkPipelineStageFlags destStages = 0;
+    auto barrier = barrierForImageUsageTransition(image, range, allowedUsages, sourceUsage, destUsage, srcStages, destStages);
 
     vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     return AGPU_OK;
@@ -374,46 +370,40 @@ agpu_error AVkCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
     auto avkCurrentFramebuffer = currentFramebuffer.as<AVkFramebuffer> ();
 
     // Transition the color attachments.
-    auto destLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < avkCurrentFramebuffer->colorCount; ++i)
     {
-        VkImageSubresourceRange range;
-        memset(&range, 0, sizeof(range));
+        VkImageSubresourceRange range = {};
 
         auto &desc = avkCurrentFramebuffer->attachmentViews[i].as<AVkTextureView> ()->description;
         range.baseArrayLayer = desc.subresource_range.base_arraylayer;
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         auto attachmentTexture = avkCurrentFramebuffer->attachmentTextures[i].as<AVkTexture> ();
-        setImageLayout(attachmentTexture->image, range, VK_IMAGE_ASPECT_COLOR_BIT, attachmentTexture->initialLayout, destLayout, attachmentTexture->initialLayoutAccessBits);
+        transitionImageUsageMode(attachmentTexture->image, attachmentTexture->description.usage_modes, attachmentTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT, range);
     }
 
     // Transition the depth stencil attachment, if needed.
     if(avkCurrentFramebuffer->hasDepthStencil)
     {
         auto depthStencilAttachment = avkCurrentFramebuffer->attachmentTextures.back().as<AVkTexture> ();
-        if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-        {
-            auto &desc = avkCurrentFramebuffer->attachmentViews.back().as<AVkTextureView> ()->description;;
-            VkImageSubresourceRange range;
-            memset(&range, 0, sizeof(range));
-            range.baseArrayLayer = desc.subresource_range.base_arraylayer;
-            range.baseMipLevel = desc.subresource_range.base_miplevel;
-            range.layerCount = 1;
-            range.levelCount = 1;
 
-            // TODO: Check for the stencil bit here.
-            setImageLayout(depthStencilAttachment->image, range, VK_IMAGE_ASPECT_DEPTH_BIT,
-                depthStencilAttachment->initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                depthStencilAttachment->initialLayoutAccessBits);
-        }
+        auto &desc = avkCurrentFramebuffer->attachmentViews.back().as<AVkTextureView> ()->description;;
+        VkImageSubresourceRange range = {};
+        range.baseArrayLayer = desc.subresource_range.base_arraylayer;
+        range.baseMipLevel = desc.subresource_range.base_miplevel;
+        range.layerCount = 1;
+        range.levelCount = 1;
+        range.aspectMask = depthStencilAttachment->imageAspect;
+
+        auto depthStencilUsageMode = depthStencilAttachment->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+        transitionImageUsageMode(depthStencilAttachment->image, depthStencilAttachment->description.usage_modes, depthStencilAttachment->description.main_usage_mode, agpu_texture_usage_mode_mask(depthStencilUsageMode), range);
     }
 
     // Begin the render pass.
     auto avkRenderPass = renderpass.as<AVkRenderPass> ();
-    VkRenderPassBeginInfo passBeginInfo;
-    memset(&passBeginInfo, 0, sizeof(passBeginInfo));
+    VkRenderPassBeginInfo passBeginInfo = {};
     passBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     passBeginInfo.renderPass = avkRenderPass->handle;
     passBeginInfo.framebuffer = avkCurrentFramebuffer->framebuffer;
@@ -441,41 +431,35 @@ agpu_error AVkCommandList::endRenderPass()
     auto avkCurrentFramebuffer = currentFramebuffer.as<AVkFramebuffer> ();
 
     // Transition the color attachments.
-    auto sourceLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     for (agpu_uint i = 0; i < avkCurrentFramebuffer->colorCount; ++i)
     {
         auto &desc = avkCurrentFramebuffer->attachmentViews[i].as<AVkTextureView> ()->description;
-        VkImageSubresourceRange range;
-        memset(&range, 0, sizeof(range));
+        VkImageSubresourceRange range = {};
         range.baseArrayLayer = desc.subresource_range.base_arraylayer;
         range.baseMipLevel = desc.subresource_range.base_miplevel;
         range.layerCount = 1;
         range.levelCount = 1;
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         auto attachmentTexture = avkCurrentFramebuffer->attachmentTextures[i].as<AVkTexture> ();
-        auto destLayout = attachmentTexture->initialLayout;
-        setImageLayout(attachmentTexture->image, range, VK_IMAGE_ASPECT_COLOR_BIT, sourceLayout, destLayout, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+        transitionImageUsageMode(attachmentTexture->image, attachmentTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT, attachmentTexture->description.main_usage_mode, range);
     }
 
     // Transition the depth stencil attachment if needed
     if(avkCurrentFramebuffer->hasDepthStencil)
     {
         auto depthStencilAttachment = avkCurrentFramebuffer->attachmentTextures.back().as<AVkTexture> ();
-        if(depthStencilAttachment->initialLayout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-        {
-            auto &desc = avkCurrentFramebuffer->attachmentViews.back().as<AVkTextureView> ()->description;
-            VkImageSubresourceRange range;
-            memset(&range, 0, sizeof(range));
-            range.baseArrayLayer = desc.subresource_range.base_arraylayer;
-            range.baseMipLevel = desc.subresource_range.base_miplevel;
-            range.layerCount = 1;
-            range.levelCount = 1;
 
-            // TODO: Check for the stencil bit here.
-            setImageLayout(depthStencilAttachment->image, range, VK_IMAGE_ASPECT_DEPTH_BIT,
-                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, depthStencilAttachment->initialLayout,
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-        }
+        auto &desc = avkCurrentFramebuffer->attachmentViews.back().as<AVkTextureView> ()->description;
+        VkImageSubresourceRange range = {};
+        range.baseArrayLayer = desc.subresource_range.base_arraylayer;
+        range.baseMipLevel = desc.subresource_range.base_miplevel;
+        range.layerCount = 1;
+        range.levelCount = 1;
+        range.aspectMask = depthStencilAttachment->imageAspect;
+
+        auto depthStencilUsageMode = depthStencilAttachment->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+        transitionImageUsageMode(depthStencilAttachment->image, depthStencilAttachment->description.usage_modes, agpu_texture_usage_mode_mask(depthStencilUsageMode), depthStencilAttachment->description.main_usage_mode, range);
     }
 
     // Unset the current framebuffer
@@ -516,27 +500,17 @@ agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTextur
     if(resolveAspects == 0)
         return AGPU_INVALID_PARAMETER;
 
-    VkImageSubresourceRange range;
-    memset(&range, 0, sizeof(range));
+    VkImageSubresourceRange range = {};
     range.layerCount = 1;
     range.levelCount = 1;
 
-    // Transition the source color attachment.
-    auto sourceInitialLayout = avkSourceTexture->initialLayout;
-    auto sourceResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    if(sourceInitialLayout != sourceResolveLayout)
-        setImageLayout(avkSourceTexture->image, range, avkSourceTexture->imageAspect, sourceInitialLayout, sourceResolveLayout, avkSourceTexture->initialLayoutAccessBits);
-
-    // Transition the dest color attachments.
-    auto destInitialLayout = avkDestTexture->initialLayout;
-    auto destResolveLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    if(destInitialLayout != destResolveLayout)
-        setImageLayout(avkDestTexture->image, range, avkDestTexture->imageAspect, destInitialLayout, destResolveLayout, avkDestTexture->initialLayoutAccessBits);
+    // Transition the textures into a copy layout.
+    transitionImageUsageMode(avkSourceTexture->image, avkSourceTexture->description.usage_modes, avkSourceTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, range);
+    transitionImageUsageMode(avkDestTexture->image, avkDestTexture->description.usage_modes, avkDestTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, range);
 
     if(avkSourceTexture->description.sample_count == 1 && avkDestTexture->description.sample_count == 1)
     {
-        VkImageBlit blitRegion;
-        memset(&blitRegion, 0, sizeof(blitRegion));
+        VkImageBlit blitRegion = {};
         blitRegion.srcSubresource.aspectMask = resolveAspects;
         blitRegion.srcSubresource.baseArrayLayer = sourceLayer;
         blitRegion.srcSubresource.layerCount = layerCount;
@@ -551,12 +525,11 @@ agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTextur
         blitRegion.dstOffsets[1].y = avkDestTexture->description.height;
         blitRegion.dstOffsets[1].z = 1;
 
-        vkCmdBlitImage(commandBuffer, avkSourceTexture->image, sourceResolveLayout, avkDestTexture->image, destResolveLayout, 1, &blitRegion, VK_FILTER_NEAREST);
+        vkCmdBlitImage(commandBuffer, avkSourceTexture->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, avkDestTexture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, VK_FILTER_NEAREST);
     }
     else
     {
-        VkImageResolve region;
-        memset(&region, 0, sizeof(region));
+        VkImageResolve region = {};
         region.dstSubresource.aspectMask = resolveAspects;
         region.dstSubresource.baseArrayLayer = destLayer;
         region.dstSubresource.layerCount = layerCount;
@@ -572,16 +545,14 @@ agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTextur
         region.extent.depth = 1;
 
         vkCmdResolveImage(commandBuffer,
-            avkSourceTexture->image, sourceResolveLayout,
-            avkDestTexture->image, destResolveLayout,
+            avkSourceTexture->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            avkDestTexture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region);
     }
 
-    // Transition the destination back to its original layout
-    if(destInitialLayout != destResolveLayout)
-        setImageLayout(avkDestTexture->image, range, avkDestTexture->imageAspect, destResolveLayout, destInitialLayout, VkAccessFlagBits(0));
-    if(sourceInitialLayout != sourceResolveLayout)
-        setImageLayout(avkSourceTexture->image, range, avkSourceTexture->imageAspect, sourceResolveLayout, sourceInitialLayout, VkAccessFlagBits(0));
+    // Transition the textures back to their original layout
+    transitionImageUsageMode(avkSourceTexture->image, avkSourceTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, avkSourceTexture->description.main_usage_mode, range);
+    transitionImageUsageMode(avkDestTexture->image, avkDestTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, avkDestTexture->description.main_usage_mode, range);
 
     return AGPU_OK;
 }
@@ -638,7 +609,7 @@ agpu_error AVkCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, ag
     region.dstOffset = dest_offset;
     region.size = copy_size;
 
-    vkCmdCopyBuffer(commandBuffer, source_buffer.as<AVkBuffer> ()->getDrawBuffer(), dest_buffer.as<AVkBuffer> ()->getDrawBuffer(), 1, &region);
+    vkCmdCopyBuffer(commandBuffer, source_buffer.as<AVkBuffer> ()->handle, dest_buffer.as<AVkBuffer> ()->handle, 1, &region);
     return AGPU_OK;
 }
 
