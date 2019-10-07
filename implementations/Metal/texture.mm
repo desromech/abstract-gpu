@@ -161,16 +161,6 @@ agpu_error AMtlTexture::uploadTextureSubData ( agpu_int level, agpu_int arrayInd
     return AGPU_OK;
 }
 
-agpu_error AMtlTexture::discardUploadBuffer (  )
-{
-    return AGPU_OK;
-}
-
-agpu_error AMtlTexture::discardReadbackBuffer (  )
-{
-    return AGPU_OK;
-}
-
 agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* viewDescription )
 {
     CHECK_POINTER(viewDescription);
