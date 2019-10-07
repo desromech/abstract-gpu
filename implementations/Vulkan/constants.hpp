@@ -230,6 +230,53 @@ inline VkImageLayout mapTextureUsageModeToLayout(agpu_texture_usage_mode_mask al
     }
 }
 
+inline VkAccessFlags mapBufferUsageModeToAccessFlags(agpu_buffer_usage_mask modes)
+{
+    VkAccessFlags flags = 0;
+
+    if(modes & AGPU_COPY_DESTINATION_BUFFER)
+        flags |= VK_ACCESS_TRANSFER_WRITE_BIT;
+    if(modes & AGPU_COPY_SOURCE_BUFFER)
+        flags |= VK_ACCESS_TRANSFER_READ_BIT;
+
+    if(modes & AGPU_ARRAY_BUFFER)
+        flags |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    if(modes & AGPU_ELEMENT_ARRAY_BUFFER)
+        flags |= VK_ACCESS_INDEX_READ_BIT;
+    if(modes & (AGPU_UNIFORM_BUFFER | AGPU_STORAGE_BUFFER | AGPU_UNIFORM_TEXEL_BUFFER | AGPU_STORAGE_TEXEL_BUFFER))
+        flags |= VK_ACCESS_SHADER_READ_BIT;
+    if(modes & (AGPU_DRAW_INDIRECT_BUFFER | AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER))
+        flags |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+    if(modes & (AGPU_STORAGE_BUFFER | AGPU_STORAGE_TEXEL_BUFFER))
+        flags |= VK_ACCESS_SHADER_WRITE_BIT;
+
+    return flags;
+}
+
+inline VkPipelineStageFlags mapBufferUsageModeToSourceStages(agpu_buffer_usage_mask modes)
+{
+    VkPipelineStageFlags flags = 0;
+
+    if(modes & (AGPU_COPY_DESTINATION_BUFFER | AGPU_COPY_SOURCE_BUFFER))
+        flags |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    if(modes & (AGPU_ARRAY_BUFFER | AGPU_ELEMENT_ARRAY_BUFFER))
+        flags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    if(modes & (AGPU_UNIFORM_BUFFER | AGPU_STORAGE_BUFFER | AGPU_UNIFORM_TEXEL_BUFFER | AGPU_STORAGE_TEXEL_BUFFER))
+        flags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    if(modes & (AGPU_DRAW_INDIRECT_BUFFER | AGPU_COMPUTE_DISPATCH_INDIRECT_BUFFER))
+        flags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+
+    return flags == 0 ? VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT: flags;
+}
+
+inline VkPipelineStageFlags mapBufferUsageModeToDestinationStages(agpu_buffer_usage_mask modes)
+{
+    VkPipelineStageFlags flags = 0;
+
+    return flags == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT: flags;
+}
+
 inline VkAccessFlags mapTextureUsageModeToAccessFlags(agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask mode)
 {
     switch(int(mode))

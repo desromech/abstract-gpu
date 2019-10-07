@@ -68,7 +68,7 @@ public:
         {
             agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_DESTINATION_BUFFER);
             agpuCopyBuffer(commandList, uploadBuffer, 0, storageBuffer, 0, bufferByteSize);
-            agpuPopBufferTransitionBarrier(commandList, storageBuffer);
+            agpuPopBufferTransitionBarrier(commandList);
         }
 
 		// Dispatch the compute
@@ -81,7 +81,7 @@ public:
         {
             agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_SOURCE_BUFFER);
             agpuCopyBuffer(commandList, storageBuffer, 0, readbackBuffer, 0, bufferByteSize);
-            agpuPopBufferTransitionBarrier(commandList, storageBuffer);
+            agpuPopBufferTransitionBarrier(commandList);
         }
 
 		agpuCloseCommandList(commandList);

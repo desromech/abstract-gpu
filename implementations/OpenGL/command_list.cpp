@@ -535,12 +535,12 @@ agpu_error GLCommandList::pushTextureTransitionBarrier(const agpu::texture_ref &
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error GLCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+agpu_error GLCommandList::popBufferTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error GLCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+agpu_error GLCommandList::popTextureTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }

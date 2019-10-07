@@ -397,16 +397,16 @@ AGPUStateTracker >> pushTextureTransitionBarrier: texture new_usage: new_usage s
 ]
 
 { #category : #'wrappers' }
-AGPUStateTracker >> popBufferTransitionBarrier: buffer [
+AGPUStateTracker >> popBufferTransitionBarrier [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance popBufferTransitionBarrier_state_tracker: (self validHandle) buffer: (self validHandleOf: buffer).
+	resultValue_ := AGPUCBindings uniqueInstance popBufferTransitionBarrier_state_tracker: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUStateTracker >> popTextureTransitionBarrier: texture subresource_range: subresource_range [
+AGPUStateTracker >> popTextureTransitionBarrier [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance popTextureTransitionBarrier_state_tracker: (self validHandle) texture: (self validHandleOf: texture) subresource_range: subresource_range.
+	resultValue_ := AGPUCBindings uniqueInstance popTextureTransitionBarrier_state_tracker: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 

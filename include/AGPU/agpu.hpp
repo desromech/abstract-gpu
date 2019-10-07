@@ -908,14 +908,14 @@ public:
 		agpuThrowIfFailed(agpuPushTextureTransitionBarrier(this, texture.get(), new_usage, subresource_range));
 	}
 
-	inline void popBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer)
+	inline void popBufferTransitionBarrier()
 	{
-		agpuThrowIfFailed(agpuPopBufferTransitionBarrier(this, buffer.get()));
+		agpuThrowIfFailed(agpuPopBufferTransitionBarrier(this));
 	}
 
-	inline void popTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_subresource_range* subresource_range)
+	inline void popTextureTransitionBarrier()
 	{
-		agpuThrowIfFailed(agpuPopTextureTransitionBarrier(this, texture.get(), subresource_range));
+		agpuThrowIfFailed(agpuPopTextureTransitionBarrier(this));
 	}
 
 	inline void copyBuffer(const agpu_ref<agpu_buffer>& source_buffer, agpu_size source_offset, const agpu_ref<agpu_buffer>& dest_buffer, agpu_size dest_offset, agpu_size copy_size)
@@ -1819,14 +1819,14 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerPushTextureTransitionBarrier(this, texture.get(), new_usage, subresource_range));
 	}
 
-	inline void popBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer)
+	inline void popBufferTransitionBarrier()
 	{
-		agpuThrowIfFailed(agpuStateTrackerPopBufferTransitionBarrier(this, buffer.get()));
+		agpuThrowIfFailed(agpuStateTrackerPopBufferTransitionBarrier(this));
 	}
 
-	inline void popTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_subresource_range* subresource_range)
+	inline void popTextureTransitionBarrier()
 	{
-		agpuThrowIfFailed(agpuStateTrackerPopTextureTransitionBarrier(this, texture.get(), subresource_range));
+		agpuThrowIfFailed(agpuStateTrackerPopTextureTransitionBarrier(this));
 	}
 
 	inline void copyBuffer(const agpu_ref<agpu_buffer>& source_buffer, agpu_size source_offset, const agpu_ref<agpu_buffer>& dest_buffer, agpu_size dest_offset, agpu_size copy_size)

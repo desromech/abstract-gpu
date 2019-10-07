@@ -578,16 +578,16 @@ agpu_error AbstractStateTracker::pushTextureTransitionBarrier(const agpu::textur
     return currentCommandList->pushTextureTransitionBarrier(texture, new_usage, subresource_range);
 }
 
-agpu_error AbstractStateTracker::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+agpu_error AbstractStateTracker::popBufferTransitionBarrier()
 {
     if(!currentCommandList) return AGPU_INVALID_OPERATION;
-    return currentCommandList->popBufferTransitionBarrier(buffer);
+    return currentCommandList->popBufferTransitionBarrier();
 }
 
-agpu_error AbstractStateTracker::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+agpu_error AbstractStateTracker::popTextureTransitionBarrier()
 {
     if(!currentCommandList) return AGPU_INVALID_OPERATION;
-    return currentCommandList->popTextureTransitionBarrier(texture, subresource_range);
+    return currentCommandList->popTextureTransitionBarrier();
 }
 
 agpu_error AbstractStateTracker::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)

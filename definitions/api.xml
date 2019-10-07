@@ -1569,12 +1569,9 @@
             </method>
 
             <method name="popBufferTransitionBarrier" cname="PopBufferTransitionBarrier" returnType="error">
-                <arg name="buffer" type="buffer*" />
             </method>
 
             <method name="popTextureTransitionBarrier" cname="PopTextureTransitionBarrier" returnType="error">
-                <arg name="texture" type="texture*" />
-                <arg name="subresource_range" type="subresource_range*" />
             </method>
 
             <method name="copyBuffer" cname="CopyBuffer" returnType="error">
@@ -2287,12 +2284,9 @@
             </method>
 
             <method name="popBufferTransitionBarrier" cname="StateTrackerPopBufferTransitionBarrier" returnType="error">
-                <arg name="buffer" type="buffer*" />
             </method>
 
             <method name="popTextureTransitionBarrier" cname="StateTrackerPopTextureTransitionBarrier" returnType="error">
-                <arg name="texture" type="texture*" />
-                <arg name="subresource_range" type="subresource_range*" />
             </method>
 
             <method name="copyBuffer" cname="StateTrackerCopyBuffer" returnType="error">

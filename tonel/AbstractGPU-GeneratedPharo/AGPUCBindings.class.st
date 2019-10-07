@@ -694,13 +694,13 @@ AGPUCBindings >> pushTextureTransitionBarrier_command_list: command_list texture
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> popBufferTransitionBarrier_command_list: command_list buffer: buffer [
-	^ self ffiCall: #(agpu_error agpuPopBufferTransitionBarrier (agpu_command_list* command_list , agpu_buffer* buffer) )
+AGPUCBindings >> popBufferTransitionBarrier_command_list: command_list [
+	^ self ffiCall: #(agpu_error agpuPopBufferTransitionBarrier (agpu_command_list* command_list) )
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> popTextureTransitionBarrier_command_list: command_list texture: texture subresource_range: subresource_range [
-	^ self ffiCall: #(agpu_error agpuPopTextureTransitionBarrier (agpu_command_list* command_list , agpu_texture* texture , agpu_subresource_range* subresource_range) )
+AGPUCBindings >> popTextureTransitionBarrier_command_list: command_list [
+	^ self ffiCall: #(agpu_error agpuPopTextureTransitionBarrier (agpu_command_list* command_list) )
 ]
 
 { #category : #'command_list' }
@@ -1429,13 +1429,13 @@ AGPUCBindings >> pushTextureTransitionBarrier_state_tracker: state_tracker textu
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> popBufferTransitionBarrier_state_tracker: state_tracker buffer: buffer [
-	^ self ffiCall: #(agpu_error agpuStateTrackerPopBufferTransitionBarrier (agpu_state_tracker* state_tracker , agpu_buffer* buffer) )
+AGPUCBindings >> popBufferTransitionBarrier_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPopBufferTransitionBarrier (agpu_state_tracker* state_tracker) )
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> popTextureTransitionBarrier_state_tracker: state_tracker texture: texture subresource_range: subresource_range [
-	^ self ffiCall: #(agpu_error agpuStateTrackerPopTextureTransitionBarrier (agpu_state_tracker* state_tracker , agpu_texture* texture , agpu_subresource_range* subresource_range) )
+AGPUCBindings >> popTextureTransitionBarrier_state_tracker: state_tracker [
+	^ self ffiCall: #(agpu_error agpuStateTrackerPopTextureTransitionBarrier (agpu_state_tracker* state_tracker) )
 ]
 
 { #category : #'state_tracker' }

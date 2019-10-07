@@ -830,14 +830,14 @@ AGPUCBindings >> pushTextureTransitionBarrier_command_list: command_list texture
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> popBufferTransitionBarrier_command_list: command_list buffer: buffer [
-	<cdecl: long 'agpuPopBufferTransitionBarrier' (void* void*)>
+AGPUCBindings >> popBufferTransitionBarrier_command_list: command_list [
+	<cdecl: long 'agpuPopBufferTransitionBarrier' (void*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> popTextureTransitionBarrier_command_list: command_list texture: texture subresource_range: subresource_range [
-	<cdecl: long 'agpuPopTextureTransitionBarrier' (void* void* AGPUSubresourceRange*)>
+AGPUCBindings >> popTextureTransitionBarrier_command_list: command_list [
+	<cdecl: long 'agpuPopTextureTransitionBarrier' (void*)>
 	^ self externalCallFailed
 ]
 
@@ -1712,14 +1712,14 @@ AGPUCBindings >> pushTextureTransitionBarrier_state_tracker: state_tracker textu
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> popBufferTransitionBarrier_state_tracker: state_tracker buffer: buffer [
-	<cdecl: long 'agpuStateTrackerPopBufferTransitionBarrier' (void* void*)>
+AGPUCBindings >> popBufferTransitionBarrier_state_tracker: state_tracker [
+	<cdecl: long 'agpuStateTrackerPopBufferTransitionBarrier' (void*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> popTextureTransitionBarrier_state_tracker: state_tracker texture: texture subresource_range: subresource_range [
-	<cdecl: long 'agpuStateTrackerPopTextureTransitionBarrier' (void* void* AGPUSubresourceRange*)>
+AGPUCBindings >> popTextureTransitionBarrier_state_tracker: state_tracker [
+	<cdecl: long 'agpuStateTrackerPopTextureTransitionBarrier' (void*)>
 	^ self externalCallFailed
 ]
 

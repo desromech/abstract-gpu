@@ -701,8 +701,8 @@ public:
 	virtual agpu_error textureMemoryBarrier(const texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range) = 0;
 	virtual agpu_error pushBufferTransitionBarrier(const buffer_ref & buffer, agpu_buffer_usage_mask new_usage) = 0;
 	virtual agpu_error pushTextureTransitionBarrier(const texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range) = 0;
-	virtual agpu_error popBufferTransitionBarrier(const buffer_ref & buffer) = 0;
-	virtual agpu_error popTextureTransitionBarrier(const texture_ref & texture, agpu_subresource_range* subresource_range) = 0;
+	virtual agpu_error popBufferTransitionBarrier() = 0;
+	virtual agpu_error popTextureTransitionBarrier() = 0;
 	virtual agpu_error copyBuffer(const buffer_ref & source_buffer, agpu_size source_offset, const buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) = 0;
 	virtual agpu_error copyBufferToTexture(const buffer_ref & buffer, const texture_ref & texture, agpu_buffer_image_copy_region* copy_region) = 0;
 	virtual agpu_error copyTextureToBuffer(const texture_ref & texture, const buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) = 0;
@@ -944,8 +944,8 @@ public:
 	virtual agpu_error textureMemoryBarrier(const texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range) = 0;
 	virtual agpu_error pushBufferTransitionBarrier(const buffer_ref & buffer, agpu_buffer_usage_mask new_usage) = 0;
 	virtual agpu_error pushTextureTransitionBarrier(const texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range) = 0;
-	virtual agpu_error popBufferTransitionBarrier(const buffer_ref & buffer) = 0;
-	virtual agpu_error popTextureTransitionBarrier(const texture_ref & texture, agpu_subresource_range* subresource_range) = 0;
+	virtual agpu_error popBufferTransitionBarrier() = 0;
+	virtual agpu_error popTextureTransitionBarrier() = 0;
 	virtual agpu_error copyBuffer(const buffer_ref & source_buffer, agpu_size source_offset, const buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) = 0;
 	virtual agpu_error copyBufferToTexture(const buffer_ref & buffer, const texture_ref & texture, agpu_buffer_image_copy_region* copy_region) = 0;
 	virtual agpu_error copyTextureToBuffer(const texture_ref & texture, const buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) = 0;

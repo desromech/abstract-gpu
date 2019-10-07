@@ -9,6 +9,7 @@
 #include "pipeline_state.hpp"
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
+#include "constants.hpp"
 
 namespace AgpuVulkan
 {
@@ -81,6 +82,9 @@ agpu::command_list_ref AVkCommandList::create(const agpu::device_ref &device, ag
 
 agpu_error AVkCommandList::close()
 {
+    while(!bufferTransitionStack.empty())
+        popBufferTransitionBarrier();
+
     auto error = vkEndCommandBuffer(commandBuffer);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
@@ -164,6 +168,22 @@ void AVkCommandList::resetState()
     isSecondaryContent = false;
 
     vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, 0);
+}
+
+agpu_buffer_usage_mask AVkCommandList::getCurrentBufferUsageMode(const agpu::buffer_ref &buffer)
+{
+    for(auto it = bufferTransitionStack.rbegin(); it != bufferTransitionStack.rend(); ++it)
+    {
+        if(it->first == buffer)
+            return it->second;
+    }
+
+    return buffer.as<AVkBuffer> ()->description.main_usage_mode;
+}
+
+agpu_texture_usage_mode_mask AVkCommandList::getCurrentTextureUsageMode(const agpu::texture_ref &texture)
+{
+    return texture.as<AVkTexture> ()->description.main_usage_mode;
 }
 
 agpu_error AVkCommandList::setShaderSignature(const agpu::shader_signature_ref &signature)
@@ -355,6 +375,23 @@ agpu_error AVkCommandList::transitionImageUsageMode(VkImage image, agpu_texture_
     auto barrier = barrierForImageUsageTransition(image, range, allowedUsages, sourceUsage, destUsage, srcStages, destStages);
 
     vkCmdPipelineBarrier(commandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    return AGPU_OK;
+}
+
+agpu_error AVkCommandList::transitionBufferUsageMode(VkBuffer buffer, agpu_buffer_usage_mask oldUsageMode, agpu_buffer_usage_mask newUsageMode)
+{
+    VkBufferMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask = mapBufferUsageModeToAccessFlags(oldUsageMode);
+    barrier.dstAccessMask = mapBufferUsageModeToAccessFlags(newUsageMode);
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = buffer;
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
+    vkCmdPipelineBarrier(commandBuffer, mapBufferUsageModeToSourceStages(oldUsageMode), mapBufferUsageModeToDestinationStages(oldUsageMode),
+            0, 0, nullptr, 1, &barrier, 0, nullptr);
+
     return AGPU_OK;
 }
 
@@ -570,7 +607,21 @@ agpu_error AVkCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage,
 
 agpu_error AVkCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+
+    VkBufferMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask = VkAccessFlags(source_accesses);
+    barrier.dstAccessMask = VkAccessFlags(dest_accesses);
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = buffer.as<AVkBuffer> ()->handle;
+    barrier.offset = offset;
+    barrier.size = size;
+    vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags(source_stage), VkPipelineStageFlags(dest_stage),
+            0, 0, nullptr, 1, &barrier, 0, nullptr);
+
+    return AGPU_OK;
 }
 
 agpu_error AVkCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
@@ -580,7 +631,11 @@ agpu_error AVkCommandList::textureMemoryBarrier(const agpu::texture_ref & textur
 
 agpu_error AVkCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
 {
-    // TODO: Emit the appropiate buffer memory barrier.
+    CHECK_POINTER(buffer);
+
+    auto currentBufferUsage = getCurrentBufferUsageMode(buffer);
+    transitionBufferUsageMode(buffer.as<AVkBuffer> ()->handle, currentBufferUsage, new_usage);
+    bufferTransitionStack.push_back(std::make_pair(buffer, new_usage));
     return AGPU_OK;
 }
 
@@ -589,12 +644,20 @@ agpu_error AVkCommandList::pushTextureTransitionBarrier(const agpu::texture_ref 
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error AVkCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+agpu_error AVkCommandList::popBufferTransitionBarrier()
 {
+    if(bufferTransitionStack.empty())
+        return AGPU_OUT_OF_BOUNDS;
+
+    auto buffer = bufferTransitionStack.back().first;
+    auto oldMode = bufferTransitionStack.back().second;
+    bufferTransitionStack.pop_back();
+    auto newMode = getCurrentBufferUsageMode(buffer);
+    transitionBufferUsageMode(buffer.as<AVkBuffer> ()->handle, oldMode, newMode);
     return AGPU_OK;
 }
 
-agpu_error AVkCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+agpu_error AVkCommandList::popTextureTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }

@@ -49,8 +49,8 @@ public:
     virtual agpu_error textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range) override;
     virtual agpu_error pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage) override;
     virtual agpu_error pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range) override;
-    virtual agpu_error popBufferTransitionBarrier(const agpu::buffer_ref & buffer) override;
-    virtual agpu_error popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range) override;
+    virtual agpu_error popBufferTransitionBarrier() override;
+    virtual agpu_error popTextureTransitionBarrier() override;
     virtual agpu_error copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) override;
     virtual agpu_error copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region) override;
     virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
@@ -62,8 +62,12 @@ public:
     VkCommandBuffer commandBuffer;
 
 private:
+    agpu_buffer_usage_mask getCurrentBufferUsageMode(const agpu::buffer_ref &buffer);
+    agpu_texture_usage_mode_mask getCurrentTextureUsageMode(const agpu::texture_ref &texture);
+
     void resetState();
     agpu_error transitionImageUsageMode(VkImage image, agpu_texture_usage_mode_mask allowedUsages, agpu_texture_usage_mode_mask sourceUsage, agpu_texture_usage_mode_mask destUsage, VkImageSubresourceRange range);
+    agpu_error transitionBufferUsageMode(VkBuffer buffer, agpu_buffer_usage_mask oldUsageMode, agpu_buffer_usage_mask newUsageMode);
 
     agpu::framebuffer_ref currentFramebuffer;
     agpu_bool isClosed;
@@ -72,6 +76,8 @@ private:
     agpu::buffer_ref drawIndirectBuffer;
     agpu::buffer_ref computeDispatchIndirectBuffer;
     agpu::shader_signature_ref shaderSignature;
+
+    std::vector<std::pair<agpu::buffer_ref, agpu_buffer_usage_mask>> bufferTransitionStack;
 };
 
 } // End of namespace AgpuVulkan

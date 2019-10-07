@@ -243,16 +243,16 @@ AGPUCommandList >> pushTextureTransitionBarrier: texture new_usage: new_usage su
 ]
 
 { #category : #'wrappers' }
-AGPUCommandList >> popBufferTransitionBarrier: buffer [
+AGPUCommandList >> popBufferTransitionBarrier [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance popBufferTransitionBarrier_command_list: (self validHandle) buffer: (self validHandleOf: buffer).
+	resultValue_ := AGPUCBindings uniqueInstance popBufferTransitionBarrier_command_list: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUCommandList >> popTextureTransitionBarrier: texture subresource_range: subresource_range [
+AGPUCommandList >> popTextureTransitionBarrier [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance popTextureTransitionBarrier_command_list: (self validHandle) texture: (self validHandleOf: texture) subresource_range: subresource_range.
+	resultValue_ := AGPUCBindings uniqueInstance popTextureTransitionBarrier_command_list: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 

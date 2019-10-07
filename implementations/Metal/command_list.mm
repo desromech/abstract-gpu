@@ -574,12 +574,12 @@ agpu_error AMtlCommandList::pushTextureTransitionBarrier(const agpu::texture_ref
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error AMtlCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+agpu_error AMtlCommandList::popBufferTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error AMtlCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+agpu_error AMtlCommandList::popTextureTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }
@@ -588,7 +588,7 @@ agpu_error AMtlCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, a
 {
     CHECK_POINTER(source_buffer);
     CHECK_POINTER(dest_buffer);
-    
+
     // FIXME: Refactor this encoder dance.
     if(computeEncoder)
     {

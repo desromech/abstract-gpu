@@ -409,12 +409,12 @@ agpu_error ADXCommandList::pushTextureTransitionBarrier(const agpu::texture_ref 
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error ADXCommandList::popBufferTransitionBarrier(const agpu::buffer_ref & buffer)
+agpu_error ADXCommandList::popBufferTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }
 
-agpu_error ADXCommandList::popTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_subresource_range* subresource_range)
+agpu_error ADXCommandList::popTextureTransitionBarrier()
 {
     return AGPU_UNIMPLEMENTED;
 }

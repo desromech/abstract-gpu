@@ -1220,8 +1220,8 @@ typedef agpu_error (*agpuBufferMemoryBarrier_FUN) (agpu_command_list* command_li
 typedef agpu_error (*agpuTextureMemoryBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
 typedef agpu_error (*agpuPushBufferTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
 typedef agpu_error (*agpuPushTextureTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
-typedef agpu_error (*agpuPopBufferTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_buffer* buffer);
-typedef agpu_error (*agpuPopTextureTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_subresource_range* subresource_range);
+typedef agpu_error (*agpuPopBufferTransitionBarrier_FUN) (agpu_command_list* command_list);
+typedef agpu_error (*agpuPopTextureTransitionBarrier_FUN) (agpu_command_list* command_list);
 typedef agpu_error (*agpuCopyBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 typedef agpu_error (*agpuCopyBufferToTexture_FUN) (agpu_command_list* command_list, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 typedef agpu_error (*agpuCopyTextureToBuffer_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
@@ -1260,8 +1260,8 @@ AGPU_EXPORT agpu_error agpuBufferMemoryBarrier(agpu_command_list* command_list, 
 AGPU_EXPORT agpu_error agpuTextureMemoryBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
 AGPU_EXPORT agpu_error agpuPushBufferTransitionBarrier(agpu_command_list* command_list, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
 AGPU_EXPORT agpu_error agpuPushTextureTransitionBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
-AGPU_EXPORT agpu_error agpuPopBufferTransitionBarrier(agpu_command_list* command_list, agpu_buffer* buffer);
-AGPU_EXPORT agpu_error agpuPopTextureTransitionBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_subresource_range* subresource_range);
+AGPU_EXPORT agpu_error agpuPopBufferTransitionBarrier(agpu_command_list* command_list);
+AGPU_EXPORT agpu_error agpuPopTextureTransitionBarrier(agpu_command_list* command_list);
 AGPU_EXPORT agpu_error agpuCopyBuffer(agpu_command_list* command_list, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 AGPU_EXPORT agpu_error agpuCopyBufferToTexture(agpu_command_list* command_list, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 AGPU_EXPORT agpu_error agpuCopyTextureToBuffer(agpu_command_list* command_list, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
@@ -1540,8 +1540,8 @@ typedef agpu_error (*agpuStateTrackerBufferMemoryBarrier_FUN) (agpu_state_tracke
 typedef agpu_error (*agpuStateTrackerTextureMemoryBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
 typedef agpu_error (*agpuStateTrackerPushBufferTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
 typedef agpu_error (*agpuStateTrackerPushTextureTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
-typedef agpu_error (*agpuStateTrackerPopBufferTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer);
-typedef agpu_error (*agpuStateTrackerPopTextureTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_subresource_range* subresource_range);
+typedef agpu_error (*agpuStateTrackerPopBufferTransitionBarrier_FUN) (agpu_state_tracker* state_tracker);
+typedef agpu_error (*agpuStateTrackerPopTextureTransitionBarrier_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerCopyBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 typedef agpu_error (*agpuStateTrackerCopyBufferToTexture_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 typedef agpu_error (*agpuStateTrackerCopyTextureToBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
@@ -1602,8 +1602,8 @@ AGPU_EXPORT agpu_error agpuStateTrackerBufferMemoryBarrier(agpu_state_tracker* s
 AGPU_EXPORT agpu_error agpuStateTrackerTextureMemoryBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
 AGPU_EXPORT agpu_error agpuStateTrackerPushBufferTransitionBarrier(agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
 AGPU_EXPORT agpu_error agpuStateTrackerPushTextureTransitionBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
-AGPU_EXPORT agpu_error agpuStateTrackerPopBufferTransitionBarrier(agpu_state_tracker* state_tracker, agpu_buffer* buffer);
-AGPU_EXPORT agpu_error agpuStateTrackerPopTextureTransitionBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_subresource_range* subresource_range);
+AGPU_EXPORT agpu_error agpuStateTrackerPopBufferTransitionBarrier(agpu_state_tracker* state_tracker);
+AGPU_EXPORT agpu_error agpuStateTrackerPopTextureTransitionBarrier(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerCopyBuffer(agpu_state_tracker* state_tracker, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 AGPU_EXPORT agpu_error agpuStateTrackerCopyBufferToTexture(agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 AGPU_EXPORT agpu_error agpuStateTrackerCopyTextureToBuffer(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);

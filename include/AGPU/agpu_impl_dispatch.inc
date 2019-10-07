@@ -825,16 +825,16 @@ AGPU_EXPORT agpu_error agpuPushTextureTransitionBarrier(agpu_command_list* self,
 	return asRef(agpu::command_list, self)->pushTextureTransitionBarrier(asRef(agpu::texture, texture), new_usage, subresource_range);
 }
 
-AGPU_EXPORT agpu_error agpuPopBufferTransitionBarrier(agpu_command_list* self, agpu_buffer* buffer)
+AGPU_EXPORT agpu_error agpuPopBufferTransitionBarrier(agpu_command_list* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::command_list, self)->popBufferTransitionBarrier(asRef(agpu::buffer, buffer));
+	return asRef(agpu::command_list, self)->popBufferTransitionBarrier();
 }
 
-AGPU_EXPORT agpu_error agpuPopTextureTransitionBarrier(agpu_command_list* self, agpu_texture* texture, agpu_subresource_range* subresource_range)
+AGPU_EXPORT agpu_error agpuPopTextureTransitionBarrier(agpu_command_list* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::command_list, self)->popTextureTransitionBarrier(asRef(agpu::texture, texture), subresource_range);
+	return asRef(agpu::command_list, self)->popTextureTransitionBarrier();
 }
 
 AGPU_EXPORT agpu_error agpuCopyBuffer(agpu_command_list* self, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size)
@@ -1752,16 +1752,16 @@ AGPU_EXPORT agpu_error agpuStateTrackerPushTextureTransitionBarrier(agpu_state_t
 	return asRef(agpu::state_tracker, self)->pushTextureTransitionBarrier(asRef(agpu::texture, texture), new_usage, subresource_range);
 }
 
-AGPU_EXPORT agpu_error agpuStateTrackerPopBufferTransitionBarrier(agpu_state_tracker* self, agpu_buffer* buffer)
+AGPU_EXPORT agpu_error agpuStateTrackerPopBufferTransitionBarrier(agpu_state_tracker* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::state_tracker, self)->popBufferTransitionBarrier(asRef(agpu::buffer, buffer));
+	return asRef(agpu::state_tracker, self)->popBufferTransitionBarrier();
 }
 
-AGPU_EXPORT agpu_error agpuStateTrackerPopTextureTransitionBarrier(agpu_state_tracker* self, agpu_texture* texture, agpu_subresource_range* subresource_range)
+AGPU_EXPORT agpu_error agpuStateTrackerPopTextureTransitionBarrier(agpu_state_tracker* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::state_tracker, self)->popTextureTransitionBarrier(asRef(agpu::texture, texture), subresource_range);
+	return asRef(agpu::state_tracker, self)->popTextureTransitionBarrier();
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerCopyBuffer(agpu_state_tracker* self, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size)
