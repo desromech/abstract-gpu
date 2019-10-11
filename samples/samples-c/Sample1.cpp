@@ -50,6 +50,7 @@ public:
         agpuReleaseCommandList(commandList);
         agpuReleaseCommandAllocator(commandAllocator);
         agpuReleaseShaderSignature(shaderSignature);
+		agpuReleaseRenderPass(mainRenderPass);
     }
 
     agpu_renderpass *mainRenderPass;

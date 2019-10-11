@@ -347,6 +347,11 @@ agpu_error GLTexture::readTextureData ( agpu_int level, agpu_int arrayIndex, agp
     return AGPU_OK;
 }
 
+agpu_error GLTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+{
+	return AGPU_UNIMPLEMENTED;
+}
+
 agpu_error GLTexture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
     return uploadTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, data);

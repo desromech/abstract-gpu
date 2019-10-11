@@ -77,6 +77,8 @@ public:
     agpu::framebuffer_ref currentFramebuffer;
 
 private:
+    void textureUsageTransitionBarrier(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode);
+
     agpu_error setCommonState();
 };
 

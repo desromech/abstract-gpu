@@ -9,6 +9,7 @@
 #include "framebuffer.hpp"
 #include "renderpass.hpp"
 #include "texture.hpp"
+#include "constants.hpp"
 
 namespace AgpuD3D12
 {
@@ -76,6 +77,20 @@ agpu_error ADXCommandList::setCommonState()
     currentFramebuffer.reset();
 
     return AGPU_OK;
+}
+
+void ADXCommandList::textureUsageTransitionBarrier(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode)
+{
+	if (sourceMode == destinationMode)
+		return;
+
+	auto sourceState = mapTextureUsageToResourceState(heapType, sourceMode);
+	auto destinationState = mapTextureUsageToResourceState(heapType, destinationMode);
+	if (sourceState == destinationState)
+		return;
+
+	auto barrier = resourceTransitionBarrier(resource, sourceState, destinationState);
+    commandList->ResourceBarrier(1, &barrier);
 }
 
 agpu_error ADXCommandList::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
@@ -250,24 +265,26 @@ agpu_error ADXCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
     if (!currentFramebuffer)
         return AGPU_OK;
 
-    // TODO: Use a more proper state depending if this is used as a texture or not.
     auto adxFramebuffer = framebuffer.as<ADXFramebuffer> ();
     auto adxRenderpass = renderpass.as<ADXRenderPass> ();
-    D3D12_RESOURCE_STATES prevState = adxFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
 
     // Perform the resource transitions
     for (size_t i = 0; i < adxFramebuffer->getColorBufferCount(); ++i)
     {
-        auto colorBuffer = adxFramebuffer->colorBuffers[i];
+        auto &colorBuffer = adxFramebuffer->colorBuffers[i];
         if (!colorBuffer)
             return AGPU_ERROR;
 
-        auto barrier = resourceTransitionBarrier(colorBuffer.as<ADXTexture> ()->gpuResource.Get(), prevState, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        commandList->ResourceBarrier(1, &barrier);
+        auto adxColorBuffer = colorBuffer.as<ADXTexture> ();
+        textureUsageTransitionBarrier(adxColorBuffer->resource.Get(), adxColorBuffer->description.heap_type, adxColorBuffer->description.main_usage_mode, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT);
     }
 
     if (adxFramebuffer->depthStencilView)
     {
+        auto adxDepthStencil = adxFramebuffer->depthStencilBuffer.as<ADXTexture> ();
+        auto depthStencilUsage = agpu_texture_usage_mode_mask(adxDepthStencil->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT));
+        textureUsageTransitionBarrier(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, adxDepthStencil->description.main_usage_mode, depthStencilUsage);
+
         auto desc = adxFramebuffer->getDepthStencilCpuHandle();
         commandList->OMSetRenderTargets((UINT)adxFramebuffer->colorBufferDescriptors.size(), &adxFramebuffer->colorBufferDescriptors[0], FALSE, &desc);
     }
@@ -312,18 +329,22 @@ agpu_error ADXCommandList::endRenderPass()
     auto adxFramebuffer = currentFramebuffer.as<ADXFramebuffer> ();
     commandList->OMSetRenderTargets(0, nullptr, FALSE, nullptr);
 
-    // TODO: Use a more proper state depending if this is used as a texture or not.
-    D3D12_RESOURCE_STATES newState = adxFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
-
     // Perform the resource transitions
+    if (adxFramebuffer->depthStencilView)
+    {
+        auto adxDepthStencil = adxFramebuffer->depthStencilBuffer.as<ADXTexture> ();
+        auto depthStencilUsage = agpu_texture_usage_mode_mask(adxDepthStencil->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT));
+        textureUsageTransitionBarrier(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, depthStencilUsage, adxDepthStencil->description.main_usage_mode);
+    }
+
     for (size_t i = 0; i < adxFramebuffer->getColorBufferCount(); ++i)
     {
         auto &colorBuffer = adxFramebuffer->colorBuffers[i];
         if (!colorBuffer)
             return AGPU_ERROR;
 
-        auto barrier = resourceTransitionBarrier(colorBuffer.as<ADXTexture> ()->gpuResource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, newState);
-        commandList->ResourceBarrier(1, &barrier);
+        auto adxColorBuffer = colorBuffer.as<ADXTexture> ();
+        textureUsageTransitionBarrier(adxColorBuffer->resource.Get(), adxColorBuffer->description.heap_type, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT, adxColorBuffer->description.main_usage_mode);
     }
 
     currentFramebuffer.reset();
@@ -341,34 +362,11 @@ agpu_error ADXCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destF
         adxDestFramebuffer->getColorBufferCount() != adxSourceFramebuffer->getColorBufferCount())
         return AGPU_INVALID_PARAMETER;
 
-    D3D12_RESOURCE_STATES destState = adxDestFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
-    D3D12_RESOURCE_STATES sourceState = adxSourceFramebuffer->swapChainBuffer ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_GENERIC_READ;
-
-    // Go to resolve state
     for (size_t i = 0; i < adxDestFramebuffer->getColorBufferCount(); ++i)
     {
-        auto &destColorBuffer = adxDestFramebuffer->colorBuffers[i];
-        auto &sourceColorBuffer = adxSourceFramebuffer->colorBuffers[i];
-        if (!destColorBuffer || !sourceColorBuffer)
-            return AGPU_ERROR;
-
-        {
-            D3D12_RESOURCE_BARRIER barriers[2] = {
-                resourceTransitionBarrier(destColorBuffer.as<ADXTexture> ()->gpuResource.Get(), destState, D3D12_RESOURCE_STATE_RESOLVE_DEST),
-                resourceTransitionBarrier(sourceColorBuffer.as<ADXTexture>()->gpuResource.Get(), sourceState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE)
-            };
-            commandList->ResourceBarrier(2, barriers);
-        }
-
-        commandList->ResolveSubresource(destColorBuffer.as<ADXTexture>()->gpuResource.Get(), 0, sourceColorBuffer.as<ADXTexture>()->gpuResource.Get(), 0, (DXGI_FORMAT)sourceColorBuffer.as<ADXTexture>()->description.format);
-
-        {
-            D3D12_RESOURCE_BARRIER barriers[2] = {
-                resourceTransitionBarrier(destColorBuffer.as<ADXTexture>()->gpuResource.Get(), D3D12_RESOURCE_STATE_RESOLVE_DEST, destState),
-                resourceTransitionBarrier(sourceColorBuffer.as<ADXTexture>()->gpuResource.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, sourceState)
-            };
-            commandList->ResourceBarrier(2, barriers);
-        }
+        auto &sourceTexture = adxSourceFramebuffer->colorBuffers[i];
+        auto &destTexture = adxSourceFramebuffer->colorBuffers[i];
+        resolveTexture(sourceTexture, 0, 0, destTexture, 0, 0, 1, 1, AGPU_TEXTURE_ASPECT_COLOR);
     }
 
     return AGPU_OK;
@@ -376,7 +374,36 @@ agpu_error ADXCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destF
 
 agpu_error ADXCommandList::resolveTexture(const agpu::texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
 {
-    return AGPU_UNIMPLEMENTED;
+    auto adxDestTexture = destTexture.as<ADXTexture> ();
+    auto adxSourceTexture = sourceTexture.as<ADXTexture> ();
+
+    UINT sourceSubresource = adxSourceTexture->subresourceIndexFor(sourceLevel, sourceLayer);
+    UINT destSubresource = adxDestTexture->subresourceIndexFor(destLevel, destLayer);
+
+    D3D12_RESOURCE_STATES destState = mapTextureUsageToResourceState(adxDestTexture->description.heap_type, adxDestTexture->description.main_usage_mode);
+    D3D12_RESOURCE_STATES sourceState = mapTextureUsageToResourceState(adxSourceTexture->description.heap_type, adxSourceTexture->description.main_usage_mode);
+
+    {
+        D3D12_RESOURCE_BARRIER barriers[2] = {
+            resourceTransitionBarrier(adxDestTexture->resource.Get(), destState, D3D12_RESOURCE_STATE_RESOLVE_DEST, destSubresource),
+            resourceTransitionBarrier(adxSourceTexture->resource.Get(), sourceState, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, sourceSubresource)
+        };
+        commandList->ResourceBarrier(2, barriers);
+    }
+
+    commandList->ResolveSubresource(adxDestTexture->resource.Get(), destSubresource,
+        adxSourceTexture->resource.Get(), sourceSubresource,
+        (DXGI_FORMAT)adxSourceTexture->description.format);
+
+    {
+        D3D12_RESOURCE_BARRIER barriers[2] = {
+            resourceTransitionBarrier(adxDestTexture->resource.Get(), D3D12_RESOURCE_STATE_RESOLVE_DEST, destState, destSubresource),
+            resourceTransitionBarrier(adxSourceTexture->resource.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, sourceState, sourceSubresource)
+        };
+        commandList->ResourceBarrier(2, barriers);
+    }
+
+    return AGPU_OK;
 }
 
 agpu_error ADXCommandList::pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)

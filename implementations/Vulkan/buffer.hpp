@@ -33,7 +33,7 @@ public:
 
     Spinlock mappingLock;
     void *mappedPointer;
-    int mapCount;
+    uint32_t mapCount;
 };
 
 } // End of namespace AgpuVulkan

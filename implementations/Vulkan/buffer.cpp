@@ -63,6 +63,8 @@ agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_d
     {
         if(description.heap_type == AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE)
             description.mapping_flags |= AGPU_MAP_WRITE_BIT;
+		else if (description.heap_type == AGPU_MEMORY_HEAP_TYPE_HOST)
+			description.mapping_flags |= AGPU_MAP_READ_BIT | AGPU_MAP_WRITE_BIT;
         else if(description.heap_type == AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST)
             description.mapping_flags |= AGPU_MAP_READ_BIT;
     }
@@ -163,13 +165,17 @@ agpu_error AVkBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_po
     if(size == 0)
         return AGPU_OK;
 
+    // Check the data.
+    CHECK_POINTER(data);
+
     // If we can map the buffer, then just perform a memcpy onto it.
     if(description.mapping_flags & AGPU_MAP_WRITE_BIT)
     {
-        auto uploadPointer = reinterpret_cast<uint8_t*> (mapBuffer(AGPU_WRITE_ONLY)) + offset;
+        auto uploadPointer = reinterpret_cast<uint8_t*> (mapBuffer(AGPU_WRITE_ONLY));
         if(!uploadPointer)
             return AGPU_ERROR;
 
+		uploadPointer += offset;
         memcpy(uploadPointer, data, size);
         return unmapBuffer();
     }

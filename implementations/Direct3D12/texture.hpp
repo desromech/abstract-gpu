@@ -21,11 +21,9 @@ public:
     virtual agpu_error unmapLevel() override;
 
     virtual agpu_error readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
-    virtual agpu_error uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
+	virtual agpu_error readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer) override;
+	virtual agpu_error uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data) override;
     virtual agpu_error uploadTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data) override;
-
-    virtual agpu_error discardUploadBuffer() override;
-    virtual agpu_error discardReadbackBuffer() override;
 
     virtual agpu_error getFullViewDescription(agpu_texture_view_description *description) override;
     virtual agpu::texture_view_ptr createView(agpu_texture_view_description* viewDescription) override;
@@ -39,13 +37,9 @@ public:
     agpu_texture_description description;
 
     D3D12_RESOURCE_DESC resourceDescription;
-    D3D12_RESOURCE_DESC transferResourceDescription;
-    UINT transferBufferNumRows;
-    UINT64 transferBufferPitch;
 
-    ComPtr<ID3D12Resource> gpuResource;
-    ComPtr<ID3D12Resource> uploadResource;
-    ComPtr<ID3D12Resource> readbackResource;
+    ComPtr<ID3D12Resource> resource;
+    ComPtr<D3D12MA::Allocation> allocation;
 
 private:
     agpu_uint mapCount;
@@ -54,7 +48,6 @@ private:
     agpu_pointer mappedPointer;
     agpu_mapping_access mappingFlags;
 	agpu::texture_view_ref fullTextureView;
-
 };
 
 } // End of namespace AgpuD3D12
