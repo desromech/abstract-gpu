@@ -47,6 +47,13 @@ AGPUTexture >> readTextureData: level arrayIndex: arrayIndex pitch: pitch sliceP
 ]
 
 { #category : #'wrappers' }
+AGPUTexture >> readTextureSubData: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch sourceRegion: sourceRegion destSize: destSize buffer: buffer [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance readTextureSubData_texture: (self validHandle) level: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch sourceRegion: sourceRegion destSize: destSize buffer: buffer.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUTexture >> uploadTextureData: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch data: data [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance uploadTextureData_texture: (self validHandle) level: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch data: data.

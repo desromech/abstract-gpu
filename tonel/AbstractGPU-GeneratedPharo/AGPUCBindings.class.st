@@ -749,6 +749,11 @@ AGPUCBindings >> readTextureData_texture: texture level: level arrayIndex: array
 ]
 
 { #category : #'texture' }
+AGPUCBindings >> readTextureSubData_texture: texture level: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch sourceRegion: sourceRegion destSize: destSize buffer: buffer [
+	^ self ffiCall: #(agpu_error agpuReadTextureSubData (agpu_texture* texture , agpu_int level , agpu_int arrayIndex , agpu_int pitch , agpu_int slicePitch , agpu_region3d* sourceRegion , agpu_size3d* destSize , agpu_pointer buffer) )
+]
+
+{ #category : #'texture' }
 AGPUCBindings >> uploadTextureData_texture: texture level: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch data: data [
 	^ self ffiCall: #(agpu_error agpuUploadTextureData (agpu_texture* texture , agpu_int level , agpu_int arrayIndex , agpu_int pitch , agpu_int slicePitch , agpu_pointer data) )
 ]

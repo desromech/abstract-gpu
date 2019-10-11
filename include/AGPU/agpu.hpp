@@ -974,6 +974,11 @@ public:
 		agpuThrowIfFailed(agpuReadTextureData(this, level, arrayIndex, pitch, slicePitch, buffer));
 	}
 
+	inline void readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+	{
+		agpuThrowIfFailed(agpuReadTextureSubData(this, level, arrayIndex, pitch, slicePitch, sourceRegion, destSize, buffer));
+	}
+
 	inline void uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 	{
 		agpuThrowIfFailed(agpuUploadTextureData(this, level, arrayIndex, pitch, slicePitch, data));

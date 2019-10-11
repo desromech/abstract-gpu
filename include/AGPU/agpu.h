@@ -257,7 +257,7 @@ typedef enum {
 	AGPU_ARRAY_BUFFER = 4,
 	AGPU_ELEMENT_ARRAY_BUFFER = 8,
 	AGPU_UNIFORM_BUFFER = 16,
-	AGPU_DRAW_INDIRECT_BUFFER = 326,
+	AGPU_DRAW_INDIRECT_BUFFER = 32,
 	AGPU_STORAGE_BUFFER = 64,
 	AGPU_UNIFORM_TEXEL_BUFFER = 128,
 	AGPU_STORAGE_TEXEL_BUFFER = 256,
@@ -1273,6 +1273,7 @@ typedef agpu_error (*agpuGetTextureDescription_FUN) (agpu_texture* texture, agpu
 typedef agpu_pointer (*agpuMapTextureLevel_FUN) (agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region);
 typedef agpu_error (*agpuUnmapTextureLevel_FUN) (agpu_texture* texture);
 typedef agpu_error (*agpuReadTextureData_FUN) (agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer);
+typedef agpu_error (*agpuReadTextureSubData_FUN) (agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer);
 typedef agpu_error (*agpuUploadTextureData_FUN) (agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data);
 typedef agpu_error (*agpuUploadTextureSubData_FUN) (agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data);
 typedef agpu_error (*agpuGetTextureFullViewDescription_FUN) (agpu_texture* texture, agpu_texture_view_description* result);
@@ -1285,6 +1286,7 @@ AGPU_EXPORT agpu_error agpuGetTextureDescription(agpu_texture* texture, agpu_tex
 AGPU_EXPORT agpu_pointer agpuMapTextureLevel(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_mapping_access flags, agpu_region3d* region);
 AGPU_EXPORT agpu_error agpuUnmapTextureLevel(agpu_texture* texture);
 AGPU_EXPORT agpu_error agpuReadTextureData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer);
+AGPU_EXPORT agpu_error agpuReadTextureSubData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer);
 AGPU_EXPORT agpu_error agpuUploadTextureData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data);
 AGPU_EXPORT agpu_error agpuUploadTextureSubData(agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data);
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* texture, agpu_texture_view_description* result);
@@ -1893,6 +1895,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuMapTextureLevel_FUN agpuMapTextureLevel;
 	agpuUnmapTextureLevel_FUN agpuUnmapTextureLevel;
 	agpuReadTextureData_FUN agpuReadTextureData;
+	agpuReadTextureSubData_FUN agpuReadTextureSubData;
 	agpuUploadTextureData_FUN agpuUploadTextureData;
 	agpuUploadTextureSubData_FUN agpuUploadTextureSubData;
 	agpuGetTextureFullViewDescription_FUN agpuGetTextureFullViewDescription;

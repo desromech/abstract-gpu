@@ -1185,6 +1185,14 @@ AGPU_EXPORT agpu_error agpuReadTextureData ( agpu_texture* texture, agpu_int lev
 	return (*dispatchTable)->agpuReadTextureData ( texture, level, arrayIndex, pitch, slicePitch, buffer );
 }
 
+AGPU_EXPORT agpu_error agpuReadTextureSubData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer )
+{
+	if (texture == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (texture);
+	return (*dispatchTable)->agpuReadTextureSubData ( texture, level, arrayIndex, pitch, slicePitch, sourceRegion, destSize, buffer );
+}
+
 AGPU_EXPORT agpu_error agpuUploadTextureData ( agpu_texture* texture, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
 	if (texture == nullptr)

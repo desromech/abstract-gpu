@@ -894,6 +894,12 @@ AGPU_EXPORT agpu_error agpuReadTextureData(agpu_texture* self, agpu_int level, a
 	return asRef(agpu::texture, self)->readTextureData(level, arrayIndex, pitch, slicePitch, buffer);
 }
 
+AGPU_EXPORT agpu_error agpuReadTextureSubData(agpu_texture* self, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::texture, self)->readTextureSubData(level, arrayIndex, pitch, slicePitch, sourceRegion, destSize, buffer);
+}
+
 AGPU_EXPORT agpu_error agpuUploadTextureData(agpu_texture* self, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 {
 	if(!self) return AGPU_NULL_POINTER;

@@ -547,7 +547,7 @@
 			<constant name="ArrayBuffer" value="4" />
 			<constant name="ElementArrayBuffer" value="8" />
 			<constant name="UniformBuffer" value="16" />
-			<constant name="DrawIndirectBuffer" value="326" />
+			<constant name="DrawIndirectBuffer" value="32" />
 			<constant name="StorageBuffer" value="64" />
             <constant name="UniformTexelBuffer" value="128" />
             <constant name="StorageTexelBuffer" value="256" />
@@ -1621,6 +1621,16 @@
                 <arg name="arrayIndex" type="int" />
                 <arg name="pitch" type="int" />
                 <arg name="slicePitch" type="int" />
+                <arg name="buffer" type="pointer" />
+            </method>
+
+            <method name="readTextureSubData" cname="ReadTextureSubData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="sourceRegion" type="region3d*" />
+                <arg name="destSize" type="size3d*" />
                 <arg name="buffer" type="pointer" />
             </method>
 

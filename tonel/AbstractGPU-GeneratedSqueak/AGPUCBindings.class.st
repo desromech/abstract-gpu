@@ -896,6 +896,12 @@ AGPUCBindings >> readTextureData_texture: texture level: level arrayIndex: array
 ]
 
 { #category : #'texture' }
+AGPUCBindings >> readTextureSubData_texture: texture level: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch sourceRegion: sourceRegion destSize: destSize buffer: buffer [
+	<cdecl: long 'agpuReadTextureSubData' (void* long long long long AGPURegion3d* AGPUSize3d* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'texture' }
 AGPUCBindings >> uploadTextureData_texture: texture level: level arrayIndex: arrayIndex pitch: pitch slicePitch: slicePitch data: data [
 	<cdecl: long 'agpuUploadTextureData' (void* long long long long void*)>
 	^ self externalCallFailed
