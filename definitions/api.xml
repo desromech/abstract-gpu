@@ -149,7 +149,6 @@
             <field name="buffer" type="uint" />
             <field name="binding" type="uint" />
             <field name="format" type="texture_format" />
-            <field name="rows" type="uint" />
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
         </struct>

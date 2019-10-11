@@ -727,7 +727,6 @@ typedef struct agpu_vertex_attrib_description {
 	agpu_uint buffer;
 	agpu_uint binding;
 	agpu_texture_format format;
-	agpu_uint rows;
 	agpu_size offset;
 	agpu_uint divisor;
 } agpu_vertex_attrib_description;
