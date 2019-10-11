@@ -5,10 +5,10 @@
 #include "SDL_syswm.h"
 
 agpu_vertex_attrib_description SampleVertex::Description[] = {
-    {0, 0, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(SampleVertex, position), 0},
-    {0, 1, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(SampleVertex, color), 0},
-    {0, 2, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(SampleVertex, normal), 0},
-    {0, 3, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, 1, offsetof(SampleVertex, texcoord), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_POSITION, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, offsetof(SampleVertex, position), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_COLOR, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, offsetof(SampleVertex, color), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_NORMAL, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, offsetof(SampleVertex, normal), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, offsetof(SampleVertex, texcoord), 0},
 };
 
 const int SampleVertex::DescriptionSize = 4;

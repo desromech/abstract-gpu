@@ -17,6 +17,11 @@ inline size_t nextPowerOfTwo(size_t v)
     v++;
     return v;
 }
+
+inline size_t alignedTo(size_t value, size_t alignment)
+{
+    return (value + alignment - 1) & (-alignment);
+}
 } // End of namespace AgpuCommon
 
 #endif // AGPU_COMMON_UTILITY_HPP

@@ -54,14 +54,14 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
         footprint.Width = (uint32_t)std::max(compressedBlockWidth, (footprint.Width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
         footprint.Height = (uint32_t)std::max(compressedBlockHeight, (footprint.Height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
 
-        footprint.RowPitch = footprint.Width / compressedBlockWidth * compressedBlockSize;
+        footprint.RowPitch = alignedTo(footprint.Width / compressedBlockWidth * compressedBlockSize, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
         *transferSlicePitch = footprint.RowPitch * (footprint.Height / compressedBlockHeight);
         *transferSize = (*transferSlicePitch) * footprint.Depth;
     }
     else
     {
         auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
-        footprint.RowPitch = (footprint.Width*uncompressedPixelSize + 3) & -4;
+        footprint.RowPitch = alignedTo(footprint.Width*uncompressedPixelSize, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
         *transferSlicePitch = footprint.RowPitch * footprint.Height;
         *transferSize = (*transferSlicePitch) * footprint.Depth;
     }

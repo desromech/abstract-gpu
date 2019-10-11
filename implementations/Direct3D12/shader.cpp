@@ -6,9 +6,6 @@
 
 namespace AgpuD3D12
 {
-extern const char* VertexAttributeSemantics[];
-extern size_t MaxVertexAttributes;
-
 inline spv::ExecutionModel mapExecutionModel(agpu_shader_type type)
 {
 	switch (type)
@@ -223,18 +220,6 @@ agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref&
 
 	// Modify the resources
 	spirv_cross::ShaderResources resources = hlsl.get_shader_resources();
-
-	// Remap the vertex input semantics.
-	//if (stageType == AGPU_VERTEX_SHADER)
-	{
-		for (size_t i = 0; i < MaxVertexAttributes; ++i)
-		{
-			spirv_cross::HLSLVertexAttributeRemap remap = {};
-			remap.location = i;
-			remap.semantic = VertexAttributeSemantics[i];
-			hlsl.add_vertex_attribute_remap(remap);
-		}
-	}
 
 	// Uniform buffers
 	auto error = mapShaderResources(hlsl, resources.uniform_buffers, shaderSignature, errorMessage, AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER);

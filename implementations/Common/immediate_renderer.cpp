@@ -184,10 +184,10 @@ bool ExtraRenderingState::operator!=(const ExtraRenderingState &other) const
 }
 
 agpu_vertex_attrib_description ImmediateVertexAttributes[] = {
-    {0, 0, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(ImmediateRendererVertex, position), 0},
-    {0, 1, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(ImmediateRendererVertex, color), 0},
-    {0, 2, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(ImmediateRendererVertex, normal), 0},
-    {0, 3, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, 1, offsetof(ImmediateRendererVertex, texcoord), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_POSITION, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, offsetof(ImmediateRendererVertex, position), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_COLOR, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, offsetof(ImmediateRendererVertex, color), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_NORMAL, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, offsetof(ImmediateRendererVertex, normal), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, offsetof(ImmediateRendererVertex, texcoord), 0},
 };
 
 static agpu::shader_ref loadSpirVShader(const agpu::device_ref &device, agpu_shader_type shaderType, const uint8_t *data, size_t dataSize)

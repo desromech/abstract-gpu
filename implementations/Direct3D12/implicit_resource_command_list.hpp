@@ -20,6 +20,8 @@
 
 namespace AgpuD3D12
 {
+using AgpuCommon::alignedTo;
+using AgpuCommon::nextPowerOfTwo;
 using Microsoft::WRL::ComPtr;
 class ADXDevice;
 
@@ -79,7 +81,7 @@ public:
     {
         if(stagingBufferCapacity < requiredSize)
         {
-            stagingBufferCapacity = AgpuCommon::nextPowerOfTwo(requiredSize);
+            stagingBufferCapacity = nextPowerOfTwo(requiredSize);
             stagingBufferCapacity = std::max(stagingBufferCapacity, size_t(InitialCapacity));
             if(buffer)
             {
@@ -88,7 +90,7 @@ public:
                 stagingBufferBasePointer = nullptr;
             }
 
-            createStagingBuffer(MemoryHeapType, requiredSize, StagingBufferResourceStates , &buffer, &bufferAllocation, reinterpret_cast<void**> (&stagingBufferBasePointer));
+            createStagingBuffer(MemoryHeapType, stagingBufferCapacity, StagingBufferResourceStates, &buffer, &bufferAllocation, reinterpret_cast<void**> (&stagingBufferBasePointer));
         }
 
         currentStagingBufferSize = requiredSize;

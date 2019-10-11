@@ -64,7 +64,7 @@ agpu::buffer_ref ADXBuffer::create(const agpu::device_ref &device, agpu_buffer_d
 	// Uniform buffers require an alignment of 256 bytes.
 	if ((description.usage_modes & AGPU_UNIFORM_BUFFER) != 0)
 	{
-		desc.Width = (desc.Width + 255) & (-256);
+        desc.Width = alignedTo(size_t(desc.Width), 256);
 	}
 
 	if ((description.usage_modes & AGPU_STORAGE_BUFFER) != 0)

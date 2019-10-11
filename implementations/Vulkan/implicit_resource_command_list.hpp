@@ -11,7 +11,8 @@
 
 namespace AgpuVulkan
 {
-
+using AgpuCommon::alignedTo;
+using AgpuCommon::nextPowerOfTwo;
 class AVkDevice;
 
 /*VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages);*/
@@ -72,7 +73,7 @@ public:
     {
         if(stagingBufferCapacity < requiredSize)
         {
-            stagingBufferCapacity = AgpuCommon::nextPowerOfTwo(requiredSize);
+            stagingBufferCapacity = nextPowerOfTwo(requiredSize);
             stagingBufferCapacity = std::max(stagingBufferCapacity, size_t(InitialCapacity));
             if(bufferHandle)
             {
@@ -82,7 +83,7 @@ public:
                 stagingBufferBasePointer = nullptr;
             }
 
-            createStagingBuffer(MemoryHeapType, requiredSize, &bufferHandle, &allocationHandle, reinterpret_cast<void**> (&stagingBufferBasePointer));
+            createStagingBuffer(MemoryHeapType, stagingBufferCapacity, &bufferHandle, &allocationHandle, reinterpret_cast<void**> (&stagingBufferBasePointer));
         }
 
         currentStagingBufferSize = requiredSize;
