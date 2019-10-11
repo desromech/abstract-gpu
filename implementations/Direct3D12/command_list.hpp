@@ -2,6 +2,8 @@
 #define AGPU_D3D12_COMMAND_LIST_HPP_
 
 #include "device.hpp"
+#include <vector>
+#include <utility>
 
 namespace AgpuD3D12
 {
@@ -77,9 +79,15 @@ public:
     agpu::framebuffer_ref currentFramebuffer;
 
 private:
-    void textureUsageTransitionBarrier(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode);
+	agpu_buffer_usage_mask getCurrentBufferUsageMode(const agpu::buffer_ref& buffer);
+	agpu_texture_usage_mode_mask getCurrentTextureUsageMode(const agpu::texture_ref& texture);
+
+    void transitionTextureUsageMode(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode);
+	void transitionBufferUsageMode(ID3D12Resource* resource, agpu_memory_heap_type heapType, agpu_buffer_usage_mask sourceMode, agpu_buffer_usage_mask destinationMode);
 
     agpu_error setCommonState();
+
+	std::vector<std::pair<agpu::buffer_ref, agpu_buffer_usage_mask>> bufferTransitionStack;
 };
 
 } // End of namespace AgpuD3D12

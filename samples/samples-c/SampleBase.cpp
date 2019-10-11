@@ -279,10 +279,8 @@ int SampleBase::main(int argc, const char **argv)
     SDL_GetWindowWMInfo(window, &windowInfo);
 
     // Open the device
-    agpu_swap_chain_create_info swapChainCreateInfo;
-    agpu_device_open_info openInfo;
-    memset(&openInfo, 0, sizeof(openInfo));
-    memset(&swapChainCreateInfo, 0, sizeof(swapChainCreateInfo));
+	agpu_swap_chain_create_info swapChainCreateInfo = {};
+	agpu_device_open_info openInfo = {};
     switch(windowInfo.subsystem)
     {
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
@@ -476,8 +474,7 @@ int ComputeSampleBase::main(int argc, const char **argv)
     printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
 
     // Open the device
-    agpu_device_open_info openInfo;
-    memset(&openInfo, 0, sizeof(openInfo));
+	agpu_device_open_info openInfo = {};
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debug_layer= true;

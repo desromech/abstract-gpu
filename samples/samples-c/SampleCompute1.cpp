@@ -33,8 +33,8 @@ public:
 			return false;
 
 		// Create the command allocator and the command list
-		auto commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_COMPUTE, commandQueue);
-		auto commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_COMPUTE, commandAllocator, pipeline);
+		auto commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+		auto commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, pipeline);
 
 		// Create different buffers for uploading, computing on the gpu, and reading back the
 		agpu_size arraySize = 256;
