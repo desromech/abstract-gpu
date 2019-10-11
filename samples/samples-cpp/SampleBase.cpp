@@ -376,7 +376,6 @@ int SampleBase::main(int argc, const char **argv)
     shutdownSample();
     swapChain.reset();
     commandQueue.reset();
-    device.reset();
 
     SDL_DestroyWindow(window);
     SDL_Quit();

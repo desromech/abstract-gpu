@@ -44,7 +44,7 @@ Documentation of all members: D3D12MemAlloc.h
   - [Thread safety](@ref general_considerations_thread_safety)
   - [Future plans](@ref general_considerations_future_plans)
   - [Features not supported](@ref general_considerations_features_not_supported)
-		
+
 \section main_see_also See also
 
 - [Product page on GPUOpen](https://gpuopen.com/gaming-product/d3d12-memory-allocator/)
@@ -373,7 +373,7 @@ typedef enum ALLOCATION_FLAGS
 
     /**
     Set this flag if the allocation should have its own dedicated memory allocation (committed resource with implicit heap).
-    
+
     Use it for special, big resources, like fullscreen textures used as render targets.
     */
     ALLOCATION_FLAG_COMMITTED = 0x1,
@@ -421,7 +421,7 @@ public:
     This function must be used instead of destructor, which is private.
     There is no reference counting involved.
     */
-    void Release();
+    ULONG Release();
 
     /** \brief Returns offset in bytes from the start of memory heap.
 
@@ -518,16 +518,16 @@ struct ALLOCATOR_DESC
 {
     /// Flags.
     ALLOCATOR_FLAGS Flags;
-    
+
     /// Direct3D device object that the allocator should be attached to.
     ID3D12Device* pDevice;
-    
+
     /** \brief Preferred size of a single `ID3D12Heap` block to be allocated.
-    
+
     Set to 0 to use default, which is currently 256 MiB.
     */
     UINT64 PreferredBlockSize;
-    
+
     /** \brief Custom CPU memory allocation callbacks. Optional.
 
     Optional, can be null. When specified, will be used for all CPU-side memory allocations.
@@ -590,12 +590,12 @@ class Allocator
 {
 public:
     /** \brief Deletes this object.
-    
+
     This function must be used instead of destructor, which is private.
     There is no reference counting involved.
     */
-    void Release();
-    
+    ULONG Release();
+
     /// Returns cached options retrieved from D3D12 device.
     const D3D12_FEATURE_DATA_D3D12_OPTIONS& GetD3D12Options() const;
 
@@ -628,9 +628,9 @@ private:
 
     Allocator(const ALLOCATION_CALLBACKS& allocationCallbacks, const ALLOCATOR_DESC& desc);
     ~Allocator();
-    
+
     AllocatorPimpl* m_Pimpl;
-    
+
     D3D12MA_CLASS_NO_COPY(Allocator)
 };
 

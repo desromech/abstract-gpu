@@ -105,7 +105,7 @@ agpu_error ADXFramebuffer::attachColorBuffer(agpu_int index, const agpu::texture
     // Perform the actual attachment.
     D3D12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
     handle.ptr += index * descriptorSize;
-    deviceForDX->d3dDevice->CreateRenderTargetView(texture.as<ADXTexture> ()->gpuResource.Get(), &viewDescription, handle);
+    deviceForDX->d3dDevice->CreateRenderTargetView(texture.as<ADXTexture> ()->resource.Get(), &viewDescription, handle);
     return AGPU_OK;
 }
 
@@ -126,7 +126,7 @@ agpu_error ADXFramebuffer::attachDepthStencilBuffer(const agpu::texture_view_ref
     depthStencilBuffer = texture;
 
     // Perform the actual attachment.
-    deviceForDX->d3dDevice->CreateDepthStencilView(texture.as<ADXTexture> ()->gpuResource.Get(), &viewDescription, depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
+    deviceForDX->d3dDevice->CreateDepthStencilView(texture.as<ADXTexture> ()->resource.Get(), &viewDescription, depthStencilHeap->GetCPUDescriptorHandleForHeapStart());
     return AGPU_OK;
 }
 

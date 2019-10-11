@@ -85,7 +85,7 @@ agpu_error ADXShaderResourceBinding::bindStorageBufferRange(agpu_int location, c
 	auto error = adxBuffer->createUAVDescription(&viewDesc, offset, size);
 	if (error) return error;
 
-	deviceForDX->d3dDevice->CreateUnorderedAccessView(adxBuffer->getActualGpuBuffer(), nullptr, &viewDesc, descriptorCpuHandle);
+	deviceForDX->d3dDevice->CreateUnorderedAccessView(adxBuffer->resource.Get(), nullptr, &viewDesc, descriptorCpuHandle);
 
 	return AGPU_OK;
 }
@@ -110,7 +110,7 @@ agpu_error ADXShaderResourceBinding::bindSampledTextureView(agpu_int location, c
 	auto error = adxTextureView->getSampledTextureViewDescription(&viewDesc);
 	if (error) return error;
 	
-	deviceForDX->d3dDevice->CreateShaderResourceView(adxTextureView->texture.lock().as<ADXTexture> ()->gpuResource.Get(), &viewDesc, descriptorCpuHandle);
+	deviceForDX->d3dDevice->CreateShaderResourceView(adxTextureView->texture.lock().as<ADXTexture> ()->resource.Get(), &viewDesc, descriptorCpuHandle);
 
 	return AGPU_OK;
 }

@@ -1,28 +1,16 @@
 #ifndef _AGPU_DEVICE_HPP_
 #define _AGPU_DEVICE_HPP_
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
-#include <windows.h>
-#include <d3d12.h>
+#include "implicit_resource_command_list.hpp"
 #include <dxgi1_4.h>
 #include <string>
 #include <mutex>
 #include <functional>
-#include <wrl.h>
 
-#include "common.hpp"
 
 namespace AgpuD3D12
 {
 
-using Microsoft::WRL::ComPtr;
 const int ShaderTypeCount = 6;
 class Direct3D12Platform;
 
@@ -72,13 +60,11 @@ public:
 	virtual agpu_error finishExecution() override;
 
 public:
-    agpu_error withTransferQueue(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &)> function);
-    agpu_error withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function);
-
-    agpu_error waitForMemoryTransfer();
-
     // Device objects
     ComPtr<ID3D12Device> d3dDevice;
+
+    // Memory allocator
+    ComPtr<D3D12MA::Allocator> memoryAllocator;
 
     UINT renderTargetViewDescriptorSize;
 
@@ -88,17 +74,35 @@ public:
     // Extra settings.
     bool isDebugEnabled;
 
+    template<typename FT>
+    void withSetupCommandListDo(const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceSetupCommandList.mutex);
+        f(implicitResourceSetupCommandList);
+    }
+
+    template<typename FT>
+    void withUploadCommandListDo(size_t requiredCpuBufferSize, size_t requiredCpuBufferAlignment, const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceUploadCommandList.mutex);
+        implicitResourceUploadCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
+
+        f(implicitResourceUploadCommandList);
+    }
+
+    template<typename FT>
+    void withReadbackCommandListDo(size_t requiredCpuBufferSize, size_t requiredCpuBufferAlignment, const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceReadbackCommandList.mutex);
+        implicitResourceReadbackCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
+
+        f(implicitResourceReadbackCommandList);
+    }
+
 private:
-    // For immediate and blocking data transferring.
-    ComPtr<ID3D12CommandAllocator> transferCommandAllocator;
-    ComPtr<ID3D12GraphicsCommandList> transferCommandList;
-
-    std::mutex transferMutex;
-    ComPtr<ID3D12CommandQueue> transferCommandQueue;
-    HANDLE transferFenceEvent;
-    ComPtr<ID3D12Fence> transferFence;
-    UINT64 transferFenceValue;
-
+    ADXImplicitResourceSetupCommandList implicitResourceSetupCommandList;
+    ADXImplicitResourceUploadCommandList implicitResourceUploadCommandList;
+    ADXImplicitResourceReadbackCommandList implicitResourceReadbackCommandList;
 };
 
 } // End of namespace AgpuD3D12

@@ -73,7 +73,7 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     colorDesc.format = createInfo->colorbuffer_format;
     colorDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     colorDesc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
-    colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+    colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_PRESENT;
     colorDesc.miplevels = 1;
     colorDesc.sample_count = 1;
 

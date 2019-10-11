@@ -3011,7 +3011,7 @@ void AllocatorPimpl::FreeCommittedMemory(Allocation* allocation)
 void AllocatorPimpl::FreePlacedMemory(Allocation* allocation)
 {
     D3D12MA_ASSERT(allocation && allocation->m_Type == Allocation::TYPE_PLACED);
-    
+
     DeviceMemoryBlock* const block = allocation->GetBlock();
     D3D12MA_ASSERT(block);
     BlockVector* const blockVector = block->GetBlockVector();
@@ -3074,13 +3074,8 @@ void AllocatorPimpl::CalculateStats(Stats& outStats)
 ////////////////////////////////////////////////////////////////////////////////
 // Public class Allocation implementation
 
-void Allocation::Release()
+ULONG Allocation::Release()
 {
-    if(this == NULL)
-    {
-        return;
-    }
-
     D3D12MA_DEBUG_GLOBAL_MUTEX_LOCK
 
     switch(m_Type)
@@ -3096,6 +3091,7 @@ void Allocation::Release()
     FreeName();
 
     D3D12MA_DELETE(m_Allocator->GetAllocs(), this);
+    return 0;
 }
 
 UINT64 Allocation::GetOffset() const
@@ -3200,13 +3196,14 @@ Allocator::~Allocator()
     D3D12MA_DELETE(m_Pimpl->GetAllocs(), m_Pimpl);
 }
 
-void Allocator::Release()
+ULONG Allocator::Release()
 {
     D3D12MA_DEBUG_GLOBAL_MUTEX_LOCK
 
     // Copy is needed because otherwise we would call destructor and invalidate the structure with callbacks before using it to free memory.
     const ALLOCATION_CALLBACKS allocationCallbacksCopy = m_Pimpl->GetAllocs();
     D3D12MA_DELETE(allocationCallbacksCopy, this);
+    return 0;
 }
 
 

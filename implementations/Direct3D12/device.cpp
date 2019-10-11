@@ -41,16 +41,15 @@ void printError(const char *format, ...)
 ADXDevice::ADXDevice()
 	: renderTargetViewDescriptorSize(0),
 	isOpened(false),
-	isDebugEnabled(false)
+	isDebugEnabled(false),
+    implicitResourceSetupCommandList(*this),
+    implicitResourceUploadCommandList(*this),
+    implicitResourceReadbackCommandList(*this)
 {
 }
 
 ADXDevice::~ADXDevice()
 {
-    if (isOpened)
-    {
-        CloseHandle(transferFenceEvent);
-    }
 }
 
 bool ADXDevice::checkDirect3D12Implementation(Direct3D12Platform *platform)
@@ -93,73 +92,25 @@ bool ADXDevice::initialize(agpu_device_open_info* openInfo)
     if (!defaultCommandQueue)
         return false;
 
-    // Create the transfer command queue.
+    // Create the memory allocator.
     {
-        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-        if (FAILED(d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&transferCommandQueue))))
-            return false;
-
-        // Create the transfer command allocator.
-        if (FAILED(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&transferCommandAllocator))))
-            return false;
-
-        // Create the transfer command list.
-        if (FAILED(d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, transferCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&transferCommandList))))
-            return false;
-
-        if (FAILED(transferCommandList->Close()))
+        D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
+        allocatorDesc.pDevice = d3dDevice.Get();
+        allocatorDesc.PreferredBlockSize = 64*1024*1024; // Reduce the default block size to 64 MB.
+        if(FAILED(D3D12MA::CreateAllocator(&allocatorDesc, &memoryAllocator)))
             return false;
     }
 
-    // Create transfer synchronization fence.
-    {
-        if (FAILED(d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&transferFence))))
-            return false;
-        transferFenceValue = 1;
-
-        // Create an event handle to use for frame synchronization.
-        transferFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-        if (transferFenceEvent == nullptr)
-            return false;
-    }
+    // Initialize the implicit resources
+    auto transferQueue = defaultCommandQueue.as<ADXCommandQueue> ()->queue;
+    if(!implicitResourceSetupCommandList.initializeWithQueue(transferQueue) ||
+       !implicitResourceUploadCommandList.initializeWithQueue(transferQueue) ||
+       !implicitResourceReadbackCommandList.initializeWithQueue(transferQueue))
+       return false;
 
     isOpened = true;
 
     return true;
-}
-
-agpu_error ADXDevice::withTransferQueue(std::function<agpu_error (const ComPtr<ID3D12CommandQueue> &)> function)
-{
-    std::unique_lock<std::mutex> l(transferMutex);
-    return function(transferCommandQueue);
-}
-
-agpu_error ADXDevice::withTransferQueueAndCommandList(std::function<agpu_error(const ComPtr<ID3D12CommandQueue> &, const ComPtr<ID3D12GraphicsCommandList> &list)> function)
-{
-    std::unique_lock<std::mutex> l(transferMutex);
-    transferCommandAllocator->Reset();
-    transferCommandList->Reset(transferCommandAllocator.Get(), nullptr);
-    return function(transferCommandQueue, transferCommandList);
-}
-
-agpu_error ADXDevice::waitForMemoryTransfer()
-{
-    // Signal the fence.
-    auto fence = transferFenceValue;
-    ERROR_IF_FAILED(transferCommandQueue->Signal(transferFence.Get(), fence));
-    ++transferFenceValue;
-
-    // Wait until previous frame is finished.
-    if (transferFence->GetCompletedValue() < fence)
-    {
-        ERROR_IF_FAILED(transferFence->SetEventOnCompletion(fence, transferFenceEvent));
-        WaitForSingleObject(transferFenceEvent, INFINITE);
-    }
-
-    return AGPU_OK;
 }
 
 agpu::command_queue_ptr ADXDevice::getDefaultCommandQueue()

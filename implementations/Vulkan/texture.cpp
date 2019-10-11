@@ -372,6 +372,11 @@ void AVkTexture::computeBufferImageTransferLayout(int level, VkSubresourceLayout
 
 agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
+	return readTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, buffer);
+}
+
+agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+{
     CHECK_POINTER(buffer);
 
     abort();
