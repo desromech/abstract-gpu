@@ -80,7 +80,7 @@ VkImageMemoryBarrier barrierForImageUsageTransition(VkImage image, VkImageSubres
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     srcStages |= mapTextureUsageModeToPipelineSourceStages(allowedUsages, sourceUsage);
-    dstStages |= mapTextureUsageModeToPipelineDestinationStages(allowedUsages, sourceUsage);
+    dstStages |= mapTextureUsageModeToPipelineDestinationStages(allowedUsages, destUsage);
     return barrier;
 }
 
@@ -89,11 +89,18 @@ AVkImplicitResourceSetupCommandList::AVkImplicitResourceSetupCommandList(AVkDevi
     : device(cdevice)
 {
     commandPool = VK_NULL_HANDLE;
-    commandBuffer = nullptr;
+    commandBuffer = VK_NULL_HANDLE;
 }
 
 AVkImplicitResourceSetupCommandList::~AVkImplicitResourceSetupCommandList()
 {
+}
+
+void AVkImplicitResourceSetupCommandList::destroy()
+{
+	vkDestroyCommandPool(device.device, commandPool, nullptr);
+	commandPool = VK_NULL_HANDLE;
+	commandBuffer = VK_NULL_HANDLE;
 }
 
 bool AVkImplicitResourceSetupCommandList::createCommandBuffer()
@@ -225,6 +232,7 @@ bool AVkImplicitResourceSetupCommandList::transitionImageUsageMode(VkImage image
 
 VkResult AVkImplicitResourceSetupCommandList::destroyStagingBuffer(VkBuffer bufferHandle, VmaAllocation allocationHandle)
 {
+	vmaUnmapMemory(device.memoryAllocator, allocationHandle);
     vmaDestroyBuffer(device.memoryAllocator, bufferHandle, allocationHandle);
     return VK_SUCCESS;
 }

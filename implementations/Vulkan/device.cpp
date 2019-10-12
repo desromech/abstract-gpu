@@ -171,6 +171,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
 
 AVkDevice::AVkDevice()
     :
+	debugReportCallback(VK_NULL_HANDLE),
     implicitResourceSetupCommandList(*this),
     implicitResourceUploadCommandList(*this),
     implicitResourceReadbackCommandList(*this)
@@ -192,8 +193,21 @@ AVkDevice::~AVkDevice()
     if(vrSystem)
         vr::VR_Shutdown();
 
+	// Destroy the implicit command list.
+	implicitResourceSetupCommandList.destroy();
+	implicitResourceUploadCommandList.destroy();
+	implicitResourceReadbackCommandList.destroy();
+
     // Destroy the memory allocator.
     vmaDestroyAllocator(memoryAllocator);
+
+	// Destroy the debug report callback.
+	if (debugReportCallback)
+		fpDestroyDebugReportCallbackEXT(vulkanInstance, debugReportCallback, nullptr);
+
+	// Destroy the vulkan devices
+	vkDestroyDevice(device, nullptr);
+	vkDestroyInstance(vulkanInstance, nullptr);
 }
 
 bool AVkDevice::checkVulkanImplementation(VulkanPlatform *platform)

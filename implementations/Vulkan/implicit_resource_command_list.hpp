@@ -25,6 +25,8 @@ public:
     AVkImplicitResourceSetupCommandList(AVkDevice &cdevice);
     ~AVkImplicitResourceSetupCommandList();
 
+	void destroy();
+
     bool clearImageWithColor(VkImage image, VkImageSubresourceRange range, agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask usageMode, VkClearColorValue *clearValue);
     bool clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask usageMode, VkClearDepthStencilValue *clearValue);
 
@@ -68,6 +70,17 @@ public:
     ~AVkImplicitResourceStagingCommandList()
     {
     }
+
+	void destroy()
+	{
+		if (bufferHandle)
+		{
+			destroyStagingBuffer(bufferHandle, allocationHandle);
+			bufferHandle = VK_NULL_HANDLE;
+			allocationHandle = VK_NULL_HANDLE;
+		}
+		AVkImplicitResourceSetupCommandList::destroy();
+	}
 
     void ensureValidCPUStagingBuffer(size_t requiredSize, size_t requiredAlignment)
     {

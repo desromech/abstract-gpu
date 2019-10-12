@@ -266,14 +266,12 @@ agpu::texture_ref AVkTexture::createFromImage(const agpu::device_ref &device, ag
     return result;
 }
 
-
 agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* viewDescription)
 {
     if(!viewDescription)
         return nullptr;
 
-    VkImageViewCreateInfo createInfo;
-    memset(&createInfo, 0, sizeof(createInfo));
+	VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = image;
     createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count);
@@ -307,7 +305,7 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     if (error)
         return VK_NULL_HANDLE;
 
-    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, mapTextureUsageModeToLayout(description.usage_modes, viewDescription->subresource_range.usage_mode), *viewDescription).disown();
+    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, mapTextureUsageModeToLayout(viewDescription->subresource_range.usage_mode, viewDescription->subresource_range.usage_mode), *viewDescription).disown();
 }
 
 agpu::texture_view_ptr AVkTexture::getOrCreateFullView()
@@ -340,7 +338,7 @@ agpu_error AVkTexture::getFullViewDescription(agpu_texture_view_description *vie
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_mode = description.usage_modes;
+    viewDescription->subresource_range.usage_mode = description.main_usage_mode;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
@@ -375,7 +373,7 @@ agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu
 	return readTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, buffer);
 }
 
-agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+agpu_error AVkTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
 {
     CHECK_POINTER(buffer);
 
@@ -440,12 +438,12 @@ agpu_error AVkTexture::uploadTextureSubData (agpu_int level, agpu_int arrayIndex
     if ((description.usage_modes & AGPU_TEXTURE_USAGE_UPLOADED) == 0)
         return AGPU_INVALID_OPERATION;
 
-    VkImageSubresourceRange range;
-    memset(&range, 0, sizeof(range));
+	VkImageSubresourceRange range = {};
     range.baseMipLevel = level;
     range.baseArrayLayer = arrayIndex;
     range.layerCount = 1;
     range.levelCount = 1;
+	range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     VkSubresourceLayout layout;
     VkBufferImageCopy copy;

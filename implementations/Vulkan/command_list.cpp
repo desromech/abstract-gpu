@@ -381,7 +381,7 @@ agpu_error AVkCommandList::transitionImageUsageMode(VkImage image, agpu_texture_
 agpu_error AVkCommandList::transitionBufferUsageMode(VkBuffer buffer, agpu_buffer_usage_mask oldUsageMode, agpu_buffer_usage_mask newUsageMode)
 {
     VkBufferMemoryBarrier barrier = {};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     barrier.srcAccessMask = mapBufferUsageModeToAccessFlags(oldUsageMode);
     barrier.dstAccessMask = mapBufferUsageModeToAccessFlags(newUsageMode);
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -389,7 +389,7 @@ agpu_error AVkCommandList::transitionBufferUsageMode(VkBuffer buffer, agpu_buffe
     barrier.buffer = buffer;
     barrier.offset = 0;
     barrier.size = VK_WHOLE_SIZE;
-    vkCmdPipelineBarrier(commandBuffer, mapBufferUsageModeToSourceStages(oldUsageMode), mapBufferUsageModeToDestinationStages(oldUsageMode),
+    vkCmdPipelineBarrier(commandBuffer, mapBufferUsageModeToSourceStages(oldUsageMode), mapBufferUsageModeToDestinationStages(newUsageMode),
             0, 0, nullptr, 1, &barrier, 0, nullptr);
 
     return AGPU_OK;
@@ -610,7 +610,7 @@ agpu_error AVkCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer, 
     CHECK_POINTER(buffer);
 
     VkBufferMemoryBarrier barrier = {};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     barrier.srcAccessMask = VkAccessFlags(source_accesses);
     barrier.dstAccessMask = VkAccessFlags(dest_accesses);
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
