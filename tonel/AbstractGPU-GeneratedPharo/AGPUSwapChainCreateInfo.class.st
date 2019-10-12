@@ -28,6 +28,7 @@ AGPUSwapChainCreateInfo class >> fieldsDesc [
 		 agpu_swap_chain_flags flags;
 		 agpu_int x;
 		 agpu_int y;
+		 agpu_swap_chain* old_swap_chain;
 	)
 ]
 

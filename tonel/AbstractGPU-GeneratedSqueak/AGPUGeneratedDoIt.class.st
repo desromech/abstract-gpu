@@ -38,6 +38,7 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUSize3d defineFields.
 	AGPUFrustumTangents defineFields.
 	AGPURegion3d defineFields.
+	AGPUBufferImageCopyRegion defineFields.
 	AGPUVrTrackedDevicePose defineFields.
 	AGPUVrGenericEvent defineFields.
 	AGPUVrControllerEvent defineFields.

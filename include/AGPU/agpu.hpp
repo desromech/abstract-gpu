@@ -315,6 +315,11 @@ public:
 		return agpuCreateStateTrackerCache(this, command_queue_family.get());
 	}
 
+	inline void finishExecution()
+	{
+		agpuThrowIfFailed(agpuFinishDeviceExecution(this));
+	}
+
 };
 
 typedef agpu_ref<agpu_device> agpu_device_ref;
@@ -440,6 +445,11 @@ public:
 	inline agpu_size getFramebufferCount()
 	{
 		return agpuGetFramebufferCount(this);
+	}
+
+	inline void setOverlayPosition(agpu_int x, agpu_int y)
+	{
+		agpuThrowIfFailed(agpuSetSwapChainOverlayPosition(this, x, y));
 	}
 
 };
@@ -878,6 +888,51 @@ public:
 		agpuThrowIfFailed(agpuMemoryBarrier(this, source_stage, dest_stage, source_accesses, dest_accesses));
 	}
 
+	inline void bufferMemoryBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+	{
+		agpuThrowIfFailed(agpuBufferMemoryBarrier(this, buffer.get(), source_stage, dest_stage, source_accesses, dest_accesses, offset, size));
+	}
+
+	inline void textureMemoryBarrier(const agpu_ref<agpu_texture>& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+	{
+		agpuThrowIfFailed(agpuTextureMemoryBarrier(this, texture.get(), source_stage, dest_stage, source_accesses, dest_accesses, subresource_range));
+	}
+
+	inline void pushBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_buffer_usage_mask new_usage)
+	{
+		agpuThrowIfFailed(agpuPushBufferTransitionBarrier(this, buffer.get(), new_usage));
+	}
+
+	inline void pushTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+	{
+		agpuThrowIfFailed(agpuPushTextureTransitionBarrier(this, texture.get(), new_usage, subresource_range));
+	}
+
+	inline void popBufferTransitionBarrier()
+	{
+		agpuThrowIfFailed(agpuPopBufferTransitionBarrier(this));
+	}
+
+	inline void popTextureTransitionBarrier()
+	{
+		agpuThrowIfFailed(agpuPopTextureTransitionBarrier(this));
+	}
+
+	inline void copyBuffer(const agpu_ref<agpu_buffer>& source_buffer, agpu_size source_offset, const agpu_ref<agpu_buffer>& dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+	{
+		agpuThrowIfFailed(agpuCopyBuffer(this, source_buffer.get(), source_offset, dest_buffer.get(), dest_offset, copy_size));
+	}
+
+	inline void copyBufferToTexture(const agpu_ref<agpu_buffer>& buffer, const agpu_ref<agpu_texture>& texture, agpu_buffer_image_copy_region* copy_region)
+	{
+		agpuThrowIfFailed(agpuCopyBufferToTexture(this, buffer.get(), texture.get(), copy_region));
+	}
+
+	inline void copyTextureToBuffer(const agpu_ref<agpu_texture>& texture, const agpu_ref<agpu_buffer>& buffer, agpu_buffer_image_copy_region* copy_region)
+	{
+		agpuThrowIfFailed(agpuCopyTextureToBuffer(this, texture.get(), buffer.get(), copy_region));
+	}
+
 };
 
 typedef agpu_ref<agpu_command_list> agpu_command_list_ref;
@@ -919,6 +974,11 @@ public:
 		agpuThrowIfFailed(agpuReadTextureData(this, level, arrayIndex, pitch, slicePitch, buffer));
 	}
 
+	inline void readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+	{
+		agpuThrowIfFailed(agpuReadTextureSubData(this, level, arrayIndex, pitch, slicePitch, sourceRegion, destSize, buffer));
+	}
+
 	inline void uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 	{
 		agpuThrowIfFailed(agpuUploadTextureData(this, level, arrayIndex, pitch, slicePitch, data));
@@ -927,16 +987,6 @@ public:
 	inline void uploadTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data)
 	{
 		agpuThrowIfFailed(agpuUploadTextureSubData(this, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data));
-	}
-
-	inline void discardUploadBuffer()
-	{
-		agpuThrowIfFailed(agpuDiscardTextureUploadBuffer(this));
-	}
-
-	inline void discardReadbackBuffer()
-	{
-		agpuThrowIfFailed(agpuDiscardTextureReadbackBuffer(this));
 	}
 
 	inline void getFullViewDescription(agpu_texture_view_description* result)
@@ -1752,6 +1802,51 @@ public:
 	inline void memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
 	{
 		agpuThrowIfFailed(agpuStateTrackerMemoryBarrier(this, source_stage, dest_stage, source_accesses, dest_accesses));
+	}
+
+	inline void bufferMemoryBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+	{
+		agpuThrowIfFailed(agpuStateTrackerBufferMemoryBarrier(this, buffer.get(), source_stage, dest_stage, source_accesses, dest_accesses, offset, size));
+	}
+
+	inline void textureMemoryBarrier(const agpu_ref<agpu_texture>& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+	{
+		agpuThrowIfFailed(agpuStateTrackerTextureMemoryBarrier(this, texture.get(), source_stage, dest_stage, source_accesses, dest_accesses, subresource_range));
+	}
+
+	inline void pushBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_buffer_usage_mask new_usage)
+	{
+		agpuThrowIfFailed(agpuStateTrackerPushBufferTransitionBarrier(this, buffer.get(), new_usage));
+	}
+
+	inline void pushTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+	{
+		agpuThrowIfFailed(agpuStateTrackerPushTextureTransitionBarrier(this, texture.get(), new_usage, subresource_range));
+	}
+
+	inline void popBufferTransitionBarrier()
+	{
+		agpuThrowIfFailed(agpuStateTrackerPopBufferTransitionBarrier(this));
+	}
+
+	inline void popTextureTransitionBarrier()
+	{
+		agpuThrowIfFailed(agpuStateTrackerPopTextureTransitionBarrier(this));
+	}
+
+	inline void copyBuffer(const agpu_ref<agpu_buffer>& source_buffer, agpu_size source_offset, const agpu_ref<agpu_buffer>& dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+	{
+		agpuThrowIfFailed(agpuStateTrackerCopyBuffer(this, source_buffer.get(), source_offset, dest_buffer.get(), dest_offset, copy_size));
+	}
+
+	inline void copyBufferToTexture(const agpu_ref<agpu_buffer>& buffer, const agpu_ref<agpu_texture>& texture, agpu_buffer_image_copy_region* copy_region)
+	{
+		agpuThrowIfFailed(agpuStateTrackerCopyBufferToTexture(this, buffer.get(), texture.get(), copy_region));
+	}
+
+	inline void copyTextureToBuffer(const agpu_ref<agpu_texture>& texture, const agpu_ref<agpu_buffer>& buffer, agpu_buffer_image_copy_region* copy_region)
+	{
+		agpuThrowIfFailed(agpuStateTrackerCopyTextureToBuffer(this, texture.get(), buffer.get(), copy_region));
 	}
 
 };

@@ -1,9 +1,7 @@
 #ifndef AGPU_VULKAN_DEVICE_HPP
 #define AGPU_VULKAN_DEVICE_HPP
 
-#include "common.hpp"
-#include "include_vulkan.h"
-#include "vk_mem_alloc.h"
+#include "implicit_resource_command_list.hpp"
 #include <string.h>
 #include <memory>
 #include <mutex>
@@ -64,6 +62,8 @@ public:
     virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
     virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
 
+    virtual agpu_error finishExecution() override;
+
 public:
     std::vector<VkPhysicalDevice> physicalDevices;
     std::vector<VkLayerProperties> instanceLayerProperties;
@@ -115,7 +115,7 @@ public:
     VmaAllocator memoryAllocator;
 
 public:
-    bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)
+    /*bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)
     {
         // Function taken from the vulkan SDK.
         // Search memtypes to find first index with those properties
@@ -132,27 +132,42 @@ public:
 
         // No memory types matched, return failure
         return false;
+    }*/
+
+    template<typename FT>
+    void withSetupCommandListDo(const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceSetupCommandList.mutex);
+        f(implicitResourceSetupCommandList);
     }
 
-    bool clearImageWithColor(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue);
-    bool clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue);
-    bool copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32_t regionCount, const VkBufferCopy *regions);
-    bool copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions);
-    bool copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions);
+    template<typename FT>
+    void withUploadCommandListDo(size_t requiredCpuBufferSize, size_t requiredCpuBufferAlignment, const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceUploadCommandList.mutex);
+        implicitResourceUploadCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
 
-    bool setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask);
-    VkImageMemoryBarrier barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages);
+        f(implicitResourceUploadCommandList);
+    }
+
+    template<typename FT>
+    void withReadbackCommandListDo(size_t requiredCpuBufferSize, size_t requiredCpuBufferAlignment, const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceReadbackCommandList.mutex);
+        implicitResourceReadbackCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
+
+        f(implicitResourceReadbackCommandList);
+    }
 
 private:
     bool checkDebugReportExtension();
 
-    bool createSetupCommandBuffer();
-    bool submitSetupCommandBuffer();
+    /*bool createSetupCommandBuffer();
+    bool submitSetupCommandBuffer();*/
 
-    std::mutex setupMutex;
-    VkCommandPool setupCommandPool;
-    VkCommandBuffer setupCommandBuffer;
-    agpu::command_queue_ref setupQueue;
+    AVkImplicitResourceSetupCommandList implicitResourceSetupCommandList;
+    AVkImplicitResourceUploadCommandList implicitResourceUploadCommandList;
+    AVkImplicitResourceReadbackCommandList implicitResourceReadbackCommandList;
 };
 
 inline VmaMemoryUsage mapHeapType(agpu_memory_heap_type type)

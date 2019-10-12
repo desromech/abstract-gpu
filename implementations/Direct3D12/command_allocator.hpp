@@ -4,22 +4,26 @@
 #include "device.hpp"
 #include "command_list.hpp"
 
-struct _agpu_command_allocator : public Object<_agpu_command_allocator>
+namespace AgpuD3D12
+{
+
+class ADXCommandAllocator : public agpu::command_allocator
 {
 public:
-    _agpu_command_allocator();
+    ADXCommandAllocator(const agpu::device_ref &device);
+    ~ADXCommandAllocator();
 
-    void lostReferences();
-
-    static _agpu_command_allocator *create(agpu_device *device, agpu_command_list_type type, agpu_command_queue *queue);
+    static agpu::command_allocator_ref create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_queue_ref &queue);
 
     agpu_error reset();
 
 public:
 
-    agpu_device *device;
+    agpu::device_ref device;
     agpu_command_list_type type;
     ComPtr<ID3D12CommandAllocator> allocator;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_COMMAND_ALLOCATOR_HPP_

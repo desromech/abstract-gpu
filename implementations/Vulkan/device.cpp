@@ -170,12 +170,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
 }
 
 AVkDevice::AVkDevice()
+    :
+	debugReportCallback(VK_NULL_HANDLE),
+    implicitResourceSetupCommandList(*this),
+    implicitResourceUploadCommandList(*this),
+    implicitResourceReadbackCommandList(*this)
 {
     vulkanInstance = nullptr;
     physicalDevice = nullptr;
     device = nullptr;
-    setupCommandPool = VK_NULL_HANDLE;
-    setupCommandBuffer = nullptr;
     hasDebugReportExtension = false;
     debugReportCallback = VK_NULL_HANDLE;
 
@@ -190,8 +193,21 @@ AVkDevice::~AVkDevice()
     if(vrSystem)
         vr::VR_Shutdown();
 
+	// Destroy the implicit command list.
+	implicitResourceSetupCommandList.destroy();
+	implicitResourceUploadCommandList.destroy();
+	implicitResourceReadbackCommandList.destroy();
+
     // Destroy the memory allocator.
     vmaDestroyAllocator(memoryAllocator);
+
+	// Destroy the debug report callback.
+	if (debugReportCallback)
+		fpDestroyDebugReportCallbackEXT(vulkanInstance, debugReportCallback, nullptr);
+
+	// Destroy the vulkan devices
+	vkDestroyDevice(device, nullptr);
+	vkDestroyInstance(vulkanInstance, nullptr);
 }
 
 bool AVkDevice::checkVulkanImplementation(VulkanPlatform *platform)
@@ -664,8 +680,10 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     allocatorInfo.device = device;
     vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
 
-    // Store a copy to the setup queue.
-    setupQueue = graphicsCommandQueues[0];
+    // Store a copy to in the implicit resource command lists.
+    implicitResourceSetupCommandList.commandQueue = graphicsCommandQueues[0];
+    implicitResourceUploadCommandList.commandQueue = graphicsCommandQueues[0];
+    implicitResourceReadbackCommandList.commandQueue = graphicsCommandQueues[0];
 
     // Create the VR system.
     if(vrSystem)
@@ -849,327 +867,9 @@ agpu::state_tracker_cache_ptr AVkDevice::createStateTrackerCache(const agpu::com
 	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
-bool AVkDevice::createSetupCommandBuffer()
+agpu_error AVkDevice::finishExecution()
 {
-    VkCommandPoolCreateInfo poolCreate;
-    memset(&poolCreate, 0, sizeof(poolCreate));
-    poolCreate.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolCreate.queueFamilyIndex = setupQueue.as<AVkCommandQueue> ()->queueFamilyIndex;
-    poolCreate.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-    auto error = vkCreateCommandPool(device, &poolCreate, nullptr, &setupCommandPool);
-    if (error)
-        return false;
-
-    VkCommandBufferAllocateInfo commandInfo;
-    memset(&commandInfo, 0, sizeof(commandInfo));
-    commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandInfo.commandPool = setupCommandPool;
-    commandInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandInfo.commandBufferCount = 1;
-
-    error = vkAllocateCommandBuffers(device, &commandInfo, &setupCommandBuffer);
-    if (error)
-    {
-        vkDestroyCommandPool(device, setupCommandPool, nullptr);
-        setupCommandPool = VK_NULL_HANDLE;
-        return false;
-    }
-
-    VkCommandBufferInheritanceInfo inheritance;
-    memset(&inheritance, 0, sizeof(inheritance));
-    inheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-
-    VkCommandBufferBeginInfo beginInfo;
-    memset(&beginInfo, 0, sizeof(beginInfo));
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.pInheritanceInfo = &inheritance;
-
-    error = vkBeginCommandBuffer(setupCommandBuffer, &beginInfo);
-    if (error)
-    {
-        vkFreeCommandBuffers(device, setupCommandPool, 1, &setupCommandBuffer);
-        vkDestroyCommandPool(device, setupCommandPool, nullptr);
-        setupCommandPool = VK_NULL_HANDLE;
-        setupCommandBuffer = VK_NULL_HANDLE;
-        return false;
-    }
-
-    return true;
+    vkDeviceWaitIdle(device);
+    return AGPU_OK;
 }
-
-bool AVkDevice::setImageLayout(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask)
-{
-    std::unique_lock<std::mutex> l(setupMutex);
-    if (!setupCommandBuffer)
-    {
-        if (!createSetupCommandBuffer())
-            return false;
-    }
-
-    VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, destLayout, srcAccessMask, srcStages, destStages);
-
-    vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    return submitSetupCommandBuffer();
-}
-
-bool AVkDevice::clearImageWithColor(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearColorValue *clearValue)
-{
-    range.aspectMask = aspect;
-
-    std::unique_lock<std::mutex> l(setupMutex);
-    if (!setupCommandBuffer)
-    {
-        if (!createSetupCommandBuffer())
-            return false;
-    }
-
-    // Transition to dst optimal
-    VkImageLayout transferLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    if (sourceLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, transferLayout, srcAccessMask, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    // Clear the image
-    vkCmdClearColorImage(setupCommandBuffer, image, transferLayout, clearValue, 1, &range);
-
-    // Transition to target layout
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, transferLayout, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    return submitSetupCommandBuffer();
-}
-
-bool AVkDevice::clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlagBits srcAccessMask, VkClearDepthStencilValue *clearValue)
-{
-    range.aspectMask = aspect;
-
-    std::unique_lock<std::mutex> l(setupMutex);
-    if (!setupCommandBuffer)
-    {
-        if (!createSetupCommandBuffer())
-            return false;
-    }
-
-    // Transition to dst optimal
-    VkImageLayout transferLayout = destLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, sourceLayout, transferLayout, srcAccessMask, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    // Clear the image
-    vkCmdClearDepthStencilImage(setupCommandBuffer, image, transferLayout, clearValue, 1, &range);
-
-    // Transition to target layout
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, transferLayout, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    return submitSetupCommandBuffer();
-}
-
-bool AVkDevice::copyBuffer(VkBuffer sourceBuffer, VkBuffer destBuffer, uint32_t regionCount, const VkBufferCopy *regions)
-{
-    std::unique_lock<std::mutex> l(setupMutex);
-    if (!setupCommandBuffer)
-    {
-        if (!createSetupCommandBuffer())
-            return false;
-    }
-
-    vkCmdCopyBuffer(setupCommandBuffer, sourceBuffer, destBuffer, regionCount, regions);
-    return submitSetupCommandBuffer();
-}
-
-bool AVkDevice::copyBufferToImage(VkBuffer buffer, VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, uint32_t regionCount, const VkBufferImageCopy *regions)
-{
-    range.aspectMask = aspect;
-
-    std::unique_lock<std::mutex> l(setupMutex);
-    if (!setupCommandBuffer)
-    {
-        if (!createSetupCommandBuffer())
-            return false;
-    }
-
-    VkImageLayout transferLayout = destLayout == VK_IMAGE_LAYOUT_GENERAL ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, transferLayout, destAccessMask, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    vkCmdCopyBufferToImage(setupCommandBuffer, buffer, image, transferLayout, regionCount, regions);
-
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, transferLayout, destLayout, VK_ACCESS_TRANSFER_WRITE_BIT, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    return submitSetupCommandBuffer();
-}
-
-bool AVkDevice::copyImageToBuffer(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout destLayout, VkAccessFlags destAccessMask, VkBuffer buffer, uint32_t regionCount, const VkBufferImageCopy *regions)
-{
-    range.aspectMask = aspect;
-
-    std::unique_lock<std::mutex> l(setupMutex);
-    if (!setupCommandBuffer)
-    {
-        if (!createSetupCommandBuffer())
-            return false;
-    }
-
-    VkImageLayout transferLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, destLayout, transferLayout, destAccessMask, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    vkCmdCopyImageToBuffer(setupCommandBuffer, image, transferLayout, buffer, regionCount, regions);
-
-    if (destLayout != transferLayout)
-    {
-        VkPipelineStageFlags srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        VkPipelineStageFlags destStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        auto barrier = barrierForImageLayoutTransition(image, range, aspect, transferLayout, destLayout, VK_ACCESS_TRANSFER_READ_BIT, srcStages, destStages);
-        vkCmdPipelineBarrier(setupCommandBuffer, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    return submitSetupCommandBuffer();
-}
-
-bool AVkDevice::submitSetupCommandBuffer()
-{
-    auto error = vkEndCommandBuffer(setupCommandBuffer);
-    if (error)
-        abort();
-
-    VkSubmitInfo submitInfo;
-    memset(&submitInfo, 0, sizeof(submitInfo));
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &setupCommandBuffer;
-
-    error = vkQueueSubmit(setupQueue.as<AVkCommandQueue> ()->queue, 1, &submitInfo, VK_NULL_HANDLE);
-    if (error)
-        abort();
-
-    error = vkQueueWaitIdle(setupQueue.as<AVkCommandQueue> ()->queue);
-    if (error)
-        abort();
-
-    error = vkResetCommandPool(device, setupCommandPool, 0);
-    if (error)
-        abort();
-
-    VkCommandBufferInheritanceInfo inheritance;
-    memset(&inheritance, 0, sizeof(inheritance));
-    inheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-
-    VkCommandBufferBeginInfo beginInfo;
-    memset(&beginInfo, 0, sizeof(beginInfo));
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.pInheritanceInfo = &inheritance;
-
-    error = vkBeginCommandBuffer(setupCommandBuffer, &beginInfo);
-    if (error)
-    {
-        vkFreeCommandBuffers(device, setupCommandPool, 1, &setupCommandBuffer);
-        vkDestroyCommandPool(device, setupCommandPool, nullptr);
-        setupCommandPool = VK_NULL_HANDLE;
-        setupCommandBuffer = VK_NULL_HANDLE;
-        return false;
-    }
-
-    return true;
-}
-
-inline void addImageLayoutBarrierMasks(VkImageLayout layout, VkAccessFlags &accessMask, VkPipelineStageFlags &stages)
-{
-    switch(layout)
-    {
-    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-        accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        stages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-        accessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        stages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-        accessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        stages |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-        accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-        accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_GENERAL:
-        accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-        stages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-        accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-        stages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        break;
-    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-        accessMask = VK_ACCESS_MEMORY_READ_BIT;
-        break;
-    default:
-        break;
-    }
-}
-
-VkImageMemoryBarrier AVkDevice::barrierForImageLayoutTransition(VkImage image, VkImageSubresourceRange range, VkImageAspectFlags aspect, VkImageLayout sourceLayout, VkImageLayout destLayout, VkAccessFlags srcAccessMask, VkPipelineStageFlags &srcStages, VkPipelineStageFlags &dstStages)
-{
-    VkImageMemoryBarrier barrier;
-    memset(&barrier, 0, sizeof(barrier));
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.image = image;
-    barrier.srcAccessMask = srcAccessMask;
-    barrier.dstAccessMask = 0;
-    barrier.oldLayout = sourceLayout;
-    barrier.newLayout = destLayout;
-    barrier.subresourceRange = range;
-    barrier.subresourceRange.aspectMask = aspect;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-    addImageLayoutBarrierMasks(barrier.oldLayout, barrier.srcAccessMask, srcStages);
-    addImageLayoutBarrierMasks(barrier.newLayout, barrier.dstAccessMask, dstStages);
-    return barrier;
-}
-
 } // End of namespace AgpuVulkan

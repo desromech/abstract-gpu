@@ -6,10 +6,10 @@
 #include "SDL_syswm.h"
 
 agpu_vertex_attrib_description SampleVertex::Description[] = {
-    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_POSITION, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(SampleVertex, position), 0},
-    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_COLOR, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(SampleVertex, color), 0},
-    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_NORMAL, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, 1, offsetof(SampleVertex, normal), 0},
-    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, 1, offsetof(SampleVertex, texcoord), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_POSITION, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, offsetof(SampleVertex, position), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_COLOR, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, offsetof(SampleVertex, color), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_NORMAL, AGPU_TEXTURE_FORMAT_R32G32B32_FLOAT, offsetof(SampleVertex, normal), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, offsetof(SampleVertex, texcoord), 0},
 };
 
 const int SampleVertex::DescriptionSize = 4;
@@ -134,7 +134,7 @@ agpu_buffer_ref AbstractSampleBase::createImmutableVertexBuffer(size_t capacity,
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity * vertexSize);
     desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-    desc.binding = AGPU_ARRAY_BUFFER;
+    desc.usage_modes = desc.main_usage_mode = AGPU_ARRAY_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = agpu_uint(vertexSize);
     return device->createBuffer(&desc, initialData);
@@ -145,7 +145,7 @@ agpu_buffer_ref AbstractSampleBase::createImmutableIndexBuffer(size_t capacity, 
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity * indexSize);
     desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-    desc.binding = AGPU_ELEMENT_ARRAY_BUFFER;
+    desc.usage_modes = desc.main_usage_mode = AGPU_ELEMENT_ARRAY_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = agpu_uint(indexSize);
     return device->createBuffer(&desc, initialData);
@@ -157,7 +157,7 @@ agpu_buffer_ref AbstractSampleBase::createImmutableDrawBuffer(size_t capacity, v
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity * commandSize);
     desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-    desc.binding = AGPU_DRAW_INDIRECT_BUFFER;
+    desc.usage_modes = desc.main_usage_mode = AGPU_DRAW_INDIRECT_BUFFER;
     desc.mapping_flags = 0;
     desc.stride = agpu_uint(commandSize);
     return device->createBuffer(&desc, initialData);
@@ -168,22 +168,47 @@ agpu_buffer_ref AbstractSampleBase::createUploadableUniformBuffer(size_t capacit
     agpu_buffer_description desc;
     desc.size = agpu_uint(capacity);
     desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-    desc.binding = AGPU_UNIFORM_BUFFER;
+    desc.usage_modes = desc.main_usage_mode = AGPU_UNIFORM_BUFFER;
     desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
     desc.stride = 0;
     return device->createBuffer(&desc, initialData);
 }
 
-agpu_buffer_ref AbstractSampleBase::createMappableStorage(size_t capacity, void *initialData)
+agpu_buffer_ref AbstractSampleBase::createMappableUploadBuffer(size_t capacity, void *initialData)
 {
-	agpu_buffer_description desc;
+    agpu_buffer_description desc;
 	desc.size = agpu_uint(capacity);
 	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
-	desc.binding = AGPU_STORAGE_BUFFER;
+	desc.usage_modes = desc.main_usage_mode = AGPU_COPY_SOURCE_BUFFER;
 	desc.mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_READ_BIT;
 	desc.stride = 0;
 	if (hasPersistentCoherentMapping)
 		desc.mapping_flags |= AGPU_MAP_PERSISTENT_BIT | AGPU_MAP_COHERENT_BIT;
+
+	return device->createBuffer(&desc, initialData);
+}
+
+agpu_buffer_ref AbstractSampleBase::createMappableReadbackBuffer(size_t capacity, void *initialData)
+{
+    agpu_buffer_description desc;
+	desc.size = agpu_uint(capacity);
+	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST;
+	desc.usage_modes = desc.main_usage_mode = AGPU_COPY_DESTINATION_BUFFER;
+	desc.mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_READ_BIT;
+	desc.stride = 0;
+	if (hasPersistentCoherentMapping)
+		desc.mapping_flags |= AGPU_MAP_PERSISTENT_BIT | AGPU_MAP_COHERENT_BIT;
+
+	return device->createBuffer(&desc, initialData);
+}
+
+agpu_buffer_ref AbstractSampleBase::createStorageBuffer(size_t capacity, size_t stride, void *initialData)
+{
+    agpu_buffer_description desc;
+	desc.size = agpu_uint(capacity);
+	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+	desc.usage_modes = desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+	desc.stride = stride;
 
 	return device->createBuffer(&desc, initialData);
 }
@@ -351,7 +376,6 @@ int SampleBase::main(int argc, const char **argv)
     shutdownSample();
     swapChain.reset();
     commandQueue.reset();
-    device.reset();
 
     SDL_DestroyWindow(window);
     SDL_Quit();

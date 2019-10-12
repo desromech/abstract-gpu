@@ -33,22 +33,25 @@ public:
 			return false;
 
 		// Create the command allocator and the command list
-		auto commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_COMPUTE, commandQueue);
-		auto commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_COMPUTE, commandAllocator, pipeline);
+		auto commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+		auto commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, pipeline);
 
-		// Create a buffer with the whole data
+		// Create different buffers for uploading, computing on the gpu, and reading back the
 		agpu_size arraySize = 256;
 		agpu_size arrayByteSize = arraySize* sizeof(float);
-		auto buffer = createMappableStorage(arrayByteSize * 3, nullptr);
+        agpu_size bufferByteSize = arrayByteSize * 3;
+		auto uploadBuffer = createMappableUploadBuffer(bufferByteSize, nullptr);
+        auto readbackBuffer = createMappableReadbackBuffer(bufferByteSize, nullptr);
+        auto storageBuffer = createStorageBuffer(bufferByteSize, sizeof(float), nullptr);
 
 		// Create the shader bindings
 		auto shaderBindings = agpuCreateShaderResourceBinding(shaderSignature, 0);
-		agpuBindStorageBufferRange(shaderBindings, 0, buffer, 0, arrayByteSize);
-		agpuBindStorageBufferRange(shaderBindings, 1, buffer, arrayByteSize, arrayByteSize);
-		agpuBindStorageBufferRange(shaderBindings, 2, buffer, arrayByteSize*2, arrayByteSize);
+		agpuBindStorageBufferRange(shaderBindings, 0, storageBuffer, 0, arrayByteSize);
+		agpuBindStorageBufferRange(shaderBindings, 1, storageBuffer, arrayByteSize, arrayByteSize);
+		agpuBindStorageBufferRange(shaderBindings, 2, storageBuffer, arrayByteSize*2, arrayByteSize);
 
 		// Write the inputs
-		auto mappedPointer = (float*)agpuMapBuffer(buffer, AGPU_READ_WRITE);
+		auto mappedPointer = (float*)agpuMapBuffer(uploadBuffer, AGPU_WRITE_ONLY);
 		float *leftInput = mappedPointer;
 		float *rightInput = mappedPointer + arraySize;
 
@@ -58,27 +61,37 @@ public:
 			rightInput[i] = 1.0f + float(i) *2;
 		}
 
-		// Unmap the buffer if needed
-		if (!hasPersistentCoherentMapping)
-			agpuUnmapBuffer(buffer);
+		// Unmap the buffer.
+		agpuUnmapBuffer(uploadBuffer);
+
+        // Copy the data from the upload buffer
+        {
+            agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_DESTINATION_BUFFER);
+            agpuCopyBuffer(commandList, uploadBuffer, 0, storageBuffer, 0, bufferByteSize);
+            agpuPopBufferTransitionBarrier(commandList);
+        }
 
 		// Dispatch the compute
 		agpuSetShaderSignature(commandList, shaderSignature);
 		agpuUseComputeShaderResources(commandList, shaderBindings);
 		agpuDispatchCompute(commandList, arraySize, 1, 1);
-		agpuCloseCommandList(commandList);
 
+
+        // Copy the data into the readback buffer.
+        {
+            agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_SOURCE_BUFFER);
+            agpuCopyBuffer(commandList, storageBuffer, 0, readbackBuffer, 0, bufferByteSize);
+            agpuPopBufferTransitionBarrier(commandList);
+        }
+
+		agpuCloseCommandList(commandList);
 		agpuAddCommandList(commandQueue, commandList);
 		agpuFinishQueueExecution(commandQueue);
 
-		// Remap the buffer if needed
-		if (!hasPersistentCoherentMapping)
-		{
-			mappedPointer = (float*)agpuMapBuffer(buffer, AGPU_READ_WRITE);
-			leftInput = mappedPointer;
-			rightInput = mappedPointer + arraySize;
-		}
-
+		// Map the readback buffer;
+        mappedPointer = (float*)agpuMapBuffer(readbackBuffer, AGPU_READ_ONLY);
+        leftInput = mappedPointer;
+        rightInput = mappedPointer + arraySize;
 		float *output = rightInput + arraySize;
 
 		// Readback the output
@@ -94,8 +107,14 @@ public:
 				fprintf(stderr, "%d: %f + %f = %f\n", (int)i, left, right, result);
 				exitCode = 1;
 			}
+            else if(left == 0 && right == 0 && expected == 0)
+            {
+                fprintf(stderr, "%d is completely zero\n", (int)i);
+                exitCode = 1;
+            }
 		}
 
+        agpuUnmapBuffer(readbackBuffer);
 		if (exitCode == 0)
 			printf("Success\n");
 
@@ -104,8 +123,9 @@ public:
 		agpuReleasePipelineState(pipeline);
 		agpuReleaseShaderResourceBinding(shaderBindings);
 		agpuReleaseShaderSignature(shaderSignature);
-		agpuUnmapBuffer(buffer);
-		agpuReleaseBuffer(buffer);
+		agpuReleaseBuffer(uploadBuffer);
+        agpuReleaseBuffer(storageBuffer);
+        agpuReleaseBuffer(readbackBuffer);
 
         return exitCode;
     }

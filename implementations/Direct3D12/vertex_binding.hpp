@@ -4,24 +4,29 @@
 #include <vector>
 #include "device.hpp"
 
-struct _agpu_vertex_binding : public Object<_agpu_vertex_binding>
+namespace AgpuD3D12
+{
+
+class ADXVertexBinding : public agpu::vertex_binding
 {
 public:
-    _agpu_vertex_binding();
+    ADXVertexBinding(const agpu::device_ref &cdevice, const agpu::vertex_layout_ref &layout);
+    ~ADXVertexBinding();
 
-    void lostReferences();
+    static agpu::vertex_binding_ref create(const agpu::device_ref &device, const agpu::vertex_layout_ref &layout);
 
-    static agpu_vertex_binding* create(agpu_device* device, agpu_vertex_layout *layout);
-
-    agpu_error bindVertexBuffers(agpu_uint count, agpu_buffer** vertex_buffers);
+    virtual agpu_error bindVertexBuffers(agpu_uint count, agpu::buffer_ref* vertex_buffers) override;
+    virtual agpu_error bindVertexBuffersWithOffsets(agpu_uint count, agpu::buffer_ref* vertex_buffers, agpu_size* offsets) override;
 
 public:
-    agpu_device *device;
-    agpu_vertex_layout *layout;
+    agpu::device_ref device;
+    agpu::vertex_layout_ref layout;
 
     std::vector<D3D12_VERTEX_BUFFER_VIEW> vertexBufferViews;
-    std::vector<agpu_buffer*> vertexBuffers;
+    std::vector<agpu::buffer_ref> vertexBuffers;
 
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_VERTEX_BINDING_HPP

@@ -11,7 +11,7 @@ void main()
 {
     outColor = computingLighting();
 
-    outPosition = matrices[modelViewMatrixIndex] * vec4(inPosition, 1.0);
-    gl_ClipDistance[0] = dot(extraRenderingStates[extraRenderingStateIndex].userClipPlane, outPosition);
-    gl_Position = matrices[projectionMatrixIndex] * outPosition;
+    outPosition = TransformationState.modelViewMatrix * vec4(inPosition, 1.0);
+    gl_ClipDistance[0] = dot(ExtraRenderingState.userClipPlane, outPosition);
+    gl_Position = TransformationState.projectionMatrix * outPosition;
 }

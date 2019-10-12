@@ -46,3 +46,10 @@ AGPUSwapChain >> getFramebufferCount [
 	^ resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUSwapChain >> setOverlayPosition: x y: y [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setOverlayPosition_swap_chain: (self validHandle) x: x y: y.
+	self checkErrorCode: resultValue_
+]
+

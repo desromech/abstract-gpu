@@ -16,7 +16,6 @@ AGPUVertexAttribDescription class >> fields [
 		(buffer 'ulong')
 		(binding 'ulong')
 		(format 'long')
-		(rows 'ulong')
 		(offset 'ulong')
 		(divisor 'ulong')
 	)

@@ -1,10 +1,79 @@
 #include "platform.hpp"
 #include "device.hpp"
+#include "../Common/offline_shader_compiler.hpp"
 
-_agpu_platform theD3D12Platform = { &agpu_d3d12_icd_dispatch };
+namespace AgpuD3D12
+{
+static agpu::platform_ref theDirect3D12Platform;
+
+Direct3D12Platform::Direct3D12Platform()
+    : isSupported(0), gpuCount(0)
+{
+    isSupported = ADXDevice::checkDirect3D12Implementation(this);
+}
+
+Direct3D12Platform::~Direct3D12Platform()
+{
+}
+
+agpu::device_ptr Direct3D12Platform::openDevice(agpu_device_open_info* openInfo)
+{
+    return ADXDevice::open(openInfo).disown();
+}
+
+agpu_cstring Direct3D12Platform::getName()
+{
+    return "Direct3D12";
+}
+
+agpu_int Direct3D12Platform::getVersion()
+{
+    return 120;
+}
+
+agpu_int Direct3D12Platform::getImplementationVersion()
+{
+    return 120;
+}
+
+agpu_bool Direct3D12Platform::hasRealMultithreading()
+{
+    return true;
+}
+
+agpu_bool Direct3D12Platform::isNative()
+{
+    return true;
+}
+
+agpu_bool Direct3D12Platform::isCrossPlatform()
+{
+    return false;
+}
+
+agpu::offline_shader_compiler_ptr Direct3D12Platform::createOfflineShaderCompiler()
+{
+    return AgpuCommon::GLSLangOfflineShaderCompiler::create().disown();
+}
+
+} // End of namespace AgpuD3D12
+
 
 AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** platforms, agpu_size* ret_numplatforms)
 {
+    using namespace AgpuD3D12;
+    static std::once_flag platformCreatedFlag;
+    std::call_once(platformCreatedFlag, []{
+        theDirect3D12Platform = agpu::makeObject<Direct3D12Platform> ();
+    });
+
+    if(!theDirect3D12Platform.as<Direct3D12Platform> ()->isSupported)
+    {
+        CHECK_POINTER(ret_numplatforms);
+        *ret_numplatforms = 0;
+        return AGPU_OK;
+    }
+
     if (!platforms && numplatforms == 0)
     {
         CHECK_POINTER(ret_numplatforms);
@@ -12,55 +81,9 @@ AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** 
         return AGPU_OK;
     }
 
-    if (ret_numplatforms)
+    if(ret_numplatforms)
         *ret_numplatforms = 1;
-    platforms[0] = &theD3D12Platform;
+    platforms[0] = reinterpret_cast<agpu_platform*> (theDirect3D12Platform.asPtrWithoutNewRef());
     return AGPU_OK;
-}
 
-AGPU_EXPORT agpu_device* agpuOpenDevice(agpu_platform* platform, agpu_device_open_info* openInfo)
-{
-    if (platform != &theD3D12Platform)
-        return nullptr;
-
-    return agpu_device::open(openInfo);
-}
-
-AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* platform)
-{
-    if (platform != &theD3D12Platform)
-        return nullptr;
-
-    return "Direct3D 12";
-}
-
-AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* platform)
-{
-    if (platform != &theD3D12Platform)
-        return 0;
-
-    return 10;
-}
-
-AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platform)
-{
-    if (platform != &theD3D12Platform)
-        return 0;
-
-    return 120;
-}
-
-AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform)
-{
-    return platform == &theD3D12Platform;
-}
-
-AGPU_EXPORT agpu_bool agpuIsNativePlatform(agpu_platform* platform)
-{
-    return platform == &theD3D12Platform;
-}
-
-AGPU_EXPORT agpu_bool agpuIsCrossPlatform(agpu_platform* platform)
-{
-    return platform != &theD3D12Platform;
 }

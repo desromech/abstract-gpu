@@ -43,6 +43,7 @@ public:
 	virtual agpu::vr_system_ptr getVRSystem() override;
     virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
     virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
+    virtual agpu_error finishExecution() override;
 
     id<MTLDevice> device;
 

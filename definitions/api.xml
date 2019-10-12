@@ -87,12 +87,14 @@
             <field name="flags" type="swap_chain_flags" />
             <field name="x" type="int" />
             <field name="y" type="int" />
+            <field name="old_swap_chain" type="swap_chain*" />
         </struct>
 
 		<struct name="buffer_description">
 			<field name="size" type="uint" />
 			<field name="heap_type" type="memory_heap_type" />
-			<field name="binding" type="buffer_binding_type" />
+			<field name="usage_modes" type="buffer_usage_mask" />
+            <field name="main_usage_mode" type="buffer_usage_mask" />
 			<field name="mapping_flags" type="bitfield" bits="buffer_mapping_flags" />
 			<field name="stride" type="uint" />
 		</struct>
@@ -147,7 +149,6 @@
             <field name="buffer" type="uint" />
             <field name="binding" type="uint" />
             <field name="format" type="texture_format" />
-            <field name="rows" type="uint" />
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
         </struct>
@@ -265,6 +266,14 @@
             <field name="width" type="uint" />
             <field name="height" type="uint" />
             <field name="depth" type="uint" />
+        </struct>
+
+        <struct name="buffer_image_copy_region">
+            <field name="buffer_offset" type="size" />
+            <field name="buffer_row_length" type="size" />
+            <field name="buffer_image_height" type="size" />
+            <field name="texture_subresource_range" type="subresource_range" />
+            <field name="texture_region" type="region3d" />
         </struct>
 
         <struct name="vr_tracked_device_pose">
@@ -497,8 +506,11 @@
             <constant name="TextureUsageDepthAttachment" value="4" />
             <constant name="TextureUsageStencilAttachment" value="8" />
             <constant name="TextureUsageStorage" value="16" />
+            <constant name="TextureUsageCopySource" value="32" />
+            <constant name="TextureUsageCopyDestination" value="64" />
             <constant name="TextureUsageReadedBack" value="32" />
             <constant name="TextureUsageUploaded" value="64" />
+            <constant name="TextureUsagePresent" value="128" />
         </enum>
 
 		<enum name="shader_type">
@@ -526,16 +538,19 @@
             <constant name="Stream" value="1" />
 		</enum>
 
-		<enum name="buffer_binding_type">
-            <constant name="GenericDataBuffer" value="0" />
-			<constant name="ArrayBuffer" value="2" />
-			<constant name="ElementArrayBuffer" value="4" />
-			<constant name="UniformBuffer" value="8" />
-			<constant name="DrawIndirectBuffer" value="16" />
-			<constant name="StorageBuffer" value="32" />
-            <constant name="UniformTexelBuffer" value="64" />
-            <constant name="StorageTexelBuffer" value="128" />
-            <constant name="ComputeDispatchIndirectBuffer" value="256" />
+		<enum name="buffer_usage_mask">
+            <constant name="CopyDestinationBuffer" value="1" />
+            <constant name="CopySourceBuffer" value="2" />
+            <constant name="GenericDataBuffer" value="3" />
+
+			<constant name="ArrayBuffer" value="4" />
+			<constant name="ElementArrayBuffer" value="8" />
+			<constant name="UniformBuffer" value="16" />
+			<constant name="DrawIndirectBuffer" value="32" />
+			<constant name="StorageBuffer" value="64" />
+            <constant name="UniformTexelBuffer" value="128" />
+            <constant name="StorageTexelBuffer" value="256" />
+            <constant name="ComputeDispatchIndirectBuffer" value="512" />
 		</enum>
 
 		<enum name="buffer_mapping_flags">
@@ -1071,6 +1086,8 @@
                 <arg name="command_queue_family" type="command_queue*" />
             </method>
 
+            <method name="finishExecution" cname="FinishDeviceExecution" returnType="error">
+            </method>
         </interface>
 
         <interface name="vr_system">
@@ -1153,6 +1170,11 @@
             </method>
 
             <method name="getFramebufferCount" cname="GetFramebufferCount" returnType="size">
+            </method>
+
+            <method name="setOverlayPosition" cname="SetSwapChainOverlayPosition" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
             </method>
         </interface>
 
@@ -1514,6 +1536,62 @@
                 <arg name="source_accesses" type="access_flags" />
                 <arg name="dest_accesses" type="access_flags" />
             </method>
+
+            <method name="bufferMemoryBarrier" cname="BufferMemoryBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="textureMemoryBarrier" cname="TextureMemoryBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="subresource_range" type="subresource_range*" />
+            </method>
+
+            <method name="pushBufferTransitionBarrier" cname="PushBufferTransitionBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="new_usage" type="buffer_usage_mask" />
+            </method>
+
+            <method name="pushTextureTransitionBarrier" cname="PushTextureTransitionBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="subresource_range*" />
+            </method>
+
+            <method name="popBufferTransitionBarrier" cname="PopBufferTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="popTextureTransitionBarrier" cname="PopTextureTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="copyBuffer" cname="CopyBuffer" returnType="error">
+                <arg name="source_buffer" type="buffer*" />
+                <arg name="source_offset" type="size" />
+                <arg name="dest_buffer" type="buffer*" />
+                <arg name="dest_offset" type="size" />
+                <arg name="copy_size" type="size" />
+            </method>
+
+            <method name="copyBufferToTexture" cname="CopyBufferToTexture" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="texture" type="texture*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTextureToBuffer" cname="CopyTextureToBuffer" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="buffer" type="buffer*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
         </interface>
 
         <interface name="texture">
@@ -1545,6 +1623,16 @@
                 <arg name="buffer" type="pointer" />
             </method>
 
+            <method name="readTextureSubData" cname="ReadTextureSubData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="sourceRegion" type="region3d*" />
+                <arg name="destSize" type="size3d*" />
+                <arg name="buffer" type="pointer" />
+            </method>
+
             <method name="uploadTextureData" cname="UploadTextureData" returnType="error">
                 <arg name="level" type="int" />
                 <arg name="arrayIndex" type="int" />
@@ -1561,12 +1649,6 @@
                 <arg name="sourceSize" type="size3d*" />
                 <arg name="destRegion" type="region3d*" />
                 <arg name="data" type="pointer" />
-            </method>
-
-            <method name="discardUploadBuffer" cname="DiscardTextureUploadBuffer" returnType="error">
-            </method>
-
-            <method name="discardReadbackBuffer" cname="DiscardTextureReadbackBuffer" returnType="error">
             </method>
 
             <method name="getFullViewDescription" cname="GetTextureFullViewDescription" returnType="error">
@@ -2178,6 +2260,62 @@
                 <arg name="dest_stage" type="pipeline_stage_flags" />
                 <arg name="source_accesses" type="access_flags" />
                 <arg name="dest_accesses" type="access_flags" />
+            </method>
+
+            <method name="bufferMemoryBarrier" cname="StateTrackerBufferMemoryBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="textureMemoryBarrier" cname="StateTrackerTextureMemoryBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="subresource_range" type="subresource_range*" />
+            </method>
+
+            <method name="pushBufferTransitionBarrier" cname="StateTrackerPushBufferTransitionBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="new_usage" type="buffer_usage_mask" />
+            </method>
+
+            <method name="pushTextureTransitionBarrier" cname="StateTrackerPushTextureTransitionBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="subresource_range*" />
+            </method>
+
+            <method name="popBufferTransitionBarrier" cname="StateTrackerPopBufferTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="popTextureTransitionBarrier" cname="StateTrackerPopTextureTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="copyBuffer" cname="StateTrackerCopyBuffer" returnType="error">
+                <arg name="source_buffer" type="buffer*" />
+                <arg name="source_offset" type="size" />
+                <arg name="dest_buffer" type="buffer*" />
+                <arg name="dest_offset" type="size" />
+                <arg name="copy_size" type="size" />
+            </method>
+
+            <method name="copyBufferToTexture" cname="StateTrackerCopyBufferToTexture" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="texture" type="texture*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTextureToBuffer" cname="StateTrackerCopyTextureToBuffer" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="buffer" type="buffer*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
             </method>
         </interface>
 

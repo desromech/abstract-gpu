@@ -3,19 +3,39 @@
 
 #include "device.hpp"
 
-struct _agpu_pipeline_state : public Object<_agpu_pipeline_state>
+namespace AgpuD3D12
+{
+
+class ADXPipelineState : public agpu::pipeline_state
 {
 public:
-    _agpu_pipeline_state();
+    ADXPipelineState();
+    ~ADXPipelineState();
 
-    void lostReferences();
-
-    agpu_int getUniformLocation(agpu_cstring name);
+	virtual void activatedOnCommandList(const ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 public:
-    agpu_device *device;
+    agpu::device_ref device;
     ComPtr<ID3D12PipelineState> state;
-    agpu_primitive_topology primitiveTopology;
 };
+
+class ADXGraphicsPipelineState : public ADXPipelineState
+{
+public:
+	ADXGraphicsPipelineState();
+	~ADXGraphicsPipelineState();
+
+	virtual void activatedOnCommandList(const ComPtr<ID3D12GraphicsCommandList>& commandList) override;
+
+	agpu_primitive_topology primitiveTopology;
+};
+
+class ADXComputePipelineState : public ADXPipelineState
+{
+public:
+	ADXComputePipelineState();
+	~ADXComputePipelineState();
+};
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_PIPELINE_STATE_HPP

@@ -2,9 +2,11 @@
 #define AGPU_VULKAN_BUFFER_HPP
 
 #include "device.hpp"
+#include "../Common/spinlock.hpp"
 
 namespace AgpuVulkan
 {
+using AgpuCommon::Spinlock;
 
 class AVkBuffer : public agpu::buffer
 {
@@ -23,24 +25,15 @@ public:
     virtual agpu_error flushWholeBuffer() override;
     virtual agpu_error invalidateWholeBuffer() override;
 
-    VkBuffer getDrawBuffer()
-    {
-        if (gpuBuffer)
-            return gpuBuffer;
-        return uploadBuffer;
-    }
-
     agpu::device_weakref weakDevice;
     agpu_buffer_description description;
 
-    VkBuffer uploadBuffer;
-    VkDeviceMemory uploadBufferMemory;
-    VkBuffer gpuBuffer;
-    VkDeviceMemory gpuBufferMemory;
+    VkBuffer handle;
+    VmaAllocation allocation;
 
-    std::mutex mapMutex;
+    Spinlock mappingLock;
     void *mappedPointer;
-    int mapCount;
+    uint32_t mapCount;
 };
 
 } // End of namespace AgpuVulkan

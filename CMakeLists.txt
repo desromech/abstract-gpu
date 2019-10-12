@@ -134,6 +134,7 @@ find_package(OpenGL)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 find_package(D3D12)
 
+# Find the Direct3D
 # For VisualStudio in Window
 find_path(SDL2_INCLUDE_DIRS
   NAMES SDL.h

@@ -2,39 +2,43 @@
 #include "command_list.hpp"
 #include "fence.hpp"
 
-_agpu_command_queue::_agpu_command_queue()
+namespace AgpuD3D12
+{
+
+ADXCommandQueue::ADXCommandQueue(const agpu::device_ref &cdevice)
+    : device(cdevice), finishFenceEvent(NULL)
 {
 
 }
 
-void _agpu_command_queue::lostReferences()
+ADXCommandQueue::~ADXCommandQueue()
 {
     CloseHandle(finishFenceEvent);
 }
 
-_agpu_command_queue *_agpu_command_queue::createDefault(agpu_device *device)
+agpu::command_queue_ref ADXCommandQueue::createDefault(const agpu::device_ref &device)
 {
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
     ComPtr<ID3D12CommandQueue> d3dQueue;
-    if (FAILED(device->d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&d3dQueue))))
-        return nullptr;
+    if (FAILED(deviceForDX->d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&d3dQueue))))
+        return agpu::command_queue_ref();
 
-    std::unique_ptr<agpu_command_queue> queue(new agpu_command_queue());
-    queue->device = device;
-    queue->queue = d3dQueue;
-    if (!queue->createFinishFence())
-        return nullptr;
+    auto queue = agpu::makeObject<ADXCommandQueue> (device);
+    auto queueObject = queue.as<ADXCommandQueue> ();
+    queueObject->queue = d3dQueue;
+    if (!queueObject->createFinishFence())
+        return agpu::command_queue_ref();
 
-    return queue.release();
+    return queue;
 }
 
-bool _agpu_command_queue::createFinishFence()
+bool ADXCommandQueue::createFinishFence()
 {
     // Create transfer synchronization fence.
-    if (FAILED(device->d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&finishFence))))
+    if (FAILED(deviceForDX->d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&finishFence))))
         return false;
     finishFenceValue = 1;
 
@@ -45,15 +49,17 @@ bool _agpu_command_queue::createFinishFence()
     return true;
 }
 
-agpu_error _agpu_command_queue::addCommandList(agpu_command_list* command_list)
+agpu_error ADXCommandQueue::addCommandList(const agpu::command_list_ref &command_list)
 {
-    ID3D12CommandList *lists[] = { command_list->commandList.Get() };
+    CHECK_POINTER(command_list);
+
+    ID3D12CommandList *lists[] = { command_list.as<ADXCommandList>()->commandList.Get() };
 
     queue->ExecuteCommandLists(1, lists);
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_queue::finish()
+agpu_error ADXCommandQueue::finishExecution()
 {
     std::unique_lock<std::mutex> l(finishLock);
 
@@ -72,58 +78,25 @@ agpu_error _agpu_command_queue::finish()
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_queue::signalFence(agpu_fence* fence)
+agpu_error ADXCommandQueue::signalFence(const agpu::fence_ref &fence)
 {
     CHECK_POINTER(fence);
+    auto adxFence = fence.as<ADXFence> ();
 
-    std::unique_lock<std::mutex> l(fence->fenceMutex);
-    queue->Signal(fence->fence.Get(), fence->fenceValue++);
+    std::unique_lock<std::mutex> l(adxFence->fenceMutex);
+    queue->Signal(adxFence->fence.Get(), adxFence->fenceValue++);
 
     return AGPU_OK;
 }
 
-agpu_error _agpu_command_queue::waitFence(agpu_fence* fence)
+agpu_error ADXCommandQueue::waitFence(const agpu::fence_ref &fence)
 {
     CHECK_POINTER(fence);
+    auto adxFence = fence.as<ADXFence> ();
 
-    std::unique_lock<std::mutex> l(fence->fenceMutex);
-    queue->Wait(fence->fence.Get(), fence->fenceValue - 1);
+    std::unique_lock<std::mutex> l(adxFence->fenceMutex);
+    queue->Wait(adxFence->fence.Get(), adxFence->fenceValue - 1);
     return AGPU_OK;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddCommandQueueReference(agpu_command_queue* command_queue)
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->retain();
-}
-
-AGPU_EXPORT agpu_error agpuReleaseCommandQueue(agpu_command_queue* command_queue)
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->release();
-}
-
-AGPU_EXPORT agpu_error agpuAddCommandList(agpu_command_queue* command_queue, agpu_command_list* command_list)
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->addCommandList(command_list);
-}
-
-AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queue)
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->finish();
-}
-
-AGPU_EXPORT agpu_error agpuSignalFence(agpu_command_queue* command_queue, agpu_fence* fence)
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->signalFence(fence);
-}
-
-AGPU_EXPORT agpu_error agpuWaitFence(agpu_command_queue* command_queue, agpu_fence* fence)
-{
-    CHECK_POINTER(command_queue);
-    return command_queue->waitFence(fence);
-}
+} // End of namespace AgpuD3D12

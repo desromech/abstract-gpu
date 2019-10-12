@@ -27,6 +27,7 @@ AGPUSwapChainCreateInfo class >> fields [
 		(flags 'long')
 		(x 'long')
 		(y 'long')
+		(old_swap_chain 'void*')
 	)
 ]
 

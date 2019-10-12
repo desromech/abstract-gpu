@@ -1,41 +1,50 @@
 #include "renderpass.hpp"
 #include "texture_formats.hpp"
 
-_agpu_renderpass::_agpu_renderpass(agpu_device *device)
-    : device(device)
+namespace AgpuD3D12
+{
+
+ADXRenderPass::ADXRenderPass(const agpu::device_ref &cdevice)
+    : device(cdevice), hasDepth(false), hasStencil(false)
+{
+    memset(&depthStencilAttachment, 0, sizeof(depthStencilAttachment));
+}
+
+ADXRenderPass::~ADXRenderPass()
 {
 }
 
-void _agpu_renderpass::lostReferences()
-{
-}
-
-agpu_renderpass *_agpu_renderpass::create(agpu_device *device, agpu_renderpass_description *description)
+agpu::renderpass_ref ADXRenderPass::create(const agpu::device_ref &device, agpu_renderpass_description *description)
 {
     if (!description)
-        return nullptr;
+        return agpu::renderpass_ref();
 
-    auto result = new agpu_renderpass(device);
+    auto result = agpu::makeObject<ADXRenderPass> (device);
+    auto adxRenderpass = result.as<ADXRenderPass> ();
 
+    adxRenderpass->colorAttachments.reserve(description->color_attachment_count);
     for (size_t i = 0; i < description->color_attachment_count; ++i)
-        result->colorAttachments.push_back(description->color_attachments[i]);
+    {
+        adxRenderpass->colorAttachments.push_back(description->color_attachments[i]);
+    }
+
     if (description->depth_stencil_attachment)
     {
-        result->depthStencilAttachment = *description->depth_stencil_attachment;
-        result->hasDepth = hasDepthComponent(result->depthStencilAttachment.format);
-        result->hasStencil = hasStencilComponent(result->depthStencilAttachment.format);
+        adxRenderpass->depthStencilAttachment = *description->depth_stencil_attachment;
+        adxRenderpass->hasDepth = hasDepthComponent(adxRenderpass->depthStencilAttachment.format);
+        adxRenderpass->hasStencil = hasStencilComponent(adxRenderpass->depthStencilAttachment.format);
     }
 
     return result;
 }
 
-agpu_error _agpu_renderpass::setDepthStencilClearValue(agpu_depth_stencil_value value)
+agpu_error ADXRenderPass::setDepthStencilClearValue(agpu_depth_stencil_value value)
 {
     depthStencilAttachment.clear_value = value;
     return AGPU_OK;
 }
 
-agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
+agpu_error ADXRenderPass::setColorClearValue(agpu_uint attachment_index, agpu_color4f value)
 {
     if (attachment_index >= colorAttachments.size())
         return AGPU_OUT_OF_BOUNDS;
@@ -44,27 +53,31 @@ agpu_error _agpu_renderpass::setColorClearValue(agpu_uint attachment_index, agpu
     return AGPU_OK;
 }
 
-// The exported C interface
-AGPU_EXPORT agpu_error agpuAddRenderPassReference(agpu_renderpass* renderpass)
+agpu_error ADXRenderPass::setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value)
 {
-    CHECK_POINTER(renderpass);
-    return renderpass->retain();
+    CHECK_POINTER(value);
+    return setColorClearValue(attachment_index, *value);
 }
 
-AGPU_EXPORT agpu_error agpuReleaseRenderPass(agpu_renderpass* renderpass)
+agpu_error ADXRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats)
 {
-    CHECK_POINTER(renderpass);
-    return renderpass->release();
+    CHECK_POINTER(color_attachment_count);
+    if(formats)
+    {
+        if(*color_attachment_count < this->colorAttachments.size())
+            return AGPU_INVALID_PARAMETER;
+
+        for(agpu_uint i = 0; i < this->colorAttachments.size(); ++i)
+            formats[i] = this->colorAttachments[i].format;
+    }
+
+    *color_attachment_count = this->colorAttachments.size();
+    return AGPU_OK;
 }
 
-AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue(agpu_renderpass* renderpass, agpu_depth_stencil_value value)
+agpu_texture_format ADXRenderPass::getDepthStencilAttachmentFormat()
 {
-    CHECK_POINTER(renderpass);
-    return renderpass->setDepthStencilClearValue(value);
+    return depthStencilAttachment.format;
 }
 
-AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value)
-{
-    CHECK_POINTER(renderpass);
-    return renderpass->setColorClearValue(attachment_index, value);
-}
+} // End of namespace AgpuD3D12

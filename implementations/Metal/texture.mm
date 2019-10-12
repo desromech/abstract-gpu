@@ -130,6 +130,11 @@ agpu_error AMtlTexture::readTextureData ( agpu_int level, agpu_int arrayIndex, a
     return AGPU_OK;
 }
 
+agpu_error AMtlTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 agpu_error AMtlTexture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
     CHECK_POINTER(data);
@@ -158,16 +163,6 @@ agpu_error AMtlTexture::uploadTextureSubData ( agpu_int level, agpu_int arrayInd
             withBytes: data
           bytesPerRow: pitch
         bytesPerImage: slicePitch];
-    return AGPU_OK;
-}
-
-agpu_error AMtlTexture::discardUploadBuffer (  )
-{
-    return AGPU_OK;
-}
-
-agpu_error AMtlTexture::discardReadbackBuffer (  )
-{
     return AGPU_OK;
 }
 

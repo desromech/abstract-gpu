@@ -144,6 +144,8 @@ struct Vector4F
 struct Matrix4F
 {
     Matrix4F() {}
+    Matrix4F(const Matrix4F &o)
+        : c1(o.c1), c2(o.c2), c3(o.c3), c4(o.c4) {}
     Matrix4F(const Vector4F &v1, const Vector4F &v2, const Vector4F &v3, const Vector4F &v4)
         : c1(v1), c2(v2), c3(v3), c4(v4) {}
 
@@ -277,6 +279,16 @@ i
         luDecomposeInto(L, U);
 
         return U.upperTriangularInverted() * L.lowerTriangularInverted();
+    }
+
+    size_t hash() const
+    {
+        return c1.hash() ^ c2.hash() ^ c3.hash() ^ c4.hash();
+    }
+    
+    bool operator==(const Matrix4F &o) const
+    {
+        return c1 == o.c1 && c2 == o.c2 && c3 == o.c3 && c4 == o.c4;
     }
 
     Matrix4F operator+(const Matrix4F &o) const

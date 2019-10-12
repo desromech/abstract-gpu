@@ -17,6 +17,8 @@ set(AGPU_Vulkan_SOURCES
     framebuffer.cpp
     framebuffer.hpp
     icd.cpp
+    implicit_resource_command_list.cpp
+    implicit_resource_command_list.hpp
     memory_allocator.cpp
     pipeline_builder.cpp
     pipeline_builder.hpp

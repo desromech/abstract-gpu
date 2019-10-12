@@ -200,3 +200,10 @@ AGPUDevice >> createStateTrackerCache: command_queue_family [
 	^ AGPUStateTrackerCache forHandle: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUDevice >> finishExecution [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance finishExecution_device: (self validHandle).
+	self checkErrorCode: resultValue_
+]
+

@@ -1,40 +1,60 @@
 #include "pipeline_state.hpp"
 
-_agpu_pipeline_state::_agpu_pipeline_state()
+namespace AgpuD3D12
 {
-
+inline D3D_PRIMITIVE_TOPOLOGY mapPrimitiveTopology(agpu_primitive_topology topology)
+{
+	switch (topology)
+	{
+	case AGPU_POINTS: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+	case AGPU_LINES: return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+	case AGPU_LINES_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+	case AGPU_LINE_STRIP: return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+	case AGPU_LINE_STRIP_ADJACENCY:return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+	case AGPU_TRIANGLES: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	case AGPU_TRIANGLES_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+	case AGPU_TRIANGLE_STRIP: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+	case AGPU_TRIANGLE_STRIP_ADJACENCY: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+	default:
+		abort();
+	}
 }
 
-void _agpu_pipeline_state::lostReferences()
+// Generic implementation for a pipeline state.
+ADXPipelineState::ADXPipelineState()
 {
-
 }
 
-agpu_int _agpu_pipeline_state::getUniformLocation(agpu_cstring name)
+ADXPipelineState::~ADXPipelineState()
 {
-    if (!name)
-        return -1;
-
-    // TODO: Implement this
-    return -1;
 }
 
-// Exported C interface
-AGPU_EXPORT agpu_error agpuAddPipelineStateReference(agpu_pipeline_state* pipeline_state)
+void ADXPipelineState::activatedOnCommandList(const ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->retain();
 }
 
-AGPU_EXPORT agpu_error agpuReleasePipelineState(agpu_pipeline_state* pipeline_state)
+// Graphics pipeline state specific functionality.
+ADXGraphicsPipelineState::ADXGraphicsPipelineState()
+	: primitiveTopology(AGPU_POINTS)
 {
-    CHECK_POINTER(pipeline_state);
-    return pipeline_state->release();
 }
 
-AGPU_EXPORT agpu_int agpuGetUniformLocation(agpu_pipeline_state* pipeline_state, agpu_cstring name)
+ADXGraphicsPipelineState::~ADXGraphicsPipelineState()
 {
-    if (!pipeline_state)
-        return -1;
-    return pipeline_state->getUniformLocation(name);
 }
+
+void ADXGraphicsPipelineState::activatedOnCommandList(const ComPtr<ID3D12GraphicsCommandList>& commandList)
+{
+	commandList->IASetPrimitiveTopology(mapPrimitiveTopology(primitiveTopology));
+}
+
+// Compute pipeline state specific functionality.
+ADXComputePipelineState::ADXComputePipelineState()
+{
+}
+
+ADXComputePipelineState::~ADXComputePipelineState()
+{
+}
+
+} // End of namespace AgpuD3D12

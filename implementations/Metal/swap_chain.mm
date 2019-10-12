@@ -161,4 +161,9 @@ agpu_size AMtlSwapChain::getFramebufferCount ( )
     return framebuffers.size();
 }
 
+agpu_error AMtlSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
+{
+    return AGPU_OK;
+}
+
 } // End of namespace AgpuMetal

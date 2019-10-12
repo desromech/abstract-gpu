@@ -5,21 +5,24 @@
 #include "device.hpp"
 #include "shader_signature_builder.hpp"
 
-class DescriptorAllocator
+namespace AgpuD3D12
+{
+
+class DescriptorTableMemoryAllocator
 {
 public:
-    DescriptorAllocator(int startIndex, int descriptorCount);
-    ~DescriptorAllocator();
+	DescriptorTableMemoryAllocator();
+    ~DescriptorTableMemoryAllocator();
 
-    int getStartIndex();
-    int allocate();
-    void free(int descriptorIndex);
+	void setup(uint32_t maxDescriptorCount);
+
+	int32_t allocate();
+    void free(int32_t descriptorTableIndex);
 
 private:
-    int startIndex;
-    int descriptorCount;
-    int freeCount;
-    std::vector<int> freeList;
+	uint32_t descriptorCount;
+	int32_t nextFreeItem;
+    std::vector<int32_t> freeList;
 };
 
 enum class ShaderResourceViewType
@@ -48,42 +51,36 @@ enum class UnorderedAccessViewType
     Count
 };
 
-struct _agpu_shader_signature : public Object<_agpu_shader_signature>
+class ADXShaderSignature : public agpu::shader_signature
 {
 public:
-    _agpu_shader_signature();
+    ADXShaderSignature(const agpu::device_ref &cdevice);
+    ~ADXShaderSignature();
 
-    void lostReferences();
+    static agpu::shader_signature_ref create(const agpu::device_ref &device, const ComPtr<ID3D12RootSignature> &rootSignature, ADXShaderSignatureBuilder *builder);
 
-    static _agpu_shader_signature *create(agpu_device *device, const ComPtr<ID3D12RootSignature> &rootSignature, ShaderSignatureElementDescription elementsDescription[16], agpu_uint maxBindingsCount[AGPU_SHADER_BINDING_TYPE_COUNT]);
-
-    agpu_shader_resource_binding* createShaderResourceBinding(agpu_uint element);
+    virtual agpu::shader_resource_binding_ptr createShaderResourceBinding(agpu_uint element) override;
 
 public:
-    agpu_device *device;
+    agpu::device_ref device;
     ComPtr<ID3D12RootSignature> rootSignature;
     ComPtr<ID3D12DescriptorHeap> shaderResourceViewHeap;
     ComPtr<ID3D12DescriptorHeap> samplerHeap;
 
-    ShaderSignatureElementDescription elementsDescription[16];
+	std::vector<ShaderSignatureBindingBank> banks;
+	size_t pushConstantCount;
 
-    UINT shaderResourceViewDescriptorSize;
-    UINT samplerDescriptorSize;
-
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> descriptorTableHeapGPUBaseAddress;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> descriptorTableHeapCPUBaseAddress;
+	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> nullDescriptorTables;
 private:
-    agpu_uint maxBindingsCount[AGPU_SHADER_BINDING_TYPE_COUNT];
-    DescriptorAllocator *descriptorAllocators[16];
-
-   
-    UINT shaderResourceViewDescriptorReservedSize;
-    UINT samplerDescriptorReservedSize;
-
-    UINT nullCbvDescriptorOffset;
-    UINT nullUavDescriptorOffset[(int)UnorderedAccessViewType::Count];
-    UINT nullSrvDescriptorOffset[(int)ShaderResourceViewType::Count];
-    UINT nullSamplerDescriptorOffset;
+	bool constructDescriptorTableAllocators();
+	bool initializeDescriptorTable(const ShaderSignatureBindingBank &bank, const D3D12_CPU_DESCRIPTOR_HANDLE &tableHandle);
 
     std::mutex allocationMutex;
+	std::vector<DescriptorTableMemoryAllocator> descriptorAllocators;
 };
+
+} // End of namespace AgpuD3D12
 
 #endif //AGPU_D3D12_SHADER_SIGNATURE_BUILDER_HPP

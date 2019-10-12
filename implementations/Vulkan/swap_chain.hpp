@@ -25,6 +25,8 @@ public:
     virtual agpu_size getCurrentBackBufferIndex() override;
     virtual agpu_size getFramebufferCount() override;
 
+    virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) override;
+
     agpu::device_ref device;
     VkSurfaceKHR surface;
     agpu::command_queue_ref graphicsQueue;

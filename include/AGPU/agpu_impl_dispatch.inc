@@ -199,6 +199,12 @@ AGPU_EXPORT agpu_state_tracker_cache* agpuCreateStateTrackerCache(agpu_device* s
 	return reinterpret_cast<agpu_state_tracker_cache*> (asRef(agpu::device, self)->createStateTrackerCache(asRef(agpu::command_queue, command_queue_family)));
 }
 
+AGPU_EXPORT agpu_error agpuFinishDeviceExecution(agpu_device* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::device, self)->finishExecution();
+}
+
 //==============================================================================
 // vr_system C dispatching functions.
 //==============================================================================
@@ -323,6 +329,12 @@ AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex(agpu_swap_chain* self)
 AGPU_EXPORT agpu_size agpuGetFramebufferCount(agpu_swap_chain* self)
 {
 	return asRef(agpu::swap_chain, self)->getFramebufferCount();
+}
+
+AGPU_EXPORT agpu_error agpuSetSwapChainOverlayPosition(agpu_swap_chain* self, agpu_int x, agpu_int y)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::swap_chain, self)->setOverlayPosition(x, y);
 }
 
 //==============================================================================
@@ -789,6 +801,60 @@ AGPU_EXPORT agpu_error agpuMemoryBarrier(agpu_command_list* self, agpu_pipeline_
 	return asRef(agpu::command_list, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
 }
 
+AGPU_EXPORT agpu_error agpuBufferMemoryBarrier(agpu_command_list* self, agpu_buffer* buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->bufferMemoryBarrier(asRef(agpu::buffer, buffer), source_stage, dest_stage, source_accesses, dest_accesses, offset, size);
+}
+
+AGPU_EXPORT agpu_error agpuTextureMemoryBarrier(agpu_command_list* self, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->textureMemoryBarrier(asRef(agpu::texture, texture), source_stage, dest_stage, source_accesses, dest_accesses, subresource_range);
+}
+
+AGPU_EXPORT agpu_error agpuPushBufferTransitionBarrier(agpu_command_list* self, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->pushBufferTransitionBarrier(asRef(agpu::buffer, buffer), new_usage);
+}
+
+AGPU_EXPORT agpu_error agpuPushTextureTransitionBarrier(agpu_command_list* self, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->pushTextureTransitionBarrier(asRef(agpu::texture, texture), new_usage, subresource_range);
+}
+
+AGPU_EXPORT agpu_error agpuPopBufferTransitionBarrier(agpu_command_list* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->popBufferTransitionBarrier();
+}
+
+AGPU_EXPORT agpu_error agpuPopTextureTransitionBarrier(agpu_command_list* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->popTextureTransitionBarrier();
+}
+
+AGPU_EXPORT agpu_error agpuCopyBuffer(agpu_command_list* self, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->copyBuffer(asRef(agpu::buffer, source_buffer), source_offset, asRef(agpu::buffer, dest_buffer), dest_offset, copy_size);
+}
+
+AGPU_EXPORT agpu_error agpuCopyBufferToTexture(agpu_command_list* self, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->copyBufferToTexture(asRef(agpu::buffer, buffer), asRef(agpu::texture, texture), copy_region);
+}
+
+AGPU_EXPORT agpu_error agpuCopyTextureToBuffer(agpu_command_list* self, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->copyTextureToBuffer(asRef(agpu::texture, texture), asRef(agpu::buffer, buffer), copy_region);
+}
+
 //==============================================================================
 // texture C dispatching functions.
 //==============================================================================
@@ -828,6 +894,12 @@ AGPU_EXPORT agpu_error agpuReadTextureData(agpu_texture* self, agpu_int level, a
 	return asRef(agpu::texture, self)->readTextureData(level, arrayIndex, pitch, slicePitch, buffer);
 }
 
+AGPU_EXPORT agpu_error agpuReadTextureSubData(agpu_texture* self, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::texture, self)->readTextureSubData(level, arrayIndex, pitch, slicePitch, sourceRegion, destSize, buffer);
+}
+
 AGPU_EXPORT agpu_error agpuUploadTextureData(agpu_texture* self, agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
 {
 	if(!self) return AGPU_NULL_POINTER;
@@ -838,18 +910,6 @@ AGPU_EXPORT agpu_error agpuUploadTextureSubData(agpu_texture* self, agpu_int lev
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::texture, self)->uploadTextureSubData(level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data);
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureUploadBuffer(agpu_texture* self)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::texture, self)->discardUploadBuffer();
-}
-
-AGPU_EXPORT agpu_error agpuDiscardTextureReadbackBuffer(agpu_texture* self)
-{
-	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::texture, self)->discardReadbackBuffer();
 }
 
 AGPU_EXPORT agpu_error agpuGetTextureFullViewDescription(agpu_texture* self, agpu_texture_view_description* result)
@@ -1672,6 +1732,60 @@ AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* self, a
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerBufferMemoryBarrier(agpu_state_tracker* self, agpu_buffer* buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->bufferMemoryBarrier(asRef(agpu::buffer, buffer), source_stage, dest_stage, source_accesses, dest_accesses, offset, size);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerTextureMemoryBarrier(agpu_state_tracker* self, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->textureMemoryBarrier(asRef(agpu::texture, texture), source_stage, dest_stage, source_accesses, dest_accesses, subresource_range);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerPushBufferTransitionBarrier(agpu_state_tracker* self, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->pushBufferTransitionBarrier(asRef(agpu::buffer, buffer), new_usage);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerPushTextureTransitionBarrier(agpu_state_tracker* self, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->pushTextureTransitionBarrier(asRef(agpu::texture, texture), new_usage, subresource_range);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerPopBufferTransitionBarrier(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->popBufferTransitionBarrier();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerPopTextureTransitionBarrier(agpu_state_tracker* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->popTextureTransitionBarrier();
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerCopyBuffer(agpu_state_tracker* self, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->copyBuffer(asRef(agpu::buffer, source_buffer), source_offset, asRef(agpu::buffer, dest_buffer), dest_offset, copy_size);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerCopyBufferToTexture(agpu_state_tracker* self, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->copyBufferToTexture(asRef(agpu::buffer, buffer), asRef(agpu::texture, texture), copy_region);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerCopyTextureToBuffer(agpu_state_tracker* self, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->copyTextureToBuffer(asRef(agpu::texture, texture), asRef(agpu::buffer, buffer), copy_region);
 }
 
 //==============================================================================

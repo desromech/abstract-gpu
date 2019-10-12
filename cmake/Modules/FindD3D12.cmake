@@ -38,6 +38,12 @@ find_path(DXGI_INCLUDE_DIR    # Set variable DXGI_INCLUDE_DIR
           HINTS
           )
 
+find_path(D3DCOMPILER_INCLUDE_DIR    # Set variable D3DCOMPILER_INCLUDE_DIR
+          d3dcompiler.h           # Find a path with dxgi1_4.h
+          HINTS "${WIN10_SDK_PATH}/Include/${WIN10_SDK_VERSION}/shared"
+          DOC "path to WIN10 SDK header files"
+          HINTS
+          )
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(DXC_BUILD_ARCH "x64")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -72,8 +78,22 @@ elseif ("${DXC_BUILD_ARCH}" STREQUAL "Win32" )
                HINTS ${WIN10_SDK_PATH}/Lib/${WIN10_SDK_VERSION}/um/x86 )
 endif ("${DXC_BUILD_ARCH}" STREQUAL "x64" )
 
-set(D3D12_LIBRARIES ${D3D12_LIBRARY} ${DXGI_LIBRARY})
-set(D3D12_INCLUDE_DIRS ${D3D12_INCLUDE_DIR} ${DXGI_INCLUDE_DIR})
+if ("${DXC_BUILD_ARCH}" STREQUAL "x64" )
+  find_library(D3DCOMPILER_LIBRARY NAMES d3dcompiler.lib
+               HINTS ${WIN10_SDK_PATH}/Lib/${WIN10_SDK_VERSION}/um/x64 )
+elseif (CMAKE_GENERATOR MATCHES "Visual Studio.*ARM" OR "${DXC_BUILD_ARCH}" STREQUAL "ARM")
+  find_library(D3DCOMPILER_LIBRARY NAMES d3dcompiler.lib
+               HINTS ${WIN10_SDK_PATH}/Lib/${WIN10_SDK_VERSION}/um/arm )
+elseif (CMAKE_GENERATOR MATCHES "Visual Studio.*ARM64" OR "${DXC_BUILD_ARCH}" STREQUAL "ARM64")
+  find_library(D3DCOMPILER_LIBRARY NAMES d3dcompiler.lib
+               HINTS ${WIN10_SDK_PATH}/Lib/${WIN10_SDK_VERSION}/um/arm64 )
+elseif ("${DXC_BUILD_ARCH}" STREQUAL "Win32" )
+  find_library(D3DCOMPILER_LIBRARY NAMES d3dcompiler.lib
+               HINTS ${WIN10_SDK_PATH}/Lib/${WIN10_SDK_VERSION}/um/x86 )
+endif ("${DXC_BUILD_ARCH}" STREQUAL "x64" )
+
+set(D3D12_LIBRARIES ${D3D12_LIBRARY} ${DXGI_LIBRARY} ${D3DCOMPILER_LIBRARY})
+set(D3D12_INCLUDE_DIRS ${D3D12_INCLUDE_DIR} ${DXGI_INCLUDE_DIR} ${D3DCOMPILER_INCLUDE_DIR})
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set D3D12_FOUND to TRUE

@@ -21,6 +21,8 @@ public:
 
     virtual agpu_error swapBuffers() override;
 
+	virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) override;
+
 public:
     agpu::device_ref device;
     agpu_pointer window;

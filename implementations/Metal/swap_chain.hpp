@@ -34,6 +34,8 @@ public:
     virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
     virtual agpu_size getCurrentBackBufferIndex() override;
     virtual agpu_size getFramebufferCount() override;
+    
+    virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) override;
 
     agpu::device_ref device;
     NSWindow *window;

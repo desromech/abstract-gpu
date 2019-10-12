@@ -507,4 +507,12 @@ agpu::state_tracker_cache_ptr GLDevice::createStateTrackerCache(const agpu::comm
 	return AgpuCommon::StateTrackerCache::create(refFromThis<agpu::device> (), 0).disown();
 }
 
+agpu_error GLDevice::finishExecution()
+{
+	onMainContextBlocking([&]{
+		mainContext->finish();
+    });
+	return AGPU_OK;
+}
+
 } // End of namespace AgpuGL
