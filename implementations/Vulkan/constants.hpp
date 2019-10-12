@@ -206,16 +206,20 @@ inline VkSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
     }
 }
 
-inline VkImageLayout mapTextureUsageModeToLayout(agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask mode)
+inline VkImageLayout mapTextureUsageModeToLayout(agpu_texture_usage_mode_mask mode)
 {
     switch(int(mode))
     {
     case AGPU_TEXTURE_USAGE_NONE: return VK_IMAGE_LAYOUT_UNDEFINED;
     case AGPU_TEXTURE_USAGE_SAMPLED:
         // TODO: Check on whether this special case makes sense or not.
-        if(allAllowedUsages & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
-            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        //if(allAllowedUsages & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
+        //    return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+        return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     case AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT: return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     case AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
     case AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
@@ -287,7 +291,7 @@ inline VkPipelineStageFlags mapBufferUsageModeToDestinationStages(agpu_buffer_us
     return flags == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT: flags;
 }
 
-inline VkAccessFlags mapTextureUsageModeToAccessFlags(agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask mode)
+inline VkAccessFlags mapTextureUsageModeToAccessFlags(agpu_texture_usage_mode_mask mode)
 {
     switch(int(mode))
     {
@@ -301,10 +305,12 @@ inline VkAccessFlags mapTextureUsageModeToAccessFlags(agpu_texture_usage_mode_ma
         return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     case AGPU_TEXTURE_USAGE_SAMPLED:
-        // TODO: Check on whether this special case makes sense or not.
-        if(allAllowedUsages & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
-            return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+        return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 
     case AGPU_TEXTURE_USAGE_COPY_DESTINATION:
         return VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -320,7 +326,7 @@ inline VkAccessFlags mapTextureUsageModeToAccessFlags(agpu_texture_usage_mode_ma
     }
 }
 
-inline VkPipelineStageFlags mapTextureUsageModeToPipelineSourceStages(agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask mode)
+inline VkPipelineStageFlags mapTextureUsageModeToPipelineSourceStages(agpu_texture_usage_mode_mask mode)
 {
     switch(int(mode))
     {
@@ -332,14 +338,14 @@ inline VkPipelineStageFlags mapTextureUsageModeToPipelineSourceStages(agpu_textu
     case AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
     case AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
     case AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
-        return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
     case AGPU_TEXTURE_USAGE_SAMPLED:
-        // TODO: Check on whether this special case makes sense or not.
-        if(allAllowedUsages & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
-            return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
+        return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+        return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     case AGPU_TEXTURE_USAGE_COPY_DESTINATION:
     case AGPU_TEXTURE_USAGE_COPY_SOURCE:
         return VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -350,7 +356,7 @@ inline VkPipelineStageFlags mapTextureUsageModeToPipelineSourceStages(agpu_textu
     }
 }
 
-inline VkPipelineStageFlags mapTextureUsageModeToPipelineDestinationStages(agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask mode)
+inline VkPipelineStageFlags mapTextureUsageModeToPipelineDestinationStages(agpu_texture_usage_mode_mask mode)
 {
     switch(int(mode))
     {
@@ -362,13 +368,14 @@ inline VkPipelineStageFlags mapTextureUsageModeToPipelineDestinationStages(agpu_
     case AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
     case AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
     case AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
-        return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
     case AGPU_TEXTURE_USAGE_SAMPLED:
-        // TODO: Check on whether this special case makes sense or not.
-        if(allAllowedUsages & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
-            return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+    case AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT:
+        return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
     case AGPU_TEXTURE_USAGE_COPY_DESTINATION:
     case AGPU_TEXTURE_USAGE_COPY_SOURCE:

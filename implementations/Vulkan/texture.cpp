@@ -81,11 +81,12 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
         auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
         auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
 
-        extent.width = (uint32_t)std::max(compressedBlockWidth, (extent.width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
-        extent.height = (uint32_t)std::max(compressedBlockHeight, (extent.height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
+        auto alignedExtent = extent;
+        alignedExtent.width = (uint32_t)std::max(compressedBlockWidth, (extent.width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
+        alignedExtent.height = (uint32_t)std::max(compressedBlockHeight, (extent.height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
         copy->imageExtent = extent;
-        copy->bufferRowLength = extent.width;
-        copy->bufferImageHeight = extent.height;
+        copy->bufferRowLength = alignedExtent.width;
+        copy->bufferImageHeight = alignedExtent.height;
 
         layout->rowPitch = copy->bufferRowLength / compressedBlockWidth * compressedBlockSize;
         layout->depthPitch = layout->rowPitch * (copy->bufferImageHeight / compressedBlockHeight) ;
@@ -149,7 +150,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
 
     auto usageModes = description->usage_modes;
     auto mainUsageMode = description->main_usage_mode;
-    VkImageLayout initialLayout = mapTextureUsageModeToLayout(usageModes, mainUsageMode);
+    //VkImageLayout initialLayout = mapTextureUsageModeToLayout(usageModes, mainUsageMode);
     VkImageAspectFlags imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 
     if(usageModes & AGPU_TEXTURE_USAGE_SAMPLED)
@@ -184,26 +185,38 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     wholeImageSubresource.levelCount = description->miplevels;
     wholeImageSubresource.aspectMask = imageAspect;
 
-    if (initialLayout != createInfo.initialLayout)
+    bool success = false;
+    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
     {
-        bool success = false;
-        if (mainUsageMode & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
+        VkClearDepthStencilValue clearValue;
+        clearValue.depth = 1.0;
+        clearValue.stencil = 0;
+        deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
+            success =
+                setupList.setupCommandBuffer() &&
+                setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_NONE, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
+                setupList.clearImageWithDepthStencil(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
+                setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
+                setupList.submitCommandBuffer();
+        });
+    }
+    else if (usageModes == AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
+    {
+        VkClearColorValue clearValue = {};
+        deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
+            success =
+                setupList.setupCommandBuffer() &&
+                setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
+                setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
+                setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
+                setupList.submitCommandBuffer();
+        });
+    }
+    else
+    {
+        VkClearColorValue clearValue = {};
+        if(!isCompressedTextureFormat(description->format))
         {
-            VkClearDepthStencilValue clearValue;
-            clearValue.depth = 1.0;
-            clearValue.stencil = 0;
-            deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
-                success =
-                    setupList.setupCommandBuffer() &&
-                    setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
-                    setupList.clearImageWithDepthStencil(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
-                    setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
-                    setupList.submitCommandBuffer();
-            });
-        }
-        else if (mainUsageMode == AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
-        {
-            VkClearColorValue clearValue = {};
             deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
                 success =
                     setupList.setupCommandBuffer() &&
@@ -215,36 +228,19 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
         }
         else
         {
-            VkClearColorValue clearValue = {};
-            if(!isCompressedTextureFormat(description->format))
-            {
-                deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
-                    success =
-                        setupList.setupCommandBuffer() &&
-                        setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
-                        setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
-                        setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
-                        setupList.submitCommandBuffer();
-                });
-            }
-            else
-            {
-                deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
-                    success =
-                        setupList.setupCommandBuffer() &&
-                        setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
-                        setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
-                        setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
-                        setupList.submitCommandBuffer();
-                });
-            }
+            deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
+                success =
+                    setupList.setupCommandBuffer() &&
+                    setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, mainUsageMode, wholeImageSubresource) &&
+                    setupList.submitCommandBuffer();
+            });
         }
+    }
 
-        if (!success)
-        {
-            vmaDestroyImage(deviceForVk->memoryAllocator, image, textureMemory);
-            return agpu::texture_ref();
-        }
+    if (!success)
+    {
+        vmaDestroyImage(deviceForVk->memoryAllocator, image, textureMemory);
+        return agpu::texture_ref();
     }
 
     auto result = agpu::makeObject<AVkTexture> (device);
@@ -268,8 +264,7 @@ agpu::texture_ref AVkTexture::createFromImage(const agpu::device_ref &device, ag
 
 agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* viewDescription)
 {
-    if(!viewDescription)
-        return nullptr;
+    if(!viewDescription) return nullptr;
 
 	VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -293,19 +288,16 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     if(viewDescription->type == AGPU_TEXTURE_CUBE)
         subresource.layerCount *= 6;
 
-    if((viewDescription->subresource_range.usage_mode & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) == 0)
-        subresource.aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
-    if (viewDescription->subresource_range.usage_mode & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT)
-        subresource.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (viewDescription->subresource_range.usage_mode & AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)
-        subresource.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    if(hasDepthComponent(viewDescription->format))
+        subresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
     VkImageView viewHandle;
     auto error = vkCreateImageView(deviceForVk->device, &createInfo, nullptr, &viewHandle);
     if (error)
         return VK_NULL_HANDLE;
 
-    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, mapTextureUsageModeToLayout(viewDescription->subresource_range.usage_mode, viewDescription->subresource_range.usage_mode), *viewDescription).disown();
+    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, mapTextureUsageModeToLayout(viewDescription->subresource_range.usage_mode), *viewDescription).disown();
 }
 
 agpu::texture_view_ptr AVkTexture::getOrCreateFullView()
@@ -436,7 +428,9 @@ agpu_error AVkTexture::uploadTextureSubData (agpu_int level, agpu_int arrayIndex
 {
     CHECK_POINTER(data);
     if ((description.usage_modes & AGPU_TEXTURE_USAGE_UPLOADED) == 0)
+    {
         return AGPU_INVALID_OPERATION;
+    }
 
 	VkImageSubresourceRange range = {};
     range.baseMipLevel = level;

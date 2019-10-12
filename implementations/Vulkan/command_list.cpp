@@ -540,6 +540,7 @@ agpu_error AVkCommandList::resolveTexture (const agpu::texture_ref &sourceTextur
     VkImageSubresourceRange range = {};
     range.layerCount = 1;
     range.levelCount = 1;
+    range.aspectMask = avkSourceTexture->imageAspect;
 
     // Transition the textures into a copy layout.
     transitionImageUsageMode(avkSourceTexture->image, avkSourceTexture->description.usage_modes, avkSourceTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, range);
