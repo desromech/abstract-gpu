@@ -71,16 +71,16 @@ VkImageMemoryBarrier barrierForImageUsageTransition(VkImage image, VkImageSubres
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.image = image;
-    barrier.srcAccessMask = mapTextureUsageModeToAccessFlags(allowedUsages, sourceUsage);
-    barrier.dstAccessMask = mapTextureUsageModeToAccessFlags(allowedUsages, destUsage);
-    barrier.oldLayout = mapTextureUsageModeToLayout(allowedUsages, sourceUsage);
-    barrier.newLayout = mapTextureUsageModeToLayout(allowedUsages, destUsage);
+    barrier.srcAccessMask = mapTextureUsageModeToAccessFlags(sourceUsage);
+    barrier.dstAccessMask = mapTextureUsageModeToAccessFlags(destUsage);
+    barrier.oldLayout = mapTextureUsageModeToLayout(sourceUsage);
+    barrier.newLayout = mapTextureUsageModeToLayout(destUsage);
     barrier.subresourceRange = range;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-    srcStages |= mapTextureUsageModeToPipelineSourceStages(allowedUsages, sourceUsage);
-    dstStages |= mapTextureUsageModeToPipelineDestinationStages(allowedUsages, destUsage);
+    srcStages |= mapTextureUsageModeToPipelineSourceStages(sourceUsage);
+    dstStages |= mapTextureUsageModeToPipelineDestinationStages(destUsage);
     return barrier;
 }
 
@@ -203,7 +203,7 @@ bool AVkImplicitResourceSetupCommandList::submitCommandBuffer()
 bool AVkImplicitResourceSetupCommandList::clearImageWithColor(VkImage image, VkImageSubresourceRange range, agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask usageMode, VkClearColorValue *clearValue)
 {
     // Clear the image
-    vkCmdClearColorImage(commandBuffer, image, mapTextureUsageModeToLayout(allAllowedUsages, usageMode), clearValue, 1, &range);
+    vkCmdClearColorImage(commandBuffer, image, mapTextureUsageModeToLayout(usageMode), clearValue, 1, &range);
 
     return true;
 }
@@ -211,7 +211,7 @@ bool AVkImplicitResourceSetupCommandList::clearImageWithColor(VkImage image, VkI
 bool AVkImplicitResourceSetupCommandList::clearImageWithDepthStencil(VkImage image, VkImageSubresourceRange range, agpu_texture_usage_mode_mask allAllowedUsages, agpu_texture_usage_mode_mask usageMode, VkClearDepthStencilValue *clearValue)
 {
     // Clear the image
-    vkCmdClearDepthStencilImage(commandBuffer, image, mapTextureUsageModeToLayout(allAllowedUsages, usageMode), clearValue, 1, &range);
+    vkCmdClearDepthStencilImage(commandBuffer, image, mapTextureUsageModeToLayout(usageMode), clearValue, 1, &range);
 
     return true;
 }
