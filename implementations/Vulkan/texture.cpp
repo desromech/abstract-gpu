@@ -368,11 +368,10 @@ agpu_error AVkTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu
 agpu_error AVkTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
 {
     CHECK_POINTER(buffer);
-
-    abort();
-    /*
     if ((description.usage_modes & AGPU_TEXTURE_USAGE_READED_BACK) == 0)
+    {
         return AGPU_INVALID_OPERATION;
+    }
 
     VkImageSubresourceRange range;
     memset(&range, 0, sizeof(range));
@@ -380,43 +379,57 @@ agpu_error AVkTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, a
     range.baseArrayLayer = arrayIndex;
     range.layerCount = 1;
     range.levelCount = 1;
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     VkSubresourceLayout layout;
     VkBufferImageCopy copy;
     computeBufferImageTransferLayout(level, &layout, &copy);
 
-    // Read the render target into the readback buffer.
     auto extent = getLevelExtent(level);
     copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.imageSubresource.mipLevel = level;
     copy.imageSubresource.baseArrayLayer = arrayIndex;
     copy.imageSubresource.layerCount = 1;
     copy.imageExtent = extent;
-    deviceForVk->copyImageToBuffer(image, range, VK_IMAGE_ASPECT_COLOR_BIT, initialLayout, initialLayoutAccessBits, readbackBuffer.as<AVkBuffer> ()->uploadBuffer, 1, &copy);
 
-    auto readbackPointer = readbackBuffer->mapBuffer(AGPU_READ_ONLY);
-    if (!readbackPointer)
-        return AGPU_ERROR;
-
-    if (agpu_uint(pitch) == layout.rowPitch && agpu_uint(slicePitch) == layout.depthPitch)
-    {
-        memcpy(buffer, readbackPointer, slicePitch);
-    }
-    else
-    {
-        auto srcRow = reinterpret_cast<uint8_t*> (readbackPointer);
-        auto dstRow = reinterpret_cast<uint8_t*> (buffer);
-        for (uint32_t y = 0; y < copy.imageExtent.height; ++y)
+    agpu_error resultCode = AGPU_ERROR;
+    deviceForVk->withReadbackCommandListDo(layout.size, 1, [&](AVkImplicitResourceReadbackCommandList &readbackList) {
+        if(readbackList.currentStagingBufferSize < layout.size)
         {
-            memcpy(dstRow, srcRow, pitch);
-            srcRow += layout.rowPitch;
-            dstRow += pitch;
+            resultCode = AGPU_OUT_OF_MEMORY;
+            return;
         }
-    }
 
-    readbackBuffer->unmapBuffer();*/
+        // Copy the image data into staging buffer.
+        auto success = readbackList.setupCommandBuffer() &&
+            readbackList.transitionImageUsageMode(image, description.usage_modes, description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, range) &&
+            readbackList.readbackImageDataToBuffer(image, copy) &&
+            readbackList.transitionImageUsageMode(image, description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, description.main_usage_mode, range) &&
+            readbackList.submitCommandBuffer();
 
-    return AGPU_OK;
+        if(success)
+        {
+            auto readbackPointer = readbackList.currentStagingBufferPointer;
+            if (agpu_uint(pitch) == layout.rowPitch && agpu_uint(slicePitch) == layout.depthPitch)
+            {
+                memcpy(buffer, readbackPointer, slicePitch);
+            }
+            else
+            {
+                auto srcRow = reinterpret_cast<uint8_t*> (readbackPointer);
+                auto dstRow = reinterpret_cast<uint8_t*> (buffer);
+                for (uint32_t y = 0; y < copy.imageExtent.height; ++y)
+                {
+                    memcpy(dstRow, srcRow, pitch);
+                    srcRow += layout.rowPitch;
+                    dstRow += pitch;
+                }
+            }
+        }
+        resultCode = success ? AGPU_OK : AGPU_ERROR;
+    });
+
+    return resultCode;
 }
 
 agpu_error AVkTexture::uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)

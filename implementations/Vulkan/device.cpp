@@ -191,7 +191,9 @@ AVkDevice::~AVkDevice()
 {
     // Shutdown the VR system, when I die.
     if(vrSystem)
+    {
         vr::VR_Shutdown();
+    }
 
 	// Destroy the implicit command list.
 	implicitResourceSetupCommandList.destroy();
@@ -203,7 +205,9 @@ AVkDevice::~AVkDevice()
 
 	// Destroy the debug report callback.
 	if (debugReportCallback)
+    {
 		fpDestroyDebugReportCallbackEXT(vulkanInstance, debugReportCallback, nullptr);
+    }
 
 	// Destroy the vulkan devices
 	vkDestroyDevice(device, nullptr);

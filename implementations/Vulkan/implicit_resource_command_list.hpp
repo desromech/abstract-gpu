@@ -132,7 +132,7 @@ public:
         return true;
     }
 
-    bool readbackBufferDataToImage(VkImage sourceImage, VkBufferImageCopy copyRegion)
+    bool readbackImageDataToBuffer(VkImage sourceImage, VkBufferImageCopy copyRegion)
     {
         copyRegion.bufferOffset = 0;
         vkCmdCopyImageToBuffer(commandBuffer, sourceImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, bufferHandle, 1, &copyRegion);
