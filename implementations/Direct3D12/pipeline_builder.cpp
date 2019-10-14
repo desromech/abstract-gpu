@@ -330,7 +330,7 @@ agpu_error ADXPipelineBuilder::setDepthBias(agpu_float constant_factor, agpu_flo
 agpu_error ADXPipelineBuilder::setDepthState(agpu_bool enabled, agpu_bool writeMask, agpu_compare_function function)
 {
     description.DepthStencilState.DepthEnable = enabled;
-    description.DepthStencilState.DepthWriteMask = writeMask ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ALL;
+    description.DepthStencilState.DepthWriteMask = writeMask ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
     description.DepthStencilState.DepthFunc = mapCompareFunction(function);
     return AGPU_OK;
 }
