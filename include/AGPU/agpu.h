@@ -954,6 +954,8 @@ AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** 
 /* Methods for interface agpu_platform. */
 typedef agpu_device* (*agpuOpenDevice_FUN) (agpu_platform* platform, agpu_device_open_info* openInfo);
 typedef agpu_cstring (*agpuGetPlatformName_FUN) (agpu_platform* platform);
+typedef agpu_size (*agpuGetPlatformGpuCount_FUN) (agpu_platform* platform);
+typedef agpu_cstring (*agpuGetPlatformGpuName_FUN) (agpu_platform* platform, agpu_size gpu_index);
 typedef agpu_int (*agpuGetPlatformVersion_FUN) (agpu_platform* platform);
 typedef agpu_int (*agpuGetPlatformImplementationVersion_FUN) (agpu_platform* platform);
 typedef agpu_bool (*agpuPlatformHasRealMultithreading_FUN) (agpu_platform* platform);
@@ -963,6 +965,8 @@ typedef agpu_offline_shader_compiler* (*agpuCreateOfflineShaderCompiler_FUN) (ag
 
 AGPU_EXPORT agpu_device* agpuOpenDevice(agpu_platform* platform, agpu_device_open_info* openInfo);
 AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* platform);
+AGPU_EXPORT agpu_size agpuGetPlatformGpuCount(agpu_platform* platform);
+AGPU_EXPORT agpu_cstring agpuGetPlatformGpuName(agpu_platform* platform, agpu_size gpu_index);
 AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* platform);
 AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platform);
 AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform);
@@ -1748,6 +1752,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetPlatforms_FUN agpuGetPlatforms;
 	agpuOpenDevice_FUN agpuOpenDevice;
 	agpuGetPlatformName_FUN agpuGetPlatformName;
+	agpuGetPlatformGpuCount_FUN agpuGetPlatformGpuCount;
+	agpuGetPlatformGpuName_FUN agpuGetPlatformGpuName;
 	agpuGetPlatformVersion_FUN agpuGetPlatformVersion;
 	agpuGetPlatformImplementationVersion_FUN agpuGetPlatformImplementationVersion;
 	agpuPlatformHasRealMultithreading_FUN agpuPlatformHasRealMultithreading;

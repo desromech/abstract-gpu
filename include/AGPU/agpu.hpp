@@ -134,6 +134,16 @@ public:
 		return agpuGetPlatformName(this);
 	}
 
+	inline agpu_size getGpuCount()
+	{
+		return agpuGetPlatformGpuCount(this);
+	}
+
+	inline agpu_cstring getGpuName(agpu_size gpu_index)
+	{
+		return agpuGetPlatformGpuName(this, gpu_index);
+	}
+
 	inline agpu_int getVersion()
 	{
 		return agpuGetPlatformVersion(this);

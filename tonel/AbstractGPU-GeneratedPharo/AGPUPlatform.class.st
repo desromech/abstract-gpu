@@ -19,6 +19,20 @@ AGPUPlatform >> getName [
 ]
 
 { #category : #'wrappers' }
+AGPUPlatform >> getGpuCount [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getGpuCount_platform: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUPlatform >> getGpuName: gpu_index [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getGpuName_platform: (self validHandle) gpu_index: gpu_index.
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUPlatform >> getVersion [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getVersion_platform: (self validHandle).

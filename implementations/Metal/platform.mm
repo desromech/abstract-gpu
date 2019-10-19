@@ -25,6 +25,16 @@ agpu_cstring MetalPlatform::getName()
     return "Metal";
 }
 
+agpu_size MetalPlatform::getGpuCount()
+{
+    return 1;
+}
+
+agpu_cstring MetalPlatform::getGpuName(agpu_size gpu_index)
+{
+    return "Default";
+}
+
 agpu_int MetalPlatform::getVersion()
 {
     return 10;

@@ -26,14 +26,24 @@ agpu_cstring Direct3D12Platform::getName()
     return "Direct3D12";
 }
 
+agpu_size Direct3D12Platform::getGpuCount()
+{
+    return 1;
+}
+
+agpu_cstring Direct3D12Platform::getGpuName(agpu_size gpu_index)
+{
+    return "Default";
+}
+
 agpu_int Direct3D12Platform::getVersion()
 {
-    return 120;
+    return 1200;
 }
 
 agpu_int Direct3D12Platform::getImplementationVersion()
 {
-    return 120;
+    return 1200;
 }
 
 agpu_bool Direct3D12Platform::hasRealMultithreading()

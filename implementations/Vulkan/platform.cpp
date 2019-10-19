@@ -27,6 +27,16 @@ agpu_cstring VulkanPlatform::getName()
     return "Vulkan";
 }
 
+agpu_size VulkanPlatform::getGpuCount()
+{
+    return 1;
+}
+
+agpu_cstring VulkanPlatform::getGpuName(agpu_size gpu_index)
+{
+    return "Default";
+}
+
 agpu_int VulkanPlatform::getVersion()
 {
     return 10;

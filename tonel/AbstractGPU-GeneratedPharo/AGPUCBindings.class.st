@@ -19,6 +19,16 @@ AGPUCBindings >> getName_platform: platform [
 ]
 
 { #category : #'platform' }
+AGPUCBindings >> getGpuCount_platform: platform [
+	^ self ffiCall: #(agpu_size agpuGetPlatformGpuCount (agpu_platform* platform) )
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> getGpuName_platform: platform gpu_index: gpu_index [
+	^ self ffiCall: #(agpu_cstring agpuGetPlatformGpuName (agpu_platform* platform , agpu_size gpu_index) )
+]
+
+{ #category : #'platform' }
 AGPUCBindings >> getVersion_platform: platform [
 	^ self ffiCall: #(agpu_int agpuGetPlatformVersion (agpu_platform* platform) )
 ]

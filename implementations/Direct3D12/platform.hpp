@@ -15,6 +15,8 @@ public:
 
     virtual agpu::device_ptr openDevice(agpu_device_open_info* openInfo) override;
 	virtual agpu_cstring getName() override;
+    virtual agpu_size getGpuCount() override;
+	virtual agpu_cstring getGpuName(agpu_size gpu_index) override;
 	virtual agpu_int getVersion() override;
 	virtual agpu_int getImplementationVersion() override;
 	virtual agpu_bool hasRealMultithreading() override;

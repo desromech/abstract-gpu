@@ -512,6 +512,8 @@ public:
 	typedef platform main_interface;
 	virtual device_ptr openDevice(agpu_device_open_info* openInfo) = 0;
 	virtual agpu_cstring getName() = 0;
+	virtual agpu_size getGpuCount() = 0;
+	virtual agpu_cstring getGpuName(agpu_size gpu_index) = 0;
 	virtual agpu_int getVersion() = 0;
 	virtual agpu_int getImplementationVersion() = 0;
 	virtual agpu_bool hasRealMultithreading() = 0;

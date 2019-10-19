@@ -12,6 +12,8 @@ public:
 
     virtual agpu::device_ptr openDevice(agpu_device_open_info* openInfo) override;
 	virtual agpu_cstring getName() override;
+    virtual agpu_size getGpuCount() override;
+	virtual agpu_cstring getGpuName(agpu_size gpu_index) override;
 	virtual agpu_int getVersion() override;
 	virtual agpu_int getImplementationVersion() override;
 	virtual agpu_bool hasRealMultithreading() override;
@@ -38,6 +40,16 @@ agpu::device_ptr GLPlatform::openDevice(agpu_device_open_info* openInfo)
 agpu_cstring GLPlatform::getName()
 {
     return "OpenGL 4.x Core";
+}
+
+agpu_size GLPlatform::getGpuCount()
+{
+    return 1;
+}
+
+agpu_cstring GLPlatform::getGpuName(agpu_size gpu_index)
+{
+    return "Default";
 }
 
 agpu_int GLPlatform::getVersion()

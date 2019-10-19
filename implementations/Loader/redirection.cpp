@@ -17,6 +17,22 @@ AGPU_EXPORT agpu_cstring agpuGetPlatformName ( agpu_platform* platform )
 	return (*dispatchTable)->agpuGetPlatformName ( platform );
 }
 
+AGPU_EXPORT agpu_size agpuGetPlatformGpuCount ( agpu_platform* platform )
+{
+	if (platform == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetPlatformGpuCount ( platform );
+}
+
+AGPU_EXPORT agpu_cstring agpuGetPlatformGpuName ( agpu_platform* platform, agpu_size gpu_index )
+{
+	if (platform == nullptr)
+		return (agpu_cstring)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetPlatformGpuName ( platform, gpu_index );
+}
+
 AGPU_EXPORT agpu_int agpuGetPlatformVersion ( agpu_platform* platform )
 {
 	if (platform == nullptr)

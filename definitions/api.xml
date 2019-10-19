@@ -959,6 +959,13 @@
             <method name="getName" cname="GetPlatformName" returnType="cstring">
             </method>
 
+            <method name="getGpuCount" cname="GetPlatformGpuCount" returnType="size">
+            </method>
+
+            <method name="getGpuName" cname="GetPlatformGpuName" returnType="cstring">
+                <arg name="gpu_index" type="size" />
+            </method>
+
             <method name="getVersion" cname="GetPlatformVersion" returnType="int">
             </method>
 

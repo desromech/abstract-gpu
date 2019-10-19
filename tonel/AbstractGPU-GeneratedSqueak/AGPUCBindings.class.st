@@ -15,7 +15,19 @@ AGPUCBindings >> openDevice_platform: platform openInfo: openInfo [
 
 { #category : #'platform' }
 AGPUCBindings >> getName_platform: platform [
-	<cdecl: byte* 'agpuGetPlatformName' (void*)>
+	<cdecl: char* 'agpuGetPlatformName' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> getGpuCount_platform: platform [
+	<cdecl: ulong 'agpuGetPlatformGpuCount' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> getGpuName_platform: platform gpu_index: gpu_index [
+	<cdecl: char* 'agpuGetPlatformGpuName' (void* ulong)>
 	^ self externalCallFailed
 ]
 
@@ -243,7 +255,7 @@ AGPUCBindings >> release_vr_system: vr_system [
 
 { #category : #'vr_system' }
 AGPUCBindings >> getVRSystemName_vr_system: vr_system [
-	<cdecl: byte* 'agpuGetVRSystemName' (void*)>
+	<cdecl: char* 'agpuGetVRSystemName' (void*)>
 	^ self externalCallFailed
 ]
 

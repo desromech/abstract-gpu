@@ -2,6 +2,8 @@
 agpuGetPlatforms,
 agpuOpenDevice,
 agpuGetPlatformName,
+agpuGetPlatformGpuCount,
+agpuGetPlatformGpuName,
 agpuGetPlatformVersion,
 agpuGetPlatformImplementationVersion,
 agpuPlatformHasRealMultithreading,

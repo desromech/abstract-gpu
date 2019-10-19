@@ -23,6 +23,16 @@ AGPU_EXPORT agpu_cstring agpuGetPlatformName(agpu_platform* self)
 	return asRef(agpu::platform, self)->getName();
 }
 
+AGPU_EXPORT agpu_size agpuGetPlatformGpuCount(agpu_platform* self)
+{
+	return asRef(agpu::platform, self)->getGpuCount();
+}
+
+AGPU_EXPORT agpu_cstring agpuGetPlatformGpuName(agpu_platform* self, agpu_size gpu_index)
+{
+	return asRef(agpu::platform, self)->getGpuName(gpu_index);
+}
+
 AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* self)
 {
 	return asRef(agpu::platform, self)->getVersion();
