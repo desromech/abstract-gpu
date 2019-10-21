@@ -150,9 +150,9 @@ agpu_error ADXCommandList::setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_
 agpu_error ADXCommandList::setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
     RECT rect;
-    rect.top = x;
-    rect.left = y;
+    rect.left = x;
     rect.right = x + w;
+    rect.top = y;
     rect.bottom = y + h;
     commandList->RSSetScissorRects(1, &rect);
     return AGPU_OK;
