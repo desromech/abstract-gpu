@@ -182,6 +182,7 @@
         <struct name="renderpass_color_attachment_description">
             <field name="format" type="texture_format" />
             <field name="sample_count" type="uint" />
+            <field name="sample_quality" type="uint" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
             <field name="clear_value" type="color4f" />
@@ -190,6 +191,7 @@
         <struct name="renderpass_depth_stencil_description">
             <field name="format" type="texture_format" />
             <field name="sample_count" type="uint" />
+            <field name="sample_quality" type="uint" />
             <field name="begin_action" type="renderpass_attachment_action" />
             <field name="end_action" type="renderpass_attachment_action" />
             <field name="stencil_begin_action" type="renderpass_attachment_action" />
@@ -1815,13 +1817,21 @@
                 <arg name="value" type="color4f*" />
             </method>
 
+            <!--- These getter methods are used for the generic implementation of the state tracker. -->
             <method name="getColorAttachmentFormats" cname="GetRenderPassColorAttachmentFormats" returnType="error">
                 <arg name="color_attachment_count" type="uint*" />
                 <arg name="formats" type="texture_format*" />
             </method>
 
-            <method name="getDepthStencilAttachmentFormat" cname="GetRenderPassgetDepthStencilAttachmentFormat" returnType="texture_format">
+            <method name="getDepthStencilAttachmentFormat" cname="GetRenderPassDepthStencilAttachmentFormat" returnType="texture_format">
             </method>
+
+            <method name="getSampleCount" cname="GetRenderPassSampleCount" returnType="uint">
+            </method>
+
+            <method name="getSampleQuality" cname="GetRenderPassSampleQuality" returnType="uint">
+            </method>
+
         </interface>
 
         <interface name="shader_signature_builder">

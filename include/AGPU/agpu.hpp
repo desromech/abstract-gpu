@@ -1279,7 +1279,17 @@ public:
 
 	inline agpu_texture_format getDepthStencilAttachmentFormat()
 	{
-		return agpuGetRenderPassgetDepthStencilAttachmentFormat(this);
+		return agpuGetRenderPassDepthStencilAttachmentFormat(this);
+	}
+
+	inline agpu_uint getSampleCount()
+	{
+		return agpuGetRenderPassSampleCount(this);
+	}
+
+	inline agpu_uint getSampleQuality()
+	{
+		return agpuGetRenderPassSampleQuality(this);
 	}
 
 };

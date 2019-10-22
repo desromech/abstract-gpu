@@ -16,6 +16,7 @@ AGPURenderpassDepthStencilDescription class >> fieldsDesc [
     ^ #(
 		 agpu_texture_format format;
 		 agpu_uint sample_count;
+		 agpu_uint sample_quality;
 		 agpu_renderpass_attachment_action begin_action;
 		 agpu_renderpass_attachment_action end_action;
 		 agpu_renderpass_attachment_action stencil_begin_action;

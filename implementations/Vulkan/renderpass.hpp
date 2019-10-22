@@ -22,6 +22,8 @@ public:
     virtual agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f *value) override;
     virtual agpu_error getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats) override;
     virtual agpu_texture_format getDepthStencilAttachmentFormat() override;
+    virtual agpu_uint getSampleCount() override;
+	virtual agpu_uint getSampleQuality() override;
 
     agpu::device_ref device;
     VkRenderPass handle;
@@ -31,6 +33,8 @@ public:
     agpu_uint colorAttachmentCount;
     std::array<agpu_texture_format, MaxRenderTargetAttachmentCount> colorAttachmentFormats;
     agpu_texture_format depthStencilFormat;
+    agpu_uint sampleCount;
+    agpu_uint sampleQuality;
 
 };
 

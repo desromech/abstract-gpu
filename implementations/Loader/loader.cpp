@@ -67,6 +67,7 @@ static std::vector<PlatformInfo*> loadedPlatforms;
 std::wstring utf8ToUtf16(const std::string &utf8)
 {
     int c = 0;
+    (void)c;
     size_t position = 0;
     std::wstring utf16;
     while (position < utf8.size())
@@ -97,6 +98,7 @@ std::wstring utf8ToUtf16(const std::string &utf8)
 std::string utf16ToUtf8(const std::wstring &utf16)
 {
     int c = 0;
+    (void)c;
     size_t position = 0;
     std::string utf8;
     while (position < utf16.size())
@@ -166,6 +168,7 @@ static std::string extension(const std::string &path)
         return std::string();
     return path.substr(dotPos + 1);
 }
+
 static bool isAbsolutePath(const std::string &path)
 {
 #if defined(_WIN32)

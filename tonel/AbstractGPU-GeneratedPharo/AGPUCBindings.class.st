@@ -965,7 +965,17 @@ AGPUCBindings >> getColorAttachmentFormats_renderpass: renderpass color_attachme
 
 { #category : #'renderpass' }
 AGPUCBindings >> getDepthStencilAttachmentFormat_renderpass: renderpass [
-	^ self ffiCall: #(agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat (agpu_renderpass* renderpass) )
+	^ self ffiCall: #(agpu_texture_format agpuGetRenderPassDepthStencilAttachmentFormat (agpu_renderpass* renderpass) )
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getSampleCount_renderpass: renderpass [
+	^ self ffiCall: #(agpu_uint agpuGetRenderPassSampleCount (agpu_renderpass* renderpass) )
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getSampleQuality_renderpass: renderpass [
+	^ self ffiCall: #(agpu_uint agpuGetRenderPassSampleQuality (agpu_renderpass* renderpass) )
 ]
 
 { #category : #'shader_signature_builder' }

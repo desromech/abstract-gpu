@@ -810,6 +810,8 @@ public:
 	virtual agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value) = 0;
 	virtual agpu_error getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats) = 0;
 	virtual agpu_texture_format getDepthStencilAttachmentFormat() = 0;
+	virtual agpu_uint getSampleCount() = 0;
+	virtual agpu_uint getSampleQuality() = 0;
 };
 
 

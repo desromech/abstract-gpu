@@ -518,6 +518,17 @@ agpu_error AbstractStateTracker::beginRenderPass(const agpu::renderpass_ref & re
         }
     }
 
+    // Apply the sample count and quality.
+    auto sampleCount = renderpass->getSampleCount();
+    auto sampleQuality = renderpass->getSampleQuality();
+    if(sampleCount != graphicsPipelineStateDescription.sampleCount ||
+        sampleQuality != graphicsPipelineStateDescription.sampleQuality)
+    {
+        graphicsPipelineStateDescription.sampleCount = sampleCount;
+        graphicsPipelineStateDescription.sampleQuality = sampleQuality;
+        changed = true;
+    }
+
     if(changed)
         invalidateGraphicsPipelineState();
 

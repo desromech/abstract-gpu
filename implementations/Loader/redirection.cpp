@@ -1529,12 +1529,28 @@ AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats ( agpu_renderpass
 	return (*dispatchTable)->agpuGetRenderPassColorAttachmentFormats ( renderpass, color_attachment_count, formats );
 }
 
-AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat ( agpu_renderpass* renderpass )
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassDepthStencilAttachmentFormat ( agpu_renderpass* renderpass )
 {
 	if (renderpass == nullptr)
 		return (agpu_texture_format)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
-	return (*dispatchTable)->agpuGetRenderPassgetDepthStencilAttachmentFormat ( renderpass );
+	return (*dispatchTable)->agpuGetRenderPassDepthStencilAttachmentFormat ( renderpass );
+}
+
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleCount ( agpu_renderpass* renderpass )
+{
+	if (renderpass == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuGetRenderPassSampleCount ( renderpass );
+}
+
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleQuality ( agpu_renderpass* renderpass )
+{
+	if (renderpass == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (renderpass);
+	return (*dispatchTable)->agpuGetRenderPassSampleQuality ( renderpass );
 }
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference ( agpu_shader_signature_builder* shader_signature_builder )

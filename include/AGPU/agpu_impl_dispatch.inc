@@ -1177,9 +1177,19 @@ AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats(agpu_renderpass* 
 	return asRef(agpu::renderpass, self)->getColorAttachmentFormats(color_attachment_count, formats);
 }
 
-AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat(agpu_renderpass* self)
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassDepthStencilAttachmentFormat(agpu_renderpass* self)
 {
 	return asRef(agpu::renderpass, self)->getDepthStencilAttachmentFormat();
+}
+
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleCount(agpu_renderpass* self)
+{
+	return asRef(agpu::renderpass, self)->getSampleCount();
+}
+
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleQuality(agpu_renderpass* self)
+{
+	return asRef(agpu::renderpass, self)->getSampleQuality();
 }
 
 //==============================================================================
