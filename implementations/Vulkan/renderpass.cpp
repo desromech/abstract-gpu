@@ -51,6 +51,9 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
     std::array<agpu_texture_format, MaxRenderTargetAttachmentCount> colorAttachmentFormats;
     agpu_texture_format depthStencilFormat = AGPU_TEXTURE_FORMAT_UNKNOWN;
 
+    agpu_uint sampleCount = 1;
+    agpu_uint sampleQuality = 0;
+
     bool hasDepthStencil = description->depth_stencil_attachment != nullptr;
     std::vector<VkAttachmentDescription> attachments(colorCount + (hasDepthStencil ? 1 : 0));
     std::vector<VkClearValue> clearValues;
@@ -69,6 +72,9 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        sampleCount = desc.sample_count;
+        sampleQuality = desc.sample_quality;
 
         VkClearValue clearValue;
         clearValue.color.float32[0] = desc.clear_value.r;
@@ -98,6 +104,9 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
 
         attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        sampleCount = desc->sample_count;
+        sampleQuality = desc->sample_quality;
 
         VkClearValue clearValue;
         clearValue.depthStencil.depth = desc->clear_value.depth;
@@ -151,6 +160,8 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
     avkRenderpass->colorAttachmentCount = colorCount;
     avkRenderpass->colorAttachmentFormats = colorAttachmentFormats;
     avkRenderpass->depthStencilFormat = depthStencilFormat;
+    avkRenderpass->sampleCount = sampleCount;
+    avkRenderpass->sampleQuality = sampleQuality;
 
     return result;
 }
@@ -208,6 +219,16 @@ agpu_error AVkRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_
 agpu_texture_format AVkRenderPass::getDepthStencilAttachmentFormat()
 {
     return depthStencilFormat;
+}
+
+agpu_uint AVkRenderPass::getSampleCount()
+{
+    return sampleCount;
+}
+
+agpu_uint AVkRenderPass::getSampleQuality()
+{
+    return sampleQuality;
 }
 
 } // End of namespace AgpuVulkan

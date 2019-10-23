@@ -764,6 +764,7 @@ typedef struct agpu_sampler_description {
 typedef struct agpu_renderpass_color_attachment_description {
 	agpu_texture_format format;
 	agpu_uint sample_count;
+	agpu_uint sample_quality;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
 	agpu_color4f clear_value;
@@ -773,6 +774,7 @@ typedef struct agpu_renderpass_color_attachment_description {
 typedef struct agpu_renderpass_depth_stencil_description {
 	agpu_texture_format format;
 	agpu_uint sample_count;
+	agpu_uint sample_quality;
 	agpu_renderpass_attachment_action begin_action;
 	agpu_renderpass_attachment_action end_action;
 	agpu_renderpass_attachment_action stencil_begin_action;
@@ -996,7 +998,7 @@ typedef agpu_renderpass* (*agpuCreateRenderPass_FUN) (agpu_device* device, agpu_
 typedef agpu_texture* (*agpuCreateTexture_FUN) (agpu_device* device, agpu_texture_description* description);
 typedef agpu_sampler* (*agpuCreateSampler_FUN) (agpu_device* device, agpu_sampler_description* description);
 typedef agpu_fence* (*agpuCreateFence_FUN) (agpu_device* device);
-typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) (agpu_device* device, agpu_uint sample_count);
+typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) (agpu_device* device, agpu_texture_format format, agpu_uint sample_count);
 typedef agpu_bool (*agpuHasTopLeftNdcOrigin_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuHasBottomLeftTextureCoordinates_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) (agpu_device* device, agpu_feature feature);
@@ -1026,7 +1028,7 @@ AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_rend
 AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description);
 AGPU_EXPORT agpu_sampler* agpuCreateSampler(agpu_device* device, agpu_sampler_description* description);
 AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device);
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count);
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_texture_format format, agpu_uint sample_count);
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature);
@@ -1382,7 +1384,9 @@ typedef agpu_error (*agpuSetDepthStencilClearValue_FUN) (agpu_renderpass* render
 typedef agpu_error (*agpuSetColorClearValue_FUN) (agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value);
 typedef agpu_error (*agpuSetColorClearValueFrom_FUN) (agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value);
 typedef agpu_error (*agpuGetRenderPassColorAttachmentFormats_FUN) (agpu_renderpass* renderpass, agpu_uint* color_attachment_count, agpu_texture_format* formats);
-typedef agpu_texture_format (*agpuGetRenderPassgetDepthStencilAttachmentFormat_FUN) (agpu_renderpass* renderpass);
+typedef agpu_texture_format (*agpuGetRenderPassDepthStencilAttachmentFormat_FUN) (agpu_renderpass* renderpass);
+typedef agpu_uint (*agpuGetRenderPassSampleCount_FUN) (agpu_renderpass* renderpass);
+typedef agpu_uint (*agpuGetRenderPassSampleQuality_FUN) (agpu_renderpass* renderpass);
 
 AGPU_EXPORT agpu_error agpuAddRenderPassReference(agpu_renderpass* renderpass);
 AGPU_EXPORT agpu_error agpuReleaseRenderPass(agpu_renderpass* renderpass);
@@ -1390,7 +1394,9 @@ AGPU_EXPORT agpu_error agpuSetDepthStencilClearValue(agpu_renderpass* renderpass
 AGPU_EXPORT agpu_error agpuSetColorClearValue(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f value);
 AGPU_EXPORT agpu_error agpuSetColorClearValueFrom(agpu_renderpass* renderpass, agpu_uint attachment_index, agpu_color4f* value);
 AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats(agpu_renderpass* renderpass, agpu_uint* color_attachment_count, agpu_texture_format* formats);
-AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat(agpu_renderpass* renderpass);
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassDepthStencilAttachmentFormat(agpu_renderpass* renderpass);
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleCount(agpu_renderpass* renderpass);
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleQuality(agpu_renderpass* renderpass);
 
 /* Methods for interface agpu_shader_signature_builder. */
 typedef agpu_error (*agpuAddShaderSignatureBuilderReference_FUN) (agpu_shader_signature_builder* shader_signature_builder);
@@ -1941,7 +1947,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuSetColorClearValue_FUN agpuSetColorClearValue;
 	agpuSetColorClearValueFrom_FUN agpuSetColorClearValueFrom;
 	agpuGetRenderPassColorAttachmentFormats_FUN agpuGetRenderPassColorAttachmentFormats;
-	agpuGetRenderPassgetDepthStencilAttachmentFormat_FUN agpuGetRenderPassgetDepthStencilAttachmentFormat;
+	agpuGetRenderPassDepthStencilAttachmentFormat_FUN agpuGetRenderPassDepthStencilAttachmentFormat;
+	agpuGetRenderPassSampleCount_FUN agpuGetRenderPassSampleCount;
+	agpuGetRenderPassSampleQuality_FUN agpuGetRenderPassSampleQuality;
 	agpuAddShaderSignatureBuilderReference_FUN agpuAddShaderSignatureBuilderReference;
 	agpuReleaseShaderSignatureBuilder_FUN agpuReleaseShaderSignatureBuilder;
 	agpuBuildShaderSignature_FUN agpuBuildShaderSignature;

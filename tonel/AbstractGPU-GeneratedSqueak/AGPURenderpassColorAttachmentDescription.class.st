@@ -15,6 +15,7 @@ AGPURenderpassColorAttachmentDescription class >> fields [
     ^ #(
 		(format 'long')
 		(sample_count 'ulong')
+		(sample_quality 'ulong')
 		(begin_action 'long')
 		(end_action 'long')
 		(clear_value 'AGPUColor4f')

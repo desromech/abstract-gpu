@@ -416,7 +416,7 @@ agpu_error ADXCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destF
     for (size_t i = 0; i < adxDestFramebuffer->getColorBufferCount(); ++i)
     {
         auto &sourceTexture = adxSourceFramebuffer->colorBuffers[i];
-        auto &destTexture = adxSourceFramebuffer->colorBuffers[i];
+        auto &destTexture = adxDestFramebuffer->colorBuffers[i];
         resolveTexture(sourceTexture, 0, 0, destTexture, 0, 0, 1, 1, AGPU_TEXTURE_ASPECT_COLOR);
     }
 
@@ -430,6 +430,31 @@ agpu_error ADXCommandList::resolveTexture(const agpu::texture_ref & sourceTextur
 
     UINT sourceSubresource = adxSourceTexture->subresourceIndexFor(sourceLevel, sourceLayer);
     UINT destSubresource = adxDestTexture->subresourceIndexFor(destLevel, destLayer);
+
+	// If there are not multiple samples, we just copy from one texture into the other one.
+	if (adxDestTexture->description.sample_count == 1 && adxSourceTexture->description.sample_count == 1)
+	{
+		auto sourceTextureMode = getCurrentTextureUsageMode(sourceTexture);
+		auto destTextureMode = getCurrentTextureUsageMode(destTexture);
+		transitionTextureUsageMode(adxSourceTexture->resource.Get(), adxSourceTexture->description.heap_type, sourceTextureMode, AGPU_TEXTURE_USAGE_COPY_SOURCE);
+		transitionTextureUsageMode(adxDestTexture->resource.Get(), adxDestTexture->description.heap_type, destTextureMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION);
+
+		D3D12_TEXTURE_COPY_LOCATION sourceRegion = {};
+		sourceRegion.pResource = adxSourceTexture->resource.Get();
+		sourceRegion.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		sourceRegion.SubresourceIndex = sourceSubresource;
+		
+		D3D12_TEXTURE_COPY_LOCATION destRegion = {};
+		destRegion.pResource = adxDestTexture->resource.Get();
+		destRegion.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		destRegion.SubresourceIndex = destSubresource;
+
+		commandList->CopyTextureRegion(&destRegion, 0, 0, 0, &sourceRegion, nullptr);
+
+		transitionTextureUsageMode(adxSourceTexture->resource.Get(), adxSourceTexture->description.heap_type, AGPU_TEXTURE_USAGE_COPY_SOURCE, sourceTextureMode);
+		transitionTextureUsageMode(adxDestTexture->resource.Get(), adxDestTexture->description.heap_type, AGPU_TEXTURE_USAGE_COPY_DESTINATION, destTextureMode);
+		return AGPU_OK;
+	}
 
     D3D12_RESOURCE_STATES destState = mapTextureUsageToResourceState(adxDestTexture->description.heap_type, getCurrentTextureUsageMode(destTexture));
     D3D12_RESOURCE_STATES sourceState = mapTextureUsageToResourceState(adxSourceTexture->description.heap_type, getCurrentTextureUsageMode(sourceTexture));

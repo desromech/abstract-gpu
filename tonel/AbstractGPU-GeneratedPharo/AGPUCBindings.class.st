@@ -164,8 +164,8 @@ AGPUCBindings >> createFence_device: device [
 ]
 
 { #category : #'device' }
-AGPUCBindings >> getMultiSampleQualityLevels_device: device sample_count: sample_count [
-	^ self ffiCall: #(agpu_int agpuGetMultiSampleQualityLevels (agpu_device* device , agpu_uint sample_count) )
+AGPUCBindings >> getMultiSampleQualityLevels_device: device format: format sample_count: sample_count [
+	^ self ffiCall: #(agpu_int agpuGetMultiSampleQualityLevels (agpu_device* device , agpu_texture_format format , agpu_uint sample_count) )
 ]
 
 { #category : #'device' }
@@ -965,7 +965,17 @@ AGPUCBindings >> getColorAttachmentFormats_renderpass: renderpass color_attachme
 
 { #category : #'renderpass' }
 AGPUCBindings >> getDepthStencilAttachmentFormat_renderpass: renderpass [
-	^ self ffiCall: #(agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat (agpu_renderpass* renderpass) )
+	^ self ffiCall: #(agpu_texture_format agpuGetRenderPassDepthStencilAttachmentFormat (agpu_renderpass* renderpass) )
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getSampleCount_renderpass: renderpass [
+	^ self ffiCall: #(agpu_uint agpuGetRenderPassSampleCount (agpu_renderpass* renderpass) )
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getSampleQuality_renderpass: renderpass [
+	^ self ffiCall: #(agpu_uint agpuGetRenderPassSampleQuality (agpu_renderpass* renderpass) )
 ]
 
 { #category : #'shader_signature_builder' }

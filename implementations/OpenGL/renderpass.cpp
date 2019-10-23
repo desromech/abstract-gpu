@@ -20,12 +20,25 @@ agpu::renderpass_ref GLRenderPass::create(const agpu::device_ref &device, agpu_r
     auto result = agpu::makeObject<GLRenderPass> (device);
     auto renderpass = result.as<GLRenderPass> ();
 
+    renderpass->sampleCount = 1;
+    renderpass->sampleQuality = 0;
+
     renderpass->colorAttachments.resize(description->color_attachment_count);
     for (size_t i = 0; i < description->color_attachment_count; ++i)
-        renderpass->colorAttachments[i] = description->color_attachments[i];
+    {
+        auto &attachment = description->color_attachments[i];
+        renderpass->colorAttachments[i] = attachment;
+        renderpass->sampleCount = attachment.sample_count;
+        renderpass->sampleQuality = attachment.sample_quality;
+    }
     renderpass->hasDepthStencil = description->depth_stencil_attachment != nullptr;
     if (renderpass->hasDepthStencil)
-        renderpass->depthStencilAttachment = *description->depth_stencil_attachment;
+    {
+        auto &attachment = *description->depth_stencil_attachment;
+        renderpass->depthStencilAttachment = attachment;
+        renderpass->sampleCount = attachment.sample_count;
+        renderpass->sampleQuality = attachment.sample_quality;
+    }
     return result;
 }
 
@@ -103,6 +116,16 @@ agpu_error GLRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_c
 agpu_texture_format GLRenderPass::getDepthStencilAttachmentFormat()
 {
     return hasDepthStencil ? depthStencilAttachment.format : AGPU_TEXTURE_FORMAT_UNKNOWN;
+}
+
+agpu_uint GLRenderPass::getSampleCount()
+{
+    return sampleCount;
+}
+
+agpu_uint GLRenderPass::getSampleQuality()
+{
+    return sampleQuality;
 }
 
 } // End of namespace AgpuGL

@@ -20,6 +20,8 @@ public:
     virtual agpu_error setColorClearValueFrom ( agpu_uint attachment_index, agpu_color4f* value) override;
     virtual agpu_error getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats) override;
     virtual agpu_texture_format getDepthStencilAttachmentFormat() override;
+    virtual agpu_uint getSampleCount() override;
+    virtual agpu_uint getSampleQuality() override;
 
     void started();
 
@@ -27,6 +29,8 @@ public:
     std::vector<agpu_renderpass_color_attachment_description> colorAttachments;
     agpu_renderpass_depth_stencil_description depthStencilAttachment;
     bool hasDepthStencil;
+    agpu_uint sampleCount;
+    agpu_uint sampleQuality;
 };
 
 } // End of namespace AgpuGL

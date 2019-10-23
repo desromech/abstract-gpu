@@ -174,9 +174,9 @@ AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* self)
 	return reinterpret_cast<agpu_fence*> (asRef(agpu::device, self)->createFence());
 }
 
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* self, agpu_uint sample_count)
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* self, agpu_texture_format format, agpu_uint sample_count)
 {
-	return asRef(agpu::device, self)->getMultiSampleQualityLevels(sample_count);
+	return asRef(agpu::device, self)->getMultiSampleQualityLevels(format, sample_count);
 }
 
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device* self)
@@ -1177,9 +1177,19 @@ AGPU_EXPORT agpu_error agpuGetRenderPassColorAttachmentFormats(agpu_renderpass* 
 	return asRef(agpu::renderpass, self)->getColorAttachmentFormats(color_attachment_count, formats);
 }
 
-AGPU_EXPORT agpu_texture_format agpuGetRenderPassgetDepthStencilAttachmentFormat(agpu_renderpass* self)
+AGPU_EXPORT agpu_texture_format agpuGetRenderPassDepthStencilAttachmentFormat(agpu_renderpass* self)
 {
 	return asRef(agpu::renderpass, self)->getDepthStencilAttachmentFormat();
+}
+
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleCount(agpu_renderpass* self)
+{
+	return asRef(agpu::renderpass, self)->getSampleCount();
+}
+
+AGPU_EXPORT agpu_uint agpuGetRenderPassSampleQuality(agpu_renderpass* self)
+{
+	return asRef(agpu::renderpass, self)->getSampleQuality();
 }
 
 //==============================================================================

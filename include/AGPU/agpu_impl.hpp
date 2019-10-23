@@ -547,7 +547,7 @@ public:
 	virtual texture_ptr createTexture(agpu_texture_description* description) = 0;
 	virtual sampler_ptr createSampler(agpu_sampler_description* description) = 0;
 	virtual fence_ptr createFence() = 0;
-	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) = 0;
+	virtual agpu_int getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count) = 0;
 	virtual agpu_bool hasTopLeftNdcOrigin() = 0;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() = 0;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) = 0;
@@ -810,6 +810,8 @@ public:
 	virtual agpu_error setColorClearValueFrom(agpu_uint attachment_index, agpu_color4f* value) = 0;
 	virtual agpu_error getColorAttachmentFormats(agpu_uint* color_attachment_count, agpu_texture_format* formats) = 0;
 	virtual agpu_texture_format getDepthStencilAttachmentFormat() = 0;
+	virtual agpu_uint getSampleCount() = 0;
+	virtual agpu_uint getSampleQuality() = 0;
 };
 
 

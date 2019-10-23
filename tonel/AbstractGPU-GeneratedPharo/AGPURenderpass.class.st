@@ -53,3 +53,17 @@ AGPURenderpass >> getDepthStencilAttachmentFormat [
 	^ resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPURenderpass >> getSampleCount [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getSampleCount_renderpass: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPURenderpass >> getSampleQuality [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getSampleQuality_renderpass: (self validHandle).
+	^ resultValue_
+]
+

@@ -22,17 +22,26 @@ agpu::renderpass_ref ADXRenderPass::create(const agpu::device_ref &device, agpu_
     auto result = agpu::makeObject<ADXRenderPass> (device);
     auto adxRenderpass = result.as<ADXRenderPass> ();
 
+	adxRenderpass->sampleCount = 1;
+	adxRenderpass->sampleQuality = 0;
+
     adxRenderpass->colorAttachments.reserve(description->color_attachment_count);
     for (size_t i = 0; i < description->color_attachment_count; ++i)
     {
-        adxRenderpass->colorAttachments.push_back(description->color_attachments[i]);
-    }
+		auto& attachment = description->color_attachments[i];
+        adxRenderpass->colorAttachments.push_back(attachment);
+		adxRenderpass->sampleCount = attachment.sample_count;
+		adxRenderpass->sampleQuality = attachment.sample_quality;
+	}
 
     if (description->depth_stencil_attachment)
     {
-        adxRenderpass->depthStencilAttachment = *description->depth_stencil_attachment;
+		auto& attachment = *description->depth_stencil_attachment;
+		adxRenderpass->depthStencilAttachment = attachment;
         adxRenderpass->hasDepth = hasDepthComponent(adxRenderpass->depthStencilAttachment.format);
         adxRenderpass->hasStencil = hasStencilComponent(adxRenderpass->depthStencilAttachment.format);
+		adxRenderpass->sampleCount = attachment.sample_count;
+		adxRenderpass->sampleQuality = attachment.sample_quality;
     }
 
     return result;
@@ -78,6 +87,16 @@ agpu_error ADXRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_
 agpu_texture_format ADXRenderPass::getDepthStencilAttachmentFormat()
 {
     return depthStencilAttachment.format;
+}
+
+agpu_uint ADXRenderPass::getSampleCount()
+{
+	return sampleCount;
+}
+
+agpu_uint ADXRenderPass::getSampleQuality()
+{
+	return sampleQuality;
 }
 
 } // End of namespace AgpuD3D12

@@ -104,12 +104,14 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     auto mainUsageMode = description->main_usage_mode;
     if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
-        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
+	{
+		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		if ((usageModes & (AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STORAGE)) == 0)
+			desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+	}
     if (usageModes & AGPU_TEXTURE_USAGE_STORAGE)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    if ((usageModes & (AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STORAGE)) == 0)
-        desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
     auto texture = agpu::makeObject<ADXTexture> (device);
     auto adxTexture = texture.as<ADXTexture> ();
@@ -122,12 +124,12 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     D3D12_CLEAR_VALUE clearValueData = {};
 	clearValueData.Format = desc.Format;
     auto clearValuePointer = &clearValueData;
-    if (mainUsageMode & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
+    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
     {
         clearValueData.DepthStencil.Depth = 1;
         clearValueData.DepthStencil.Stencil = 0;
     }
-    else if((mainUsageMode & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT) == 0)
+    else if((usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT) == 0)
     {
         clearValuePointer = nullptr;
     }

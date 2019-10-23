@@ -194,8 +194,8 @@ AGPUCBindings >> createFence_device: device [
 ]
 
 { #category : #'device' }
-AGPUCBindings >> getMultiSampleQualityLevels_device: device sample_count: sample_count [
-	<cdecl: long 'agpuGetMultiSampleQualityLevels' (void* ulong)>
+AGPUCBindings >> getMultiSampleQualityLevels_device: device format: format sample_count: sample_count [
+	<cdecl: long 'agpuGetMultiSampleQualityLevels' (void* long ulong)>
 	^ self externalCallFailed
 ]
 
@@ -1155,7 +1155,19 @@ AGPUCBindings >> getColorAttachmentFormats_renderpass: renderpass color_attachme
 
 { #category : #'renderpass' }
 AGPUCBindings >> getDepthStencilAttachmentFormat_renderpass: renderpass [
-	<cdecl: long 'agpuGetRenderPassgetDepthStencilAttachmentFormat' (void*)>
+	<cdecl: long 'agpuGetRenderPassDepthStencilAttachmentFormat' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getSampleCount_renderpass: renderpass [
+	<cdecl: ulong 'agpuGetRenderPassSampleCount' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'renderpass' }
+AGPUCBindings >> getSampleQuality_renderpass: renderpass [
+	<cdecl: ulong 'agpuGetRenderPassSampleQuality' (void*)>
 	^ self externalCallFailed
 ]
 
