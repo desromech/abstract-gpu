@@ -1071,6 +1071,7 @@
             </method>
 
             <method name="getMultiSampleQualityLevels" cname="GetMultiSampleQualityLevels" returnType="int">
+                <arg name="format" type="texture_format" />
                 <arg name="sample_count" type="uint" />
             </method>
 

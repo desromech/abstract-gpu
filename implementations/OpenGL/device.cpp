@@ -209,9 +209,9 @@ void GLDevice::readVersionInformation()
     }
 }
 
-agpu_int GLDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
+agpu_int GLDevice::getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)
 {
-    return 1;
+    return sample_count > 1 ? 1 : 0;
 }
 
 

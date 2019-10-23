@@ -54,7 +54,7 @@ public:
 	virtual agpu::texture_ptr createTexture(agpu_texture_description* description) override;
 	virtual agpu::sampler_ptr createSampler(agpu_sampler_description* description) override;
 	virtual agpu::fence_ptr createFence() override;
-	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) override;
+	virtual agpu_int getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count) override;
 	virtual agpu_bool hasTopLeftNdcOrigin() override;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;

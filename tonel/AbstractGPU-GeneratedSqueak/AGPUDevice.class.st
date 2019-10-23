@@ -152,9 +152,9 @@ AGPUDevice >> createFence [
 ]
 
 { #category : #'wrappers' }
-AGPUDevice >> getMultiSampleQualityLevels: sample_count [
+AGPUDevice >> getMultiSampleQualityLevels: format sample_count: sample_count [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getMultiSampleQualityLevels_device: (self validHandle) sample_count: sample_count.
+	resultValue_ := AGPUCBindings uniqueInstance getMultiSampleQualityLevels_device: (self validHandle) format: format sample_count: sample_count.
 	^ resultValue_
 ]
 

@@ -164,8 +164,8 @@ AGPUCBindings >> createFence_device: device [
 ]
 
 { #category : #'device' }
-AGPUCBindings >> getMultiSampleQualityLevels_device: device sample_count: sample_count [
-	^ self ffiCall: #(agpu_int agpuGetMultiSampleQualityLevels (agpu_device* device , agpu_uint sample_count) )
+AGPUCBindings >> getMultiSampleQualityLevels_device: device format: format sample_count: sample_count [
+	^ self ffiCall: #(agpu_int agpuGetMultiSampleQualityLevels (agpu_device* device , agpu_texture_format format , agpu_uint sample_count) )
 ]
 
 { #category : #'device' }

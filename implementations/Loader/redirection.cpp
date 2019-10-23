@@ -249,12 +249,12 @@ AGPU_EXPORT agpu_fence* agpuCreateFence ( agpu_device* device )
 	return (*dispatchTable)->agpuCreateFence ( device );
 }
 
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_uint sample_count )
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels ( agpu_device* device, agpu_texture_format format, agpu_uint sample_count )
 {
 	if (device == nullptr)
 		return (agpu_int)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
-	return (*dispatchTable)->agpuGetMultiSampleQualityLevels ( device, sample_count );
+	return (*dispatchTable)->agpuGetMultiSampleQualityLevels ( device, format, sample_count );
 }
 
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin ( agpu_device* device )

@@ -173,7 +173,7 @@ agpu::fence_ptr AMtlDevice::createFence()
 
 agpu_int AMtlDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
 {
-    return sample_count == 1 ? 1 : 0;
+    return sample_count > 1 ? 1 : 0;
 }
 
 agpu_bool AMtlDevice::hasTopLeftNdcOrigin()

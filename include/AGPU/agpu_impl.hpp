@@ -547,7 +547,7 @@ public:
 	virtual texture_ptr createTexture(agpu_texture_description* description) = 0;
 	virtual sampler_ptr createSampler(agpu_sampler_description* description) = 0;
 	virtual fence_ptr createFence() = 0;
-	virtual agpu_int getMultiSampleQualityLevels(agpu_uint sample_count) = 0;
+	virtual agpu_int getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count) = 0;
 	virtual agpu_bool hasTopLeftNdcOrigin() = 0;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() = 0;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) = 0;

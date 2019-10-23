@@ -194,8 +194,8 @@ AGPUCBindings >> createFence_device: device [
 ]
 
 { #category : #'device' }
-AGPUCBindings >> getMultiSampleQualityLevels_device: device sample_count: sample_count [
-	<cdecl: long 'agpuGetMultiSampleQualityLevels' (void* ulong)>
+AGPUCBindings >> getMultiSampleQualityLevels_device: device format: format sample_count: sample_count [
+	<cdecl: long 'agpuGetMultiSampleQualityLevels' (void* long ulong)>
 	^ self externalCallFailed
 ]
 

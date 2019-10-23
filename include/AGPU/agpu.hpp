@@ -290,9 +290,9 @@ public:
 		return agpuCreateFence(this);
 	}
 
-	inline agpu_int getMultiSampleQualityLevels(agpu_uint sample_count)
+	inline agpu_int getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)
 	{
-		return agpuGetMultiSampleQualityLevels(this, sample_count);
+		return agpuGetMultiSampleQualityLevels(this, format, sample_count);
 	}
 
 	inline agpu_bool hasTopLeftNdcOrigin()

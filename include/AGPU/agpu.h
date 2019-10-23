@@ -998,7 +998,7 @@ typedef agpu_renderpass* (*agpuCreateRenderPass_FUN) (agpu_device* device, agpu_
 typedef agpu_texture* (*agpuCreateTexture_FUN) (agpu_device* device, agpu_texture_description* description);
 typedef agpu_sampler* (*agpuCreateSampler_FUN) (agpu_device* device, agpu_sampler_description* description);
 typedef agpu_fence* (*agpuCreateFence_FUN) (agpu_device* device);
-typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) (agpu_device* device, agpu_uint sample_count);
+typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) (agpu_device* device, agpu_texture_format format, agpu_uint sample_count);
 typedef agpu_bool (*agpuHasTopLeftNdcOrigin_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuHasBottomLeftTextureCoordinates_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) (agpu_device* device, agpu_feature feature);
@@ -1028,7 +1028,7 @@ AGPU_EXPORT agpu_renderpass* agpuCreateRenderPass(agpu_device* device, agpu_rend
 AGPU_EXPORT agpu_texture* agpuCreateTexture(agpu_device* device, agpu_texture_description* description);
 AGPU_EXPORT agpu_sampler* agpuCreateSampler(agpu_device* device, agpu_sampler_description* description);
 AGPU_EXPORT agpu_fence* agpuCreateFence(agpu_device* device);
-AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_uint sample_count);
+AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_texture_format format, agpu_uint sample_count);
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature);
