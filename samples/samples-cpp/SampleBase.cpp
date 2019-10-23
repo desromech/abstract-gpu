@@ -477,8 +477,7 @@ void SampleBase::swapBuffers()
 agpu_renderpass_ref SampleBase::createMainPass(const glm::vec4 &clearColor)
 {
     // Color attachment
-    agpu_renderpass_color_attachment_description colorAttachment;
-    memset(&colorAttachment, 0, sizeof(colorAttachment));
+    agpu_renderpass_color_attachment_description colorAttachment = {};
     colorAttachment.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
     colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
@@ -486,17 +485,17 @@ agpu_renderpass_ref SampleBase::createMainPass(const glm::vec4 &clearColor)
     colorAttachment.clear_value.g = clearColor.g;
     colorAttachment.clear_value.b = clearColor.b;
     colorAttachment.clear_value.a = clearColor.a;
+    colorAttachment.sample_count = 1;
 
     // Depth stencil
-    agpu_renderpass_depth_stencil_description depthStencil;
-    memset(&depthStencil, 0, sizeof(depthStencil));
+    agpu_renderpass_depth_stencil_description depthStencil = {};
     depthStencil.format = AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT;
     depthStencil.begin_action = AGPU_ATTACHMENT_CLEAR;
     depthStencil.end_action = AGPU_ATTACHMENT_KEEP;
     depthStencil.clear_value.depth = 1.0;
+    depthStencil.sample_count = 1;
 
-    agpu_renderpass_description description;
-    memset(&description, 0, sizeof(description));
+    agpu_renderpass_description description = {};
     description.color_attachment_count = 1;
     description.color_attachments = &colorAttachment;
     description.depth_stencil_attachment = &depthStencil;

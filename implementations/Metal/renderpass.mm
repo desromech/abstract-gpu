@@ -50,14 +50,25 @@ agpu::renderpass_ref AMtlRenderPass::create(const agpu::device_ref &device, agpu
     auto renderpass = result.as<AMtlRenderPass> ();
 
     // Store the color attachments.
+    renderpass->sampleCount = 1;
+    renderpass->sampleQuality = 0;
     renderpass->colorAttachments.reserve(description->color_attachment_count);
     for(int i = 0; i < description->color_attachment_count; ++i)
-        renderpass->colorAttachments.push_back(description->color_attachments[i]);
+    {
+        auto &attachment = description->color_attachments[i];
+        renderpass->sampleCount = attachment.sample_count;
+        renderpass->sampleQuality = attachment.sample_quality;
+        renderpass->colorAttachments.push_back(attachment);
+    }
 
     renderpass->hasDepthStencil = description->depth_stencil_attachment != nullptr;
     if(renderpass->hasDepthStencil)
     {
-        renderpass->depthStencil = *description->depth_stencil_attachment;
+        auto &attachment = *description->depth_stencil_attachment;
+        renderpass->depthStencil = attachment;
+        renderpass->sampleCount = attachment.sample_count;
+        renderpass->sampleQuality = attachment.sample_quality;
+
         auto depthStencilFormat = renderpass->depthStencil.format;
         renderpass->hasStencil = depthStencilFormat == AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ||
             depthStencilFormat == AGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT;
@@ -173,6 +184,16 @@ agpu_error AMtlRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment
 agpu_texture_format AMtlRenderPass::getDepthStencilAttachmentFormat()
 {
     return hasDepthStencil ? depthStencil.format : AGPU_TEXTURE_FORMAT_UNKNOWN;
+}
+
+agpu_uint AMtlRenderPass::getSampleCount()
+{
+    return sampleCount;
+}
+
+agpu_uint AMtlRenderPass::getSampleQuality()
+{
+    return sampleQuality;
 }
 
 } // End of namespace AgpuMetal

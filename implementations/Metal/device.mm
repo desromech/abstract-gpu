@@ -171,7 +171,7 @@ agpu::fence_ptr AMtlDevice::createFence()
     return AMtlFence::create(refFromThis<agpu::device> ()).disown();
 }
 
-agpu_int AMtlDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
+agpu_int AMtlDevice::getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)
 {
     return 1;
 }
