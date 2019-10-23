@@ -208,11 +208,13 @@ agpu::fence_ptr ADXDevice::createFence()
     return ADXFence::create(refFromThis<agpu::device> ()).disown();
 }
 
-agpu_int ADXDevice::getMultiSampleQualityLevels(agpu_uint sample_count)
+agpu_int ADXDevice::getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)
 {
-    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS levels;
-    memset(&levels, 0, sizeof(levels));
-    levels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	if (sample_count == 1)
+		return 1;
+
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS levels = {};
+    levels.Format = DXGI_FORMAT(format);
     levels.SampleCount = sample_count;
     if (FAILED(d3dDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &levels, sizeof(levels))))
         return 0;

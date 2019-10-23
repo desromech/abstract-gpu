@@ -719,7 +719,7 @@ agpu_bool AVkDevice::isFeatureSupported(agpu_feature feature)
 
 agpu_int AVkDevice::getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)
 {
-    return sample_count > 1 ? 1 : 0;
+    return 1;
 }
 
 agpu::command_queue_ptr AVkDevice::getDefaultCommandQueue()
