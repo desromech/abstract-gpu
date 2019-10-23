@@ -267,7 +267,7 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         if(!immediateSharedRenderingStates) return false;
 
         agpu_sampler_description samplerDescription = {};
-        samplerDescription.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+        samplerDescription.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR;
         samplerDescription.max_lod = 1000.0f;
         auto sampler = agpu::sampler_ref(device->createSampler(&samplerDescription));
         if(!sampler) return false;
