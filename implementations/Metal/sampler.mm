@@ -90,7 +90,7 @@ agpu::sampler_ref AMtlSampler::create(const agpu::device_ref &device, agpu_sampl
     descriptor.mipFilter = mapMipmapMode(description->filter);
     descriptor.lodMinClamp = description->min_lod;
     descriptor.lodMaxClamp = description->max_lod;
-    descriptor.maxAnisotropy = std::max(1.0f, description->maxanisotropy);
+    descriptor.maxAnisotropy = description->filter == AGPU_FILTER_ANISOTROPIC ? description->maxanisotropy : 1.0f;
     descriptor.normalizedCoordinates = YES;
     descriptor.compareFunction = mapCompareFunction(description->comparison_function);
 
