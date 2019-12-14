@@ -72,6 +72,8 @@ public:
 
             // Create the pipeline builder
             auto pipelineBuilder = device->createPipelineBuilder();
+            pipelineBuilder->setRenderTargetFormat(0, ColorBufferFormat);
+            pipelineBuilder->setDepthStencilFormat(DepthStencilBufferFormat);
             pipelineBuilder->setShaderSignature(shaderSignature);
             pipelineBuilder->attachShader(vertexShader);
             pipelineBuilder->attachShader(fragmentShader);

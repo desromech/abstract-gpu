@@ -78,6 +78,40 @@ inline MTLStencilOperation mapStencilOperation(agpu_stencil_operation operation)
     }
 }
 
+inline MTLResourceOptions mapBufferMemoryHeapType(agpu_memory_heap_type heapType)
+{
+    switch(heapType)
+    {
+    case AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL:
+        return MTLResourceStorageModePrivate;
+    case AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE:
+        return MTLResourceStorageModeShared | MTLResourceCPUCacheModeWriteCombined;
+    case AGPU_MEMORY_HEAP_TYPE_CUSTOM:
+    case AGPU_MEMORY_HEAP_TYPE_HOST:
+    case AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST:  ;
+        return MTLResourceStorageModeShared | MTLResourceOptionCPUCacheModeDefault;
+    }
+}
+
+inline MTLStorageMode mapTextureStorageMode(agpu_memory_heap_type heapType)
+{
+    switch(heapType)
+    {
+    case AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL:
+        return MTLStorageModePrivate;
+    case AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE:
+    case AGPU_MEMORY_HEAP_TYPE_CUSTOM:
+    case AGPU_MEMORY_HEAP_TYPE_HOST:
+    case AGPU_MEMORY_HEAP_TYPE_DEVICE_TO_HOST:
+#if TARGET_OS_IOS || TARGET_OS_TVOS
+        return MTLStorageModeShared;
+#endif
+#if TARGET_OS_OSX
+        return MTLStorageModeManaged;
+#endif
+    }
+}
+
 } // End of namespace AgpuMetal
 
 #endif //_AGPU_METAL_CONSTANTS_HPP

@@ -98,6 +98,8 @@ AVkImplicitResourceSetupCommandList::~AVkImplicitResourceSetupCommandList()
 
 void AVkImplicitResourceSetupCommandList::destroy()
 {
+    if(commandPool == VK_NULL_HANDLE)
+        return;
 	vkDestroyCommandPool(device.device, commandPool, nullptr);
 	commandPool = VK_NULL_HANDLE;
 	commandBuffer = VK_NULL_HANDLE;

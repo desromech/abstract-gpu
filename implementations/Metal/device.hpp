@@ -1,7 +1,7 @@
 #ifndef _AGPU_METAL_DEVICE_HPP_
 #define _AGPU_METAL_DEVICE_HPP_
 
-#include "common.hpp"
+#include "implicit_resource_command_list.hpp"
 #import <Metal/Metal.h>
 
 namespace AgpuMetal
@@ -47,9 +47,29 @@ public:
 
     id<MTLDevice> device;
 
+    template<typename FT>
+    void withUploadCommandListDo(size_t requiredCpuBufferSize, size_t requiredCpuBufferAlignment, const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceUploadCommandList.mutex);
+        implicitResourceUploadCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
+
+        f(implicitResourceUploadCommandList);
+    }
+
+    template<typename FT>
+    void withReadbackCommandListDo(size_t requiredCpuBufferSize, size_t requiredCpuBufferAlignment, const FT &f)
+    {
+        std::unique_lock<std::mutex> l(implicitResourceReadbackCommandList.mutex);
+        implicitResourceReadbackCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
+
+        f(implicitResourceReadbackCommandList);
+    }
+
 private:
     agpu::command_queue_ref mainCommandQueue;
 
+    AMtlImplicitResourceUploadCommandList implicitResourceUploadCommandList;
+    AMtlImplicitResourceReadbackCommandList implicitResourceReadbackCommandList;
 };
 
 } // End of namespace AgpuMetal

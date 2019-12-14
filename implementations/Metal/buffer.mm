@@ -1,8 +1,9 @@
 #include "buffer.hpp"
+#include "constants.hpp"
 
 namespace AgpuMetal
 {
-    
+
 AMtlBuffer::AMtlBuffer(const agpu::device_ref &device)
     : device(device)
 {
@@ -21,8 +22,8 @@ agpu::buffer_ref AMtlBuffer::create ( const agpu::device_ref &device, agpu_buffe
         return agpu::buffer_ref();
 
     id<MTLBuffer> handle = nil;
-    MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault;
-    if(initial_data)
+    MTLResourceOptions options = mapBufferMemoryHeapType(description->heap_type);
+    if(initial_data && description->heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
         handle = [deviceForMetal->device newBufferWithBytes: initial_data length: description->size options: options];
     else
         handle = [deviceForMetal->device newBufferWithLength: description->size options: options];
@@ -31,6 +32,10 @@ agpu::buffer_ref AMtlBuffer::create ( const agpu::device_ref &device, agpu_buffe
     auto buffer = result.as<AMtlBuffer> ();
     buffer->description = *description;
     buffer->handle = handle;
+
+    if(initial_data && description->heap_type == AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+        buffer->uploadBufferData(0, description->size, initial_data);
+
     return result;
 }
 
@@ -55,13 +60,34 @@ agpu_error AMtlBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_p
     CHECK_POINTER(data)
     if(offset + size > handle.length)
         return AGPU_OUT_OF_BOUNDS;
+        
+    if(description.heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+    {
+        auto contents = reinterpret_cast<uint8_t*> (handle.contents);
+        if(!contents)
+            return AGPU_INVALID_OPERATION;
 
-    auto contents = reinterpret_cast<uint8_t*> (handle.contents);
-    if(!contents)
-        return AGPU_INVALID_OPERATION;
+        memcpy(contents + offset, data, size);
+        return AGPU_OK;
+    }
+    
+    bool uploadResult = false;
+    deviceForMetal->withUploadCommandListDo(size, 1, [&](AMtlImplicitResourceUploadCommandList &uploadList) {
+        // Do we need to stream the buffer upload?.
+        if(size <= uploadList.currentStagingBufferSize)
+        {
+            memcpy(uploadList.currentStagingBufferPointer, data, size);
+            uploadResult = uploadList.setupCommandBuffer()
+                && uploadList.uploadBufferData(handle, offset, size)
+                && uploadList.submitCommandBuffer();
+        }
+        else
+        {
+            abort();
+        }
+    });
 
-    memcpy(contents + offset, data, size);
-    return AGPU_OK;
+    return uploadResult ? AGPU_OK : AGPU_ERROR;
 }
 
 agpu_error AMtlBuffer::readBufferData(agpu_size offset, agpu_size size, agpu_pointer buffer)
@@ -70,12 +96,32 @@ agpu_error AMtlBuffer::readBufferData(agpu_size offset, agpu_size size, agpu_poi
     if(offset + size > handle.length)
         return AGPU_OUT_OF_BOUNDS;
 
-    auto contents = reinterpret_cast<uint8_t*> (handle.contents);
-    if(!contents)
-        return AGPU_INVALID_OPERATION;
+    if(description.heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+    {
+        auto contents = reinterpret_cast<uint8_t*> (handle.contents);
+        if(!contents)
+            return AGPU_INVALID_OPERATION;
 
-    memcpy(buffer, contents + offset, size);
-    return AGPU_OK;
+        memcpy(buffer, contents + offset, size);
+    }
+    
+    bool readbackResult = false;
+    deviceForMetal->withReadbackCommandListDo(size, 1, [&](AMtlImplicitResourceReadbackCommandList &readbackList) {
+        // Do we need to stream the buffer upload?.
+        if(size <= readbackList.currentStagingBufferSize)
+        {
+            readbackResult = readbackList.setupCommandBuffer()
+                && readbackList.readbackBufferData(handle, offset, size)
+                && readbackList.submitCommandBuffer();
+            memcpy(buffer, readbackList.currentStagingBufferPointer, size);
+        }
+        else
+        {
+            abort();
+        }
+    });
+
+    return readbackResult ? AGPU_OK : AGPU_ERROR;
 }
 
 agpu_error AMtlBuffer::flushWholeBuffer (  )

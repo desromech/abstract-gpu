@@ -17,6 +17,8 @@ set(AGPU_Metal_SOURCES
     framebuffer.hpp
     framebuffer.mm
     icd.cpp
+    implicit_resource_command_list.mm
+    implicit_resource_command_list.hpp
     pipeline_builder.hpp
     pipeline_builder.mm
     pipeline_state.hpp
