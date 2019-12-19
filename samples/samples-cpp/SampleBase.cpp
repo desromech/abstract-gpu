@@ -322,8 +322,8 @@ int SampleBase::main(int argc, const char **argv)
         return -1;
     }
 
-    swapChainCreateInfo.colorbuffer_format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-    swapChainCreateInfo.depth_stencil_format = AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT;
+    swapChainCreateInfo.colorbuffer_format = ColorBufferFormat;
+    swapChainCreateInfo.depth_stencil_format = DepthStencilBufferFormat;
     swapChainCreateInfo.width = screenWidth;
     swapChainCreateInfo.height = screenHeight;
     swapChainCreateInfo.buffer_count = 3;

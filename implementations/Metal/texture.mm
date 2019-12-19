@@ -2,6 +2,7 @@
 #include "texture_view.hpp"
 #include "texture_format.hpp"
 #include "command_queue.hpp"
+#include "constants.hpp"
 
 namespace AgpuMetal
 {
@@ -52,17 +53,12 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
     descriptor.width = description->width;
     descriptor.height = description->height;
     descriptor.mipmapLevelCount = description->miplevels;
-    descriptor.storageMode = MTLStorageModeManaged; // For upload texture.
-    if(description->sample_count > 1)
-    {
-        descriptor.storageMode = MTLStorageModePrivate;
-    }    
+    descriptor.storageMode = mapTextureStorageMode(description->heap_type); // For upload texture.
 
     auto usageModes = description->usage_modes;
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
     {
         descriptor.usage = MTLTextureUsageRenderTarget;
-        descriptor.storageMode = MTLStorageModePrivate;
     }
     else if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
     {
@@ -106,64 +102,111 @@ agpu_error AMtlTexture::unmapLevel (  )
     return AGPU_UNSUPPORTED;
 }
 
-agpu_error AMtlTexture::readTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer )
+agpu_error AMtlTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer buffer)
 {
-    CHECK_POINTER(buffer);
-
-    // Synchronize this with the GPU
-    // TODO: Avoid this when is not needed.
-    id<MTLCommandBuffer> commandBuffer = [deviceForMetal->getDefaultCommandQueueHandle() commandBuffer];
-    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-    [blitEncoder synchronizeResource: handle];
-    [blitEncoder endEncoding];
-    [commandBuffer commit];
-    [commandBuffer waitUntilCompleted];
-    [commandBuffer release];
-
-    MTLRegion region = getLevelRegion(level);
-    [handle getBytes: buffer
-     bytesPerRow: pitch
-   bytesPerImage: slicePitch
-      fromRegion: region
-     mipmapLevel: level
-           slice: arrayIndex];
-    return AGPU_OK;
+    return readTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, buffer);
 }
 
 agpu_error AMtlTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    if ((description.usage_modes & AGPU_TEXTURE_USAGE_READED_BACK) == 0)
+    {
+        return AGPU_INVALID_OPERATION;
+    }
+
+    // TODO: Compute properly the region and the transfer size.
+    MTLRegion region = getLevelRegion(level);
+    
+    size_t transferSize = slicePitch*region.size.depth;
+    if(transferSize == 0)
+        return AGPU_OK;
+
+    if(description.heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+    {
+#if TARGET_OS_OSX
+        // Synchronize this with the GPU when using a managed texture.
+        // TODO: Avoid this when is not needed.
+        id<MTLCommandBuffer> commandBuffer = [deviceForMetal->getDefaultCommandQueueHandle() commandBuffer];
+        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+        [blitEncoder synchronizeResource: handle];
+        [blitEncoder endEncoding];
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
+        [commandBuffer release];
+#endif
+
+        [handle getBytes: buffer bytesPerRow: pitch bytesPerImage: slicePitch 
+            fromRegion: region mipmapLevel: level slice: arrayIndex];
+        return AGPU_OK;
+    }
+    
+    agpu_error resultCode = AGPU_ERROR;
+    deviceForMetal->withReadbackCommandListDo(transferSize, 1, [&](AMtlImplicitResourceReadbackCommandList &readbackList) {
+        if(readbackList.currentStagingBufferSize < transferSize)
+        {
+            resultCode = AGPU_OUT_OF_MEMORY;
+            return;
+        }
+
+        // Copy the image data into staging buffer.
+        auto success = readbackList.setupCommandBuffer() &&
+            readbackList.readbackImageDataToBuffer(handle, level, arrayIndex, region, pitch, slicePitch) &&
+            readbackList.submitCommandBuffer();
+
+        if(success)
+        {
+            auto readbackPointer = readbackList.currentStagingBufferPointer;
+            memcpy(buffer, readbackPointer, slicePitch*region.size.depth);
+        }
+        resultCode = success ? AGPU_OK : AGPU_ERROR;
+    });
+
+    return resultCode;
 }
 
 agpu_error AMtlTexture::uploadTextureData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data )
 {
-    CHECK_POINTER(data);
-
-    MTLRegion region = getLevelRegion(level);
-
-    [handle replaceRegion:(MTLRegion)region
-          mipmapLevel: level
-                slice: arrayIndex
-            withBytes: data
-          bytesPerRow: pitch
-        bytesPerImage: slicePitch];
-    return AGPU_OK;
+    return uploadTextureSubData(level, arrayIndex, pitch, slicePitch, nullptr, nullptr, data);
 }
 
 agpu_error AMtlTexture::uploadTextureSubData ( agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_size3d* sourceSize, agpu_region3d* destRegion, agpu_pointer data )
 {
     CHECK_POINTER(data);
 
-    // TODO: Implement this properly.
+    // TODO: Compute properly the region and the transfer size.
     MTLRegion region = getLevelRegion(level);
+    
+    size_t transferSize = slicePitch*region.size.depth;
+    if(transferSize == 0)
+        return AGPU_OK;
 
-    [handle replaceRegion:(MTLRegion)region
-          mipmapLevel: level
-                slice: arrayIndex
-            withBytes: data
-          bytesPerRow: pitch
-        bytesPerImage: slicePitch];
-    return AGPU_OK;
+    if(description.heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+    {
+        [handle replaceRegion:(MTLRegion)region mipmapLevel: level slice: arrayIndex
+                withBytes: data bytesPerRow: pitch bytesPerImage: slicePitch];
+        return AGPU_OK;
+    }
+        
+    agpu_error resultCode = AGPU_OK;
+    deviceForMetal->withUploadCommandListDo(transferSize, 1, [&](AMtlImplicitResourceUploadCommandList &uploadList) {
+        if(uploadList.currentStagingBufferSize < transferSize)
+        {
+            resultCode = AGPU_OUT_OF_MEMORY;
+            return;
+        }
+
+        // Copy the image data into the staging buffer.
+        auto bufferPointer = uploadList.currentStagingBufferPointer;
+        memcpy(bufferPointer, data, slicePitch*region.size.depth);
+
+        auto success = uploadList.setupCommandBuffer() &&
+            uploadList.uploadBufferDataToImage(handle, level, arrayIndex, region, pitch, slicePitch) &&
+            uploadList.submitCommandBuffer();
+        resultCode = success ? AGPU_OK : AGPU_ERROR;
+    });
+
+    return resultCode;
 }
 
 agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* viewDescription )

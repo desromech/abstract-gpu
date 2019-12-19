@@ -22,11 +22,17 @@ namespace AgpuMetal
 {
 
 AMtlDevice::AMtlDevice()
+    :
+    implicitResourceUploadCommandList(*this),
+    implicitResourceReadbackCommandList(*this)
 {
 }
 
 AMtlDevice::~AMtlDevice()
 {
+    implicitResourceUploadCommandList.destroy();
+    implicitResourceReadbackCommandList.destroy();
+
     mainCommandQueue.reset();
     if(device)
         [device release];
@@ -49,6 +55,11 @@ agpu::device_ref AMtlDevice::open(agpu_device_open_info *openInfo)
     auto device = result.as<AMtlDevice> ();
     device->device = mtlDevice;
     device->mainCommandQueue = AMtlCommandQueue::create(result, mainCommandQueue);
+    
+    // Store a copy to in the implicit resource command lists.
+    device->implicitResourceUploadCommandList.commandQueue = device->mainCommandQueue;
+    device->implicitResourceReadbackCommandList.commandQueue = device->mainCommandQueue;
+
     return result;
 }
 

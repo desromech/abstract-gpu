@@ -63,7 +63,6 @@ agpu_error AMtlCommandList::setShaderSignature(const agpu::shader_signature_ref 
 {
     currentShaderSignature = signature;
 
-    currentVertexBinding.reset();
     auto oldPipeline = currentPipeline;
     currentPipeline.reset();
 
