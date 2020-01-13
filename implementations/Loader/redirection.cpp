@@ -393,36 +393,52 @@ AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses ( agpu_vr_system* vr_system )
 	return (*dispatchTable)->agpuWaitAndFetchVRPoses ( vr_system );
 }
 
-AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+AGPU_EXPORT agpu_size agpuGetMaxVRTrackedDevicePoseCount ( agpu_vr_system* vr_system )
 {
 	if (vr_system == nullptr)
 		return (agpu_size)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
-	return (*dispatchTable)->agpuGetValidVRTrackedDevicePoseCount ( vr_system );
+	return (*dispatchTable)->agpuGetMaxVRTrackedDevicePoseCount ( vr_system );
 }
 
-AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
-{
-	if (vr_system == nullptr)
-		return AGPU_NULL_POINTER;
-	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
-	return (*dispatchTable)->agpuGetValidVRTrackedDevicePoseInto ( vr_system, index, dest );
-}
-
-AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+AGPU_EXPORT agpu_size agpuGetCurrentVRTrackedDevicePoseCount ( agpu_vr_system* vr_system )
 {
 	if (vr_system == nullptr)
 		return (agpu_size)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
-	return (*dispatchTable)->agpuGetValidVRRenderTrackedDevicePoseCount ( vr_system );
+	return (*dispatchTable)->agpuGetCurrentVRTrackedDevicePoseCount ( vr_system );
 }
 
-AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
+AGPU_EXPORT agpu_error agpuGetCurrentVRTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
 {
 	if (vr_system == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
-	return (*dispatchTable)->agpuGetValidVRRenderTrackedDevicePoseInto ( vr_system, index, dest );
+	return (*dispatchTable)->agpuGetCurrentVRTrackedDevicePoseInto ( vr_system, index, dest );
+}
+
+AGPU_EXPORT agpu_size agpuGetMaxVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetMaxVRRenderTrackedDevicePoseCount ( vr_system );
+}
+
+AGPU_EXPORT agpu_size agpuGetCurrentVRRenderTrackedDevicePoseCount ( agpu_vr_system* vr_system )
+{
+	if (vr_system == nullptr)
+		return (agpu_size)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetCurrentVRRenderTrackedDevicePoseCount ( vr_system );
+}
+
+AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest )
+{
+	if (vr_system == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetCurrentVRRenderTrackedDevicePoseInto ( vr_system, index, dest );
 }
 
 AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )

@@ -391,24 +391,34 @@ public:
 		agpuThrowIfFailed(agpuWaitAndFetchVRPoses(this));
 	}
 
-	inline agpu_size getValidTrackedDevicePoseCount()
+	inline agpu_size getTrackedDeviceMaxPoseCount()
 	{
-		return agpuGetValidVRTrackedDevicePoseCount(this);
+		return agpuGetMaxVRTrackedDevicePoseCount(this);
 	}
 
-	inline void getValidTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest)
+	inline agpu_size getCurrentTrackedDevicePoseCount()
 	{
-		agpuThrowIfFailed(agpuGetValidVRTrackedDevicePoseInto(this, index, dest));
+		return agpuGetCurrentVRTrackedDevicePoseCount(this);
 	}
 
-	inline agpu_size getValidRenderTrackedDevicePoseCount()
+	inline void getCurrentTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest)
 	{
-		return agpuGetValidVRRenderTrackedDevicePoseCount(this);
+		agpuThrowIfFailed(agpuGetCurrentVRTrackedDevicePoseInto(this, index, dest));
 	}
 
-	inline void getValidRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest)
+	inline agpu_size getMaxRenderTrackedDevicePoseCount()
 	{
-		agpuThrowIfFailed(agpuGetValidVRRenderTrackedDevicePoseInto(this, index, dest));
+		return agpuGetMaxVRRenderTrackedDevicePoseCount(this);
+	}
+
+	inline agpu_size getCurrentRenderTrackedDevicePoseCount()
+	{
+		return agpuGetCurrentVRRenderTrackedDevicePoseCount(this);
+	}
+
+	inline void getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest)
+	{
+		agpuThrowIfFailed(agpuGetCurrentVRRenderTrackedDevicePoseInto(this, index, dest));
 	}
 
 	inline agpu_bool pollEvent(agpu_vr_event* event)

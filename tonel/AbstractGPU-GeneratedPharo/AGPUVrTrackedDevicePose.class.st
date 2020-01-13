@@ -20,6 +20,7 @@ AGPUVrTrackedDevicePose class >> fieldsDesc [
 		 agpu_matrix4x4f device_to_absolute_tracking;
 		 agpu_vector3f velocity;
 		 agpu_vector3f angular_velocity;
+		 agpu_bool is_valid;
 	)
 ]
 

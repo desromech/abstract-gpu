@@ -64,6 +64,8 @@ inline agpu_vr_tracked_device_class mapTrackedDeviceClass(vr::TrackedDeviceClass
 AVkVrSystem::AVkVrSystem(const agpu::device_ref &cdevice)
     : weakDevice(cdevice), submissionCommandBufferIndex(0)
 {
+    currentTrackedDevicePoses.resize(vr::k_unMaxTrackedDeviceCount);
+    currentRenderTrackedDevicePoses.resize(vr::k_unMaxTrackedDeviceCount);
 }
 
 AVkVrSystem::~AVkVrSystem()
@@ -152,8 +154,9 @@ agpu_error AVkVrSystem::submitEyeRenderTargets(const agpu::texture_ref & left_ey
 
 agpu_vr_tracked_device_pose AVkVrSystem::convertTrackedDevicePose(agpu_uint deviceId, const vr::TrackedDevicePose_t &devicePose)
 {
-    agpu_vr_tracked_device_pose convertedPose;
-    memset(&convertedPose, 0, sizeof(convertedPose));
+    agpu_vr_tracked_device_pose convertedPose = {};
+    convertedPose.is_valid = devicePose.bPoseIsValid ? 1 : 0;
+    if(!convertedPose.is_valid) return convertedPose;
 
     auto device = weakDevice.lock();
     convertedPose.device_id = deviceId;
@@ -172,52 +175,42 @@ agpu_error AVkVrSystem::waitAndFetchPoses()
 {
     vr::VRCompositor()->WaitGetPoses(trackedDevicesPose, vr::k_unMaxTrackedDeviceCount, renderTrackedDevicesPose, vr::k_unMaxTrackedDeviceCount );
 
-    validTrackedDevicePoses.clear();
     for(size_t i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i)
-    {
-        auto &trackedDevicePose = trackedDevicesPose[i];
-        if(trackedDevicePose.bPoseIsValid)
-            validTrackedDevicePoses.push_back(convertTrackedDevicePose(i, trackedDevicePose));
-    }
+        currentTrackedDevicePoses[i]  = convertTrackedDevicePose(i, trackedDevicesPose[i]);
 
-    validRenderTrackedDevicePoses.clear();
     for(size_t i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i)
-    {
-        auto &trackedDevicePose = renderTrackedDevicesPose[i];
-        if(trackedDevicePose.bPoseIsValid)
-            validRenderTrackedDevicePoses.push_back(convertTrackedDevicePose(i, trackedDevicePose));
-    }
+        currentRenderTrackedDevicePoses[i]  = convertTrackedDevicePose(i, renderTrackedDevicesPose[i]);
 
     return AGPU_OK;
 }
 
-agpu_size AVkVrSystem::getValidTrackedDevicePoseCount()
+agpu_size AVkVrSystem::getCurrentTrackedDevicePoseCount()
 {
-    return validTrackedDevicePoses.size();
+    return currentTrackedDevicePoses.size();
 }
 
-agpu_error AVkVrSystem::getValidTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+agpu_error AVkVrSystem::getCurrentTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
 {
     CHECK_POINTER(dest);
-    if(index >= validTrackedDevicePoses.size())
+    if(index >= currentTrackedDevicePoses.size())
         return AGPU_INVALID_PARAMETER;
 
-    *dest = validTrackedDevicePoses[index];
+    *dest = currentTrackedDevicePoses[index];
     return AGPU_OK;
 }
 
-agpu_size AVkVrSystem::getValidRenderTrackedDevicePoseCount ()
+agpu_size AVkVrSystem::getCurrentRenderTrackedDevicePoseCount ()
 {
-    return validRenderTrackedDevicePoses.size();
+    return currentRenderTrackedDevicePoses.size();
 }
 
-agpu_error AVkVrSystem::getValidRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
+agpu_error AVkVrSystem::getCurrentRenderTrackedDevicePoseInto ( agpu_size index, agpu_vr_tracked_device_pose* dest )
 {
     CHECK_POINTER(dest);
-    if(index >= validRenderTrackedDevicePoses.size())
+    if(index >= currentRenderTrackedDevicePoses.size())
         return AGPU_INVALID_PARAMETER;
 
-    *dest = validRenderTrackedDevicePoses[index];
+    *dest = currentRenderTrackedDevicePoses[index];
     return AGPU_OK;
 }
 
