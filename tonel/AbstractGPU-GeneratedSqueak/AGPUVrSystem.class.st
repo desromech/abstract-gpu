@@ -75,30 +75,44 @@ AGPUVrSystem >> waitAndFetchPoses [
 ]
 
 { #category : #'wrappers' }
-AGPUVrSystem >> getValidTrackedDevicePoseCount [
+AGPUVrSystem >> getMaxTrackedDevicePoseCount [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getValidTrackedDevicePoseCount_vr_system: (self validHandle).
+	resultValue_ := AGPUCBindings uniqueInstance getMaxTrackedDevicePoseCount_vr_system: (self validHandle).
 	^ resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUVrSystem >> getValidTrackedDevicePoseInto: index dest: dest [
+AGPUVrSystem >> getCurrentTrackedDevicePoseCount [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getValidTrackedDevicePoseInto_vr_system: (self validHandle) index: index dest: dest.
+	resultValue_ := AGPUCBindings uniqueInstance getCurrentTrackedDevicePoseCount_vr_system: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> getCurrentTrackedDevicePoseInto: index dest: dest [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getCurrentTrackedDevicePoseInto_vr_system: (self validHandle) index: index dest: dest.
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUVrSystem >> getValidRenderTrackedDevicePoseCount [
+AGPUVrSystem >> getMaxRenderTrackedDevicePoseCount [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getValidRenderTrackedDevicePoseCount_vr_system: (self validHandle).
+	resultValue_ := AGPUCBindings uniqueInstance getMaxRenderTrackedDevicePoseCount_vr_system: (self validHandle).
 	^ resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUVrSystem >> getValidRenderTrackedDevicePoseInto: index dest: dest [
+AGPUVrSystem >> getCurrentRenderTrackedDevicePoseCount [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getValidRenderTrackedDevicePoseInto_vr_system: (self validHandle) index: index dest: dest.
+	resultValue_ := AGPUCBindings uniqueInstance getCurrentRenderTrackedDevicePoseCount_vr_system: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUVrSystem >> getCurrentRenderTrackedDevicePoseInto: index dest: dest [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getCurrentRenderTrackedDevicePoseInto_vr_system: (self validHandle) index: index dest: dest.
 	self checkErrorCode: resultValue_
 ]
 

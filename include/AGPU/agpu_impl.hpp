@@ -571,10 +571,12 @@ public:
 	virtual agpu_error getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum) = 0;
 	virtual agpu_error submitEyeRenderTargets(const texture_ref & left_eye, const texture_ref & right_eye) = 0;
 	virtual agpu_error waitAndFetchPoses() = 0;
-	virtual agpu_size getValidTrackedDevicePoseCount() = 0;
-	virtual agpu_error getValidTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
-	virtual agpu_size getValidRenderTrackedDevicePoseCount() = 0;
-	virtual agpu_error getValidRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
+	virtual agpu_size getMaxTrackedDevicePoseCount() = 0;
+	virtual agpu_size getCurrentTrackedDevicePoseCount() = 0;
+	virtual agpu_error getCurrentTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
+	virtual agpu_size getMaxRenderTrackedDevicePoseCount() = 0;
+	virtual agpu_size getCurrentRenderTrackedDevicePoseCount() = 0;
+	virtual agpu_error getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
 	virtual agpu_bool pollEvent(agpu_vr_event* event) = 0;
 };
 

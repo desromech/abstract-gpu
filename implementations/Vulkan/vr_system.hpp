@@ -52,10 +52,12 @@ public:
     virtual agpu_error submitEyeRenderTargets(const agpu::texture_ref & left_eye, const agpu::texture_ref & right_eye) override;
 
     virtual agpu_error waitAndFetchPoses() override;
-    virtual agpu_size getValidTrackedDevicePoseCount() override;
-    virtual agpu_error getValidTrackedDevicePoseInto( agpu_size index, agpu_vr_tracked_device_pose* dest) override;
-    virtual agpu_size getValidRenderTrackedDevicePoseCount() override;
-    virtual agpu_error getValidRenderTrackedDevicePoseInto( agpu_size index, agpu_vr_tracked_device_pose* dest) override;
+    virtual agpu_size getMaxTrackedDevicePoseCount() override;
+	virtual agpu_size getCurrentTrackedDevicePoseCount() override;
+	virtual agpu_error getCurrentTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) override;
+	virtual agpu_size getMaxRenderTrackedDevicePoseCount() override;
+	virtual agpu_size getCurrentRenderTrackedDevicePoseCount() override;
+	virtual agpu_error getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) override;
 
     virtual agpu_bool pollEvent ( agpu_vr_event* event ) override;
 
@@ -64,8 +66,8 @@ public:
 private:
     agpu_vr_tracked_device_pose convertTrackedDevicePose(agpu_uint deviceId, const vr::TrackedDevicePose_t &devicePose);
 
-    std::vector<agpu_vr_tracked_device_pose> validTrackedDevicePoses;
-    std::vector<agpu_vr_tracked_device_pose> validRenderTrackedDevicePoses;
+    std::vector<agpu_vr_tracked_device_pose> currentTrackedDevicePoses;
+    std::vector<agpu_vr_tracked_device_pose> currentRenderTrackedDevicePoses;
     vr::TrackedDevicePose_t trackedDevicesPose[vr::k_unMaxTrackedDeviceCount];
     vr::TrackedDevicePose_t renderTrackedDevicesPose[vr::k_unMaxTrackedDeviceCount];
 

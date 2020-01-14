@@ -302,26 +302,38 @@ AGPUCBindings >> waitAndFetchPoses_vr_system: vr_system [
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidTrackedDevicePoseCount_vr_system: vr_system [
-	<cdecl: ulong 'agpuGetValidVRTrackedDevicePoseCount' (void*)>
+AGPUCBindings >> getMaxTrackedDevicePoseCount_vr_system: vr_system [
+	<cdecl: ulong 'agpuGetMaxVRTrackedDevicePoseCount' (void*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
-	<cdecl: long 'agpuGetValidVRTrackedDevicePoseInto' (void* ulong AGPUVrTrackedDevicePose*)>
+AGPUCBindings >> getCurrentTrackedDevicePoseCount_vr_system: vr_system [
+	<cdecl: ulong 'agpuGetCurrentVRTrackedDevicePoseCount' (void*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidRenderTrackedDevicePoseCount_vr_system: vr_system [
-	<cdecl: ulong 'agpuGetValidVRRenderTrackedDevicePoseCount' (void*)>
+AGPUCBindings >> getCurrentTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	<cdecl: long 'agpuGetCurrentVRTrackedDevicePoseInto' (void* ulong AGPUVrTrackedDevicePose*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidRenderTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
-	<cdecl: long 'agpuGetValidVRRenderTrackedDevicePoseInto' (void* ulong AGPUVrTrackedDevicePose*)>
+AGPUCBindings >> getMaxRenderTrackedDevicePoseCount_vr_system: vr_system [
+	<cdecl: ulong 'agpuGetMaxVRRenderTrackedDevicePoseCount' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getCurrentRenderTrackedDevicePoseCount_vr_system: vr_system [
+	<cdecl: ulong 'agpuGetCurrentVRRenderTrackedDevicePoseCount' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getCurrentRenderTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	<cdecl: long 'agpuGetCurrentVRRenderTrackedDevicePoseInto' (void* ulong AGPUVrTrackedDevicePose*)>
 	^ self externalCallFailed
 ]
 

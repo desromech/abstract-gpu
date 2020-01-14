@@ -254,23 +254,33 @@ AGPUCBindings >> waitAndFetchPoses_vr_system: vr_system [
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidTrackedDevicePoseCount_vr_system: vr_system [
-	^ self ffiCall: #(agpu_size agpuGetValidVRTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+AGPUCBindings >> getMaxTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetMaxVRTrackedDevicePoseCount (agpu_vr_system* vr_system) )
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
-	^ self ffiCall: #(agpu_error agpuGetValidVRTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
+AGPUCBindings >> getCurrentTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetCurrentVRTrackedDevicePoseCount (agpu_vr_system* vr_system) )
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidRenderTrackedDevicePoseCount_vr_system: vr_system [
-	^ self ffiCall: #(agpu_size agpuGetValidVRRenderTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+AGPUCBindings >> getCurrentTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_error agpuGetCurrentVRTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getValidRenderTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
-	^ self ffiCall: #(agpu_error agpuGetValidVRRenderTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
+AGPUCBindings >> getMaxRenderTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetMaxVRRenderTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getCurrentRenderTrackedDevicePoseCount_vr_system: vr_system [
+	^ self ffiCall: #(agpu_size agpuGetCurrentVRRenderTrackedDevicePoseCount (agpu_vr_system* vr_system) )
+]
+
+{ #category : #'vr_system' }
+AGPUCBindings >> getCurrentRenderTrackedDevicePoseInto_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto (agpu_vr_system* vr_system , agpu_size index , agpu_vr_tracked_device_pose* dest) )
 ]
 
 { #category : #'vr_system' }
