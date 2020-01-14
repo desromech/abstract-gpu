@@ -571,7 +571,7 @@ public:
 	virtual agpu_error getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frustum_tangents* frustum) = 0;
 	virtual agpu_error submitEyeRenderTargets(const texture_ref & left_eye, const texture_ref & right_eye) = 0;
 	virtual agpu_error waitAndFetchPoses() = 0;
-	virtual agpu_size getTrackedDeviceMaxPoseCount() = 0;
+	virtual agpu_size getMaxTrackedDevicePoseCount() = 0;
 	virtual agpu_size getCurrentTrackedDevicePoseCount() = 0;
 	virtual agpu_error getCurrentTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
 	virtual agpu_size getMaxRenderTrackedDevicePoseCount() = 0;

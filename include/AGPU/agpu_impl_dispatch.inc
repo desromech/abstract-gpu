@@ -279,7 +279,7 @@ AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses(agpu_vr_system* self)
 
 AGPU_EXPORT agpu_size agpuGetMaxVRTrackedDevicePoseCount(agpu_vr_system* self)
 {
-	return asRef(agpu::vr_system, self)->getTrackedDeviceMaxPoseCount();
+	return asRef(agpu::vr_system, self)->getMaxTrackedDevicePoseCount();
 }
 
 AGPU_EXPORT agpu_size agpuGetCurrentVRTrackedDevicePoseCount(agpu_vr_system* self)

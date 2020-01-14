@@ -1143,7 +1143,7 @@
             <method name="waitAndFetchPoses" cname="WaitAndFetchVRPoses" returnType="error">
             </method>
 
-            <method name="getTrackedDeviceMaxPoseCount" cname="GetMaxVRTrackedDevicePoseCount" returnType="size">
+            <method name="getMaxTrackedDevicePoseCount" cname="GetMaxVRTrackedDevicePoseCount" returnType="size">
             </method>
 
             <method name="getCurrentTrackedDevicePoseCount" cname="GetCurrentVRTrackedDevicePoseCount" returnType="size">

@@ -302,7 +302,7 @@ AGPUCBindings >> waitAndFetchPoses_vr_system: vr_system [
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getTrackedDeviceMaxPoseCount_vr_system: vr_system [
+AGPUCBindings >> getMaxTrackedDevicePoseCount_vr_system: vr_system [
 	<cdecl: ulong 'agpuGetMaxVRTrackedDevicePoseCount' (void*)>
 	^ self externalCallFailed
 ]

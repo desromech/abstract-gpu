@@ -75,9 +75,9 @@ AGPUVrSystem >> waitAndFetchPoses [
 ]
 
 { #category : #'wrappers' }
-AGPUVrSystem >> getTrackedDeviceMaxPoseCount [
+AGPUVrSystem >> getMaxTrackedDevicePoseCount [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance getTrackedDeviceMaxPoseCount_vr_system: (self validHandle).
+	resultValue_ := AGPUCBindings uniqueInstance getMaxTrackedDevicePoseCount_vr_system: (self validHandle).
 	^ resultValue_
 ]
 

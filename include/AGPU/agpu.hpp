@@ -391,7 +391,7 @@ public:
 		agpuThrowIfFailed(agpuWaitAndFetchVRPoses(this));
 	}
 
-	inline agpu_size getTrackedDeviceMaxPoseCount()
+	inline agpu_size getMaxTrackedDevicePoseCount()
 	{
 		return agpuGetMaxVRTrackedDevicePoseCount(this);
 	}

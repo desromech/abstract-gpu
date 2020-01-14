@@ -184,6 +184,16 @@ agpu_error AVkVrSystem::waitAndFetchPoses()
     return AGPU_OK;
 }
 
+agpu_size AVkVrSystem::getMaxTrackedDevicePoseCount()
+{
+    return vr::k_unMaxTrackedDeviceCount;
+}
+
+agpu_size AVkVrSystem::getMaxRenderTrackedDevicePoseCount()
+{
+    return vr::k_unMaxTrackedDeviceCount;
+}
+
 agpu_size AVkVrSystem::getCurrentTrackedDevicePoseCount()
 {
     return currentTrackedDevicePoses.size();

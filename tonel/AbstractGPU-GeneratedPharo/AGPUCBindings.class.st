@@ -254,7 +254,7 @@ AGPUCBindings >> waitAndFetchPoses_vr_system: vr_system [
 ]
 
 { #category : #'vr_system' }
-AGPUCBindings >> getTrackedDeviceMaxPoseCount_vr_system: vr_system [
+AGPUCBindings >> getMaxTrackedDevicePoseCount_vr_system: vr_system [
 	^ self ffiCall: #(agpu_size agpuGetMaxVRTrackedDevicePoseCount (agpu_vr_system* vr_system) )
 ]
 

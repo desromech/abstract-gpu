@@ -52,7 +52,7 @@ public:
     virtual agpu_error submitEyeRenderTargets(const agpu::texture_ref & left_eye, const agpu::texture_ref & right_eye) override;
 
     virtual agpu_error waitAndFetchPoses() override;
-    virtual agpu_size getTrackedDeviceMaxPoseCount() override;
+    virtual agpu_size getMaxTrackedDevicePoseCount() override;
 	virtual agpu_size getCurrentTrackedDevicePoseCount() override;
 	virtual agpu_error getCurrentTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) override;
 	virtual agpu_size getMaxRenderTrackedDevicePoseCount() override;
