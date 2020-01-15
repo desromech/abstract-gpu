@@ -31,32 +31,35 @@
         <property key="externalUnionSuperClass" value="ExternalUnion" />
     </language>
 
+    <language name="Sysmel">
+        <property key="namespace" value="AGPU" />
+    </language>
 </bindings>
 
 <version name="1.0">
     <types>
-        <typedef name="byte" ctype="unsigned char" />
-        <typedef name="sbyte" ctype="signed char" />
-        <typedef name="short" ctype="signed short" />
-        <typedef name="ushort" ctype="unsigned short" />
-        <typedef name="int" ctype="signed int" />
-        <typedef name="uint" ctype="unsigned int" />
-        <typedef name="pointer" ctype="void*" />
-        <typedef name="size" ctype="unsigned int" />
-        <typedef name="enum" ctype="int" />
-        <typedef name="bool" ctype="int" />
+        <typedef name="byte" ctype="unsigned char" sysmelType="UInt8"/>
+        <typedef name="sbyte" ctype="signed char" sysmelType="Int8" />
+        <typedef name="short" ctype="signed short" sysmelType="Int16" />
+        <typedef name="ushort" ctype="unsigned short" sysmelType="UInt16" />
+        <typedef name="int" ctype="signed int" sysmelType="Int32" />
+        <typedef name="uint" ctype="unsigned int" sysmelType="UInt32" />
+        <typedef name="pointer" ctype="void*" sysmelType="Void pointer" />
+        <typedef name="size" ctype="unsigned int" sysmelType="UInt32" />
+        <typedef name="enum" ctype="int" sysmelType="Int32" />
+        <typedef name="bool" ctype="int" sysmelType="Int32" />
 
-        <typedef name="float" ctype="float" />
-        <typedef name="double" ctype="double" />
+        <typedef name="float" ctype="float" sysmelType="Float32" />
+        <typedef name="double" ctype="double" sysmelType="Float64" />
 
-        <typedef name="bitfield" ctype="unsigned int" />
+        <typedef name="bitfield" ctype="unsigned int" sysmelType="UInt32" />
 
-        <typedef name="cstring" ctype="const char*" />
-        <typedef name="string" ctype="const char*" />
-        <typedef name="string_length" ctype="int" />
+        <typedef name="cstring" ctype="const char*" sysmelType="Char8 const pointer" />
+        <typedef name="string" ctype="const char*" sysmelType="Char8 const pointer" />
+        <typedef name="string_length" ctype="int" sysmelType="UInt32" />
 
-        <typedef name="cstring_buffer" ctype="char*" />
-        <typedef name="string_buffer" ctype="char*" />
+        <typedef name="cstring_buffer" ctype="char*" sysmelType="Char8 pointer" />
+        <typedef name="string_buffer" ctype="char*" sysmelType="Char8 pointer" />
     </types>
 
 	<structs>
