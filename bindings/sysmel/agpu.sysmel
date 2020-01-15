@@ -892,6 +892,7 @@ struct VrTrackedDevicePose definition: {
 	public field device_to_absolute_tracking type: Matrix4x4f.
 	public field velocity type: Vector3f.
 	public field angular_velocity type: Vector3f.
+	public field is_valid type: Int32.
 }.
 
 struct VrGenericEvent definition: {
@@ -1005,10 +1006,12 @@ function agpuGetVRProjectionMatrix externC (vr_system: VrSystem pointer, eye: Vr
 function agpuGetVRProjectionFrustumTangents externC (vr_system: VrSystem pointer, eye: VrEye, frustum: FrustumTangents pointer) => Error.
 function agpuSubmitVREyeRenderTargets externC (vr_system: VrSystem pointer, left_eye: Texture pointer, right_eye: Texture pointer) => Error.
 function agpuWaitAndFetchVRPoses externC (vr_system: VrSystem pointer) => Error.
-function agpuGetValidVRTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
-function agpuGetValidVRTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
-function agpuGetValidVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
-function agpuGetValidVRRenderTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
+function agpuGetMaxVRTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
+function agpuGetMaxVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRRenderTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
 function agpuPollVREvent externC (vr_system: VrSystem pointer, event: VrEvent pointer) => Int32.
 function agpuAddSwapChainReference externC (swap_chain: SwapChain pointer) => Error.
 function agpuReleaseSwapChain externC (swap_chain: SwapChain pointer) => Error.
@@ -1503,17 +1506,23 @@ VrSystem extend: {
 	inline method waitAndFetchPoses ::=> Void
 		:= throwIfError: (agpuWaitAndFetchVRPoses(self address)).
 
-	inline method getValidTrackedDevicePoseCount ::=> UInt32
-		:= agpuGetValidVRTrackedDevicePoseCount(self address).
+	inline method getMaxTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetMaxVRTrackedDevicePoseCount(self address).
 
-	inline method getValidTrackedDevicePoseInto: (index: UInt32) dest: (dest: VrTrackedDevicePose pointer) ::=> Void
-		:= throwIfError: (agpuGetValidVRTrackedDevicePoseInto(self address, index, dest)).
+	inline method getCurrentTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetCurrentVRTrackedDevicePoseCount(self address).
 
-	inline method getValidRenderTrackedDevicePoseCount ::=> UInt32
-		:= agpuGetValidVRRenderTrackedDevicePoseCount(self address).
+	inline method getCurrentTrackedDevicePoseInto: (index: UInt32) dest: (dest: VrTrackedDevicePose pointer) ::=> Void
+		:= throwIfError: (agpuGetCurrentVRTrackedDevicePoseInto(self address, index, dest)).
 
-	inline method getValidRenderTrackedDevicePoseInto: (index: UInt32) dest: (dest: VrTrackedDevicePose pointer) ::=> Void
-		:= throwIfError: (agpuGetValidVRRenderTrackedDevicePoseInto(self address, index, dest)).
+	inline method getMaxRenderTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetMaxVRRenderTrackedDevicePoseCount(self address).
+
+	inline method getCurrentRenderTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetCurrentVRRenderTrackedDevicePoseCount(self address).
+
+	inline method getCurrentRenderTrackedDevicePoseInto: (index: UInt32) dest: (dest: VrTrackedDevicePose pointer) ::=> Void
+		:= throwIfError: (agpuGetCurrentVRRenderTrackedDevicePoseInto(self address, index, dest)).
 
 	inline method pollEvent: (event: VrEvent pointer) ::=> Int32
 		:= agpuPollVREvent(self address, event).
