@@ -289,8 +289,9 @@
             <field name="device_to_absolute_tracking" type="matrix4x4f" />
             <field name="velocity" type="vector3f" />
             <field name="angular_velocity" type="vector3f" />
-        </struct>
 
+            <field name="is_valid" type="bool" />
+        </struct>
 
         <struct name="vr_generic_event">
             <field name="word1" type="uint" />
@@ -1145,18 +1146,24 @@
             <method name="waitAndFetchPoses" cname="WaitAndFetchVRPoses" returnType="error">
             </method>
 
-            <method name="getValidTrackedDevicePoseCount" cname="GetValidVRTrackedDevicePoseCount" returnType="size">
+            <method name="getMaxTrackedDevicePoseCount" cname="GetMaxVRTrackedDevicePoseCount" returnType="size">
             </method>
 
-            <method name="getValidTrackedDevicePoseInto" cname="GetValidVRTrackedDevicePoseInto" returnType="error">
+            <method name="getCurrentTrackedDevicePoseCount" cname="GetCurrentVRTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getCurrentTrackedDevicePoseInto" cname="GetCurrentVRTrackedDevicePoseInto" returnType="error">
                 <arg name="index" type="size" />
                 <arg name="dest" type="vr_tracked_device_pose*" />
             </method>
 
-            <method name="getValidRenderTrackedDevicePoseCount" cname="GetValidVRRenderTrackedDevicePoseCount" returnType="size">
+            <method name="getMaxRenderTrackedDevicePoseCount" cname="GetMaxVRRenderTrackedDevicePoseCount" returnType="size">
             </method>
 
-            <method name="getValidRenderTrackedDevicePoseInto" cname="GetValidVRRenderTrackedDevicePoseInto" returnType="error">
+            <method name="getCurrentRenderTrackedDevicePoseCount" cname="GetCurrentVRRenderTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getCurrentRenderTrackedDevicePoseInto" cname="GetCurrentVRRenderTrackedDevicePoseInto" returnType="error">
                 <arg name="index" type="size" />
                 <arg name="dest" type="vr_tracked_device_pose*" />
             </method>

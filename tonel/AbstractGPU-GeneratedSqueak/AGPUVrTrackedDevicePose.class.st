@@ -19,6 +19,7 @@ AGPUVrTrackedDevicePose class >> fields [
 		(device_to_absolute_tracking 'AGPUMatrix4x4f')
 		(velocity 'AGPUVector3f')
 		(angular_velocity 'AGPUVector3f')
+		(is_valid 'long')
 	)
 ]
 

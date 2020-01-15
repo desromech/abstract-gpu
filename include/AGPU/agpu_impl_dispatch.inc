@@ -277,26 +277,36 @@ AGPU_EXPORT agpu_error agpuWaitAndFetchVRPoses(agpu_vr_system* self)
 	return asRef(agpu::vr_system, self)->waitAndFetchPoses();
 }
 
-AGPU_EXPORT agpu_size agpuGetValidVRTrackedDevicePoseCount(agpu_vr_system* self)
+AGPU_EXPORT agpu_size agpuGetMaxVRTrackedDevicePoseCount(agpu_vr_system* self)
 {
-	return asRef(agpu::vr_system, self)->getValidTrackedDevicePoseCount();
+	return asRef(agpu::vr_system, self)->getMaxTrackedDevicePoseCount();
 }
 
-AGPU_EXPORT agpu_error agpuGetValidVRTrackedDevicePoseInto(agpu_vr_system* self, agpu_size index, agpu_vr_tracked_device_pose* dest)
+AGPU_EXPORT agpu_size agpuGetCurrentVRTrackedDevicePoseCount(agpu_vr_system* self)
+{
+	return asRef(agpu::vr_system, self)->getCurrentTrackedDevicePoseCount();
+}
+
+AGPU_EXPORT agpu_error agpuGetCurrentVRTrackedDevicePoseInto(agpu_vr_system* self, agpu_size index, agpu_vr_tracked_device_pose* dest)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::vr_system, self)->getValidTrackedDevicePoseInto(index, dest);
+	return asRef(agpu::vr_system, self)->getCurrentTrackedDevicePoseInto(index, dest);
 }
 
-AGPU_EXPORT agpu_size agpuGetValidVRRenderTrackedDevicePoseCount(agpu_vr_system* self)
+AGPU_EXPORT agpu_size agpuGetMaxVRRenderTrackedDevicePoseCount(agpu_vr_system* self)
 {
-	return asRef(agpu::vr_system, self)->getValidRenderTrackedDevicePoseCount();
+	return asRef(agpu::vr_system, self)->getMaxRenderTrackedDevicePoseCount();
 }
 
-AGPU_EXPORT agpu_error agpuGetValidVRRenderTrackedDevicePoseInto(agpu_vr_system* self, agpu_size index, agpu_vr_tracked_device_pose* dest)
+AGPU_EXPORT agpu_size agpuGetCurrentVRRenderTrackedDevicePoseCount(agpu_vr_system* self)
+{
+	return asRef(agpu::vr_system, self)->getCurrentRenderTrackedDevicePoseCount();
+}
+
+AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto(agpu_vr_system* self, agpu_size index, agpu_vr_tracked_device_pose* dest)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::vr_system, self)->getValidRenderTrackedDevicePoseInto(index, dest);
+	return asRef(agpu::vr_system, self)->getCurrentRenderTrackedDevicePoseInto(index, dest);
 }
 
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* self, agpu_vr_event* event)
