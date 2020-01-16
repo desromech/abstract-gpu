@@ -369,23 +369,23 @@
             <constant name="OutOfMemory" value="-12" />
         </enum>
 
-        <enum name="device_open_flags">
+        <enum name="device_open_flags" optionalPrefix="DeviceOpenFlag">
             <constant name="DeviceOpenFlagNone" value="0" />
             <constant name="DeviceOpenFlagAllowVR" value="1" />
         </enum>
 
-        <enum name="swap_chain_flags">
+        <enum name="swap_chain_flags" optionalPrefix="SwapChainFlag">
             <constant name="SwapChainFlagNone" value="0" />
             <constant name="SwapChainFlagOverlayWindow" value="1" />
         </enum>
 
-        <enum name="command_queue_type">
+        <enum name="command_queue_type" optionalPrefix="CommandQueueType">
             <constant name="CommandQueueTypeGraphics" value="0" />
             <constant name="CommandQueueTypeCompute" value="1" />
             <constant name="CommandQueueTypeTransfer" value="2" />
         </enum>
 
-        <enum name="access_flags">
+        <enum name="access_flags" optionalPrefix="Access">
             <!-- Same bit patterns as Vulkan VkAccessFlags -->
             <constant name="AccessIndirectCommandRead" value="1" />
             <constant name="AccessIndexRead" value="2" />
@@ -409,7 +409,7 @@
             <constant name="AccessTransformFeedbackCounterWrite" value="134217728" />
         </enum>
 
-        <enum name="pipeline_stage_flags">
+        <enum name="pipeline_stage_flags" optionalPrefix="PipelineStage">
             <!-- Same bit patterns as VkPipelineStageFlagBits -->
             <constant name="PipelineStageTopOfPipe" value="1" />
             <constant name="PipelineStageDrawIndirect" value="2" />
@@ -452,13 +452,13 @@
             <constant name="ImmediatePolygon" value="102" />
 		</enum>
 
-        <enum name="polygon_mode">
+        <enum name="polygon_mode" optionalPrefix="PolygonMode">
             <constant name="PolygonModeFill" value="0" />
             <constant name="PolygonModeLine" value="1" />
             <constant name="PolygonModePoint" value="2" />
         </enum>
 
-        <enum name="feature">
+        <enum name="feature" optionalPrefix="Feature">
             <constant name="FeaturePersistentMemoryMapping" value="1" />
             <constant name="FeatureCoherentMemoryMapping" value="2" />
             <constant name="FeaturePersistentCoherentMemoryMapping" value="3" />
@@ -468,7 +468,7 @@
             <constant name="FeatureVRInputDevices" value="7" />
         </enum>
 
-        <enum name="renderpass_attachment_action">
+        <enum name="renderpass_attachment_action" optionalPrefix="Attachment">
             <constant name="AttachmentKeep" value="0" />
             <constant name="AttachmentClear" value="1" />
             <constant name="AttachmentDiscard" value="2" />
@@ -505,7 +505,7 @@
             <constant name="Texture3D" value="5" />
         </enum>
 
-        <enum name="texture_usage_mode_mask">
+        <enum name="texture_usage_mode_mask" optionalPrefix="TextureUsage">
             <constant name="TextureUsageNone" value="0" />
             <constant name="TextureUsageSampled" value="1" />
             <constant name="TextureUsageColorAttachment" value="2" />
@@ -529,7 +529,7 @@
 			<constant name="LibraryShader" value="6" />
 		</enum>
 
-		<enum name="memory_heap_type">
+		<enum name="memory_heap_type" optionalPrefix="MemoryHeapType">
             <constant name="MemoryHeapTypeDeviceLocal" value="0" />
             <constant name="MemoryHeapTypeHostToDevice" value="1" />
             <constant name="MemoryHeapTypeDeviceToHost" value="2" />
@@ -559,7 +559,7 @@
             <constant name="ComputeDispatchIndirectBuffer" value="512" />
 		</enum>
 
-		<enum name="buffer_mapping_flags">
+		<enum name="buffer_mapping_flags" optionalPrefix="Map">
 			<constant name="MapReadBit" value="1" />
 			<constant name="MapWriteBit" value="2" />
 			<constant name="MapPersistentBit" value="4" />
@@ -579,7 +579,7 @@
 			<constant name="ColorBufferBit" value="4" />
 		</enum>
 
-        <enum name="shader_binding_type" >
+        <enum name="shader_binding_type" optionalPrefix="ShaderBindingType">
             <constant name="ShaderBindingTypeSampledImage" value="0" />
             <constant name="ShaderBindingTypeStorageImage" value="1" />
             <constant name="ShaderBindingTypeUniformTexelBuffer" value="2" />
@@ -590,7 +590,7 @@
             <constant name="ShaderBindingTypeCount" value="7" />
         </enum>
 
-		<enum name="shader_language">
+		<enum name="shader_language" optionalPrefix="ShaderLanguage">
             <constant name="ShaderLanguageNone" value="0" />
 			<constant name="ShaderLanguageGlsl" value="1" />
             <constant name="ShaderLanguageEglsl" value="2" />
@@ -618,7 +618,7 @@
             <constant name="UnsignedInt" value="9" />
         </enum>
 
-        <enum name="texture_format">
+        <enum name="texture_format" optionalPrefix="TextureFormat">
             <constant name="TextureFormatUnknown" value="0" />
             <constant name="TextureFormatR32G32B32A32_Typeless" value="1" />
             <constant name="TextureFormatR32G32B32A32_Float" value="2" />
@@ -766,7 +766,7 @@
             <constant name="TextureFormatASTC12X12_UNormSRGB" value="257" />
         </enum>
 
-        <enum name="filter">
+        <enum name="filter" optionalPrefix="Filter">
             <constant name="FilterMinNearestMagNearestMipmapNearest" value="0x0" />
             <constant name="FilterMinNearestMagNearestMipmapLinear" value="0x1" />
             <constant name="FilterMinNearestMagLinearMipmapNearest" value="0x4" />
@@ -778,7 +778,7 @@
             <constant name="FilterAnisotropic" value="0x55" />
         </enum>
 
-        <enum name="texture_address_mode">
+        <enum name="texture_address_mode" optionalPrefix="TextureAddressMode">
             <constant name="TextureAddressModeWrap" value="1" />
             <constant name="TextureAddressModeMirror" value="2" />
             <constant name="TextureAddressModeClamp" value="3" />
@@ -786,21 +786,21 @@
             <constant name="TextureAddressModeMirrorOnce" value="5" />
         </enum>
 
-        <enum name="texture_aspect">
+        <enum name="texture_aspect" optionalPrefix="TextureAspect">
             <constant name="TextureAspectColor" value="1" />
             <constant name="TextureAspectDepth" value="2" />
             <constant name="TextureAspectStencil" value="4" />
             <constant name="TextureAspectAll" value="-1" />
         </enum>
 
-        <enum name="command_list_type">
+        <enum name="command_list_type" optionalPrefix="CommandListType">
             <constant name="CommandListTypeDirect" value="1" />
             <constant name="CommandListTypeBundle" value="2" />
             <constant name="CommandListTypeCompute" value="3" />
             <constant name="CommandListTypeCopy" value="4" />
         </enum>
 
-        <enum name="blending_factor">
+        <enum name="blending_factor" optionalPrefix="Blending">
             <constant name="BlendingZero" value="1" />
             <constant name="BlendingOne" value="2" />
             <constant name="BlendingSrcColor" value="3" />
@@ -820,7 +820,7 @@
             <constant name="BlendingInvertedSrc1Alpha" value="19" />
         </enum>
 
-        <enum name="blending_operation">
+        <enum name="blending_operation" optionalPrefix="BlendingOperation">
             <constant name="BlendingOperationAdd" value="1" />
             <constant name="BlendingOperationSubtract" value="2" />
             <constant name="BlendingOperationReverseSubtract" value="3" />
@@ -828,7 +828,7 @@
             <constant name="BlendingOperationMax" value="5" />
         </enum>
 
-        <enum name="component_swizzle">
+        <enum name="component_swizzle" optionalPrefix="ComponentSwizzle">
             <constant name="ComponentSwizzleIdentity" value="0" />
             <constant name="ComponentSwizzleOne" value="1" />
             <constant name="ComponentSwizzleZero" value="2" />
@@ -843,19 +843,19 @@
             <constant name="Clockwise" value="1" />
         </enum>
 
-        <enum name="cull_mode">
+        <enum name="cull_mode" optionalPrefix="CullMode">
             <constant name="CullModeNone" value="0" />
             <constant name="CullModeFront" value="1" />
             <constant name="CullModeBack" value="2" />
             <constant name="CullModeFrontAndBack" value="3" />
         </enum>
 
-        <enum name="vr_eye">
+        <enum name="vr_eye" optionalPrefix="VrEye">
             <constant name="VrEyeLeft" value="0" />
             <constant name="VrEyeRight" value="1" />
         </enum>
 
-        <enum name="vr_tracked_device_class">
+        <enum name="vr_tracked_device_class" optionalPrefix="VrTrackedDeviceClass">
             <constant name="VrTrackedDeviceClassInvalid" value="0" />
             <constant name="VrTrackedDeviceClassHmd" value="1" />
             <constant name="VrTrackedDeviceClassController" value="2" />
@@ -864,7 +864,7 @@
             <constant name="VrTrackedDeviceClassDisplayRedirect" value="5" />
         </enum>
 
-        <enum name="vr_tracked_device_role">
+        <enum name="vr_tracked_device_role" optionalPrefix="VrTrackedDeviceRole">
             <constant name="VrTrackedDeviceRoleInvalid" value="0" />
             <constant name="VrTrackedDeviceRoleLeftHand" value="1" />
             <constant name="VrTrackedDeviceRoleRightHand" value="2" />
@@ -872,7 +872,7 @@
             <constant name="VrTrackedDeviceRoleThreadmill" value="4" />
         </enum>
 
-        <enum name="vr_button">
+        <enum name="vr_button" optionalPrefix="VrButton">
             <constant name="VrButtonSystem" value="0" />
             <constant name="VrButtonApplicationMenu" value="1" />
             <constant name="VrButtonGrip" value="2" />
@@ -898,12 +898,12 @@
             <constant name="VrButtonKnucklesJoyStick" value="35" />
         </enum>
 
-        <enum name="vr_dual_analog_which">
+        <enum name="vr_dual_analog_which" optionalPrefix="VrDualAnalog">
             <constant name="VrDualAnalogLeft" value="0" />
             <constant name="VrDualAnalogRight" value="1" />
         </enum>
 
-        <enum name="vr_event_type">
+        <enum name="vr_event_type" optionalPrefix="VrEventType">
             <constant name="VrEventTypeInvalid" value="0" />
 
             <constant name="VrEventTypeTrackedDeviceActivated" value="100" />
@@ -933,14 +933,14 @@
             <constant name="VrEventTypeDualAnalogCancel" value="257" />
         </enum>
 
-        <enum name="immediate_renderer_vertex_attribute">
+        <enum name="immediate_renderer_vertex_attribute" optionalPrefix="ImmediateRendererVertexAttribute">
             <constant name="ImmediateRendererVertexAttributePosition" value="0" />
             <constant name="ImmediateRendererVertexAttributeColor" value="1" />
             <constant name="ImmediateRendererVertexAttributeNormal" value="2" />
             <constant name="ImmediateRendererVertexAttributeTexcoord" value="3" />
         </enum>
 
-        <enum name="immediate_renderer_fog_mode">
+        <enum name="immediate_renderer_fog_mode" optionalPrefix="ImmediateRendererFogMode">
             <constant name="ImmediateRendererFogModeNone" value="0" />
             <constant name="ImmediateRendererFogModeLinear" value="1" />
             <constant name="ImmediateRendererFogModeExponential" value="2" />

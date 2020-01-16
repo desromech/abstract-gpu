@@ -108,9 +108,9 @@ class ImmediateRenderer definition: {}.
 ## Enums.
 ################################################################################
 enum CommandQueueType valueType: Int32; values: #{
-	CommandQueueTypeGraphics: 0.
-	CommandQueueTypeCompute: 1.
-	CommandQueueTypeTransfer: 2.
+	Graphics: 0.
+	Compute: 1.
+	Transfer: 2.
 }.
 
 enum RenderBufferBit valueType: Int32; values: #{
@@ -145,29 +145,29 @@ enum Error valueType: Int32; values: #{
 }.
 
 enum Feature valueType: Int32; values: #{
-	FeaturePersistentMemoryMapping: 1.
-	FeatureCoherentMemoryMapping: 2.
-	FeaturePersistentCoherentMemoryMapping: 3.
-	FeatureCommandListReuse: 4.
-	FeatureNonEmulatedCommandListReuse: 5.
-	FeatureVRDisplay: 6.
-	FeatureVRInputDevices: 7.
+	PersistentMemoryMapping: 1.
+	CoherentMemoryMapping: 2.
+	PersistentCoherentMemoryMapping: 3.
+	CommandListReuse: 4.
+	NonEmulatedCommandListReuse: 5.
+	VRDisplay: 6.
+	VRInputDevices: 7.
 }.
 
 enum DeviceOpenFlags valueType: Int32; values: #{
-	DeviceOpenFlagNone: 0.
-	DeviceOpenFlagAllowVR: 1.
+	None: 0.
+	AllowVR: 1.
 }.
 
 enum ShaderBindingType valueType: Int32; values: #{
-	ShaderBindingTypeSampledImage: 0.
-	ShaderBindingTypeStorageImage: 1.
-	ShaderBindingTypeUniformTexelBuffer: 2.
-	ShaderBindingTypeStorageTexelBuffer: 3.
-	ShaderBindingTypeUniformBuffer: 4.
-	ShaderBindingTypeStorageBuffer: 5.
-	ShaderBindingTypeSampler: 6.
-	ShaderBindingTypeCount: 7.
+	SampledImage: 0.
+	StorageImage: 1.
+	UniformTexelBuffer: 2.
+	StorageTexelBuffer: 3.
+	UniformBuffer: 4.
+	StorageBuffer: 5.
+	Sampler: 6.
+	Count: 7.
 }.
 
 enum FaceWinding valueType: Int32; values: #{
@@ -176,193 +176,193 @@ enum FaceWinding valueType: Int32; values: #{
 }.
 
 enum TextureUsageModeMask valueType: Int32; values: #{
-	TextureUsageNone: 0.
-	TextureUsageSampled: 1.
-	TextureUsageColorAttachment: 2.
-	TextureUsageDepthAttachment: 4.
-	TextureUsageStencilAttachment: 8.
-	TextureUsageStorage: 16.
-	TextureUsageCopySource: 32.
-	TextureUsageCopyDestination: 64.
-	TextureUsageReadedBack: 32.
-	TextureUsageUploaded: 64.
-	TextureUsagePresent: 128.
+	None: 0.
+	Sampled: 1.
+	ColorAttachment: 2.
+	DepthAttachment: 4.
+	StencilAttachment: 8.
+	Storage: 16.
+	CopySource: 32.
+	CopyDestination: 64.
+	ReadedBack: 32.
+	Uploaded: 64.
+	Present: 128.
 }.
 
 enum TextureAddressMode valueType: Int32; values: #{
-	TextureAddressModeWrap: 1.
-	TextureAddressModeMirror: 2.
-	TextureAddressModeClamp: 3.
-	TextureAddressModeBorder: 4.
-	TextureAddressModeMirrorOnce: 5.
+	Wrap: 1.
+	Mirror: 2.
+	Clamp: 3.
+	Border: 4.
+	MirrorOnce: 5.
 }.
 
 enum TextureFormat valueType: Int32; values: #{
-	TextureFormatUnknown: 0.
-	TextureFormatR32G32B32A32_Typeless: 1.
-	TextureFormatR32G32B32A32_Float: 2.
-	TextureFormatR32G32B32A32_UInt: 3.
-	TextureFormatR32G32B32A32_SInt: 4.
-	TextureFormatR32G32B32_Typeless: 5.
-	TextureFormatR32G32B32_Float: 6.
-	TextureFormatR32G32B32_UInt: 7.
-	TextureFormatR32G32B32_SInt: 8.
-	TextureFormatR16G16B16A16_Typeless: 9.
-	TextureFormatR16G16B16A16_Float: 10.
-	TextureFormatR16G16B16A16_UNorm: 11.
-	TextureFormatR16G16B16A16_UInt: 12.
-	TextureFormatR16G16B16A16_SNorm: 13.
-	TextureFormatR16G16B16A16_SInt: 14.
-	TextureFormatR32G32_Typeless: 15.
-	TextureFormatR32G32_Float: 16.
-	TextureFormatR32G32_UInt: 17.
-	TextureFormatR32G32_SInt: 18.
-	TextureFormatR32G8X24_Typeless: 19.
-	TextureFormatD32_Float_S8X24_UInt: 20.
-	TextureFormatR32_Float_S8X24_Typeless: 21.
-	TextureFormatX32_Typeless_G8X24_UInt: 22.
-	TextureFormatR10G10B10A2_Typeless: 23.
-	TextureFormatR10G10B10A2_UNorm: 24.
-	TextureFormatR10G10B10A2_UInt: 25.
-	TextureFormatR11G11B10_Float: 26.
-	TextureFormatR8G8B8A8_Typeless: 27.
-	TextureFormatR8G8B8A8_UNorm: 28.
-	TextureFormatR8G8B8A8_UNormSRGB: 29.
-	TextureFormatR8G8B8A8_UInt: 30.
-	TextureFormatR8G8B8A8_SNorm: 31.
-	TextureFormatR8G8B8A8_SInt: 32.
-	TextureFormatR16G16_Typeless: 33.
-	TextureFormatR16G16_Float: 34.
-	TextureFormatR16G16_UNorm: 35.
-	TextureFormatR16G16_UInt: 36.
-	TextureFormatR16G16_SNorm: 37.
-	TextureFormatR16G16_SInt: 38.
-	TextureFormatR32_Typeless: 39.
-	TextureFormatD32_Float: 40.
-	TextureFormatR32_Float: 41.
-	TextureFormatR32_UInt: 42.
-	TextureFormatR32_SInt: 43.
-	TextureFormatR24G8_Typeless: 44.
-	TextureFormatD24_UnormS8_UInt: 45.
-	TextureFormatR24_UnormX8_Typeless: 46.
-	TextureFormatX24TG8_UInt: 47.
-	TextureFormatR8G8_Typeless: 48.
-	TextureFormatR8G8_UNorm: 49.
-	TextureFormatR8G8_UInt: 50.
-	TextureFormatR8G8_SNorm: 51.
-	TextureFormatR8G8_SInt: 52.
-	TextureFormatR16_Typeless: 53.
-	TextureFormatR16_Float: 54.
-	TextureFormatD16_UNorm: 55.
-	TextureFormatR16_UNorm: 56.
-	TextureFormatR16_UInt: 57.
-	TextureFormatR16_SNorm: 58.
-	TextureFormatR16_SInt: 59.
-	TextureFormatR8_Typeless: 60.
-	TextureFormatR8_UNorm: 61.
-	TextureFormatR8_UInt: 62.
-	TextureFormatR8_SNorm: 63.
-	TextureFormatR8_SInt: 64.
-	TextureFormatA8_UNorm: 65.
-	TextureFormatR1_UNorm: 66.
-	TextureFormatBC1_Typeless: 70.
-	TextureFormatBC1_UNorm: 71.
-	TextureFormatBC1_UNormSRGB: 72.
-	TextureFormatBC2_Typeless: 73.
-	TextureFormatBC2_UNorm: 74.
-	TextureFormatBC2_UNormSRGB: 75.
-	TextureFormatBC3_Typeless: 76.
-	TextureFormatBC3_UNorm: 77.
-	TextureFormatBC3_UNormSRGB: 78.
-	TextureFormatBC4_Typeless: 79.
-	TextureFormatBC4_UNorm: 80.
-	TextureFormatBC4_SNorm: 81.
-	TextureFormatBC5_Typeless: 82.
-	TextureFormatBC5_UNorm: 83.
-	TextureFormatBC5_SNorm: 84.
-	TextureFormatB5G6R5_UNorm: 85.
-	TextureFormatB5G5R5A1_UNorm: 86.
-	TextureFormatB8G8R8A8_UNorm: 87.
-	TextureFormatB8G8R8X8_UNorm: 88.
-	TextureFormatB8G8R8A8_Typeless: 90.
-	TextureFormatB8G8R8A8_UNormSRGB: 91.
-	TextureFormatB8G8R8X8_Typeless: 92.
-	TextureFormatB8G8R8X8_UNormSRGB: 93.
-	TextureFormatETC2_R8G8B8_UNorm: 200.
-	TextureFormatETC2_R8G8B8_UNormSRGB: 201.
-	TextureFormatETC2_R8G8B8A1_UNorm: 202.
-	TextureFormatETC2_R8G8B8A1_UNormSRGB: 203.
-	TextureFormatETC2_R8G8B8A8_UNorm: 204.
-	TextureFormatETC2_R8G8B8A8_UNormSRGB: 205.
-	TextureFormatEAC_R11_UNorm: 206.
-	TextureFormatEAC_R11_SNorm: 207.
-	TextureFormatEAC_R11G11_UNorm: 208.
-	TextureFormatEAC_R11G11_SNorm: 209.
-	TextureFormatASTC4X4_UNorm: 230.
-	TextureFormatASTC4X4_UNormSRGB: 231.
-	TextureFormatASTC5X4_UNorm: 232.
-	TextureFormatASTC5X4_UNormSRGB: 233.
-	TextureFormatASTC5X5_UNorm: 234.
-	TextureFormatASTC5X5_UNormSRGB: 235.
-	TextureFormatASTC6X5_UNorm: 236.
-	TextureFormatASTC6X5_UNormSRGB: 237.
-	TextureFormatASTC6X6_UNorm: 238.
-	TextureFormatASTC6X6_UNormSRGB: 239.
-	TextureFormatASTC8X5_UNorm: 240.
-	TextureFormatASTC8X5_UNormSRGB: 241.
-	TextureFormatASTC8X6_UNorm: 242.
-	TextureFormatASTC8X6_UNormSRGB: 243.
-	TextureFormatASTC8X8_UNorm: 244.
-	TextureFormatASTC8X8_UNormSRGB: 245.
-	TextureFormatASTC10X5_UNorm: 246.
-	TextureFormatASTC10X5_UNormSRGB: 247.
-	TextureFormatASTC10X6_UNorm: 248.
-	TextureFormatASTC10X6_UNormSRGB: 249.
-	TextureFormatASTC10X8_UNorm: 250.
-	TextureFormatASTC10X8_UNormSRGB: 251.
-	TextureFormatASTC10X10_UNorm: 252.
-	TextureFormatASTC10X10_UNormSRGB: 253.
-	TextureFormatASTC12X10_UNorm: 254.
-	TextureFormatASTC12X10_UNormSRGB: 255.
-	TextureFormatASTC12X12_UNorm: 256.
-	TextureFormatASTC12X12_UNormSRGB: 257.
+	Unknown: 0.
+	R32G32B32A32_Typeless: 1.
+	R32G32B32A32_Float: 2.
+	R32G32B32A32_UInt: 3.
+	R32G32B32A32_SInt: 4.
+	R32G32B32_Typeless: 5.
+	R32G32B32_Float: 6.
+	R32G32B32_UInt: 7.
+	R32G32B32_SInt: 8.
+	R16G16B16A16_Typeless: 9.
+	R16G16B16A16_Float: 10.
+	R16G16B16A16_UNorm: 11.
+	R16G16B16A16_UInt: 12.
+	R16G16B16A16_SNorm: 13.
+	R16G16B16A16_SInt: 14.
+	R32G32_Typeless: 15.
+	R32G32_Float: 16.
+	R32G32_UInt: 17.
+	R32G32_SInt: 18.
+	R32G8X24_Typeless: 19.
+	D32_Float_S8X24_UInt: 20.
+	R32_Float_S8X24_Typeless: 21.
+	X32_Typeless_G8X24_UInt: 22.
+	R10G10B10A2_Typeless: 23.
+	R10G10B10A2_UNorm: 24.
+	R10G10B10A2_UInt: 25.
+	R11G11B10_Float: 26.
+	R8G8B8A8_Typeless: 27.
+	R8G8B8A8_UNorm: 28.
+	R8G8B8A8_UNormSRGB: 29.
+	R8G8B8A8_UInt: 30.
+	R8G8B8A8_SNorm: 31.
+	R8G8B8A8_SInt: 32.
+	R16G16_Typeless: 33.
+	R16G16_Float: 34.
+	R16G16_UNorm: 35.
+	R16G16_UInt: 36.
+	R16G16_SNorm: 37.
+	R16G16_SInt: 38.
+	R32_Typeless: 39.
+	D32_Float: 40.
+	R32_Float: 41.
+	R32_UInt: 42.
+	R32_SInt: 43.
+	R24G8_Typeless: 44.
+	D24_UnormS8_UInt: 45.
+	R24_UnormX8_Typeless: 46.
+	X24TG8_UInt: 47.
+	R8G8_Typeless: 48.
+	R8G8_UNorm: 49.
+	R8G8_UInt: 50.
+	R8G8_SNorm: 51.
+	R8G8_SInt: 52.
+	R16_Typeless: 53.
+	R16_Float: 54.
+	D16_UNorm: 55.
+	R16_UNorm: 56.
+	R16_UInt: 57.
+	R16_SNorm: 58.
+	R16_SInt: 59.
+	R8_Typeless: 60.
+	R8_UNorm: 61.
+	R8_UInt: 62.
+	R8_SNorm: 63.
+	R8_SInt: 64.
+	A8_UNorm: 65.
+	R1_UNorm: 66.
+	BC1_Typeless: 70.
+	BC1_UNorm: 71.
+	BC1_UNormSRGB: 72.
+	BC2_Typeless: 73.
+	BC2_UNorm: 74.
+	BC2_UNormSRGB: 75.
+	BC3_Typeless: 76.
+	BC3_UNorm: 77.
+	BC3_UNormSRGB: 78.
+	BC4_Typeless: 79.
+	BC4_UNorm: 80.
+	BC4_SNorm: 81.
+	BC5_Typeless: 82.
+	BC5_UNorm: 83.
+	BC5_SNorm: 84.
+	B5G6R5_UNorm: 85.
+	B5G5R5A1_UNorm: 86.
+	B8G8R8A8_UNorm: 87.
+	B8G8R8X8_UNorm: 88.
+	B8G8R8A8_Typeless: 90.
+	B8G8R8A8_UNormSRGB: 91.
+	B8G8R8X8_Typeless: 92.
+	B8G8R8X8_UNormSRGB: 93.
+	ETC2_R8G8B8_UNorm: 200.
+	ETC2_R8G8B8_UNormSRGB: 201.
+	ETC2_R8G8B8A1_UNorm: 202.
+	ETC2_R8G8B8A1_UNormSRGB: 203.
+	ETC2_R8G8B8A8_UNorm: 204.
+	ETC2_R8G8B8A8_UNormSRGB: 205.
+	EAC_R11_UNorm: 206.
+	EAC_R11_SNorm: 207.
+	EAC_R11G11_UNorm: 208.
+	EAC_R11G11_SNorm: 209.
+	ASTC4X4_UNorm: 230.
+	ASTC4X4_UNormSRGB: 231.
+	ASTC5X4_UNorm: 232.
+	ASTC5X4_UNormSRGB: 233.
+	ASTC5X5_UNorm: 234.
+	ASTC5X5_UNormSRGB: 235.
+	ASTC6X5_UNorm: 236.
+	ASTC6X5_UNormSRGB: 237.
+	ASTC6X6_UNorm: 238.
+	ASTC6X6_UNormSRGB: 239.
+	ASTC8X5_UNorm: 240.
+	ASTC8X5_UNormSRGB: 241.
+	ASTC8X6_UNorm: 242.
+	ASTC8X6_UNormSRGB: 243.
+	ASTC8X8_UNorm: 244.
+	ASTC8X8_UNormSRGB: 245.
+	ASTC10X5_UNorm: 246.
+	ASTC10X5_UNormSRGB: 247.
+	ASTC10X6_UNorm: 248.
+	ASTC10X6_UNormSRGB: 249.
+	ASTC10X8_UNorm: 250.
+	ASTC10X8_UNormSRGB: 251.
+	ASTC10X10_UNorm: 252.
+	ASTC10X10_UNormSRGB: 253.
+	ASTC12X10_UNorm: 254.
+	ASTC12X10_UNormSRGB: 255.
+	ASTC12X12_UNorm: 256.
+	ASTC12X12_UNormSRGB: 257.
 }.
 
 enum VrEventType valueType: Int32; values: #{
-	VrEventTypeInvalid: 0.
-	VrEventTypeTrackedDeviceActivated: 100.
-	VrEventTypeTrackedDeviceDeactivated: 101.
-	VrEventTypeTrackedDeviceUpdated: 102.
-	VrEventTypeTrackedDeviceUserInteractionStarted: 103.
-	VrEventTypeTrackedDeviceUserInteractionEnded: 104.
-	VrEventTypeIpdChanged: 105.
-	VrEventTypeEnterStandbyMode: 106.
-	VrEventTypeLeaveStandbyMode: 107.
-	VrEventTypeTrackedDeviceRoleChanged: 108.
-	VrEventTypeWirelessDisconnect: 112.
-	VrEventTypeWirelessReconnect: 113.
-	VrEventTypeButtonPressed: 200.
-	VrEventTypeButtonReleased: 201.
-	VrEventTypeButtonTouch: 202.
-	VrEventTypeButtonUntouch: 203.
-	VrEventTypeDualAnalogPressed: 250.
-	VrEventTypeDualAnalogReleased: 251.
-	VrEventTypeDualAnalogTouch: 252.
-	VrEventTypeDualAnalogUntouch: 253.
-	VrEventTypeDualAnalogMove: 254.
-	VrEventTypeDualAnalogModeSwitch1: 255.
-	VrEventTypeDualAnalogModeSwitch2: 256.
-	VrEventTypeDualAnalogCancel: 257.
+	Invalid: 0.
+	TrackedDeviceActivated: 100.
+	TrackedDeviceDeactivated: 101.
+	TrackedDeviceUpdated: 102.
+	TrackedDeviceUserInteractionStarted: 103.
+	TrackedDeviceUserInteractionEnded: 104.
+	IpdChanged: 105.
+	EnterStandbyMode: 106.
+	LeaveStandbyMode: 107.
+	TrackedDeviceRoleChanged: 108.
+	WirelessDisconnect: 112.
+	WirelessReconnect: 113.
+	ButtonPressed: 200.
+	ButtonReleased: 201.
+	ButtonTouch: 202.
+	ButtonUntouch: 203.
+	DualAnalogPressed: 250.
+	DualAnalogReleased: 251.
+	DualAnalogTouch: 252.
+	DualAnalogUntouch: 253.
+	DualAnalogMove: 254.
+	DualAnalogModeSwitch1: 255.
+	DualAnalogModeSwitch2: 256.
+	DualAnalogCancel: 257.
 }.
 
 enum ComponentSwizzle valueType: Int32; values: #{
-	ComponentSwizzleIdentity: 0.
-	ComponentSwizzleOne: 1.
-	ComponentSwizzleZero: 2.
-	ComponentSwizzleR: 3.
-	ComponentSwizzleG: 4.
-	ComponentSwizzleB: 5.
-	ComponentSwizzleA: 6.
+	Identity: 0.
+	One: 1.
+	Zero: 2.
+	R: 3.
+	G: 4.
+	B: 5.
+	A: 6.
 }.
 
 enum ShaderType valueType: Int32; values: #{
@@ -376,17 +376,17 @@ enum ShaderType valueType: Int32; values: #{
 }.
 
 enum ShaderLanguage valueType: Int32; values: #{
-	ShaderLanguageNone: 0.
-	ShaderLanguageGlsl: 1.
-	ShaderLanguageEglsl: 2.
-	ShaderLanguageVglsl: 3.
-	ShaderLanguageSpirV: 4.
-	ShaderLanguageHlsl: 5.
-	ShaderLanguageMetal: 6.
-	ShaderLanguageMetalAir: 7.
-	ShaderLanguageBinary: 8.
-	ShaderLanguageSpirVAssembly: 9.
-	ShaderLanguageDeviceShader: 10.
+	None: 0.
+	Glsl: 1.
+	Eglsl: 2.
+	Vglsl: 3.
+	SpirV: 4.
+	Hlsl: 5.
+	Metal: 6.
+	MetalAir: 7.
+	Binary: 8.
+	SpirVAssembly: 9.
+	DeviceShader: 10.
 }.
 
 enum MappingAccess valueType: Int32; values: #{
@@ -396,120 +396,120 @@ enum MappingAccess valueType: Int32; values: #{
 }.
 
 enum BufferMappingFlags valueType: Int32; values: #{
-	MapReadBit: 1.
-	MapWriteBit: 2.
-	MapPersistentBit: 4.
-	MapCoherentBit: 8.
-	MapDynamicStorageBit: 16.
+	ReadBit: 1.
+	WriteBit: 2.
+	PersistentBit: 4.
+	CoherentBit: 8.
+	DynamicStorageBit: 16.
 }.
 
 enum BlendingOperation valueType: Int32; values: #{
-	BlendingOperationAdd: 1.
-	BlendingOperationSubtract: 2.
-	BlendingOperationReverseSubtract: 3.
-	BlendingOperationMin: 4.
-	BlendingOperationMax: 5.
+	Add: 1.
+	Subtract: 2.
+	ReverseSubtract: 3.
+	Min: 4.
+	Max: 5.
 }.
 
 enum RenderpassAttachmentAction valueType: Int32; values: #{
-	AttachmentKeep: 0.
-	AttachmentClear: 1.
-	AttachmentDiscard: 2.
+	Keep: 0.
+	Clear: 1.
+	Discard: 2.
 }.
 
 enum VrTrackedDeviceRole valueType: Int32; values: #{
-	VrTrackedDeviceRoleInvalid: 0.
-	VrTrackedDeviceRoleLeftHand: 1.
-	VrTrackedDeviceRoleRightHand: 2.
-	VrTrackedDeviceRoleOptOut: 3.
-	VrTrackedDeviceRoleThreadmill: 4.
+	Invalid: 0.
+	LeftHand: 1.
+	RightHand: 2.
+	OptOut: 3.
+	Threadmill: 4.
 }.
 
 enum PolygonMode valueType: Int32; values: #{
-	PolygonModeFill: 0.
-	PolygonModeLine: 1.
-	PolygonModePoint: 2.
+	Fill: 0.
+	Line: 1.
+	Point: 2.
 }.
 
 enum ImmediateRendererFogMode valueType: Int32; values: #{
-	ImmediateRendererFogModeNone: 0.
-	ImmediateRendererFogModeLinear: 1.
-	ImmediateRendererFogModeExponential: 2.
-	ImmediateRendererFogModeExponentialSquared: 3.
+	None: 0.
+	Linear: 1.
+	Exponential: 2.
+	ExponentialSquared: 3.
 }.
 
 enum PipelineStageFlags valueType: Int32; values: #{
-	PipelineStageTopOfPipe: 1.
-	PipelineStageDrawIndirect: 2.
-	PipelineStageVertexInput: 4.
-	PipelineStageVertexShader: 8.
-	PipelineStageTessellationControl: 16.
-	PipelineStageTessellationEvaluation: 32.
-	PipelineStageGeometryShader: 64.
-	PipelineStageFragmentShader: 128.
-	PipelineStageEarlyFragmentTests: 256.
-	PipelineStageLateFragmentTests: 512.
-	PipelineStageColorAttachmentOutput: 1024.
-	PipelineStageComputeShader: 2048.
-	PipelineStageTransfer: 4096.
-	PipelineStageBottomOfPipe: 8192.
-	PipelineStageHost: 16384.
-	PipelineStageAllGraphics: 32768.
-	PipelineStageAllCommands: 65536.
-	PipelineStageTransformFeedback: 16777216.
-	PipelineStageConditionalRendering: 262144.
+	TopOfPipe: 1.
+	DrawIndirect: 2.
+	VertexInput: 4.
+	VertexShader: 8.
+	TessellationControl: 16.
+	TessellationEvaluation: 32.
+	GeometryShader: 64.
+	FragmentShader: 128.
+	EarlyFragmentTests: 256.
+	LateFragmentTests: 512.
+	ColorAttachmentOutput: 1024.
+	ComputeShader: 2048.
+	Transfer: 4096.
+	BottomOfPipe: 8192.
+	Host: 16384.
+	AllGraphics: 32768.
+	AllCommands: 65536.
+	TransformFeedback: 16777216.
+	ConditionalRendering: 262144.
 }.
 
 enum VrDualAnalogWhich valueType: Int32; values: #{
-	VrDualAnalogLeft: 0.
-	VrDualAnalogRight: 1.
+	Left: 0.
+	Right: 1.
 }.
 
 enum Filter valueType: Int32; values: #{
-	FilterMinNearestMagNearestMipmapNearest: 16r0.
-	FilterMinNearestMagNearestMipmapLinear: 16r1.
-	FilterMinNearestMagLinearMipmapNearest: 16r4.
-	FilterMinNearestMagLinearMipmapLinear: 16r5.
-	FilterMinLinearMagNearestMipmapNearest: 16r10.
-	FilterMinLinearMagNearestMipmapLinear: 16r11.
-	FilterMinLinearMagLinearMipmapNearest: 16r14.
-	FilterMinLinearMagLinearMipmapLinear: 16r15.
-	FilterAnisotropic: 16r55.
+	MinNearestMagNearestMipmapNearest: 16r0.
+	MinNearestMagNearestMipmapLinear: 16r1.
+	MinNearestMagLinearMipmapNearest: 16r4.
+	MinNearestMagLinearMipmapLinear: 16r5.
+	MinLinearMagNearestMipmapNearest: 16r10.
+	MinLinearMagNearestMipmapLinear: 16r11.
+	MinLinearMagLinearMipmapNearest: 16r14.
+	MinLinearMagLinearMipmapLinear: 16r15.
+	Anisotropic: 16r55.
 }.
 
 enum MemoryHeapType valueType: Int32; values: #{
-	MemoryHeapTypeDeviceLocal: 0.
-	MemoryHeapTypeHostToDevice: 1.
-	MemoryHeapTypeDeviceToHost: 2.
-	MemoryHeapTypeHost: 3.
-	MemoryHeapTypeCustom: 4.
-	MemoryHeapTypeStagingUpload: 3.
+	DeviceLocal: 0.
+	HostToDevice: 1.
+	DeviceToHost: 2.
+	Host: 3.
+	Custom: 4.
+	StagingUpload: 3.
 	Static: 0.
 	Dynamic: 1.
 	Stream: 1.
 }.
 
 enum AccessFlags valueType: Int32; values: #{
-	AccessIndirectCommandRead: 1.
-	AccessIndexRead: 2.
-	AccessVertexAttributeRead: 4.
-	AccessUniformRead: 8.
-	AccessInputAttachmentRead: 16.
-	AccessShaderRead: 32.
-	AccessShaderWrite: 64.
-	AccessColorAttachmentRead: 128.
-	AccessColorAttachmentWrite: 256.
-	AccessDepthStencilAttachmentRead: 512.
-	AccessDepthStencilAttachmentWrite: 1024.
-	AccessTransferRead: 2048.
-	AccessTransferWrite: 4096.
-	AccessHostRead: 8192.
-	AccessHostWrite: 16384.
-	AccessMemoryRead: 32768.
-	AccessMemoryWrite: 65536.
-	AccessTransformFeedbackWrite: 33554432.
-	AccessTransformFeedbackCounterRead: 67108864.
-	AccessTransformFeedbackCounterWrite: 134217728.
+	IndirectCommandRead: 1.
+	IndexRead: 2.
+	VertexAttributeRead: 4.
+	UniformRead: 8.
+	InputAttachmentRead: 16.
+	ShaderRead: 32.
+	ShaderWrite: 64.
+	ColorAttachmentRead: 128.
+	ColorAttachmentWrite: 256.
+	DepthStencilAttachmentRead: 512.
+	DepthStencilAttachmentWrite: 1024.
+	TransferRead: 2048.
+	TransferWrite: 4096.
+	HostRead: 8192.
+	HostWrite: 16384.
+	MemoryRead: 32768.
+	MemoryWrite: 65536.
+	TransformFeedbackWrite: 33554432.
+	TransformFeedbackCounterRead: 67108864.
+	TransformFeedbackCounterWrite: 134217728.
 }.
 
 enum StencilOperation valueType: Int32; values: #{
@@ -524,10 +524,10 @@ enum StencilOperation valueType: Int32; values: #{
 }.
 
 enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
-	ImmediateRendererVertexAttributePosition: 0.
-	ImmediateRendererVertexAttributeColor: 1.
-	ImmediateRendererVertexAttributeNormal: 2.
-	ImmediateRendererVertexAttributeTexcoord: 3.
+	Position: 0.
+	Color: 1.
+	Normal: 2.
+	Texcoord: 3.
 }.
 
 enum CompareFunction valueType: Int32; values: #{
@@ -542,10 +542,10 @@ enum CompareFunction valueType: Int32; values: #{
 }.
 
 enum TextureAspect valueType: Int32; values: #{
-	TextureAspectColor: 1.
-	TextureAspectDepth: 2.
-	TextureAspectStencil: 4.
-	TextureAspectAll: -1.
+	Color: 1.
+	Depth: 2.
+	Stencil: 4.
+	All: -1.
 }.
 
 enum PrimitiveTopology valueType: Int32; values: #{
@@ -565,28 +565,28 @@ enum PrimitiveTopology valueType: Int32; values: #{
 }.
 
 enum BlendingFactor valueType: Int32; values: #{
-	BlendingZero: 1.
-	BlendingOne: 2.
-	BlendingSrcColor: 3.
-	BlendingInvertedSrcColor: 4.
-	BlendingSrcAlpha: 5.
-	BlendingInvertedSrcAlpha: 6.
-	BlendingDestAlpha: 7.
-	BlendingInvertedDestAlpha: 8.
-	BlendingDestColor: 9.
-	BlendingInvertedDestColor: 10.
-	BlendingSrcAlphaSat: 11.
-	BlendingConstantFactor: 14.
-	BlendingInvertedConstantFactor: 15.
-	BlendingSrc1Color: 16.
-	BlendingInvertedSrc1Color: 17.
-	BlendingSrc1Alpha: 18.
-	BlendingInvertedSrc1Alpha: 19.
+	Zero: 1.
+	One: 2.
+	SrcColor: 3.
+	InvertedSrcColor: 4.
+	SrcAlpha: 5.
+	InvertedSrcAlpha: 6.
+	DestAlpha: 7.
+	InvertedDestAlpha: 8.
+	DestColor: 9.
+	InvertedDestColor: 10.
+	SrcAlphaSat: 11.
+	ConstantFactor: 14.
+	InvertedConstantFactor: 15.
+	Src1Color: 16.
+	InvertedSrc1Color: 17.
+	Src1Alpha: 18.
+	InvertedSrc1Alpha: 19.
 }.
 
 enum SwapChainFlags valueType: Int32; values: #{
-	SwapChainFlagNone: 0.
-	SwapChainFlagOverlayWindow: 1.
+	None: 0.
+	OverlayWindow: 1.
 }.
 
 enum BufferUsageMask valueType: Int32; values: #{
@@ -604,31 +604,31 @@ enum BufferUsageMask valueType: Int32; values: #{
 }.
 
 enum CullMode valueType: Int32; values: #{
-	CullModeNone: 0.
-	CullModeFront: 1.
-	CullModeBack: 2.
-	CullModeFrontAndBack: 3.
+	None: 0.
+	Front: 1.
+	Back: 2.
+	FrontAndBack: 3.
 }.
 
 enum CommandListType valueType: Int32; values: #{
-	CommandListTypeDirect: 1.
-	CommandListTypeBundle: 2.
-	CommandListTypeCompute: 3.
-	CommandListTypeCopy: 4.
+	Direct: 1.
+	Bundle: 2.
+	Compute: 3.
+	Copy: 4.
 }.
 
 enum VrEye valueType: Int32; values: #{
-	VrEyeLeft: 0.
-	VrEyeRight: 1.
+	Left: 0.
+	Right: 1.
 }.
 
 enum VrTrackedDeviceClass valueType: Int32; values: #{
-	VrTrackedDeviceClassInvalid: 0.
-	VrTrackedDeviceClassHmd: 1.
-	VrTrackedDeviceClassController: 2.
-	VrTrackedDeviceClassGenericTracker: 3.
-	VrTrackedDeviceClassTrackingReference: 4.
-	VrTrackedDeviceClassDisplayRedirect: 5.
+	Invalid: 0.
+	Hmd: 1.
+	Controller: 2.
+	GenericTracker: 3.
+	TrackingReference: 4.
+	DisplayRedirect: 5.
 }.
 
 enum FieldType valueType: Int32; values: #{
@@ -645,26 +645,26 @@ enum FieldType valueType: Int32; values: #{
 }.
 
 enum VrButton valueType: Int32; values: #{
-	VrButtonSystem: 0.
-	VrButtonApplicationMenu: 1.
-	VrButtonGrip: 2.
-	VrButtonDpadLeft: 3.
-	VrButtonDpadUp: 4.
-	VrButtonDpadRight: 5.
-	VrButtonDpadDown: 6.
-	VrButtonA: 7.
-	VrButtonProximitySensor: 31.
-	VrButtonAxis0: 32.
-	VrButtonAxis1: 33.
-	VrButtonAxis2: 34.
-	VrButtonAxis3: 35.
-	VrButtonAxis4: 36.
-	VrButtonSteamVrTouchpad: 32.
-	VrButtonSteamVrTrigger: 33.
-	VrButtonDashboardBack: 2.
-	VrButtonKnucklesA: 2.
-	VrButtonKnucklesB: 1.
-	VrButtonKnucklesJoyStick: 35.
+	System: 0.
+	ApplicationMenu: 1.
+	Grip: 2.
+	DpadLeft: 3.
+	DpadUp: 4.
+	DpadRight: 5.
+	DpadDown: 6.
+	A: 7.
+	ProximitySensor: 31.
+	Axis0: 32.
+	Axis1: 33.
+	Axis2: 34.
+	Axis3: 35.
+	Axis4: 36.
+	SteamVrTouchpad: 32.
+	SteamVrTrigger: 33.
+	DashboardBack: 2.
+	KnucklesA: 2.
+	KnucklesB: 1.
+	KnucklesJoyStick: 35.
 }.
 
 struct DeviceOpenInfo definition: {
