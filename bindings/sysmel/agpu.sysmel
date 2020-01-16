@@ -6,41 +6,45 @@ template SmartRefPtr(PT: Type)
 	:= struct definition: {
 	compileTimeConstant PointedType := PT.
 	compileTimeConstant PointerType := PointedType pointer.
+	compileTimeConstant SmartPointerType := SelfType.
 
 	private field pointer_ type: PointerType.
 
-	meta method for: (pointer: PointerType) ::=> SelfType
-		:= SelfType basicNewValue initializeWith: pointer; yourself.
+	meta extend: {
+		inline method for: (pointer: PointerType) ::=> SmartPointerType
+			:= SmartPointerType basicNewValue initializeWith: pointer; yourself.
+		macro method nil := ``(`,self basicNewValue).
+	}.
 
-	method finalize => Void := {
+	inline method finalize => Void := {
 		if: pointer_ ~~ nil then: {
 			pointer_ _ release.
 		}.
 	}.
 
-	method initializeWith: (pointer: PointerType) ::=> Void := {
+	inline method initializeWith: (pointer: PointerType) ::=> Void := {
 		pointer_ := pointer
 	}.
 
-	method initializeFrom: (o: SelfType const ref) ::=> Void := {
+	inline method initializeFrom: (o: SelfType const ref) ::=> Void := {
 		pointer_ := o __private pointer_.
 		if: pointer_ ~~ nil then: {
 			pointer_ _ addReference
 		}.
 	}.
 
-	method initializeMovingFrom: (o: SelfType tempRef) ::=> Void := {
+	inline method initializeMovingFrom: (o: SelfType tempRef) ::=> Void := {
 		pointer_ := o __private pointer_.
 		o __private pointer_ := nil
 	}.
 
-	method _ => PointedType ref
+	inline method _ => PointedType ref
 		:= pointer_ _.
 
-	const method getPointer => PointerType
+	inline const method getPointer => PointerType
 		:= pointer_.
 
-	method reset: (newPointer: PointerType) ::=> Void := {
+	inline method reset: (newPointer: PointerType) ::=> Void := {
 		if: pointer_ ~~ nil then: {
 			pointer_ _ release
 		}.
@@ -48,7 +52,10 @@ template SmartRefPtr(PT: Type)
 		pointer_ := newPointer
 	}.
 
-	method assignValue: (o: SelfType const ref) ::=> SelfType const ref := {
+	inline method reset => Void
+		:=  self reset: nil.
+
+	inline method assignValue: (o: SelfType const ref) ::=> SelfType const ref := {
 		let newPointer := o __private pointer_.
 		if: newPointer ~~ nil then: {
 			newPointer _ addReference
@@ -61,7 +68,7 @@ template SmartRefPtr(PT: Type)
 		self
 	}.
 
-	method assignValue: (o: SelfType tempRef) ::=> SelfType const ref := {
+	inline method assignValue: (o: SelfType tempRef) ::=> SelfType const ref := {
 		let newPointer := o __private pointer_.
 		o __private pointer_ := nil.
 		if: pointer_ ~~ nil then: {
@@ -71,6 +78,15 @@ template SmartRefPtr(PT: Type)
 		pointer_ := newPointer.
 		self
 	}.
+
+	## Some convenience macros.
+	macro method isNil := ``(`,self getPointer isNil).
+	macro method isNotNil := ``(`,self getPointer isNotNil).
+
+	macro method ifNil: nilAction := ``(`,self getPointer ifNil: `,nilAction).
+	macro method ifNil: nilAction ifNotNil: notNilAction := ``(`,self getPointer ifNil: `,nilAction ifNotNil: `, notNilAction).
+	macro method ifNotNil: notNilAction := ``(`,self getPointer ifNotNil: `,notNilAction).
+	macro method ifNotNil: notNilAction ifNil: nilAction  := ``(`,self getPointer ifNotNil: `,notNilAction ifNil: `,nilAction).
 }.
 
 ################################################################################
