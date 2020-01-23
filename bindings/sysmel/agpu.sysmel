@@ -38,7 +38,7 @@ template SmartRefPtr(PT: Type)
 		o __private pointer_ := nil
 	}.
 
-	inline method _ => PointedType ref
+	inline const method _ => PointedType ref
 		:= pointer_ _.
 
 	inline const method getPointer => PointerType
@@ -382,13 +382,13 @@ enum ComponentSwizzle valueType: Int32; values: #{
 }.
 
 enum ShaderType valueType: Int32; values: #{
-	VertexShader: 0.
-	FragmentShader: 1.
-	GeometryShader: 2.
-	ComputeShader: 3.
-	TessellationControlShader: 4.
-	TessellationEvaluationShader: 5.
-	LibraryShader: 6.
+	Vertex: 0.
+	Fragment: 1.
+	Geometry: 2.
+	Compute: 3.
+	TessellationControl: 4.
+	TessellationEvaluation: 5.
+	Library: 6.
 }.
 
 enum ShaderLanguage valueType: Int32; values: #{
@@ -1414,7 +1414,7 @@ Device extend: {
 	inline method createSwapChain: (commandQueue: CommandQueueRef const ref) swapChainInfo: (swapChainInfo: SwapChainCreateInfo pointer) ::=> SwapChainRef
 		:= SwapChainRef for: (agpuCreateSwapChain(self address, commandQueue getPointer, swapChainInfo)).
 
-	inline method createBuffer: (description: BufferDescription pointer) initial_data: (initial_data: Void pointer) ::=> BufferRef
+	inline method createBuffer: (description: BufferDescription pointer) initialData: (initial_data: Void pointer) ::=> BufferRef
 		:= BufferRef for: (agpuCreateBuffer(self address, description, initial_data)).
 
 	inline method createVertexLayout ::=> VertexLayoutRef
@@ -1438,7 +1438,7 @@ Device extend: {
 	inline method createCommandAllocator: (type: CommandListType) queue: (queue: CommandQueueRef const ref) ::=> CommandAllocatorRef
 		:= CommandAllocatorRef for: (agpuCreateCommandAllocator(self address, type, queue getPointer)).
 
-	inline method createCommandList: (type: CommandListType) allocator: (allocator: CommandAllocatorRef const ref) initial_pipeline_state: (initial_pipeline_state: PipelineStateRef const ref) ::=> CommandListRef
+	inline method createCommandList: (type: CommandListType) allocator: (allocator: CommandAllocatorRef const ref) initialPipelineState: (initial_pipeline_state: PipelineStateRef const ref) ::=> CommandListRef
 		:= CommandListRef for: (agpuCreateCommandList(self address, type, allocator getPointer, initial_pipeline_state getPointer)).
 
 	inline method getPreferredShaderLanguage ::=> ShaderLanguage
@@ -1465,7 +1465,7 @@ Device extend: {
 	inline method createFence ::=> FenceRef
 		:= FenceRef for: (agpuCreateFence(self address)).
 
-	inline method getMultiSampleQualityLevels: (format: TextureFormat) sample_count: (sample_count: UInt32) ::=> Int32
+	inline method getMultiSampleQualityLevels: (format: TextureFormat) sampleCount: (sample_count: UInt32) ::=> Int32
 		:= agpuGetMultiSampleQualityLevels(self address, format, sample_count).
 
 	inline method hasTopLeftNdcOrigin ::=> Int32
@@ -1510,13 +1510,13 @@ VrSystem extend: {
 	inline method getEyeToHeadTransform: (eye: VrEye) transform: (transform: Matrix4x4f pointer) ::=> Void
 		:= throwIfError: (agpuGetVREyeToHeadTransformInto(self address, eye, transform)).
 
-	inline method getProjectionMatrix: (eye: VrEye) near_distance: (near_distance: Float32) far_distance: (far_distance: Float32) projection_matrix: (projection_matrix: Matrix4x4f pointer) ::=> Void
+	inline method getProjectionMatrix: (eye: VrEye) nearDistance: (near_distance: Float32) farDistance: (far_distance: Float32) projectionMatrix: (projection_matrix: Matrix4x4f pointer) ::=> Void
 		:= throwIfError: (agpuGetVRProjectionMatrix(self address, eye, near_distance, far_distance, projection_matrix)).
 
 	inline method getProjectionFrustumTangents: (eye: VrEye) frustum: (frustum: FrustumTangents pointer) ::=> Void
 		:= throwIfError: (agpuGetVRProjectionFrustumTangents(self address, eye, frustum)).
 
-	inline method submitEyeRenderTargets: (left_eye: TextureRef const ref) right_eye: (right_eye: TextureRef const ref) ::=> Void
+	inline method submitEyeRenderTargets: (left_eye: TextureRef const ref) rightEye: (right_eye: TextureRef const ref) ::=> Void
 		:= throwIfError: (agpuSubmitVREyeRenderTargets(self address, left_eye getPointer, right_eye getPointer)).
 
 	inline method waitAndFetchPoses ::=> Void
@@ -1582,7 +1582,7 @@ ComputePipelineBuilder extend: {
 	inline method attachShader: (shader: ShaderRef const ref) ::=> Void
 		:= throwIfError: (agpuAttachComputeShader(self address, shader getPointer)).
 
-	inline method attachShaderWithEntryPoint: (shader: ShaderRef const ref) type: (type: ShaderType) entry_point: (entry_point: Char8 const pointer) ::=> Void
+	inline method attachShaderWithEntryPoint: (shader: ShaderRef const ref) type: (type: ShaderType) entryPoint: (entry_point: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuAttachComputeShaderWithEntryPoint(self address, shader getPointer, type, entry_point)).
 
 	inline method getBuildingLogLength ::=> UInt32
@@ -1609,7 +1609,7 @@ PipelineBuilder extend: {
 	inline method attachShader: (shader: ShaderRef const ref) ::=> Void
 		:= throwIfError: (agpuAttachShader(self address, shader getPointer)).
 
-	inline method attachShaderWithEntryPoint: (shader: ShaderRef const ref) type: (type: ShaderType) entry_point: (entry_point: Char8 const pointer) ::=> Void
+	inline method attachShaderWithEntryPoint: (shader: ShaderRef const ref) type: (type: ShaderType) entryPoint: (entry_point: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuAttachShaderWithEntryPoint(self address, shader getPointer, type, entry_point)).
 
 	inline method getBuildingLogLength ::=> UInt32
@@ -1633,7 +1633,7 @@ PipelineBuilder extend: {
 	inline method setCullMode: (mode: CullMode) ::=> Void
 		:= throwIfError: (agpuSetCullMode(self address, mode)).
 
-	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slope_factor: (slope_factor: Float32) ::=> Void
+	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slopeFactor: (slope_factor: Float32) ::=> Void
 		:= throwIfError: (agpuSetDepthBias(self address, constant_factor, clamp, slope_factor)).
 
 	inline method setDepthState: (enabled: Int32) writeMask: (writeMask: Int32) function: (function: CompareFunction) ::=> Void
@@ -1669,7 +1669,7 @@ PipelineBuilder extend: {
 	inline method setShaderSignature: (signature: ShaderSignatureRef const ref) ::=> Void
 		:= throwIfError: (agpuSetPipelineShaderSignature(self address, signature getPointer)).
 
-	inline method setSampleDescription: (sample_count: UInt32) sample_quality: (sample_quality: UInt32) ::=> Void
+	inline method setSampleDescription: (sample_count: UInt32) sampleQuality: (sample_quality: UInt32) ::=> Void
 		:= throwIfError: (agpuSetSampleDescription(self address, sample_count, sample_quality)).
 
 }.
@@ -1741,7 +1741,7 @@ CommandList extend: {
 	inline method useIndexBuffer: (index_buffer: BufferRef const ref) ::=> Void
 		:= throwIfError: (agpuUseIndexBuffer(self address, index_buffer getPointer)).
 
-	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) index_size: (index_size: UInt32) ::=> Void
+	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) indexSize: (index_size: UInt32) ::=> Void
 		:= throwIfError: (agpuUseIndexBufferAt(self address, index_buffer getPointer, offset, index_size)).
 
 	inline method useDrawIndirectBuffer: (draw_buffer: BufferRef const ref) ::=> Void
@@ -1756,19 +1756,19 @@ CommandList extend: {
 	inline method useComputeShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
 		:= throwIfError: (agpuUseComputeShaderResources(self address, binding getPointer)).
 
-	inline method drawArrays: (vertex_count: UInt32) instance_count: (instance_count: UInt32) first_vertex: (first_vertex: UInt32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
 
 	inline method drawArraysIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
 		:= throwIfError: (agpuDrawArraysIndirect(self address, offset, drawcount)).
 
-	inline method drawElements: (index_count: UInt32) instance_count: (instance_count: UInt32) first_index: (first_index: UInt32) base_vertex: (base_vertex: Int32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawElements: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuDrawElements(self address, index_count, instance_count, first_index, base_vertex, base_instance)).
 
 	inline method drawElementsIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
 		:= throwIfError: (agpuDrawElementsIndirect(self address, offset, drawcount)).
 
-	inline method dispatchCompute: (group_count_x: UInt32) group_count_y: (group_count_y: UInt32) group_count_z: (group_count_z: UInt32) ::=> Void
+	inline method dispatchCompute: (group_count_x: UInt32) groupCountY: (group_count_y: UInt32) groupCountZ: (group_count_z: UInt32) ::=> Void
 		:= throwIfError: (agpuDispatchCompute(self address, group_count_x, group_count_y, group_count_z)).
 
 	inline method dispatchComputeIndirect: (offset: UInt32) ::=> Void
@@ -1783,13 +1783,13 @@ CommandList extend: {
 	inline method close ::=> Void
 		:= throwIfError: (agpuCloseCommandList(self address)).
 
-	inline method reset: (allocator: CommandAllocatorRef const ref) initial_pipeline_state: (initial_pipeline_state: PipelineStateRef const ref) ::=> Void
+	inline method reset: (allocator: CommandAllocatorRef const ref) initialPipelineState: (initial_pipeline_state: PipelineStateRef const ref) ::=> Void
 		:= throwIfError: (agpuResetCommandList(self address, allocator getPointer, initial_pipeline_state getPointer)).
 
-	inline method resetBundle: (allocator: CommandAllocatorRef const ref) initial_pipeline_state: (initial_pipeline_state: PipelineStateRef const ref) inheritance_info: (inheritance_info: InheritanceInfo pointer) ::=> Void
+	inline method resetBundle: (allocator: CommandAllocatorRef const ref) initialPipelineState: (initial_pipeline_state: PipelineStateRef const ref) inheritanceInfo: (inheritance_info: InheritanceInfo pointer) ::=> Void
 		:= throwIfError: (agpuResetBundleCommandList(self address, allocator getPointer, initial_pipeline_state getPointer, inheritance_info)).
 
-	inline method beginRenderPass: (renderpass: RenderpassRef const ref) framebuffer: (framebuffer: FramebufferRef const ref) bundle_content: (bundle_content: Int32) ::=> Void
+	inline method beginRenderPass: (renderpass: RenderpassRef const ref) framebuffer: (framebuffer: FramebufferRef const ref) bundleContent: (bundle_content: Int32) ::=> Void
 		:= throwIfError: (agpuBeginRenderPass(self address, renderpass getPointer, framebuffer getPointer, bundle_content)).
 
 	inline method endRenderPass ::=> Void
@@ -1804,19 +1804,19 @@ CommandList extend: {
 	inline method pushConstants: (offset: UInt32) size: (size: UInt32) values: (values: Void pointer) ::=> Void
 		:= throwIfError: (agpuPushConstants(self address, offset, size, values)).
 
-	inline method memoryBarrier: (source_stage: PipelineStageFlags) dest_stage: (dest_stage: PipelineStageFlags) source_accesses: (source_accesses: AccessFlags) dest_accesses: (dest_accesses: AccessFlags) ::=> Void
+	inline method memoryBarrier: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) ::=> Void
 		:= throwIfError: (agpuMemoryBarrier(self address, source_stage, dest_stage, source_accesses, dest_accesses)).
 
-	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) source_stage: (source_stage: PipelineStageFlags) dest_stage: (dest_stage: PipelineStageFlags) source_accesses: (source_accesses: AccessFlags) dest_accesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
 		:= throwIfError: (agpuBufferMemoryBarrier(self address, buffer getPointer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size)).
 
-	inline method textureMemoryBarrier: (texture: TextureRef const ref) source_stage: (source_stage: PipelineStageFlags) dest_stage: (dest_stage: PipelineStageFlags) source_accesses: (source_accesses: AccessFlags) dest_accesses: (dest_accesses: AccessFlags) subresource_range: (subresource_range: SubresourceRange pointer) ::=> Void
+	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
 		:= throwIfError: (agpuTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, subresource_range)).
 
-	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) new_usage: (new_usage: BufferUsageMask) ::=> Void
+	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) newUsage: (new_usage: BufferUsageMask) ::=> Void
 		:= throwIfError: (agpuPushBufferTransitionBarrier(self address, buffer getPointer, new_usage)).
 
-	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) new_usage: (new_usage: TextureUsageModeMask) subresource_range: (subresource_range: SubresourceRange pointer) ::=> Void
+	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
 		:= throwIfError: (agpuPushTextureTransitionBarrier(self address, texture getPointer, new_usage, subresource_range)).
 
 	inline method popBufferTransitionBarrier ::=> Void
@@ -1825,13 +1825,13 @@ CommandList extend: {
 	inline method popTextureTransitionBarrier ::=> Void
 		:= throwIfError: (agpuPopTextureTransitionBarrier(self address)).
 
-	inline method copyBuffer: (source_buffer: BufferRef const ref) source_offset: (source_offset: UInt32) dest_buffer: (dest_buffer: BufferRef const ref) dest_offset: (dest_offset: UInt32) copy_size: (copy_size: UInt32) ::=> Void
+	inline method copyBuffer: (source_buffer: BufferRef const ref) sourceOffset: (source_offset: UInt32) destBuffer: (dest_buffer: BufferRef const ref) destOffset: (dest_offset: UInt32) copySize: (copy_size: UInt32) ::=> Void
 		:= throwIfError: (agpuCopyBuffer(self address, source_buffer getPointer, source_offset, dest_buffer getPointer, dest_offset, copy_size)).
 
-	inline method copyBufferToTexture: (buffer: BufferRef const ref) texture: (texture: TextureRef const ref) copy_region: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+	inline method copyBufferToTexture: (buffer: BufferRef const ref) texture: (texture: TextureRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
 		:= throwIfError: (agpuCopyBufferToTexture(self address, buffer getPointer, texture getPointer, copy_region)).
 
-	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copy_region: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
 		:= throwIfError: (agpuCopyTextureToBuffer(self address, texture getPointer, buffer getPointer, copy_region)).
 
 }.
@@ -1933,10 +1933,10 @@ VertexBinding extend: {
 	inline method release ::=> Void
 		:= throwIfError: (agpuReleaseVertexBinding(self address)).
 
-	inline method bindVertexBuffers: (count: UInt32) vertex_buffers: (vertex_buffers: BufferRef pointer) ::=> Void
+	inline method bindVertexBuffers: (count: UInt32) vertexBuffers: (vertex_buffers: BufferRef pointer) ::=> Void
 		:= throwIfError: (agpuBindVertexBuffers(self address, count, vertex_buffers reinterpretCastTo: Buffer pointer pointer)).
 
-	inline method bindVertexBuffersWithOffsets: (count: UInt32) vertex_buffers: (vertex_buffers: BufferRef pointer) offsets: (offsets: UInt32 pointer) ::=> Void
+	inline method bindVertexBuffersWithOffsets: (count: UInt32) vertexBuffers: (vertex_buffers: BufferRef pointer) offsets: (offsets: UInt32 pointer) ::=> Void
 		:= throwIfError: (agpuBindVertexBuffersWithOffsets(self address, count, vertex_buffers reinterpretCastTo: Buffer pointer pointer, offsets)).
 
 }.
@@ -1948,7 +1948,7 @@ VertexLayout extend: {
 	inline method release ::=> Void
 		:= throwIfError: (agpuReleaseVertexLayout(self address)).
 
-	inline method addVertexAttributeBindings: (vertex_buffer_count: UInt32) vertex_strides: (vertex_strides: UInt32 pointer) attribute_count: (attribute_count: UInt32) attributes: (attributes: VertexAttribDescription pointer) ::=> Void
+	inline method addVertexAttributeBindings: (vertex_buffer_count: UInt32) vertexStrides: (vertex_strides: UInt32 pointer) attributeCount: (attribute_count: UInt32) attributes: (attributes: VertexAttribDescription pointer) ::=> Void
 		:= throwIfError: (agpuAddVertexAttributeBindings(self address, vertex_buffer_count, vertex_strides, attribute_count, attributes)).
 
 }.
@@ -1964,7 +1964,7 @@ Shader extend: {
 		:= throwIfError: (agpuSetShaderSource(self address, language, sourceText, sourceTextLength)).
 
 	inline method compileShader: (options: Char8 const pointer) ::=> Void
-		:= throwIfError: (agpuCompileShader(self address, options)).
+		:= agpuCompileShader(self address, options).
 
 	inline method getCompilationLogLength ::=> UInt32
 		:= agpuGetShaderCompilationLogLength(self address).
@@ -2056,16 +2056,16 @@ ShaderResourceBinding extend: {
 	inline method release ::=> Void
 		:= throwIfError: (agpuReleaseShaderResourceBinding(self address)).
 
-	inline method bindUniformBuffer: (location: Int32) uniform_buffer: (uniform_buffer: BufferRef const ref) ::=> Void
+	inline method bindUniformBuffer: (location: Int32) uniformBuffer: (uniform_buffer: BufferRef const ref) ::=> Void
 		:= throwIfError: (agpuBindUniformBuffer(self address, location, uniform_buffer getPointer)).
 
-	inline method bindUniformBufferRange: (location: Int32) uniform_buffer: (uniform_buffer: BufferRef const ref) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+	inline method bindUniformBufferRange: (location: Int32) uniformBuffer: (uniform_buffer: BufferRef const ref) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
 		:= throwIfError: (agpuBindUniformBufferRange(self address, location, uniform_buffer getPointer, offset, size)).
 
-	inline method bindStorageBuffer: (location: Int32) storage_buffer: (storage_buffer: BufferRef const ref) ::=> Void
+	inline method bindStorageBuffer: (location: Int32) storageBuffer: (storage_buffer: BufferRef const ref) ::=> Void
 		:= throwIfError: (agpuBindStorageBuffer(self address, location, storage_buffer getPointer)).
 
-	inline method bindStorageBufferRange: (location: Int32) storage_buffer: (storage_buffer: BufferRef const ref) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+	inline method bindStorageBufferRange: (location: Int32) storageBuffer: (storage_buffer: BufferRef const ref) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
 		:= throwIfError: (agpuBindStorageBufferRange(self address, location, storage_buffer getPointer, offset, size)).
 
 	inline method bindSampledTextureView: (location: Int32) view: (view: TextureViewRef const ref) ::=> Void
@@ -2108,7 +2108,7 @@ OfflineShaderCompiler extend: {
 		:= throwIfError: (agpuSetOfflineShaderCompilerSource(self address, language, stage, sourceText, sourceTextLength)).
 
 	inline method compileShader: (target_language: ShaderLanguage) options: (options: Char8 const pointer) ::=> Void
-		:= throwIfError: (agpuCompileOfflineShader(self address, target_language, options)).
+		:= agpuCompileOfflineShader(self address, target_language, options).
 
 	inline method getCompilationLogLength ::=> UInt32
 		:= agpuGetOfflineShaderCompilationLogLength(self address).
@@ -2134,13 +2134,13 @@ StateTrackerCache extend: {
 	inline method release ::=> Void
 		:= throwIfError: (agpuReleaseStateTrackerCacheReference(self address)).
 
-	inline method createStateTracker: (type: CommandListType) command_queue: (command_queue: CommandQueueRef const ref) ::=> StateTrackerRef
+	inline method createStateTracker: (type: CommandListType) commandQueue: (command_queue: CommandQueueRef const ref) ::=> StateTrackerRef
 		:= StateTrackerRef for: (agpuCreateStateTracker(self address, type, command_queue getPointer)).
 
-	inline method createStateTrackerWithCommandAllocator: (type: CommandListType) command_queue: (command_queue: CommandQueueRef const ref) command_allocator: (command_allocator: CommandAllocatorRef const ref) ::=> StateTrackerRef
+	inline method createStateTrackerWithCommandAllocator: (type: CommandListType) commandQueue: (command_queue: CommandQueueRef const ref) commandAllocator: (command_allocator: CommandAllocatorRef const ref) ::=> StateTrackerRef
 		:= StateTrackerRef for: (agpuCreateStateTrackerWithCommandAllocator(self address, type, command_queue getPointer, command_allocator getPointer)).
 
-	inline method createStateTrackerWithFrameBuffering: (type: CommandListType) command_queue: (command_queue: CommandQueueRef const ref) framebuffering_count: (framebuffering_count: UInt32) ::=> StateTrackerRef
+	inline method createStateTrackerWithFrameBuffering: (type: CommandListType) commandQueue: (command_queue: CommandQueueRef const ref) framebufferingCount: (framebuffering_count: UInt32) ::=> StateTrackerRef
 		:= StateTrackerRef for: (agpuCreateStateTrackerWithFrameBuffering(self address, type, command_queue getPointer, framebuffering_count)).
 
 	inline method createImmediateRenderer ::=> ImmediateRendererRef
@@ -2206,7 +2206,7 @@ StateTracker extend: {
 	inline method setCullMode: (mode: CullMode) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetCullMode(self address, mode)).
 
-	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slope_factor: (slope_factor: Float32) ::=> Void
+	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slopeFactor: (slope_factor: Float32) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetDepthBias(self address, constant_factor, clamp, slope_factor)).
 
 	inline method setDepthState: (enabled: Int32) writeMask: (writeMask: Int32) function: (function: CompareFunction) ::=> Void
@@ -2233,7 +2233,7 @@ StateTracker extend: {
 	inline method setShaderSignature: (signature: ShaderSignatureRef const ref) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetShaderSignature(self address, signature getPointer)).
 
-	inline method setSampleDescription: (sample_count: UInt32) sample_quality: (sample_quality: UInt32) ::=> Void
+	inline method setSampleDescription: (sample_count: UInt32) sampleQuality: (sample_quality: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetSampleDescription(self address, sample_count, sample_quality)).
 
 	inline method setViewport: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
@@ -2248,7 +2248,7 @@ StateTracker extend: {
 	inline method useIndexBuffer: (index_buffer: BufferRef const ref) ::=> Void
 		:= throwIfError: (agpuStateTrackerUseIndexBuffer(self address, index_buffer getPointer)).
 
-	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) index_size: (index_size: UInt32) ::=> Void
+	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) indexSize: (index_size: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerUseIndexBufferAt(self address, index_buffer getPointer, offset, index_size)).
 
 	inline method useDrawIndirectBuffer: (draw_buffer: BufferRef const ref) ::=> Void
@@ -2263,19 +2263,19 @@ StateTracker extend: {
 	inline method useComputeShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
 		:= throwIfError: (agpuStateTrackerUseComputeShaderResources(self address, binding getPointer)).
 
-	inline method drawArrays: (vertex_count: UInt32) instance_count: (instance_count: UInt32) first_vertex: (first_vertex: UInt32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
 
 	inline method drawArraysIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerDrawArraysIndirect(self address, offset, drawcount)).
 
-	inline method drawElements: (index_count: UInt32) instance_count: (instance_count: UInt32) first_index: (first_index: UInt32) base_vertex: (base_vertex: Int32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawElements: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerDrawElements(self address, index_count, instance_count, first_index, base_vertex, base_instance)).
 
 	inline method drawElementsIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerDrawElementsIndirect(self address, offset, drawcount)).
 
-	inline method dispatchCompute: (group_count_x: UInt32) group_count_y: (group_count_y: UInt32) group_count_z: (group_count_z: UInt32) ::=> Void
+	inline method dispatchCompute: (group_count_x: UInt32) groupCountY: (group_count_y: UInt32) groupCountZ: (group_count_z: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerDispatchCompute(self address, group_count_x, group_count_y, group_count_z)).
 
 	inline method dispatchComputeIndirect: (offset: UInt32) ::=> Void
@@ -2287,7 +2287,7 @@ StateTracker extend: {
 	inline method executeBundle: (bundle: CommandListRef const ref) ::=> Void
 		:= throwIfError: (agpuStateTrackerExecuteBundle(self address, bundle getPointer)).
 
-	inline method beginRenderPass: (renderpass: RenderpassRef const ref) framebuffer: (framebuffer: FramebufferRef const ref) bundle_content: (bundle_content: Int32) ::=> Void
+	inline method beginRenderPass: (renderpass: RenderpassRef const ref) framebuffer: (framebuffer: FramebufferRef const ref) bundleContent: (bundle_content: Int32) ::=> Void
 		:= throwIfError: (agpuStateTrackerBeginRenderPass(self address, renderpass getPointer, framebuffer getPointer, bundle_content)).
 
 	inline method endRenderPass ::=> Void
@@ -2302,19 +2302,19 @@ StateTracker extend: {
 	inline method pushConstants: (offset: UInt32) size: (size: UInt32) values: (values: Void pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerPushConstants(self address, offset, size, values)).
 
-	inline method memoryBarrier: (source_stage: PipelineStageFlags) dest_stage: (dest_stage: PipelineStageFlags) source_accesses: (source_accesses: AccessFlags) dest_accesses: (dest_accesses: AccessFlags) ::=> Void
+	inline method memoryBarrier: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) ::=> Void
 		:= throwIfError: (agpuStateTrackerMemoryBarrier(self address, source_stage, dest_stage, source_accesses, dest_accesses)).
 
-	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) source_stage: (source_stage: PipelineStageFlags) dest_stage: (dest_stage: PipelineStageFlags) source_accesses: (source_accesses: AccessFlags) dest_accesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerBufferMemoryBarrier(self address, buffer getPointer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size)).
 
-	inline method textureMemoryBarrier: (texture: TextureRef const ref) source_stage: (source_stage: PipelineStageFlags) dest_stage: (dest_stage: PipelineStageFlags) source_accesses: (source_accesses: AccessFlags) dest_accesses: (dest_accesses: AccessFlags) subresource_range: (subresource_range: SubresourceRange pointer) ::=> Void
+	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, subresource_range)).
 
-	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) new_usage: (new_usage: BufferUsageMask) ::=> Void
+	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) newUsage: (new_usage: BufferUsageMask) ::=> Void
 		:= throwIfError: (agpuStateTrackerPushBufferTransitionBarrier(self address, buffer getPointer, new_usage)).
 
-	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) new_usage: (new_usage: TextureUsageModeMask) subresource_range: (subresource_range: SubresourceRange pointer) ::=> Void
+	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerPushTextureTransitionBarrier(self address, texture getPointer, new_usage, subresource_range)).
 
 	inline method popBufferTransitionBarrier ::=> Void
@@ -2323,13 +2323,13 @@ StateTracker extend: {
 	inline method popTextureTransitionBarrier ::=> Void
 		:= throwIfError: (agpuStateTrackerPopTextureTransitionBarrier(self address)).
 
-	inline method copyBuffer: (source_buffer: BufferRef const ref) source_offset: (source_offset: UInt32) dest_buffer: (dest_buffer: BufferRef const ref) dest_offset: (dest_offset: UInt32) copy_size: (copy_size: UInt32) ::=> Void
+	inline method copyBuffer: (source_buffer: BufferRef const ref) sourceOffset: (source_offset: UInt32) destBuffer: (dest_buffer: BufferRef const ref) destOffset: (dest_offset: UInt32) copySize: (copy_size: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerCopyBuffer(self address, source_buffer getPointer, source_offset, dest_buffer getPointer, dest_offset, copy_size)).
 
-	inline method copyBufferToTexture: (buffer: BufferRef const ref) texture: (texture: TextureRef const ref) copy_region: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+	inline method copyBufferToTexture: (buffer: BufferRef const ref) texture: (texture: TextureRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerCopyBufferToTexture(self address, buffer getPointer, texture getPointer, copy_region)).
 
-	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copy_region: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerCopyTextureToBuffer(self address, texture getPointer, buffer getPointer, copy_region)).
 
 }.
@@ -2362,7 +2362,7 @@ ImmediateRenderer extend: {
 	inline method setCullMode: (mode: CullMode) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetCullMode(self address, mode)).
 
-	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slope_factor: (slope_factor: Float32) ::=> Void
+	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slopeFactor: (slope_factor: Float32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetDepthBias(self address, constant_factor, clamp, slope_factor)).
 
 	inline method setDepthState: (enabled: Int32) writeMask: (writeMask: Int32) function: (function: CompareFunction) ::=> Void
@@ -2503,7 +2503,7 @@ ImmediateRenderer extend: {
 	inline method useIndexBuffer: (index_buffer: BufferRef const ref) ::=> Void
 		:= throwIfError: (agpuImmediateRendererUseIndexBuffer(self address, index_buffer getPointer)).
 
-	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) index_size: (index_size: UInt32) ::=> Void
+	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) indexSize: (index_size: UInt32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererUseIndexBufferAt(self address, index_buffer getPointer, offset, index_size)).
 
 	inline method setCurrentMeshColors: (stride: UInt32) elementCount: (elementCount: UInt32) colors: (colors: Void pointer) ::=> Void
@@ -2518,13 +2518,13 @@ ImmediateRenderer extend: {
 	inline method setPrimitiveType: (type: PrimitiveTopology) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetPrimitiveType(self address, type)).
 
-	inline method drawArrays: (vertex_count: UInt32) instance_count: (instance_count: UInt32) first_vertex: (first_vertex: UInt32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
 
-	inline method drawElements: (index_count: UInt32) instance_count: (instance_count: UInt32) first_index: (first_index: UInt32) base_vertex: (base_vertex: Int32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawElements: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererDrawElements(self address, index_count, instance_count, first_index, base_vertex, base_instance)).
 
-	inline method drawElementsWithIndices: (mode: PrimitiveTopology) indices: (indices: Void pointer) index_count: (index_count: UInt32) instance_count: (instance_count: UInt32) first_index: (first_index: UInt32) base_vertex: (base_vertex: Int32) base_instance: (base_instance: UInt32) ::=> Void
+	inline method drawElementsWithIndices: (mode: PrimitiveTopology) indices: (indices: Void pointer) indexCount: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererDrawElementsWithIndices(self address, mode, indices, index_count, instance_count, first_index, base_vertex, base_instance)).
 
 	inline method endMesh ::=> Void

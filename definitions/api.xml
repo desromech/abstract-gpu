@@ -519,7 +519,7 @@
             <constant name="TextureUsagePresent" value="128" />
         </enum>
 
-		<enum name="shader_type">
+		<enum name="shader_type" optionalSuffix="Shader">
 			<constant name="VertexShader" value="0" />
 			<constant name="FragmentShader" value="1" />
 			<constant name="GeometryShader" value="2" />
@@ -1786,7 +1786,7 @@
                 <arg name="sourceTextLength" type="string_length" />
             </method>
 
-            <method name="compileShader" cname="CompileShader" returnType="error">
+            <method name="compileShader" cname="CompileShader" returnType="error" errorIsNotException="true">
                 <arg name="options" type="cstring" />
             </method>
 
@@ -1966,7 +1966,7 @@
                 <arg name="sourceTextLength" type="string_length" />
             </method>
 
-            <method name="compileShader" cname="CompileOfflineShader" returnType="error">
+            <method name="compileShader" cname="CompileOfflineShader" returnType="error" errorIsNotException="true">
                 <arg name="target_language" type="shader_language" />
                 <arg name="options" type="cstring" />
             </method>
