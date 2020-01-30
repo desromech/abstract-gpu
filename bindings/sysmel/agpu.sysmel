@@ -26,7 +26,7 @@ template SmartRefPtr(PT: Type)
 		pointer_ := pointer
 	}.
 
-	inline method initializeFrom: (o: SelfType const ref) ::=> Void := {
+	inline method initializeCopyingFrom: (o: SelfType const ref) ::=> Void := {
 		pointer_ := o __private pointer_.
 		if: pointer_ ~~ nil then: {
 			pointer_ _ addReference
