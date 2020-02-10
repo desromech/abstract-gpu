@@ -34,7 +34,11 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         descriptor.textureType = isArray ? MTLTextureType1DArray : MTLTextureType1D;
         break;
     case AGPU_TEXTURE_2D:
-        descriptor.textureType = isArray ? MTLTextureType2DArray : MTLTextureType2D;
+        if(description->sample_count > 1)
+            descriptor.textureType = isArray ? MTLTextureType2DMultisampleArray : MTLTextureType2DMultisample;
+        else
+            descriptor.textureType = isArray ? MTLTextureType2DArray : MTLTextureType2D;
+        
         break;
     case AGPU_TEXTURE_CUBE:
         descriptor.textureType = MTLTextureTypeCube;
@@ -53,6 +57,7 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
     descriptor.width = description->width;
     descriptor.height = description->height;
     descriptor.mipmapLevelCount = description->miplevels;
+    descriptor.sampleCount = std::max(description->sample_count, 1u);
     descriptor.storageMode = mapTextureStorageMode(description->heap_type); // For upload texture.
 
     auto usageModes = description->usage_modes;

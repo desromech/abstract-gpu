@@ -18,6 +18,7 @@ public:
 
     void releaseDrawable();
     void setDrawable(id<MTLDrawable> drawable, id<MTLTexture> drawableTexture);
+    id<MTLDrawable> borrowDrawable();
     id<MTLTexture> getColorTexture(agpu_uint index);
 
     agpu::device_ref device;

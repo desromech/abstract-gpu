@@ -10,7 +10,7 @@
     swapChain = theSwapChain;
     auto &swapChainInfo = swapChain->swapChainInfo;
 
-    if(![self initWithFrame: NSMakeRect(0, 0, swapChainInfo.width, swapChainInfo.height)])
+    if(![self initWithFrame: NSMakeRect(swapChainInfo.x, swapChainInfo.y, swapChainInfo.width, swapChainInfo.height)])
         return nil;
 
     CGSize drawableSize;
@@ -30,6 +30,22 @@
     return self;
 }
 
+- (void) swapChainRecreatedInto: (AgpuMetal::AMtlSwapChain*)theNewSwapChain
+{
+    auto metalLayer = swapChain->metalLayer;
+    swapChain->metalLayer = nil;
+    theNewSwapChain->metalLayer = metalLayer;
+    swapChain = theNewSwapChain;
+    
+    auto &swapChainInfo = theNewSwapChain->swapChainInfo;
+    self.frame = NSMakeRect(swapChainInfo.x, swapChainInfo.y, swapChainInfo.width, swapChainInfo.height);
+    
+    CGSize drawableSize;
+    drawableSize.width = swapChainInfo.width;
+    drawableSize.height = swapChainInfo.height;
+    metalLayer.drawableSize = drawableSize;
+}
+
 @end
 
 namespace AgpuMetal
@@ -45,6 +61,8 @@ AMtlSwapChain::AMtlSwapChain(const agpu::device_ref &device)
 
 AMtlSwapChain::~AMtlSwapChain()
 {
+    if(view)
+        [view removeFromSuperview];
     if(window)
         [window release];
 }
@@ -56,17 +74,41 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
 
     auto result = agpu::makeObject<AMtlSwapChain> (device);
     auto amtlSwapChain = result.as<AMtlSwapChain> ();
-
-    auto window = (NSWindow*)createInfo->window;
-    amtlSwapChain->window = window;
     amtlSwapChain->swapChainInfo = *createInfo;
+    
+    // If there is an old swap chain, we should just borrow its view and resize its drawable.
+    AMtlSwapChain *oldMtlSwapChain = nullptr;
+    if(createInfo->old_swap_chain)
+    {
+        auto oldSwapChainRef = agpu::swap_chain_ref::import(createInfo->old_swap_chain);
+        oldMtlSwapChain = oldSwapChainRef.as<AMtlSwapChain> ();
+        amtlSwapChain->window = oldMtlSwapChain->window;
+        amtlSwapChain->view = oldMtlSwapChain->view;
 
-    // Create the view
-    amtlSwapChain->view = [[AGPUSwapChainView alloc] initWithSwapChain: amtlSwapChain];
-    if(amtlSwapChain->view == nil)
-        return agpu::swap_chain_ref();
+        oldMtlSwapChain->window = nil;
+        oldMtlSwapChain->view = nil;
+        [amtlSwapChain->view swapChainRecreatedInto: amtlSwapChain];
+    }
+    else
+    {
+        auto window = (__bridge NSWindow*)createInfo->window;
+        [window retain];
+        amtlSwapChain->window = window;
 
-    window.contentView = amtlSwapChain->view;
+        // Create the view
+        amtlSwapChain->view = [[AGPUSwapChainView alloc] initWithSwapChain: amtlSwapChain];
+        if(amtlSwapChain->view == nil)
+            return agpu::swap_chain_ref();
+
+        if(createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW)
+        {
+            [window.contentView addSubview: amtlSwapChain->view];
+        }
+        else
+        {
+            window.contentView = amtlSwapChain->view;        
+        }        
+    }
 
     // Create the depth stencil buffer
     agpu::texture_ref depthStencilBuffer;
@@ -112,6 +154,12 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
     }
 
     // Set the drawable of the first framebuffer
+    if(oldMtlSwapChain)
+    {
+        oldMtlSwapChain->framebuffers[oldMtlSwapChain->currentFramebufferIndex]
+            .as<AMtlFramebuffer> ()->releaseDrawable();
+    }
+    
     auto drawable = [amtlSwapChain->metalLayer nextDrawable];
     if(!drawable)
         return agpu::swap_chain_ref();
@@ -126,6 +174,9 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
 
 agpu_error AMtlSwapChain::swapBuffers()
 {
+    if(!view)
+        return AGPU_INVALID_OPERATION;
+
     auto currentFramebuffer = framebuffers[currentFramebufferIndex];
     auto &presentCommand = presentCommands[currentFramebufferIndex];
     if(presentCommand)
@@ -163,6 +214,11 @@ agpu_size AMtlSwapChain::getFramebufferCount ( )
 
 agpu_error AMtlSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
 {
+    if(swapChainInfo.flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW)
+    {
+        if(view)
+            [view setFrameOrigin: (NSPoint){(CGFloat)x, (CGFloat)y}];
+    }
     return AGPU_OK;
 }
 

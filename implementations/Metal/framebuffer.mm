@@ -78,6 +78,13 @@ void AMtlFramebuffer::releaseDrawable()
     drawable = nil;
 }
 
+id<MTLDrawable> AMtlFramebuffer::borrowDrawable()
+{
+    auto result = drawable;
+    drawable = nil;
+    return result;
+}
+
 void AMtlFramebuffer::setDrawable(id<MTLDrawable> drawable, id<MTLTexture> drawableTexture)
 {
     this->drawable = drawable;

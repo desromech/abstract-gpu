@@ -67,11 +67,13 @@ public:
     void swapBuffers();
 
 protected:
+    void recreateSwapChain();
     agpu_renderpass_ref createMainPass(const glm::vec4 &clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     int screenWidth, screenHeight;
     SDL_Window *window;
 
+    agpu_swap_chain_create_info currentSwapChainCreateInfo;
     agpu_swap_chain_ref swapChain;
     bool quit;
 

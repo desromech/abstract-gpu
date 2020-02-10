@@ -269,7 +269,7 @@ int SampleBase::main(int argc, const char **argv)
     screenWidth = 640;
     screenHeight = 480;
 
-    int flags = 0;
+    int flags = SDL_WINDOW_RESIZABLE;
 
     // Get the platform.
     agpu_platform *platform;
@@ -282,7 +282,7 @@ int SampleBase::main(int argc, const char **argv)
 
     printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
     snprintf(nameBuffer, sizeof(nameBuffer), "AGPU Sample - %s Platform", agpuGetPlatformName(platform));
-    SDL_Window * window = SDL_CreateWindow(nameBuffer, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
+    window = SDL_CreateWindow(nameBuffer, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
     if(!window)
     {
         printError("Failed to open window\n");
@@ -295,26 +295,25 @@ int SampleBase::main(int argc, const char **argv)
     SDL_GetWindowWMInfo(window, &windowInfo);
 
     // Open the device
-    agpu_swap_chain_create_info swapChainCreateInfo;
     agpu_device_open_info openInfo;
     memset(&openInfo, 0, sizeof(openInfo));
-    memset(&swapChainCreateInfo, 0, sizeof(swapChainCreateInfo));
+    memset(&currentSwapChainCreateInfo, 0, sizeof(currentSwapChainCreateInfo));
     switch(windowInfo.subsystem)
     {
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     case SDL_SYSWM_WINDOWS:
-        swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.win.window;
+        currentSwapChainCreateInfo.window = (agpu_pointer)windowInfo.info.win.window;
         break;
 #endif
 #if defined(SDL_VIDEO_DRIVER_X11)
     case SDL_SYSWM_X11:
         openInfo.display = (agpu_pointer)windowInfo.info.x11.display;
-        swapChainCreateInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
+        currentSwapChainCreateInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
         break;
 #endif
 #if defined(SDL_VIDEO_DRIVER_COCOA)
     case SDL_SYSWM_COCOA:
-        swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.cocoa.window;
+        currentSwapChainCreateInfo.window = (agpu_pointer)windowInfo.info.cocoa.window;
         break;
 #endif
     default:
@@ -322,11 +321,11 @@ int SampleBase::main(int argc, const char **argv)
         return -1;
     }
 
-    swapChainCreateInfo.colorbuffer_format = ColorBufferFormat;
-    swapChainCreateInfo.depth_stencil_format = DepthStencilBufferFormat;
-    swapChainCreateInfo.width = screenWidth;
-    swapChainCreateInfo.height = screenHeight;
-    swapChainCreateInfo.buffer_count = 3;
+    currentSwapChainCreateInfo.colorbuffer_format = ColorBufferFormat;
+    currentSwapChainCreateInfo.depth_stencil_format = DepthStencilBufferFormat;
+    currentSwapChainCreateInfo.width = screenWidth;
+    currentSwapChainCreateInfo.height = screenHeight;
+    currentSwapChainCreateInfo.buffer_count = 3;
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debug_layer= true;
@@ -345,7 +344,7 @@ int SampleBase::main(int argc, const char **argv)
     commandQueue = device->getDefaultCommandQueue();
 
     // Create the swap chain.
-    swapChain = device->createSwapChain(commandQueue.get(), &swapChainCreateInfo);
+    swapChain = device->createSwapChain(commandQueue, &currentSwapChainCreateInfo);
     if(!swapChain)
     {
         printError("Failed to create the swap chain\n");
@@ -416,6 +415,19 @@ void SampleBase::processEvents()
         case SDL_QUIT:
             quit = true;
             break;
+        case SDL_WINDOWEVENT:
+            {
+                switch(event.window.event)
+                {
+                case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    recreateSwapChain();
+                    break;
+                default:
+                    break;
+                }
+            }
+            break;
         default:
             //ignore
             break;
@@ -463,6 +475,21 @@ bool SampleBase::initializeSample()
 
 void SampleBase::shutdownSample()
 {
+}
+
+void SampleBase::recreateSwapChain()
+{
+    int w, h;
+    SDL_GetWindowSize(window, &w, &h);
+    screenWidth = std::max(w, 4);
+    screenHeight = std::max(h, 4);
+    
+    device->finishExecution();
+    auto newSwapChainCreateInfo = currentSwapChainCreateInfo;
+    newSwapChainCreateInfo.width = screenWidth;
+    newSwapChainCreateInfo.height = screenHeight;
+    newSwapChainCreateInfo.old_swap_chain = swapChain.get();
+    swapChain = device->createSwapChain(commandQueue, &newSwapChainCreateInfo);
 }
 
 void SampleBase::render()
