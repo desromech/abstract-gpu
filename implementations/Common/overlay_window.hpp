@@ -25,6 +25,7 @@ public:
 
     virtual agpu_error setSize(uint32_t newWidth, uint32_t newHeight) = 0;
     virtual agpu_error setPosition(int32_t newX, int32_t newY) = 0;
+    virtual agpu_error setPositionAndSize(int32_t newX, int32_t newY, uint32_t newWidth, uint32_t newHeight) = 0;
 
     uint32_t width, height;
     int32_t x, y;

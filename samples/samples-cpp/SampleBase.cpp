@@ -458,6 +458,9 @@ void SampleBase::onKeyDown(const SDL_KeyboardEvent &event)
     case SDLK_ESCAPE:
         quit = true;
         break;
+    case SDLK_f:
+        toggleFullscren();
+        break;
     default:
         // ignore
         break;
@@ -477,13 +480,20 @@ void SampleBase::shutdownSample()
 {
 }
 
+void SampleBase::toggleFullscren()
+{
+    auto isFullscreen = (SDL_GetWindowFlags(window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0;
+    SDL_SetWindowFullscreen(window, isFullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+    recreateSwapChain();
+}
+
 void SampleBase::recreateSwapChain()
 {
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
     screenWidth = std::max(w, 4);
     screenHeight = std::max(h, 4);
-    
+
     device->finishExecution();
     auto newSwapChainCreateInfo = currentSwapChainCreateInfo;
     newSwapChainCreateInfo.width = screenWidth;
@@ -498,7 +508,27 @@ void SampleBase::render()
 
 void SampleBase::swapBuffers()
 {
-    swapChain->swapBuffers();
+    try
+    {
+        swapChain->swapBuffers();
+    }
+    catch(agpu_exception &e)
+    {
+        auto errorCode = e.getErrorCode();
+        if(errorCode == AGPU_OUT_OF_DATE)
+        {
+            // We must recreate the swap chain.
+            recreateSwapChain();
+        }
+        else if(errorCode == AGPU_SUBOPTIMAL)
+        {
+            // Ignore this case.
+        }
+        else
+        {
+            throw e;
+        }
+    }
 }
 
 agpu_renderpass_ref SampleBase::createMainPass(const glm::vec4 &clearColor)

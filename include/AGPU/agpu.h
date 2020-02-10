@@ -82,6 +82,8 @@ typedef enum {
 	AGPU_LINKING_ERROR = -10,
 	AGPU_COMMAND_LIST_CLOSED = -11,
 	AGPU_OUT_OF_MEMORY = -12,
+	AGPU_OUT_OF_DATE = -13,
+	AGPU_SUBOPTIMAL = -14,
 } agpu_error;
 
 typedef enum {

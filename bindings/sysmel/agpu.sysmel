@@ -158,6 +158,8 @@ enum Error valueType: Int32; values: #{
 	LinkingError: -10.
 	CommandListClosed: -11.
 	OutOfMemory: -12.
+	OutOfDate: -13.
+	Suboptimal: -14.
 }.
 
 enum Feature valueType: Int32; values: #{

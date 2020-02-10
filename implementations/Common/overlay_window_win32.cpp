@@ -23,6 +23,7 @@ public:
 
 	virtual agpu_error setSize(uint32_t newWidth, uint32_t newHeight) override;
 	virtual agpu_error setPosition(int32_t newX, int32_t newY) override;
+    virtual agpu_error setPositionAndSize(int32_t newX, int32_t newY, uint32_t newWidth, uint32_t newHeight) override;
 
     HWND parentWindowHandle;
     HWND windowHandle;
@@ -57,7 +58,7 @@ OverlaySwapChainWindowPtr createOverlaySwapChainWin32Window(agpu_swap_chain_crea
 		windowClass.style = CS_HREDRAW | CS_VREDRAW;
 		RegisterClassExW(&windowClass);
 	});
-	
+
 	HINSTANCE hInstance = GetModuleHandle(nullptr);
 	HWND overlayHwnd = CreateWindowW(L"AGPUSwapChainOverlayWindowClass", L"AGPUOverlay", WS_CHILD | WS_VISIBLE, createInfo->x, createInfo->y, createInfo->width, createInfo->height, (HWND)createInfo->window, NULL, hInstance, NULL);
 	if (!overlayHwnd)
@@ -107,11 +108,18 @@ agpu_error OverlaySwapChainWin32Window::setSize(uint32_t newWidth, uint32_t newH
 agpu_error OverlaySwapChainWin32Window::setPosition(int32_t newX, int32_t newY)
 {
 	SetWindowPos(windowHandle, HWND_TOP, newX, newY, width, height, SWP_NOSIZE|SWP_NOZORDER);
-	x = newX;
-	y = newY;
 	return AGPU_OK;
 }
 
+agpu_error OverlaySwapChainWin32Window::setPositionAndSize(int32_t newX, int32_t newY, uint32_t newWidth, uint32_t newHeight)
+{
+    SetWindowPos(windowHandle, HWND_TOP, newX, newY, newWidth, newHeight, SWP_NOZORDER);
+    x = newX;
+	y = newY;
+	width = newWidth;
+	height = newHeight;
+    return AGPU_OK;
+}
 
 } // End of namespace AgpuCommon
 #endif //_WIN32

@@ -121,29 +121,49 @@ agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const 
     }
 
 	OverlaySwapChainWindowPtr overlayWindow;
-    if((createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW) != 0)
+    VkResult error;
+    if(createInfo->old_swap_chain)
     {
-        overlayWindow = createOverlaySwapChainWindow(createInfo);
-        if(!overlayWindow)
-            return agpu::swap_chain_ref();
+        auto oldSwapChainRef = agpu::swap_chain_ref::import(createInfo->old_swap_chain);
+        auto avkOldSwapChain = oldSwapChainRef.as<AVkSwapChain> ();
+
+        // Borrow the overlay window from the old swap chain.
+        if((createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW) != 0)
+        {
+            overlayWindow = avkOldSwapChain->overlayWindow;
+            overlayWindow->setPositionAndSize(createInfo->x, createInfo->y, createInfo->width, createInfo->height);
+        }
+
+        // Borrow the surface from the old swap chain.
+        surface = avkOldSwapChain->surface;
+        avkOldSwapChain->surface = VK_NULL_HANDLE;
     }
-
-    VkResult error = VK_ERROR_FEATURE_NOT_PRESENT;
-    if(!createInfo->window_system_name)
-        error = createDefaultSurface(device, graphicsCommandQueue, createInfo, overlayWindow , &surface);
-    else if(!strcmp(createInfo->window_system_name, "xlib"))
-        error = createXlibSurface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
-    else if(!strcmp(createInfo->window_system_name, "xcb"))
-        error = createXcbSurface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
-    else if(!strcmp(createInfo->window_system_name, "win32"))
-        error = createWin32Surface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
-    else if(!strcmp(createInfo->window_system_name, "display"))
-        error = createDisplaySurface(device, graphicsCommandQueue, createInfo, &surface);
-
-    if(error || surface == VK_NULL_HANDLE)
+    else
     {
-        printError("Failed to create the swap chain surface\n");
-        return agpu::swap_chain_ref();
+        if((createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW) != 0)
+        {
+            overlayWindow = createOverlaySwapChainWindow(createInfo);
+            if(!overlayWindow)
+                return agpu::swap_chain_ref();
+        }
+
+        error = VK_ERROR_FEATURE_NOT_PRESENT;
+        if(!createInfo->window_system_name)
+            error = createDefaultSurface(device, graphicsCommandQueue, createInfo, overlayWindow , &surface);
+        else if(!strcmp(createInfo->window_system_name, "xlib"))
+            error = createXlibSurface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
+        else if(!strcmp(createInfo->window_system_name, "xcb"))
+            error = createXcbSurface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
+        else if(!strcmp(createInfo->window_system_name, "win32"))
+            error = createWin32Surface(device, graphicsCommandQueue, createInfo, overlayWindow, &surface);
+        else if(!strcmp(createInfo->window_system_name, "display"))
+            error = createDisplaySurface(device, graphicsCommandQueue, createInfo, &surface);
+
+        if(error || surface == VK_NULL_HANDLE)
+        {
+            printError("Failed to create the swap chain surface\n");
+            return agpu::swap_chain_ref();
+        }
     }
 
     auto presentationQueue = graphicsCommandQueue;
@@ -283,8 +303,7 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         preTransform = surfaceCapabilities.currentTransform;
     }
 
-    VkSwapchainCreateInfoKHR swapchainInfo;
-    memset(&swapchainInfo, 0, sizeof(swapchainInfo));
+    VkSwapchainCreateInfoKHR swapchainInfo = {};
     swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchainInfo.surface = surface;
     swapchainInfo.minImageCount = desiredNumberOfSwapchainImages;
@@ -297,7 +316,13 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
     swapchainInfo.imageArrayLayers = 1;
     swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchainInfo.presentMode = swapchainPresentMode;
-    swapchainInfo.oldSwapchain = handle;
+    swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
+    if(createInfo->old_swap_chain)
+    {
+        auto oldSwapChainRef = agpu::swap_chain_ref::import(createInfo->old_swap_chain);
+        auto avkOldSwapChain = oldSwapChainRef.as<AVkSwapChain> ();
+        swapchainInfo.oldSwapchain = avkOldSwapChain->handle;
+    }
 
     error = deviceForVk->fpCreateSwapchainKHR(deviceForVk->device, &swapchainInfo, nullptr, &handle);
     if (error)
@@ -413,29 +438,27 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
             return false;
     }
 
-    if (!getNextBackBufferIndex())
-        return false;
-
-    return true;
+    auto nextBackBufferError = getNextBackBufferIndex();
+    return nextBackBufferError == AGPU_OK || nextBackBufferError == AGPU_OUT_OF_DATE || nextBackBufferError == AGPU_SUBOPTIMAL;
 }
 
-bool AVkSwapChain::getNextBackBufferIndex()
+agpu_error AVkSwapChain::getNextBackBufferIndex()
 {
     auto semaphore = semaphores[currentSemaphoreIndex];
     currentSemaphoreIndex = (currentSemaphoreIndex + 1) % semaphores.size();
     auto error = deviceForVk->fpAcquireNextImageKHR(deviceForVk->device, handle, UINT64_MAX, semaphore, VK_NULL_HANDLE, &currentBackBufferIndex);
+    agpu_error result = AGPU_OK;
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        // TODO: Recreate the swap chain.
-        printf("Swap chain is out of date\n");
-        return true;
+        return AGPU_OUT_OF_DATE;
     }
     else if (error == VK_SUBOPTIMAL_KHR)
     {
+        result = AGPU_SUBOPTIMAL;
     }
     else if(error)
     {
-        return false;
+        CONVERT_VULKAN_ERROR(error);
     }
 
     {
@@ -451,7 +474,7 @@ bool AVkSwapChain::getNextBackBufferIndex()
         vkQueueSubmit(graphicsQueue.as<AVkCommandQueue> ()->queue, 1, &submit, VK_NULL_HANDLE);
     }
 
-    return true;
+    return result;
 }
 
 agpu_error AVkSwapChain::swapBuffers()
@@ -467,22 +490,17 @@ agpu_error AVkSwapChain::swapBuffers()
 
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        // TODO: Recreate the swap chain.
-        printf("TODO: Out of date swap chain\n");
-        return AGPU_OK;
+        return AGPU_OUT_OF_DATE;
     }
     else if (error == VK_SUBOPTIMAL_KHR)
     {
-        printf("khronos suboptimal\n");
     }
     else if (error)
     {
         CONVERT_VULKAN_ERROR(error);
     }
 
-    if (!getNextBackBufferIndex())
-        return AGPU_ERROR;
-    return AGPU_OK;
+    return getNextBackBufferIndex();
 }
 
 agpu::framebuffer_ptr AVkSwapChain::getCurrentBackBuffer()

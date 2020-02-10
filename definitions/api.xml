@@ -367,6 +367,8 @@
             <constant name="LinkingError" value="-10" />
             <constant name="CommandListClosed" value="-11" />
             <constant name="OutOfMemory" value="-12" />
+            <constant name="OutOfDate" value="-13" />
+            <constant name="Suboptimal" value="-14" />
         </enum>
 
         <enum name="device_open_flags" optionalPrefix="DeviceOpenFlag">

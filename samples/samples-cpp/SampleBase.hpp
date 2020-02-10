@@ -67,6 +67,7 @@ public:
     void swapBuffers();
 
 protected:
+    void toggleFullscren();
     void recreateSwapChain();
     agpu_renderpass_ref createMainPass(const glm::vec4 &clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 

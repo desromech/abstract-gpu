@@ -47,7 +47,7 @@ public:
     uint32_t currentSemaphoreIndex;
     AgpuCommon::OverlaySwapChainWindowPtr overlayWindow;
 private:
-    bool getNextBackBufferIndex();
+    agpu_error getNextBackBufferIndex();
 };
 
 } // End of namespace AgpuVulkan

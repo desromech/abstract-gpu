@@ -15,10 +15,13 @@ matrix:
       sudo: required
       env: BUILD_MODE=Release
     - os: osx
+      osx_image: xcode10.2
       env: BUILD_MODE=Debug
     - os: osx
+      osx_image: xcode10.2
       env: BUILD_MODE=RelWithDebInfo
     - os: osx
+      osx_image: xcode10.2
       env: BUILD_MODE=Release
 
 install: ./.travis_install.sh
