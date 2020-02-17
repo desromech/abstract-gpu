@@ -371,12 +371,11 @@ bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(const agpu::device_ref &d
 
 agpu_error AgpuVkVRSystemSubmissionCommandBuffer::beginCommandBuffer(VkCommandBuffer commandBuffer)
 {
-    VkCommandBufferInheritanceInfo inheritance;
+    VkCommandBufferInheritanceInfo inheritance = {};
     memset(&inheritance, 0, sizeof(inheritance));
     inheritance.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 
-    VkCommandBufferBeginInfo beginInfo;
-    memset(&beginInfo, 0, sizeof(beginInfo));
+    VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.pInheritanceInfo = &inheritance;
 
@@ -464,7 +463,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const
         {
             VkPipelineStageFlags srcStages = 0;
             VkPipelineStageFlags destStages = 0;
-            auto barrier = barrierForImageUsageTransition(rightEyeTexture->image, imageRange, rightEyeTexture->description.usage_modes, leftEyeTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, srcStages, destStages);
+            auto barrier = barrierForImageUsageTransition(rightEyeTexture->image, imageRange, rightEyeTexture->description.usage_modes, rightEyeTexture->description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, srcStages, destStages);
             vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
@@ -483,15 +482,15 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitVREyeRenderTargets(const
             VkPipelineStageFlags srcStages = 0;
             VkPipelineStageFlags destStages = 0;
             auto barrier = barrierForImageUsageTransition(leftEyeTexture->image, imageRange, leftEyeTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, leftEyeTexture->description.main_usage_mode, srcStages, destStages);
-            vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            vkCmdPipelineBarrier(afterSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
         if(rightEyeTexture->description.main_usage_mode != AGPU_TEXTURE_USAGE_COPY_SOURCE)
         {
             VkPipelineStageFlags srcStages = 0;
             VkPipelineStageFlags destStages = 0;
-            auto barrier = barrierForImageUsageTransition(rightEyeTexture->image, imageRange, rightEyeTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, leftEyeTexture->description.main_usage_mode, srcStages, destStages);
-            vkCmdPipelineBarrier(beforeSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            auto barrier = barrierForImageUsageTransition(rightEyeTexture->image, imageRange, rightEyeTexture->description.usage_modes, AGPU_TEXTURE_USAGE_COPY_SOURCE, rightEyeTexture->description.main_usage_mode, srcStages, destStages);
+            vkCmdPipelineBarrier(afterSubmissionCommandList, srcStages, destStages, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
         auto error = vkEndCommandBuffer(afterSubmissionCommandList);
@@ -564,8 +563,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitEyeTexture ( vr::Hmd_Eye
     bounds.vMin = 0.0f;
     bounds.vMax = 1.0f;
 
-    vr::VRVulkanTextureData_t vulkanData;
-    memset(&vulkanData, 0, sizeof(vulkanData));
+    vr::VRVulkanTextureData_t vulkanData = {};
 
     vulkanData.m_nImage = ( uint64_t ) avkTexture->image;
 	vulkanData.m_pDevice = ( VkDevice_T * ) deviceForVk->device;
