@@ -20,48 +20,34 @@ class ref_counter
 {
 public:
     ref_counter(T *cobject)
-        : dispatchTable(&cppRefcountedDispatchTable), object(cobject), strongCount(1), weakCount(0)
+        : dispatchTable(&cppRefcountedDispatchTable), object(cobject), strongCount(1), weakCount(1)
     {
         object->setRefCounterPointer(this);
     }
 
     agpu_error retain()
     {
-        // Check once before doing the increase.
-        if(strongCount == 0)
+        // First sanity check.
+        if(strongCount.load(std::memory_order_acquire) == 0)
             return AGPU_INVALID_OPERATION;
 
-        // Increase the referenece count.
-        auto old = strongCount.fetch_add(1, std::memory_order_relaxed);
-
-        // Check again, for concurrency reasons.
-        if(old == 0)
-            return AGPU_INVALID_OPERATION;
-
+        // Increase the reference count.
+        strongCount.fetch_add(1, std::memory_order_acq_rel);
         return AGPU_OK;
     }
 
     agpu_error release()
     {
         // First sanity check.
-        if(strongCount == 0)
+        if(strongCount.load(std::memory_order_acquire) == 0)
             return AGPU_INVALID_OPERATION;
 
         // Decrease the strong count.
-        auto old = strongCount.fetch_sub(1, std::memory_order_relaxed);
-
-        // Check again, for concurrency reasons.
-        if(old == 0)
-            return AGPU_INVALID_OPERATION;
-
-        // Should I delete the object?
+        auto old = strongCount.fetch_sub(1, std::memory_order_acq_rel);
         if(old == 1)
         {
             delete object;
-
-            // Should I delete myself?
-            if(weakCount == 0)
-                delete this;
+            weakRelease();
         }
 
         return AGPU_OK;
@@ -70,9 +56,9 @@ public:
     bool weakLock()
     {
         unsigned int oldCount;
-        while((oldCount = strongCount.load()) != 0)
+        while((oldCount = strongCount.load(std::memory_order_acquire)) != 0)
         {
-            if(strongCount.compare_exchange_weak(oldCount, oldCount + 1))
+            if(strongCount.compare_exchange_weak(oldCount, oldCount + 1, std::memory_order_acq_rel))
                 return true;
         }
 
@@ -81,10 +67,17 @@ public:
 
     void weakRetain()
     {
+        weakCount.fetch_add(1, std::memory_order_acq_rel);
     }
 
     void weakRelease()
     {
+        auto old = weakCount.fetch_sub(1, std::memory_order_acq_rel);
+        if(old == 1)
+        {
+            // Nobody else is referencing me.
+            delete this;
+        }
     }
 
     agpu_icd_dispatch *dispatchTable;
