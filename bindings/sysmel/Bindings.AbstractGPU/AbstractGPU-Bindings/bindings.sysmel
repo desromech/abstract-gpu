@@ -4,9 +4,9 @@ namespace AGPU definition:
 
 template SmartRefPtr(PT: Type)
 	:= struct definition: {
-	compileTimeConstant PointedType := PT.
-	compileTimeConstant PointerType := PointedType pointer.
-	compileTimeConstant SmartPointerType := SelfType.
+	compileTime constant PointedType := PT.
+	compileTime constant PointerType := PointedType pointer.
+	compileTime constant SmartPointerType := SelfType.
 
 	private field pointer_ type: PointerType.
 
@@ -1340,32 +1340,32 @@ function agpuEndImmediateRendererMesh externC (immediate_renderer: ImmediateRend
 ################################################################################
 ## Smart pointers.
 ################################################################################
-compileTimeConstant DeviceRef := SmartRefPtr(Device).
-compileTimeConstant VrSystemRef := SmartRefPtr(VrSystem).
-compileTimeConstant SwapChainRef := SmartRefPtr(SwapChain).
-compileTimeConstant ComputePipelineBuilderRef := SmartRefPtr(ComputePipelineBuilder).
-compileTimeConstant PipelineBuilderRef := SmartRefPtr(PipelineBuilder).
-compileTimeConstant PipelineStateRef := SmartRefPtr(PipelineState).
-compileTimeConstant CommandQueueRef := SmartRefPtr(CommandQueue).
-compileTimeConstant CommandAllocatorRef := SmartRefPtr(CommandAllocator).
-compileTimeConstant CommandListRef := SmartRefPtr(CommandList).
-compileTimeConstant TextureRef := SmartRefPtr(Texture).
-compileTimeConstant TextureViewRef := SmartRefPtr(TextureView).
-compileTimeConstant SamplerRef := SmartRefPtr(Sampler).
-compileTimeConstant BufferRef := SmartRefPtr(Buffer).
-compileTimeConstant VertexBindingRef := SmartRefPtr(VertexBinding).
-compileTimeConstant VertexLayoutRef := SmartRefPtr(VertexLayout).
-compileTimeConstant ShaderRef := SmartRefPtr(Shader).
-compileTimeConstant FramebufferRef := SmartRefPtr(Framebuffer).
-compileTimeConstant RenderpassRef := SmartRefPtr(Renderpass).
-compileTimeConstant ShaderSignatureBuilderRef := SmartRefPtr(ShaderSignatureBuilder).
-compileTimeConstant ShaderSignatureRef := SmartRefPtr(ShaderSignature).
-compileTimeConstant ShaderResourceBindingRef := SmartRefPtr(ShaderResourceBinding).
-compileTimeConstant FenceRef := SmartRefPtr(Fence).
-compileTimeConstant OfflineShaderCompilerRef := SmartRefPtr(OfflineShaderCompiler).
-compileTimeConstant StateTrackerCacheRef := SmartRefPtr(StateTrackerCache).
-compileTimeConstant StateTrackerRef := SmartRefPtr(StateTracker).
-compileTimeConstant ImmediateRendererRef := SmartRefPtr(ImmediateRenderer).
+compileTime constant DeviceRef := SmartRefPtr(Device).
+compileTime constant VrSystemRef := SmartRefPtr(VrSystem).
+compileTime constant SwapChainRef := SmartRefPtr(SwapChain).
+compileTime constant ComputePipelineBuilderRef := SmartRefPtr(ComputePipelineBuilder).
+compileTime constant PipelineBuilderRef := SmartRefPtr(PipelineBuilder).
+compileTime constant PipelineStateRef := SmartRefPtr(PipelineState).
+compileTime constant CommandQueueRef := SmartRefPtr(CommandQueue).
+compileTime constant CommandAllocatorRef := SmartRefPtr(CommandAllocator).
+compileTime constant CommandListRef := SmartRefPtr(CommandList).
+compileTime constant TextureRef := SmartRefPtr(Texture).
+compileTime constant TextureViewRef := SmartRefPtr(TextureView).
+compileTime constant SamplerRef := SmartRefPtr(Sampler).
+compileTime constant BufferRef := SmartRefPtr(Buffer).
+compileTime constant VertexBindingRef := SmartRefPtr(VertexBinding).
+compileTime constant VertexLayoutRef := SmartRefPtr(VertexLayout).
+compileTime constant ShaderRef := SmartRefPtr(Shader).
+compileTime constant FramebufferRef := SmartRefPtr(Framebuffer).
+compileTime constant RenderpassRef := SmartRefPtr(Renderpass).
+compileTime constant ShaderSignatureBuilderRef := SmartRefPtr(ShaderSignatureBuilder).
+compileTime constant ShaderSignatureRef := SmartRefPtr(ShaderSignature).
+compileTime constant ShaderResourceBindingRef := SmartRefPtr(ShaderResourceBinding).
+compileTime constant FenceRef := SmartRefPtr(Fence).
+compileTime constant OfflineShaderCompilerRef := SmartRefPtr(OfflineShaderCompiler).
+compileTime constant StateTrackerCacheRef := SmartRefPtr(StateTrackerCache).
+compileTime constant StateTrackerRef := SmartRefPtr(StateTracker).
+compileTime constant ImmediateRendererRef := SmartRefPtr(ImmediateRenderer).
 
 ################################################################################
 ## Object bindings.

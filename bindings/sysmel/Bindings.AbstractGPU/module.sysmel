@@ -1,0 +1,2 @@
+Compiler addLinkerArguments: #("-lAgpu" "-L." "-Wl,-rpath=.");
+    loadPackage: #"AbstractGPU-Bindings".
