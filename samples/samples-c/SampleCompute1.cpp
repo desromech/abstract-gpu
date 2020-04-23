@@ -69,13 +69,12 @@ public:
             agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_DESTINATION_BUFFER);
             agpuCopyBuffer(commandList, uploadBuffer, 0, storageBuffer, 0, bufferByteSize);
             agpuPopBufferTransitionBarrier(commandList);
-        }
+	    }
 
 		// Dispatch the compute
 		agpuSetShaderSignature(commandList, shaderSignature);
 		agpuUseComputeShaderResources(commandList, shaderBindings);
 		agpuDispatchCompute(commandList, arraySize, 1, 1);
-
 
         // Copy the data into the readback buffer.
         {

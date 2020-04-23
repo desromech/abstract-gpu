@@ -184,7 +184,64 @@ agpu_error ADXTexture::readTextureData(agpu_int level, agpu_int arrayIndex, agpu
 
 agpu_error ADXTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_region3d* sourceRegion, agpu_size3d* destSize, agpu_pointer buffer)
 {
-	abort();
+    CHECK_POINTER(buffer);
+    if ((description.usage_modes & AGPU_TEXTURE_USAGE_READED_BACK) == 0)
+        return AGPU_INVALID_OPERATION;
+
+    auto subresourceIndex = subresourceIndexFor(level, arrayIndex);
+
+    // Compute the copy source footprint.
+    D3D12_TEXTURE_COPY_LOCATION copySourceLocation= {};
+    copySourceLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    copySourceLocation.SubresourceIndex = subresourceIndex;
+
+    // Compute the copy source footprint.
+    D3D12_TEXTURE_COPY_LOCATION copyDestinationLocation = {};
+    size_t transferSlicePitch = 0;
+    size_t transferSize = 0;
+    computeBufferImageTransferLayout(description, level, &copyDestinationLocation, &transferSlicePitch, &transferSize);
+
+    agpu_error resultCode = AGPU_OK;
+    deviceForDX->withReadbackCommandListDo(transferSize, 1, [&](ADXImplicitResourceReadbackCommandList& readbackList) {
+        if (readbackList.currentStagingBufferSize < transferSize)
+        {
+            resultCode = AGPU_OUT_OF_MEMORY;
+            return;
+        }
+
+        auto success = readbackList.setupCommandBuffer() &&
+            readbackList.transitionTextureUsageMode(resource, description.heap_type, description.main_usage_mode, AGPU_TEXTURE_USAGE_COPY_SOURCE, subresourceIndex) &&
+            readbackList.readbackImageDataToBuffer(copyDestinationLocation, resource, copySourceLocation) &&
+            readbackList.transitionTextureUsageMode(resource, description.heap_type, AGPU_TEXTURE_USAGE_COPY_SOURCE, description.main_usage_mode, subresourceIndex) &&
+            readbackList.submitCommandBufferAndWait() &&
+            readbackList.lockBuffer();
+        resultCode = success ? AGPU_OK : AGPU_ERROR;
+
+        if (!success)
+            return;
+        // Copy the image data into the staging buffer.
+        auto bufferPointer = readbackList.currentStagingBufferPointer;
+        auto& copyFootprint = copyDestinationLocation.PlacedFootprint.Footprint;
+        if (agpu_uint(pitch) == copyFootprint.RowPitch && agpu_uint(slicePitch) == transferSlicePitch && !destSize && !sourceRegion)
+        {
+            memcpy(buffer, bufferPointer, slicePitch);
+        }
+        else
+        {
+            auto srcRow = reinterpret_cast<uint8_t*> (bufferPointer);
+            auto dstRow = reinterpret_cast<uint8_t*> (buffer);
+            for (uint32_t y = 0; y < copyFootprint.Height; ++y)
+            {
+                memcpy(dstRow, srcRow, pitch);
+                dstRow += pitch;
+                srcRow += copyFootprint.RowPitch;
+            }
+        }
+
+        });
+
+    return resultCode;
+
 	/*    auto mappedPointer = mapLevel(level, arrayIndex, AGPU_READ_ONLY, nullptr);
 		if (!mappedPointer)
 			return AGPU_ERROR;

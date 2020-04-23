@@ -41,10 +41,6 @@ public:
 
 private:
     agpu_error createView();
-
-    Spinlock mappingLock;
-    agpu_pointer *mappedPointer;
-    uint32_t mapCount;
 };
 
 } // End of namespace AgpuD3D12

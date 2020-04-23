@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <vector>
 #include <memory>
+#include <algorithm>
 #include "SampleBase.hpp"
 #include "SampleVertex.hpp"
 #include "SDL_syswm.h"

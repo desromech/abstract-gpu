@@ -42,7 +42,7 @@ AGPUMorph >> blitTexture: texture toScreen: aCanvas [
 		pitch := mainFramebufferForm width * 4.
 		slicePitch := pitch * mainFramebufferForm height.
 		mainFramebufferForm unhibernate.
-	
+
 		texture readTextureData: 0 arrayIndex: 0 pitch: pitch slicePitch: slicePitch buffer: mainFramebufferForm bits.
 		aCanvas translucentImage: mainFramebufferForm at: self bounds origin.
 	].
@@ -55,13 +55,13 @@ AGPUMorph >> checkFramebuffer [
 	innerBounds := self innerBounds.
 	currentWidth := innerBounds width asInteger.
 	currentHeight := innerBounds height asInteger.
-	(currentWidth ~= screenWidth or: [ currentHeight ~= screenHeight ]) ifTrue: [ 
+	(currentWidth ~= screenWidth or: [ currentHeight ~= screenHeight ]) ifTrue: [
 		mainFramebuffer release.
 		mainColorbuffer release.
 		mainDepthbuffer ifNotNil: [
 			mainDepthbuffer release.
 		].
-	
+
 		self createFramebuffer
 	]
 ]
@@ -98,11 +98,11 @@ AGPUMorph >> createFramebuffer [
 		main_usage_mode: AGPU_TEXTURE_USAGE_READED_BACK;
 		sample_count: 1.
 	mainColorbuffer := device createTexture: colorBufferDesc.
-	
+
 	mainColorbufferView := mainColorbuffer getOrCreateFullView.
 
 	mainDepthbufferView := nil.
-	(hasDepth or: [ hasStencil ]) ifTrue: [ 
+	(hasDepth or: [ hasStencil ]) ifTrue: [
 		depthStencilFormat := self depthStencilFormat.
 		depthStencilDesc := AGPUTextureDescription new
 			type: AGPU_TEXTURE_2D;
@@ -127,7 +127,7 @@ AGPUMorph >> createFramebuffer [
 
 	mainFramebuffer := device createFrameBuffer: screenWidth height: screenHeight colorCount: 1 colorViews: (AGPU packListOfReferences: {mainColorbufferView}) depthStencilView: mainDepthbufferView.
 	mainFramebufferForm := Form extent: screenWidth@screenHeight depth: 32.
-		
+
 ]
 
 { #category : #initialization }
@@ -135,7 +135,7 @@ AGPUMorph >> createRenderPassWithColor: aColor [
 	| colorAttachment depthStencilAttachment renderpassDescription |
 	colorAttachment := nil.
 	depthStencilAttachment := nil.
-	
+
 	[
 		colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
 		colorAttachment
@@ -143,16 +143,20 @@ AGPUMorph >> createRenderPassWithColor: aColor [
 			begin_action: AGPU_ATTACHMENT_CLEAR;
 			end_action: AGPU_ATTACHMENT_KEEP;
 			clear_value: aColor asAGPUColor4f;
-			sample_count: 1.
-		
+			sample_count: 1;
+			sample_quality: 0.
+
 		depthStencilAttachment := AGPURenderpassDepthStencilDescription externalNew.
 		depthStencilAttachment
 			format: self depthStencilFormat;
 			begin_action: AGPU_ATTACHMENT_CLEAR;
 			end_action: AGPU_ATTACHMENT_KEEP;
+			stencil_begin_action: AGPU_ATTACHMENT_CLEAR;
+			stencil_end_action: AGPU_ATTACHMENT_KEEP;
 			clear_value: (AGPUDepthStencilValue new depth: 1.0; stencil: 0; yourself);
-			sample_count: 1.
-		
+			sample_count: 1;
+			sample_quality: 0.
+
 		renderpassDescription := AGPURenderpassDescription new.
 		renderpassDescription
 			color_attachment_count: 1;
@@ -174,12 +178,12 @@ AGPUMorph >> depthStencilFormat [
 AGPUMorph >> drawOn: aCanvas [
 	self checkSession.
 	self checkFramebuffer.
-	
+
 	perFrameSynchronization renderFrameWith: [ :aStateTracker |
 		stateTracker := aStateTracker.
 		self render.
 	].
-	
+
 	self blitTexture: mainColorbuffer toScreen: aCanvas
 ]
 
@@ -196,23 +200,23 @@ AGPUMorph >> hasStencil [
 { #category : #initialization }
 AGPUMorph >> initialize [
 	super initialize.
-	
+
 	self extent: 640@480.
 	self clipSubmorphs: true.
 	self initializeForNewSession
-	
+
 
 ]
 
 { #category : #initialization }
 AGPUMorph >> initializeForNewSession [
 	device := AGPU mainDevice.
-	
+
 	perFrameSynchronization := AGPUImplicitFrameSynchronization for: device.
 	self createFramebuffer.
 
 	session := AGPU session.
-	
+
 ]
 
 { #category : #'as yet unclassified' }

@@ -18,7 +18,7 @@ DXGI_FORMAT mapIndexFormat(size_t indexSize)
 }
 
 ADXBuffer::ADXBuffer(const agpu::device_ref &device)
-    : weakDevice(device), mappedPointer(nullptr), mapCount(0)
+    : weakDevice(device)
 {
 
 }
@@ -166,34 +166,23 @@ agpu_pointer ADXBuffer::mapBuffer(agpu_mapping_access flags)
     if (!canBeReaded && !canBeWritten)
         return nullptr;
 
-    std::unique_lock<Spinlock> l(mappingLock);
-    if(mapCount == 0)
+    // Check the flags more properly.
+    D3D12_RANGE readRange = {};
+    if (flags & AGPU_READ_ONLY)
+        readRange.End = description.size;
+
+    agpu_pointer* mappedPointer;
+    if (FAILED(resource->Map(0, &readRange, (void**)&mappedPointer)))
     {
-        // Check the flags more properly.
-        D3D12_RANGE readRange = {};
-        if (FAILED(resource->Map(0, canBeReaded ? nullptr : &readRange, (void**)&mappedPointer)))
-        {
-            mapCount = 0;
-            return nullptr;
-        }
+        return nullptr;
     }
 
-    ++mapCount;
     return mappedPointer;
 }
 
 agpu_error ADXBuffer::unmapBuffer()
 {
-    std::unique_lock<Spinlock> l(mappingLock);
-    if (!mappedPointer || mapCount == 0)
-        return AGPU_INVALID_OPERATION;
-
-    --mapCount;
-    if(mapCount != 0)
-        return AGPU_OK;
-
     resource->Unmap(0, nullptr);
-    mappedPointer = nullptr;
     return AGPU_OK;
 }
 

@@ -1,9 +1,5 @@
 add_definitions(-DAGPU_BUILD)
 
-include_directories(
-../../thirdparty/glslang
-)
-
 set(AgpuCommonHighLevelInterfaces_SOURCES
     offline_shader_compiler.cpp
     offline_shader_compiler.hpp

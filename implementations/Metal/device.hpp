@@ -63,6 +63,7 @@ public:
         implicitResourceReadbackCommandList.ensureValidCPUStagingBuffer(requiredCpuBufferSize, requiredCpuBufferAlignment);
 
         f(implicitResourceReadbackCommandList);
+        implicitResourceReadbackCommandList.lockBuffer();
     }
 
 private:

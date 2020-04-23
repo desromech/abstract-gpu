@@ -137,7 +137,8 @@ agpu_error ADXImplicitResourceSetupCommandList::createStagingBuffer(agpu_memory_
         return AGPU_ERROR;
 
     auto resource = *outBuffer;
-    if(FAILED(resource->Map(0, nullptr, mappedPointer)))
+    *mappedPointer = nullptr;
+    if(heapType == AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE && FAILED(resource->Map(0, nullptr, mappedPointer)))
         return AGPU_ERROR;
 
     return AGPU_OK;

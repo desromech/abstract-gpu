@@ -97,6 +97,30 @@ public:
         currentStagingBufferPointer = stagingBufferBasePointer;
     }
 
+    bool lockBuffer()
+    {
+        if (stagingBufferBasePointer)
+            return true;
+
+        D3D12_RANGE range = {};
+        range.End = currentStagingBufferSize;
+
+        buffer->Map(0, &range, (void**)&stagingBufferBasePointer);
+        currentStagingBufferPointer = stagingBufferBasePointer;
+
+        return true;
+    }
+
+    bool unlockBuffer()
+    {
+        if (!stagingBufferBasePointer)
+            return true;
+
+        buffer->Unmap(0, nullptr);
+        stagingBufferBasePointer = nullptr;
+        return true;
+    }
+
     bool uploadBufferData(const ComPtr<ID3D12Resource> &destBuffer, size_t offset, size_t size)
     {
         commandList->CopyBufferRegion(destBuffer.Get(), offset, buffer.Get(), 0, size);
@@ -107,6 +131,14 @@ public:
     {
         copySourceLocation.pResource = buffer.Get();
         copyDestinationLocation.pResource = destTexture.Get();
+        commandList->CopyTextureRegion(&copyDestinationLocation, 0, 0, 0, &copySourceLocation, nullptr);
+        return true;
+    }
+
+    bool readbackImageDataToBuffer(D3D12_TEXTURE_COPY_LOCATION copyDestinationLocation, const ComPtr<ID3D12Resource>& sourceTexture, D3D12_TEXTURE_COPY_LOCATION copySourceLocation)
+    {
+        copyDestinationLocation.pResource = buffer.Get();
+        copySourceLocation.pResource = sourceTexture.Get();
         commandList->CopyTextureRegion(&copyDestinationLocation, 0, 0, 0, &copySourceLocation, nullptr);
         return true;
     }

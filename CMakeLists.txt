@@ -94,6 +94,12 @@ find_library(VULKAN_LIBRARY
 	HINTS ${VULKAN_FIND_LIBRARY_PATHS}
 )
 
+## Prefer out version of glslang
+include_directories(
+thirdparty/glslang
+thirdparty/spirv-cross/
+)
+
 if(VULKAN_INCLUDE_DIRS AND VULKAN_LIBRARY)
 	set(VULKAN_FOUND TRUE)
 	include_directories(${VULKAN_INCLUDE_DIRS})
@@ -105,7 +111,6 @@ include_directories(
 include
 thirdparty/glm
 thirdparty/opengl/include
-thirdparty/spirv-cross/
 )
 
 # Set output dir.
