@@ -526,20 +526,26 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     if (error)
         return false;
 
-    deviceLayerProperties.resize(deviceLayerCount);
-    error = vkEnumerateDeviceLayerProperties(physicalDevice, &deviceLayerCount, &deviceLayerProperties[0]);
-    if (error)
-        return false;
+    if(deviceLayerCount > 0)
+    {
+        deviceLayerProperties.resize(deviceLayerCount);
+        error = vkEnumerateDeviceLayerProperties(physicalDevice, &deviceLayerCount, &deviceLayerProperties[0]);
+        if (error)
+            return false;
+    }
 
     uint32_t deviceExtensionCount;
     error = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr);
     if (error)
         return false;
 
-    deviceExtensionProperties.resize(deviceExtensionCount);
-    error = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, &deviceExtensionProperties[0]);
-    if (error)
-        return false;
+    if(deviceExtensionCount > 0)
+    {
+        deviceExtensionProperties.resize(deviceExtensionCount);
+        error = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, &deviceExtensionProperties[0]);
+        if (error)
+            return false;        
+    }
 
     if(vrSystem)
     {
