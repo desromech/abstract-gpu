@@ -111,7 +111,7 @@ vec4 computingLightingWith(in LightingParameters parameters)
         color += computeLightContributionWith(LightingState.lights[i], parameters);
     }
 
-    return clamp(color, 0.0, 1.0);
+    return clamp(color, 0.0, 1.0)*MaterialState.diffuse.a;
 }
 
 vec4 computingLighting()
