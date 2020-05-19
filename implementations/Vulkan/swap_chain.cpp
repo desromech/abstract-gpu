@@ -38,16 +38,21 @@ AVkSwapChain::~AVkSwapChain()
 static VkResult createXlibSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, const OverlaySwapChainWindowPtr& overlayWindow, VkSurfaceKHR *surface)
 {
 #ifdef __unix__
-    if(!deviceForVk->displayHandle)
-        deviceForVk->displayHandle = XOpenDisplay(nullptr);
+    auto displayHandle = createInfo->display;
+    if(!displayHandle)
+    {
+        if(!deviceForVk->displayHandle)
+            deviceForVk->displayHandle = XOpenDisplay(nullptr);
+        displayHandle = deviceForVk->displayHandle;
+    }
 
-    if (!deviceForVk->displayHandle || !createInfo->window)
+    if (!displayHandle || !createInfo->window)
         return VK_INCOMPLETE;
 
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
     memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.connection = XGetXCBConnection((Display*)deviceForVk->displayHandle);
+    surfaceCreateInfo.connection = XGetXCBConnection((Display*)displayHandle);
     surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
 
     return vkCreateXcbSurfaceKHR(deviceForVk->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
@@ -59,16 +64,21 @@ static VkResult createXlibSurface(const agpu::device_ref &device, const agpu::co
 static VkResult createXcbSurface(const agpu::device_ref &device, const agpu::command_queue_ref &graphicsCommandQueue, agpu_swap_chain_create_info *createInfo, const OverlaySwapChainWindowPtr& overlayWindow, VkSurfaceKHR *surface)
 {
 #ifdef __unix__
-    if(!deviceForVk->displayHandle)
-        deviceForVk->displayHandle = xcb_connect(nullptr, nullptr);
+    auto displayHandle = createInfo->display;
+    if(!displayHandle)
+    {
+        if(!deviceForVk->displayHandle)
+            deviceForVk->displayHandle = xcb_connect(nullptr, nullptr);
+        displayHandle = deviceForVk->displayHandle;
+    }
 
-    if (!deviceForVk->displayHandle || !createInfo->window)
+    if (!displayHandle || !createInfo->window)
         return VK_INCOMPLETE;
 
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
     memset(&surfaceCreateInfo, 0, sizeof(surfaceCreateInfo));
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    surfaceCreateInfo.connection = XGetXCBConnection((Display*)deviceForVk->displayHandle);
+    surfaceCreateInfo.connection = (xcb_connection_t*)displayHandle;
     surfaceCreateInfo.window = (xcb_window_t)(uintptr_t)createInfo->window;
 
     return vkCreateXcbSurfaceKHR(deviceForVk->vulkanInstance, &surfaceCreateInfo, nullptr, surface);
