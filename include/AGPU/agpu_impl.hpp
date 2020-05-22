@@ -544,6 +544,7 @@ public:
 	virtual agpu_bool hasTopLeftNdcOrigin() = 0;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() = 0;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) = 0;
+	virtual agpu_int getLimitValue(agpu_limit limit) = 0;
 	virtual vr_system_ptr getVRSystem() = 0;
 	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
 	virtual state_tracker_cache_ptr createStateTrackerCache(const command_queue_ref & command_queue_family) = 0;

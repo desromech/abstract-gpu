@@ -180,6 +180,14 @@ typedef enum {
 } agpu_feature;
 
 typedef enum {
+	AGPU_LIMIT_NON_COHERENT_ATOM_SIZE = 1,
+	AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT = 2,
+	AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT = 3,
+	AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT = 4,
+	AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT = 5,
+} agpu_limit;
+
+typedef enum {
 	AGPU_ATTACHMENT_KEEP = 0,
 	AGPU_ATTACHMENT_CLEAR = 1,
 	AGPU_ATTACHMENT_DISCARD = 2,
@@ -1005,6 +1013,7 @@ typedef agpu_int (*agpuGetMultiSampleQualityLevels_FUN) (agpu_device* device, ag
 typedef agpu_bool (*agpuHasTopLeftNdcOrigin_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuHasBottomLeftTextureCoordinates_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) (agpu_device* device, agpu_feature feature);
+typedef agpu_int (*agpuGetLimitValue_FUN) (agpu_device* device, agpu_limit limit);
 typedef agpu_vr_system* (*agpuGetVRSystem_FUN) (agpu_device* device);
 typedef agpu_offline_shader_compiler* (*agpuCreateOfflineShaderCompilerForDevice_FUN) (agpu_device* device);
 typedef agpu_state_tracker_cache* (*agpuCreateStateTrackerCache_FUN) (agpu_device* device, agpu_command_queue* command_queue_family);
@@ -1035,6 +1044,7 @@ AGPU_EXPORT agpu_int agpuGetMultiSampleQualityLevels(agpu_device* device, agpu_t
 AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature);
+AGPU_EXPORT agpu_int agpuGetLimitValue(agpu_device* device, agpu_limit limit);
 AGPU_EXPORT agpu_vr_system* agpuGetVRSystem(agpu_device* device);
 AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* device);
 AGPU_EXPORT agpu_state_tracker_cache* agpuCreateStateTrackerCache(agpu_device* device, agpu_command_queue* command_queue_family);
@@ -1798,6 +1808,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuHasTopLeftNdcOrigin_FUN agpuHasTopLeftNdcOrigin;
 	agpuHasBottomLeftTextureCoordinates_FUN agpuHasBottomLeftTextureCoordinates;
 	agpuIsFeatureSupportedOnDevice_FUN agpuIsFeatureSupportedOnDevice;
+	agpuGetLimitValue_FUN agpuGetLimitValue;
 	agpuGetVRSystem_FUN agpuGetVRSystem;
 	agpuCreateOfflineShaderCompilerForDevice_FUN agpuCreateOfflineShaderCompilerForDevice;
 	agpuCreateStateTrackerCache_FUN agpuCreateStateTrackerCache;

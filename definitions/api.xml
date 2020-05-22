@@ -470,6 +470,14 @@
             <constant name="FeatureVRInputDevices" value="7" />
         </enum>
 
+        <enum name="limit" optionalPrefix="Limit">
+            <constant name="LimitNonCoherentAtomSize" value="1" />
+            <constant name="LimitMinMemoryMapAlignment" value="2" />
+            <constant name="LimitMinTexelBufferOffsetAlignment" value="3" />
+            <constant name="LimitMinUniformBufferOffsetAlignment" value="4" />
+            <constant name="LimitMinStorageBufferOffsetAlignment" value="5" />
+        </enum>
+
         <enum name="renderpass_attachment_action" optionalPrefix="Attachment">
             <constant name="AttachmentKeep" value="0" />
             <constant name="AttachmentClear" value="1" />
@@ -1089,6 +1097,10 @@
 
             <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
                 <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getLimitValue" cname="GetLimitValue" returnType="int">
+                <arg name="limit" type="limit" />
             </method>
 
             <method name="getVRSystem" cname="GetVRSystem" returnType="vr_system*">

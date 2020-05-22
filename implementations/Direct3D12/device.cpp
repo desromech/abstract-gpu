@@ -247,6 +247,20 @@ agpu_bool ADXDevice::isFeatureSupported(agpu_feature feature)
 	}
 }
 
+agpu_int ADXDevice::getLimitValue(agpu_limit limit)
+{
+    // TODO: Implement this properly.
+    switch(limit)
+    {
+    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return 256;
+    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return 256;
+    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return 256;
+    case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return 256;
+    case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return 256;
+    default: return 0;
+    }
+}
+
 agpu::vr_system_ptr ADXDevice::getVRSystem()
 {
     // TODO: Implement this with OpenVR, Windows Mixed Reality, and the HoloLens streaming API.

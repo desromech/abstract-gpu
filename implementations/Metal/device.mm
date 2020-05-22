@@ -55,7 +55,7 @@ agpu::device_ref AMtlDevice::open(agpu_device_open_info *openInfo)
     auto device = result.as<AMtlDevice> ();
     device->device = mtlDevice;
     device->mainCommandQueue = AMtlCommandQueue::create(result, mainCommandQueue);
-    
+
     // Store a copy to in the implicit resource command lists.
     device->implicitResourceUploadCommandList.commandQueue = device->mainCommandQueue;
     device->implicitResourceReadbackCommandList.commandQueue = device->mainCommandQueue;
@@ -78,6 +78,20 @@ agpu_bool AMtlDevice::isFeatureSupported(agpu_feature feature)
 
     default:
         return false;
+    }
+}
+
+agpu_int AMtlDevice::getLimitValue(agpu_limit limit)
+{
+    // TODO: Implement this properly.
+    switch(limit)
+    {
+    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return 256;
+    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return 256;
+    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return 256;
+    case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return 256;
+    case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return 256;
+    default: return 0;
     }
 }
 

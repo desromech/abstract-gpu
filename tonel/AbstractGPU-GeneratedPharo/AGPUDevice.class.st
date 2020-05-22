@@ -180,6 +180,13 @@ AGPUDevice >> isFeatureSupported: feature [
 ]
 
 { #category : #'wrappers' }
+AGPUDevice >> getLimitValue: limit [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getLimitValue_device: (self validHandle) limit: limit.
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUDevice >> getVRSystem [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getVRSystem_device: (self validHandle).

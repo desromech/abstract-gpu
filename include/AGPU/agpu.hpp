@@ -310,6 +310,11 @@ public:
 		return agpuIsFeatureSupportedOnDevice(this, feature);
 	}
 
+	inline agpu_int getLimitValue(agpu_limit limit)
+	{
+		return agpuGetLimitValue(this, limit);
+	}
+
 	inline agpu_ref<agpu_vr_system> getVRSystem()
 	{
 		return agpuGetVRSystem(this);

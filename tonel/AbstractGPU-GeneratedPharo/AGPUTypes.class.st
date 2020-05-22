@@ -47,7 +47,7 @@ Class {
 		'agpu_texture_aspect',
 		'agpu_immediate_renderer',
 		'agpu_draw_elements_command',
-		'agpu_texture_type',
+		'agpu_limit',
 		'agpu_cull_mode',
 		'agpu_shader_signature',
 		'agpu_error',
@@ -93,6 +93,7 @@ Class {
 		'agpu_command_queue_type',
 		'agpu_state_tracker_cache',
 		'agpu_vr_event',
+		'agpu_texture_type',
 		'agpu_buffer_usage_mask',
 		'agpu_pointer',
 		'agpu_size3d',
@@ -179,7 +180,7 @@ AGPUTypes class >> initialize [
 	agpu_texture_aspect := #int.
 	agpu_immediate_renderer := #'void'.
 	agpu_draw_elements_command := AGPUDrawElementsCommand.
-	agpu_texture_type := #int.
+	agpu_limit := #int.
 	agpu_cull_mode := #int.
 	agpu_shader_signature := #'void'.
 	agpu_error := #int.
@@ -225,6 +226,7 @@ AGPUTypes class >> initialize [
 	agpu_command_queue_type := #int.
 	agpu_state_tracker_cache := #'void'.
 	agpu_vr_event := AGPUVrEvent.
+	agpu_texture_type := #int.
 	agpu_buffer_usage_mask := #int.
 	agpu_pointer := #'void*'.
 	agpu_size3d := AGPUSize3d.

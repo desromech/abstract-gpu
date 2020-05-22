@@ -544,7 +544,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
         deviceExtensionProperties.resize(deviceExtensionCount);
         error = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, &deviceExtensionProperties[0]);
         if (error)
-            return false;        
+            return false;
     }
 
     if(vrSystem)
@@ -721,6 +721,20 @@ agpu_bool AVkDevice::isFeatureSupported(agpu_feature feature)
     case AGPU_FEATURE_VRINPUT_DEVICES: return isVRInputDevicesSupported;
 	default: return false;
 	}
+}
+
+
+agpu_int AVkDevice::getLimitValue(agpu_limit limit)
+{
+    switch(limit)
+    {
+    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return deviceProperties.limits.nonCoherentAtomSize;
+    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return deviceProperties.limits.minMemoryMapAlignment;
+    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minTexelBufferOffsetAlignment;
+    case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minUniformBufferOffsetAlignment;
+    case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minStorageBufferOffsetAlignment;
+    default: return 0;
+    }
 }
 
 agpu_int AVkDevice::getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)

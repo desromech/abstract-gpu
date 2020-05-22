@@ -194,6 +194,11 @@ AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* self, agpu_fea
 	return asRef(agpu::device, self)->isFeatureSupported(feature);
 }
 
+AGPU_EXPORT agpu_int agpuGetLimitValue(agpu_device* self, agpu_limit limit)
+{
+	return asRef(agpu::device, self)->getLimitValue(limit);
+}
+
 AGPU_EXPORT agpu_vr_system* agpuGetVRSystem(agpu_device* self)
 {
 	return reinterpret_cast<agpu_vr_system*> (asRef(agpu::device, self)->getVRSystem());

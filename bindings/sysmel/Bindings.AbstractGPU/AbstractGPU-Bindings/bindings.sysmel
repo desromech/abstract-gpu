@@ -188,6 +188,29 @@ enum ShaderBindingType valueType: Int32; values: #{
 	Count: 7.
 }.
 
+enum VrButton valueType: Int32; values: #{
+	System: 0.
+	ApplicationMenu: 1.
+	Grip: 2.
+	DpadLeft: 3.
+	DpadUp: 4.
+	DpadRight: 5.
+	DpadDown: 6.
+	A: 7.
+	ProximitySensor: 31.
+	Axis0: 32.
+	Axis1: 33.
+	Axis2: 34.
+	Axis3: 35.
+	Axis4: 36.
+	SteamVrTouchpad: 32.
+	SteamVrTrigger: 33.
+	DashboardBack: 2.
+	KnucklesA: 2.
+	KnucklesB: 1.
+	KnucklesJoyStick: 35.
+}.
+
 enum FaceWinding valueType: Int32; values: #{
 	CounterClockwise: 0.
 	Clockwise: 1.
@@ -507,27 +530,12 @@ enum MemoryHeapType valueType: Int32; values: #{
 	Stream: 1.
 }.
 
-enum AccessFlags valueType: Int32; values: #{
-	IndirectCommandRead: 1.
-	IndexRead: 2.
-	VertexAttributeRead: 4.
-	UniformRead: 8.
-	InputAttachmentRead: 16.
-	ShaderRead: 32.
-	ShaderWrite: 64.
-	ColorAttachmentRead: 128.
-	ColorAttachmentWrite: 256.
-	DepthStencilAttachmentRead: 512.
-	DepthStencilAttachmentWrite: 1024.
-	TransferRead: 2048.
-	TransferWrite: 4096.
-	HostRead: 8192.
-	HostWrite: 16384.
-	MemoryRead: 32768.
-	MemoryWrite: 65536.
-	TransformFeedbackWrite: 33554432.
-	TransformFeedbackCounterRead: 67108864.
-	TransformFeedbackCounterWrite: 134217728.
+enum Limit valueType: Int32; values: #{
+	NonCoherentAtomSize: 1.
+	MinMemoryMapAlignment: 2.
+	MinTexelBufferOffsetAlignment: 3.
+	MinUniformBufferOffsetAlignment: 4.
+	MinStorageBufferOffsetAlignment: 5.
 }.
 
 enum StencilOperation valueType: Int32; values: #{
@@ -662,27 +670,27 @@ enum FieldType valueType: Int32; values: #{
 	UnsignedInt: 9.
 }.
 
-enum VrButton valueType: Int32; values: #{
-	System: 0.
-	ApplicationMenu: 1.
-	Grip: 2.
-	DpadLeft: 3.
-	DpadUp: 4.
-	DpadRight: 5.
-	DpadDown: 6.
-	A: 7.
-	ProximitySensor: 31.
-	Axis0: 32.
-	Axis1: 33.
-	Axis2: 34.
-	Axis3: 35.
-	Axis4: 36.
-	SteamVrTouchpad: 32.
-	SteamVrTrigger: 33.
-	DashboardBack: 2.
-	KnucklesA: 2.
-	KnucklesB: 1.
-	KnucklesJoyStick: 35.
+enum AccessFlags valueType: Int32; values: #{
+	IndirectCommandRead: 1.
+	IndexRead: 2.
+	VertexAttributeRead: 4.
+	UniformRead: 8.
+	InputAttachmentRead: 16.
+	ShaderRead: 32.
+	ShaderWrite: 64.
+	ColorAttachmentRead: 128.
+	ColorAttachmentWrite: 256.
+	DepthStencilAttachmentRead: 512.
+	DepthStencilAttachmentWrite: 1024.
+	TransferRead: 2048.
+	TransferWrite: 4096.
+	HostRead: 8192.
+	HostWrite: 16384.
+	MemoryRead: 32768.
+	MemoryWrite: 65536.
+	TransformFeedbackWrite: 33554432.
+	TransformFeedbackCounterRead: 67108864.
+	TransformFeedbackCounterWrite: 134217728.
 }.
 
 struct DeviceOpenInfo definition: {
@@ -1010,6 +1018,7 @@ function agpuGetMultiSampleQualityLevels externC (device: Device pointer, format
 function agpuHasTopLeftNdcOrigin externC (device: Device pointer) => Int32.
 function agpuHasBottomLeftTextureCoordinates externC (device: Device pointer) => Int32.
 function agpuIsFeatureSupportedOnDevice externC (device: Device pointer, feature: Feature) => Int32.
+function agpuGetLimitValue externC (device: Device pointer, limit: Limit) => Int32.
 function agpuGetVRSystem externC (device: Device pointer) => VrSystem pointer.
 function agpuCreateOfflineShaderCompilerForDevice externC (device: Device pointer) => OfflineShaderCompiler pointer.
 function agpuCreateStateTrackerCache externC (device: Device pointer, command_queue_family: CommandQueue pointer) => StateTrackerCache pointer.
@@ -1478,6 +1487,9 @@ Device extend: {
 
 	inline method isFeatureSupported: (feature: Feature) ::=> Int32
 		:= agpuIsFeatureSupportedOnDevice(self address, feature).
+
+	inline method getLimitValue: (limit: Limit) ::=> Int32
+		:= agpuGetLimitValue(self address, limit).
 
 	inline method getVRSystem ::=> VrSystemRef
 		:= VrSystemRef for: (agpuGetVRSystem(self address)).

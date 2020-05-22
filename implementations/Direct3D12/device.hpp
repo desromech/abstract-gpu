@@ -53,6 +53,7 @@ public:
 	virtual agpu_bool hasTopLeftNdcOrigin() override;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
+	virtual agpu_int getLimitValue(agpu_limit limit) override;
 	virtual agpu::vr_system_ptr getVRSystem() override;
 	virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
 	virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;

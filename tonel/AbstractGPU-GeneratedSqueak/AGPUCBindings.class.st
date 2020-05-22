@@ -218,6 +218,12 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> getLimitValue_device: device limit: limit [
+	<cdecl: long 'agpuGetLimitValue' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'device' }
 AGPUCBindings >> getVRSystem_device: device [
 	<cdecl: void* 'agpuGetVRSystem' (void*)>
 	^ self externalCallFailed

@@ -184,6 +184,11 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> getLimitValue_device: device limit: limit [
+	^ self ffiCall: #(agpu_int agpuGetLimitValue (agpu_device* device , agpu_limit limit) )
+]
+
+{ #category : #'device' }
 AGPUCBindings >> getVRSystem_device: device [
 	^ self ffiCall: #(agpu_vr_system* agpuGetVRSystem (agpu_device* device) )
 ]
