@@ -61,8 +61,8 @@ inline agpu_vr_tracked_device_class mapTrackedDeviceClass(vr::TrackedDeviceClass
     }
 }
 
-AVkVrSystem::AVkVrSystem(const agpu::device_ref &cdevice)
-    : weakDevice(cdevice), submissionCommandBufferIndex(0)
+AVkVrSystem::AVkVrSystem(const agpu::device_ref &device)
+    : weakDevice(device), sharedContext(deviceForVk->sharedContext), submissionCommandBufferIndex(0)
 {
     currentTrackedDevicePoses.resize(vr::k_unMaxTrackedDeviceCount);
     currentRenderTrackedDevicePoses.resize(vr::k_unMaxTrackedDeviceCount);
@@ -91,8 +91,7 @@ agpu_cstring AVkVrSystem::getVRSystemName()
 
 agpu_pointer AVkVrSystem::getNativeHandle()
 {
-    auto device = weakDevice.lock();
-    return deviceForVk->vrSystem;
+    return sharedContext->vrSystem;
 }
 
 agpu_error AVkVrSystem::getRecommendedRenderTargetSize(agpu_size2d* size )
@@ -101,7 +100,7 @@ agpu_error AVkVrSystem::getRecommendedRenderTargetSize(agpu_size2d* size )
 
     uint32_t width, height;
     auto device = weakDevice.lock();
-    deviceForVk->vrSystem->GetRecommendedRenderTargetSize(&width, &height);
+    sharedContext->vrSystem->GetRecommendedRenderTargetSize(&width, &height);
     size->width = width;
     size->height = height;
     return AGPU_OK;
@@ -111,7 +110,7 @@ agpu_error AVkVrSystem::getEyeToHeadTransform(agpu_vr_eye eye, agpu_matrix4x4f* 
 {
     CHECK_POINTER(transform);
     auto device = weakDevice.lock();
-    *transform = convertOVRMatrix(deviceForVk->vrSystem->GetEyeToHeadTransform(mapVREye(eye)));
+    *transform = convertOVRMatrix(sharedContext->vrSystem->GetEyeToHeadTransform(mapVREye(eye)));
     return AGPU_OK;
 }
 
@@ -119,7 +118,7 @@ agpu_error AVkVrSystem::getProjectionMatrix ( agpu_vr_eye eye, agpu_float near_d
 {
     CHECK_POINTER(projection_matrix);
     auto device = weakDevice.lock();
-    *projection_matrix = convertOVRMatrix(deviceForVk->vrSystem->GetProjectionMatrix(mapVREye(eye), near_distance, far_distance));
+    *projection_matrix = convertOVRMatrix(sharedContext->vrSystem->GetProjectionMatrix(mapVREye(eye), near_distance, far_distance));
     return AGPU_OK;
 }
 
@@ -129,7 +128,7 @@ agpu_error AVkVrSystem::getProjectionFrustumTangents(agpu_vr_eye eye, agpu_frust
 
     float left, right, top, bottom;
     auto device = weakDevice.lock();
-    deviceForVk->vrSystem->GetProjectionRaw(mapVREye(eye), &left, &right, &top, &bottom);
+    sharedContext->vrSystem->GetProjectionRaw(mapVREye(eye), &left, &right, &top, &bottom);
 
     frustum->left = left;
     frustum->right = right;
@@ -160,7 +159,7 @@ agpu_vr_tracked_device_pose AVkVrSystem::convertTrackedDevicePose(agpu_uint devi
 
     auto device = weakDevice.lock();
     convertedPose.device_id = deviceId;
-    convertedPose.device_class = mapTrackedDeviceClass(deviceForVk->vrSystem->GetTrackedDeviceClass(deviceId));
+    convertedPose.device_class = mapTrackedDeviceClass(sharedContext->vrSystem->GetTrackedDeviceClass(deviceId));
     convertedPose.device_role = AGPU_VR_TRACKED_DEVICE_ROLE_INVALID;
 
     convertedPose.device_to_absolute_tracking = convertOVRMatrix(devicePose.mDeviceToAbsoluteTracking);
@@ -231,7 +230,7 @@ agpu_bool AVkVrSystem::pollEvent ( agpu_vr_event* event )
 
     vr::VREvent_t rawEvent;
     auto device = weakDevice.lock();
-    while(deviceForVk->vrSystem->PollNextEvent(&rawEvent, sizeof(rawEvent)))
+    while(sharedContext->vrSystem->PollNextEvent(&rawEvent, sizeof(rawEvent)))
     {
         // We are using the same ids, so there is no need to map them.
         memset(event, 0, sizeof(agpu_vr_event));
@@ -296,23 +295,20 @@ AgpuVkVRSystemSubmissionCommandBuffer::AgpuVkVRSystemSubmissionCommandBuffer()
 
 AgpuVkVRSystemSubmissionCommandBuffer::~AgpuVkVRSystemSubmissionCommandBuffer()
 {
-    auto device = weakDevice.lock();
-    if(device)
-    {
-        if(fence)
-            vkDestroyFence(deviceForVk->device, fence, nullptr);
-        if(beforeSubmissionCommandList)
-            vkFreeCommandBuffers(deviceForVk->device, commandPool, 1, &beforeSubmissionCommandList);
-        if(afterSubmissionCommandList)
-            vkFreeCommandBuffers(deviceForVk->device, commandPool, 1, &afterSubmissionCommandList);
-        if(commandPool)
-            vkDestroyCommandPool(deviceForVk->device, commandPool, nullptr);
-    }
+    if(fence)
+        vkDestroyFence(sharedContext->device, fence, nullptr);
+    if(beforeSubmissionCommandList)
+        vkFreeCommandBuffers(sharedContext->device, commandPool, 1, &beforeSubmissionCommandList);
+    if(afterSubmissionCommandList)
+        vkFreeCommandBuffers(sharedContext->device, commandPool, 1, &afterSubmissionCommandList);
+    if(commandPool)
+        vkDestroyCommandPool(sharedContext->device, commandPool, nullptr);
 }
 
 bool AgpuVkVRSystemSubmissionCommandBuffer::initialize(const agpu::device_ref &device)
 {
     this->weakDevice = device;
+    this->sharedContext = deviceForVk->sharedContext;
 
     // Create the fence
     {

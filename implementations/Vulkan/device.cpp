@@ -169,9 +169,38 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFunction(
     return VK_FALSE;
 }
 
+AVkDeviceSharedContext::AVkDeviceSharedContext()
+    :
+	debugReportCallback(VK_NULL_HANDLE)
+{
+    hasDebugReportExtension = false;
+    debugReportCallback = VK_NULL_HANDLE;
+    vrSystem = nullptr;
+}
+
+AVkDeviceSharedContext::~AVkDeviceSharedContext()
+{
+    if(vrSystem)
+        vr::VR_Shutdown();
+
+    // Destroy the memory allocator.
+    if(memoryAllocator)
+        vmaDestroyAllocator(memoryAllocator);
+
+    // Destroy the debug report callback.
+    if (debugReportCallback)
+        fpDestroyDebugReportCallbackEXT(vulkanInstance, debugReportCallback, nullptr);
+
+    // Destroy the vulkan devices
+    if(device)
+        vkDestroyDevice(device, nullptr);
+
+    if(vulkanInstance)
+        vkDestroyInstance(vulkanInstance, nullptr);
+}
+
 AVkDevice::AVkDevice()
     :
-	debugReportCallback(VK_NULL_HANDLE),
     implicitResourceSetupCommandList(*this),
     implicitResourceUploadCommandList(*this),
     implicitResourceReadbackCommandList(*this)
@@ -179,39 +208,17 @@ AVkDevice::AVkDevice()
     vulkanInstance = nullptr;
     physicalDevice = nullptr;
     device = nullptr;
-    hasDebugReportExtension = false;
-    debugReportCallback = VK_NULL_HANDLE;
 
     isVRDisplaySupported = false;
     isVRInputDevicesSupported = false;
-    vrSystem = nullptr;
 }
 
 AVkDevice::~AVkDevice()
 {
-    // Shutdown the VR system, when I die.
-    if(vrSystem)
-    {
-        vr::VR_Shutdown();
-    }
-
 	// Destroy the implicit command list.
 	implicitResourceSetupCommandList.destroy();
 	implicitResourceUploadCommandList.destroy();
 	implicitResourceReadbackCommandList.destroy();
-
-    // Destroy the memory allocator.
-    vmaDestroyAllocator(memoryAllocator);
-
-	// Destroy the debug report callback.
-	if (debugReportCallback)
-    {
-		fpDestroyDebugReportCallbackEXT(vulkanInstance, debugReportCallback, nullptr);
-    }
-
-	// Destroy the vulkan devices
-	vkDestroyDevice(device, nullptr);
-	vkDestroyInstance(vulkanInstance, nullptr);
 }
 
 bool AVkDevice::checkVulkanImplementation(VulkanPlatform *platform)
@@ -292,7 +299,8 @@ bool AVkDevice::checkDebugReportExtension()
     debugInfo.pfnCallback = debugReportCallbackFunction;
     debugInfo.pUserData = this;
 
-    auto error = fpCreateDebugReportCallbackEXT(vulkanInstance, &debugInfo, nullptr, &debugReportCallback);
+    sharedContext->fpDestroyDebugReportCallbackEXT = fpDestroyDebugReportCallbackEXT;
+    auto error = fpCreateDebugReportCallbackEXT(vulkanInstance, &debugInfo, nullptr, &sharedContext->debugReportCallback);
     if (error)
     {
         printError("Failed to register debug report callback.\n");
@@ -362,6 +370,8 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     std::vector<const char *> deviceExtensions;
 
     displayHandle = openInfo->display;
+    sharedContext = std::make_shared<AVkDeviceSharedContext> ();
+    auto &vrSystem = sharedContext->vrSystem;
 
     // Is VR support requested? if so, we may need to request some extensions
     // that are required by the VR system.
@@ -445,7 +455,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     // Enable the debug reporting extension
     if (openInfo->debug_layer && hasExtension("VK_EXT_debug_report", instanceExtensionProperties))
     {
-        hasDebugReportExtension = true;
+        sharedContext->hasDebugReportExtension = true;
         instanceExtensions.push_back("VK_EXT_debug_report");
     }
 
@@ -463,6 +473,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     error = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
     if (error)
         return false;
+    sharedContext->vulkanInstance = vulkanInstance;
 
     // Get the physical devices
     uint32_t gpuCount;
@@ -582,8 +593,8 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     GET_INSTANCE_PROC_ADDR(GetPhysicalDeviceSurfacePresentModesKHR);
     GET_INSTANCE_PROC_ADDR(GetSwapchainImagesKHR);
 
-    if (hasDebugReportExtension)
-        hasDebugReportExtension = checkDebugReportExtension();
+    if (sharedContext->hasDebugReportExtension)
+        sharedContext->hasDebugReportExtension = checkDebugReportExtension();
 
     // Open all the availables queues.
     std::vector<VkDeviceQueueCreateInfo> createQueueInfos;
@@ -633,6 +644,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     error = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
     if (error)
         return false;
+    sharedContext->device = device;
 
     GET_DEVICE_PROC_ADDR(CreateSwapchainKHR);
     GET_DEVICE_PROC_ADDR(DestroySwapchainKHR);
@@ -688,7 +700,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
-    vmaCreateAllocator(&allocatorInfo, &memoryAllocator);
+    vmaCreateAllocator(&allocatorInfo, &sharedContext->memoryAllocator);
 
     // Store a copy to in the implicit resource command lists.
     implicitResourceSetupCommandList.commandQueue = graphicsCommandQueues[0];

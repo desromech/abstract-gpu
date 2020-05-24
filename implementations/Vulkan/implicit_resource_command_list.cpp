@@ -100,7 +100,8 @@ void AVkImplicitResourceSetupCommandList::destroy()
 {
     if(commandPool == VK_NULL_HANDLE)
         return;
-	vkDestroyCommandPool(device.device, commandPool, nullptr);
+
+    vkDestroyCommandPool(device.device, commandPool, nullptr);
 	commandPool = VK_NULL_HANDLE;
 	commandBuffer = VK_NULL_HANDLE;
 }
@@ -234,8 +235,8 @@ bool AVkImplicitResourceSetupCommandList::transitionImageUsageMode(VkImage image
 
 VkResult AVkImplicitResourceSetupCommandList::destroyStagingBuffer(VkBuffer bufferHandle, VmaAllocation allocationHandle)
 {
-	vmaUnmapMemory(device.memoryAllocator, allocationHandle);
-    vmaDestroyBuffer(device.memoryAllocator, bufferHandle, allocationHandle);
+	vmaUnmapMemory(device.sharedContext->memoryAllocator, allocationHandle);
+    vmaDestroyBuffer(device.sharedContext->memoryAllocator, bufferHandle, allocationHandle);
     return VK_SUCCESS;
 }
 
@@ -251,10 +252,10 @@ VkResult AVkImplicitResourceSetupCommandList::createStagingBuffer(agpu_memory_he
     allocationInfo.usage = mapHeapType(heapType);
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     allocationInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    auto error = vmaCreateBuffer(device.memoryAllocator, &bufferDescription, &allocationInfo, bufferHandle, allocationHandle, nullptr);
+    auto error = vmaCreateBuffer(device.sharedContext->memoryAllocator, &bufferDescription, &allocationInfo, bufferHandle, allocationHandle, nullptr);
     if(error) return error;
 
-    return vmaMapMemory(device.memoryAllocator, *allocationHandle, mappedPointer);
+    return vmaMapMemory(device.sharedContext->memoryAllocator, *allocationHandle, mappedPointer);
 }
 
 } // End of namespace AgpuVulkan

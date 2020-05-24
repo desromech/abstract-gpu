@@ -14,6 +14,24 @@ namespace AgpuVulkan
 {
 class VulkanPlatform;
 
+class AVkDeviceSharedContext
+{
+public:
+    AVkDeviceSharedContext();
+    ~AVkDeviceSharedContext();
+
+    bool hasDebugReportExtension;
+    PFN_vkDestroyDebugReportCallbackEXT fpDestroyDebugReportCallbackEXT;
+    VkDebugReportCallbackEXT debugReportCallback;
+
+    VkInstance vulkanInstance;
+    VkDevice device;
+    VmaAllocator memoryAllocator;
+    vr::IVRSystem *vrSystem;
+};
+
+typedef std::shared_ptr<AVkDeviceSharedContext> AVkDeviceSharedContextPtr;
+
 /**
 * Agpu vulkan device
 */
@@ -74,8 +92,8 @@ public:
     std::vector<VkQueueFamilyProperties> queueProperties;
 
     VkInstance vulkanInstance;
-    VkPhysicalDevice physicalDevice;
     VkDevice device;
+    VkPhysicalDevice physicalDevice;
     VkPhysicalDeviceFeatures deviceFeatures;
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -86,8 +104,6 @@ public:
     // Debug layer extension pointers
     PFN_vkCreateDebugReportCallbackEXT fpCreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT fpDestroyDebugReportCallbackEXT;
-    bool hasDebugReportExtension;
-    VkDebugReportCallbackEXT debugReportCallback;
 
     // Required extension pointers.
     DECLARE_VK_EXTENSION_FP(GetPhysicalDeviceSurfaceSupportKHR);
@@ -104,7 +120,6 @@ public:
     bool isVRDisplaySupported;
     bool isVRInputDevicesSupported;
 
-    vr::IVRSystem *vrSystem;
     agpu::vr_system_ref vrSystemWrapper;
 
     // Queues
@@ -112,8 +127,8 @@ public:
     std::vector<agpu::command_queue_ref> computeCommandQueues;
     std::vector<agpu::command_queue_ref> transferCommandQueues;
 
-    // The memory allocator
-    VmaAllocator memoryAllocator;
+    // The device shared context data. This is keep in a separate object with lifetime management objectives.
+    AVkDeviceSharedContextPtr sharedContext;
 
 public:
     /*bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)

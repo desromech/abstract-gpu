@@ -20,6 +20,7 @@ public:
     agpu_error beginCommandBuffer(VkCommandBuffer commandBuffer);
     agpu_error waitFence();
 
+    AVkDeviceSharedContextPtr sharedContext;
     agpu::device_weakref weakDevice;
 
     VkFence fence;
@@ -62,6 +63,7 @@ public:
     virtual agpu_bool pollEvent ( agpu_vr_event* event ) override;
 
     agpu::device_weakref weakDevice;
+    AVkDeviceSharedContextPtr sharedContext;
 
 private:
     agpu_vr_tracked_device_pose convertTrackedDevicePose(agpu_uint deviceId, const vr::TrackedDevicePose_t &devicePose);

@@ -26,6 +26,7 @@ public:
     virtual agpu_error invalidateWholeBuffer() override;
 
     agpu::device_weakref weakDevice;
+    AVkDeviceSharedContextPtr sharedContext;
     agpu_buffer_description description;
 
     VkBuffer handle;

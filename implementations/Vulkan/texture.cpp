@@ -118,7 +118,7 @@ AVkTexture::~AVkTexture()
         return;
 
     if(image)
-        vmaDestroyImage(deviceForVk->memoryAllocator, image, memory);
+        vmaDestroyImage(deviceForVk->sharedContext->memoryAllocator, image, memory);
 }
 
 agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_texture_description *description)
@@ -175,7 +175,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     allocInfo.usage = mapHeapType(description->heap_type);
     VkImage image;
     VmaAllocation textureMemory;
-    auto error = vmaCreateImage(deviceForVk->memoryAllocator, &createInfo, &allocInfo, &image, &textureMemory, nullptr);
+    auto error = vmaCreateImage(deviceForVk->sharedContext->memoryAllocator, &createInfo, &allocInfo, &image, &textureMemory, nullptr);
     if(error)
         return agpu::texture_ref();
 
@@ -239,7 +239,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
 
     if (!success)
     {
-        vmaDestroyImage(deviceForVk->memoryAllocator, image, textureMemory);
+        vmaDestroyImage(deviceForVk->sharedContext->memoryAllocator, image, textureMemory);
         return agpu::texture_ref();
     }
 

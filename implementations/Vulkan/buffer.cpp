@@ -4,7 +4,7 @@ namespace AgpuVulkan
 {
 
 AVkBuffer::AVkBuffer(const agpu::device_ref &device)
-    : weakDevice(device)
+    : weakDevice(device), sharedContext(deviceForVk->sharedContext)
 {
     handle = VK_NULL_HANDLE;
     allocation = VK_NULL_HANDLE;
@@ -13,12 +13,8 @@ AVkBuffer::AVkBuffer(const agpu::device_ref &device)
 
 AVkBuffer::~AVkBuffer()
 {
-    auto device = weakDevice.lock();
-    if(device)
-    {
-        if (handle)
-            vmaDestroyBuffer(deviceForVk->memoryAllocator, handle, allocation);
-    }
+    if (handle)
+        vmaDestroyBuffer(sharedContext->memoryAllocator, handle, allocation);
 }
 
 agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_description* originalDescription, agpu_pointer initial_data)
@@ -78,7 +74,7 @@ agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_d
 
     VkBuffer bufferHandle;
     VmaAllocation allocationHandle;
-    auto error = vmaCreateBuffer(deviceForVk->memoryAllocator, &bufferDescription, &allocationInfo, &bufferHandle, &allocationHandle, nullptr);
+    auto error = vmaCreateBuffer(deviceForVk->sharedContext->memoryAllocator, &bufferDescription, &allocationInfo, &bufferHandle, &allocationHandle, nullptr);
     if(error) return agpu::buffer_ref();
 
     // Create the buffer object.
@@ -114,7 +110,7 @@ agpu_pointer AVkBuffer::mapBuffer(agpu_mapping_access flags)
     std::unique_lock<Spinlock> l(mappingLock);
     if (mapCount == 0)
     {
-        auto error = vmaMapMemory(deviceForVk->memoryAllocator, allocation, &mappedPointer);
+        auto error = vmaMapMemory(sharedContext->memoryAllocator, allocation, &mappedPointer);
         if (error)
         {
             return nullptr;
@@ -137,7 +133,7 @@ agpu_error AVkBuffer::unmapBuffer()
     --mapCount;
     if (mapCount == 0)
     {
-        vmaUnmapMemory(deviceForVk->memoryAllocator, allocation);
+        vmaUnmapMemory(sharedContext->memoryAllocator, allocation);
         mappedPointer = nullptr;
     }
 
@@ -260,7 +256,7 @@ agpu_error AVkBuffer::flushWholeBuffer()
     if(!device)
         return AGPU_INVALID_OPERATION;
 
-    vmaFlushAllocation(deviceForVk->memoryAllocator, allocation, 0, description.size);
+    vmaFlushAllocation(deviceForVk->sharedContext->memoryAllocator, allocation, 0, description.size);
     return AGPU_OK;
 }
 
@@ -273,7 +269,7 @@ agpu_error AVkBuffer::invalidateWholeBuffer()
     if(!device)
         return AGPU_INVALID_OPERATION;
 
-    vmaInvalidateAllocation(deviceForVk->memoryAllocator, allocation, 0, description.size);
+    vmaInvalidateAllocation(deviceForVk->sharedContext->memoryAllocator, allocation, 0, description.size);
     return AGPU_OK;
 }
 
