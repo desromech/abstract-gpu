@@ -2006,6 +2006,12 @@ AGPUCBindings >> setLightingEnabled_immediate_renderer: immediate_renderer enabl
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setLightingModel_immediate_renderer: immediate_renderer model: model [
+	<cdecl: long 'agpuImmediateRendererSetLightingModel' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> clearLights_immediate_renderer: immediate_renderer [
 	<cdecl: long 'agpuImmediateRendererClearLights' (void*)>
 	^ self externalCallFailed
@@ -2026,6 +2032,18 @@ AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index en
 { #category : #'immediate_renderer' }
 AGPUCBindings >> setMaterial_immediate_renderer: immediate_renderer state: state [
 	<cdecl: long 'agpuImmediateRendererSetMaterial' (void* AGPUImmediateRendererMaterial*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setSkinningEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	<cdecl: long 'agpuImmediateRendererSetSkinningEnabled' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setSkinBones_immediate_renderer: immediate_renderer count: count matrices: matrices transpose: transpose [
+	<cdecl: long 'agpuImmediateRendererSetSkinBones' (void* ulong float* long)>
 	^ self externalCallFailed
 ]
 

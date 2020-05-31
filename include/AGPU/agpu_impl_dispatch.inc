@@ -2043,6 +2043,12 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingEnabled(agpu_immediate_re
 	return asRef(agpu::immediate_renderer, self)->setLightingEnabled(enabled);
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingModel(agpu_immediate_renderer* self, agpu_immediate_renderer_lighting_model model)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setLightingModel(model);
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererClearLights(agpu_immediate_renderer* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
@@ -2065,6 +2071,18 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial(agpu_immediate_renderer*
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::immediate_renderer, self)->setMaterial(state);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetSkinningEnabled(agpu_immediate_renderer* self, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setSkinningEnabled(enabled);
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetSkinBones(agpu_immediate_renderer* self, agpu_uint count, agpu_float* matrices, agpu_bool transpose)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setSkinBones(count, matrices, transpose);
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_renderer* self, agpu_bool enabled)

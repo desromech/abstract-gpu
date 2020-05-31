@@ -948,6 +948,15 @@
             <constant name="ImmediateRendererVertexAttributeColor" value="1" />
             <constant name="ImmediateRendererVertexAttributeNormal" value="2" />
             <constant name="ImmediateRendererVertexAttributeTexcoord" value="3" />
+            <constant name="ImmediateRendererVertexAttributeTexcoord2" value="4" />
+            <constant name="ImmediateRendererVertexAttributeBoneIndices" value="5" />
+            <constant name="ImmediateRendererVertexAttributeBoneWeights" value="6" />
+        </enum>
+
+        <enum name="immediate_renderer_lighting_model" optionalPrefix="ImmediateRendererLightingModel">
+            <constant name="ImmediateRendererLightingModelPerVertex" value="0" />
+            <constant name="ImmediateRendererLightingModelPerFragment" value="1" />
+            <constant name="ImmediateRendererLightingModelPerMetallicRoughness" value="2" />
         </enum>
 
         <enum name="immediate_renderer_fog_mode" optionalPrefix="ImmediateRendererFogMode">
@@ -2550,6 +2559,10 @@
                 <arg name="enabled" type="bool" />
             </method>
 
+            <method name="setLightingModel" cname="ImmediateRendererSetLightingModel" returnType="error">
+                <arg name="model" type="immediate_renderer_lighting_model" />
+            </method>
+
             <method name="clearLights" cname="ImmediateRendererClearLights" returnType="error">
             </method>
 
@@ -2568,6 +2581,16 @@
 
             <method name="setMaterial" cname="ImmediateRendererSetMaterial" returnType="error">
                 <arg name="state" type="immediate_renderer_material*" />
+            </method>
+
+            <method name="setSkinningEnabled" cname="ImmediateRendererSetSkinningEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setSkinBones" cname="ImmediateRendererSetSkinBones" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="matrices" type="float*" />
+                <arg name="transpose" type="bool" />
             </method>
 
             <method name="setTexturingEnabled" cname="ImmediateRendererSetTextureEnabled" returnType="error">

@@ -530,6 +530,13 @@ agpu_error ImmediateRenderer::setLightingEnabled(agpu_bool enabled)
     return AGPU_OK;
 }
 
+
+agpu_error ImmediateRenderer::setLightingModel(agpu_immediate_renderer_lighting_model model)
+{
+	currentRenderingState.lightingModel = model;
+    return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::clearLights()
 {
     auto newState = lightingStateBuffer.currentState;
@@ -675,10 +682,23 @@ agpu_error ImmediateRenderer::setTexturingEnabled(agpu_bool enabled)
     currentRenderingState.texturingEnabled = enabled;
     return AGPU_OK;
 }
+
 agpu_error ImmediateRenderer::bindTexture(const agpu::texture_ref &texture)
 {
     currentRenderingState.activeTexture = texture;
     return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::setSkinningEnabled(agpu_bool enabled)
+{
+	currentRenderingState.skinningEnabled = enabled;
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose)
+{
+	printf("TODO: setSkinBones\n");
+	return AGPU_OK;
 }
 
 agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(const agpu::texture_ref &texture)

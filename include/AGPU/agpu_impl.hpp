@@ -999,10 +999,13 @@ public:
 	virtual agpu_error scale(agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error setFlatShading(agpu_bool enabled) = 0;
 	virtual agpu_error setLightingEnabled(agpu_bool enabled) = 0;
+	virtual agpu_error setLightingModel(agpu_immediate_renderer_lighting_model model) = 0;
 	virtual agpu_error clearLights() = 0;
 	virtual agpu_error setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a) = 0;
 	virtual agpu_error setLight(agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state) = 0;
 	virtual agpu_error setMaterial(agpu_immediate_renderer_material* state) = 0;
+	virtual agpu_error setSkinningEnabled(agpu_bool enabled) = 0;
+	virtual agpu_error setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose) = 0;
 	virtual agpu_error setTexturingEnabled(agpu_bool enabled) = 0;
 	virtual agpu_error bindTexture(const texture_ref & texture) = 0;
 	virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) = 0;

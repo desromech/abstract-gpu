@@ -129,6 +129,12 @@ enum CommandQueueType valueType: Int32; values: #{
 	Transfer: 2.
 }.
 
+enum ImmediateRendererLightingModel valueType: Int32; values: #{
+	PerVertex: 0.
+	PerFragment: 1.
+	PerMetallicRoughness: 2.
+}.
+
 enum RenderBufferBit valueType: Int32; values: #{
 	DepthBufferBit: 1.
 	StencilBufferBit: 2.
@@ -554,6 +560,9 @@ enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
 	Color: 1.
 	Normal: 2.
 	Texcoord: 3.
+	Texcoord2: 4.
+	BoneIndices: 5.
+	BoneWeights: 6.
 }.
 
 enum CompareFunction valueType: Int32; values: #{
@@ -1316,10 +1325,13 @@ function agpuImmediateRendererTranslate externC (immediate_renderer: ImmediateRe
 function agpuImmediateRendererScale externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
 function agpuImmediateRendererSetFlatShading externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
 function agpuImmediateRendererSetLightingEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetLightingModel externC (immediate_renderer: ImmediateRenderer pointer, model: ImmediateRendererLightingModel) => Error.
 function agpuImmediateRendererClearLights externC (immediate_renderer: ImmediateRenderer pointer) => Error.
 function agpuImmediateRendererSetAmbientLighting externC (immediate_renderer: ImmediateRenderer pointer, r: Float32, g: Float32, b: Float32, a: Float32) => Error.
 function agpuImmediateRendererSetLight externC (immediate_renderer: ImmediateRenderer pointer, index: UInt32, enabled: Int32, state: ImmediateRendererLight pointer) => Error.
 function agpuImmediateRendererSetMaterial externC (immediate_renderer: ImmediateRenderer pointer, state: ImmediateRendererMaterial pointer) => Error.
+function agpuImmediateRendererSetSkinningEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetSkinBones externC (immediate_renderer: ImmediateRenderer pointer, count: UInt32, matrices: Float32 pointer, transpose: Int32) => Error.
 function agpuImmediateRendererSetTextureEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
 function agpuImmediateRendererBindTexture externC (immediate_renderer: ImmediateRenderer pointer, texture: Texture pointer) => Error.
 function agpuImmediateRendererSetClipPlane externC (immediate_renderer: ImmediateRenderer pointer, index: UInt32, enabled: Int32, p1: Float32, p2: Float32, p3: Float32, p4: Float32) => Error.
@@ -2457,6 +2469,9 @@ ImmediateRenderer extend: {
 	inline method setLightingEnabled: (enabled: Int32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetLightingEnabled(self address, enabled)).
 
+	inline method setLightingModel: (model: ImmediateRendererLightingModel) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetLightingModel(self address, model)).
+
 	inline method clearLights ::=> Void
 		:= throwIfError: (agpuImmediateRendererClearLights(self address)).
 
@@ -2468,6 +2483,12 @@ ImmediateRenderer extend: {
 
 	inline method setMaterial: (state: ImmediateRendererMaterial pointer) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetMaterial(self address, state)).
+
+	inline method setSkinningEnabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetSkinningEnabled(self address, enabled)).
+
+	inline method setSkinBones: (count: UInt32) matrices: (matrices: Float32 pointer) transpose: (transpose: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetSkinBones(self address, count, matrices, transpose)).
 
 	inline method setTexturingEnabled: (enabled: Int32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetTextureEnabled(self address, enabled)).

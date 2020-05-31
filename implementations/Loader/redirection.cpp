@@ -2665,6 +2665,14 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingEnabled ( agpu_immediate_
 	return (*dispatchTable)->agpuImmediateRendererSetLightingEnabled ( immediate_renderer, enabled );
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetLightingModel ( agpu_immediate_renderer* immediate_renderer, agpu_immediate_renderer_lighting_model model )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetLightingModel ( immediate_renderer, model );
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererClearLights ( agpu_immediate_renderer* immediate_renderer )
 {
 	if (immediate_renderer == nullptr)
@@ -2695,6 +2703,22 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetMaterial ( agpu_immediate_rendere
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
 	return (*dispatchTable)->agpuImmediateRendererSetMaterial ( immediate_renderer, state );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetSkinningEnabled ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetSkinningEnabled ( immediate_renderer, enabled );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererSetSkinBones ( agpu_immediate_renderer* immediate_renderer, agpu_uint count, agpu_float* matrices, agpu_bool transpose )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetSkinBones ( immediate_renderer, count, matrices, transpose );
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )

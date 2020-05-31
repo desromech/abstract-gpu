@@ -1674,6 +1674,11 @@ AGPUCBindings >> setLightingEnabled_immediate_renderer: immediate_renderer enabl
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setLightingModel_immediate_renderer: immediate_renderer model: model [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetLightingModel (agpu_immediate_renderer* immediate_renderer , agpu_immediate_renderer_lighting_model model) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> clearLights_immediate_renderer: immediate_renderer [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererClearLights (agpu_immediate_renderer* immediate_renderer) )
 ]
@@ -1691,6 +1696,16 @@ AGPUCBindings >> setLight_immediate_renderer: immediate_renderer index: index en
 { #category : #'immediate_renderer' }
 AGPUCBindings >> setMaterial_immediate_renderer: immediate_renderer state: state [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererSetMaterial (agpu_immediate_renderer* immediate_renderer , agpu_immediate_renderer_material* state) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setSkinningEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetSkinningEnabled (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> setSkinBones_immediate_renderer: immediate_renderer count: count matrices: matrices transpose: transpose [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetSkinBones (agpu_immediate_renderer* immediate_renderer , agpu_uint count , agpu_float* matrices , agpu_bool transpose) )
 ]
 
 { #category : #'immediate_renderer' }

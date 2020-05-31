@@ -2075,6 +2075,11 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererSetLightingEnabled(this, enabled));
 	}
 
+	inline void setLightingModel(agpu_immediate_renderer_lighting_model model)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetLightingModel(this, model));
+	}
+
 	inline void clearLights()
 	{
 		agpuThrowIfFailed(agpuImmediateRendererClearLights(this));
@@ -2093,6 +2098,16 @@ public:
 	inline void setMaterial(agpu_immediate_renderer_material* state)
 	{
 		agpuThrowIfFailed(agpuImmediateRendererSetMaterial(this, state));
+	}
+
+	inline void setSkinningEnabled(agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetSkinningEnabled(this, enabled));
+	}
+
+	inline void setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetSkinBones(this, count, matrices, transpose));
 	}
 
 	inline void setTexturingEnabled(agpu_bool enabled)

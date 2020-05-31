@@ -257,6 +257,13 @@ AGPUImmediateRenderer >> setLightingEnabled: enabled [
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> setLightingModel: model [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setLightingModel_immediate_renderer: (self validHandle) model: model.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> clearLights [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance clearLights_immediate_renderer: (self validHandle).
@@ -281,6 +288,20 @@ AGPUImmediateRenderer >> setLight: index enabled: enabled state: state [
 AGPUImmediateRenderer >> setMaterial: state [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setMaterial_immediate_renderer: (self validHandle) state: state.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> setSkinningEnabled: enabled [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setSkinningEnabled_immediate_renderer: (self validHandle) enabled: enabled.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> setSkinBones: count matrices: matrices transpose: transpose [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setSkinBones_immediate_renderer: (self validHandle) count: count matrices: matrices transpose: transpose.
 	self checkErrorCode: resultValue_
 ]
 

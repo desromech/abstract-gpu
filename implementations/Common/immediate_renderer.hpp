@@ -60,13 +60,17 @@ struct ImmediateRenderingState
     ImmediateRenderingState()
         : activePrimitiveTopology(AGPU_POINTS),
           flatShading(false),
+          lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX),
           lightingEnabled(false),
-          texturingEnabled(false) {}
+          texturingEnabled(false),
+          skinningEnabled(false) {}
 
     agpu_primitive_topology activePrimitiveTopology;
     bool flatShading;
     bool lightingEnabled;
+    agpu_immediate_renderer_lighting_model lightingModel;
     bool texturingEnabled;
+    bool skinningEnabled;
 
     agpu::shader_resource_binding_ref lightingStateBinding;
     agpu::shader_resource_binding_ref extraRenderingStateBinding;
@@ -452,10 +456,13 @@ public:
     // Fixed function pipeline states
     virtual agpu_error setFlatShading(agpu_bool enabled) override;
     virtual agpu_error setLightingEnabled(agpu_bool enabled) override;
+    virtual agpu_error setLightingModel(agpu_immediate_renderer_lighting_model model) override;
     virtual agpu_error clearLights() override;
     virtual agpu_error setAmbientLighting(agpu_float r, agpu_float g, agpu_float b, agpu_float a) override;
     virtual agpu_error setLight(agpu_uint index, agpu_bool enabled, agpu_immediate_renderer_light* state) override;
     virtual agpu_error setMaterial(agpu_immediate_renderer_material* state) override;
+    virtual agpu_error setSkinningEnabled(agpu_bool enabled) override;
+	virtual agpu_error setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose) override;
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
     virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) override;
