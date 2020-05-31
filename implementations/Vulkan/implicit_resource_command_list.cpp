@@ -98,6 +98,7 @@ AVkImplicitResourceSetupCommandList::~AVkImplicitResourceSetupCommandList()
 
 void AVkImplicitResourceSetupCommandList::destroy()
 {
+    fflush(stdout);
     if(commandPool == VK_NULL_HANDLE)
         return;
 

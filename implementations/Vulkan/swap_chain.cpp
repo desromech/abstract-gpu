@@ -291,12 +291,17 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
 
     VkPresentModeKHR swapchainPresentMode = presentModes[0];
     for (size_t i = 0; i < presentModeCount; i++) {
-        if (presentModes[i] == VK_PRESENT_MODE_FIFO_KHR) {
+        if (presentModes[i] == VK_PRESENT_MODE_FIFO_KHR && swapchainPresentMode != VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
             swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         }
 
         if (presentModes[i] == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
             swapchainPresentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+            break;
+        }
+
+        if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+            swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
             break;
         }
     }

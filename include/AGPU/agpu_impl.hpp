@@ -120,8 +120,7 @@ public:
 
     ~ref()
     {
-        if(counter)
-            counter->release();
+        reset();
     }
 
     static StrongRef import(void *rawCounter)
@@ -145,9 +144,10 @@ public:
 
     void reset(Counter *newCounter = nullptr)
     {
-        if(counter)
-            counter->release();
+        auto c = counter;
         counter = newCounter;
+        if(c)
+            c->release();
     }
 
     Counter *disown()
@@ -245,8 +245,7 @@ public:
 
     ~weak_ref()
     {
-        if(counter)
-            counter->weakRelease();
+        reset();
     }
 
     WeakRef &operator=(const StrongRef &other)
@@ -269,6 +268,14 @@ public:
             counter->weakRelease();
         counter = newCounter;
         return *this;
+    }
+
+    void reset()
+    {
+        auto c = counter;
+        counter = nullptr;
+        if(c)
+            c->weakRelease();
     }
 
     StrongRef lock()
