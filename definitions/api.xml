@@ -956,7 +956,7 @@
         <enum name="immediate_renderer_lighting_model" optionalPrefix="ImmediateRendererLightingModel">
             <constant name="ImmediateRendererLightingModelPerVertex" value="0" />
             <constant name="ImmediateRendererLightingModelPerFragment" value="1" />
-            <constant name="ImmediateRendererLightingModelPerMetallicRoughness" value="2" />
+            <constant name="ImmediateRendererLightingModelMetallicRoughness" value="2" />
         </enum>
 
         <enum name="immediate_renderer_fog_mode" optionalPrefix="ImmediateRendererFogMode">

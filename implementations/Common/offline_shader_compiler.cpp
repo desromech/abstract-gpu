@@ -125,6 +125,7 @@ agpu_error GLSLangOfflineShaderCompiler::compileShader(agpu_shader_language targ
     case AGPU_SHADER_LANGUAGE_EGLSL:
     case AGPU_SHADER_LANGUAGE_VGLSL:
     case AGPU_SHADER_LANGUAGE_HLSL:
+    case AGPU_SHADER_LANGUAGE_DEVICE_SHADER:
         return compileShaderWithGLSLang(target_language, options);
     default:
         return AGPU_UNSUPPORTED;

@@ -7,28 +7,58 @@
 #include <assert.h>
 #include <vector>
 #include <functional>
+#include <string.h>
 
 namespace AgpuCommon
 {
 
+struct ImmediateShaderCompilationParameters
+{
+    ImmediateShaderCompilationParameters()
+        : flatShading(false),
+        texturingEnabled(false),
+        skinningEnabled(false),
+        lightingEnabled(false),
+        lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX)
+    {}
+
+    bool operator==(const ImmediateShaderCompilationParameters &other) const;
+    size_t hash() const;
+
+    std::string shaderOptionsString(agpu_shader_type type) const;
+
+    bool flatShading;
+    bool texturingEnabled;
+    bool skinningEnabled;
+    bool lightingEnabled;
+    agpu_immediate_renderer_lighting_model lightingModel;
+};
+}
+
+namespace std
+{
+template<>
+struct hash<AgpuCommon::ImmediateShaderCompilationParameters>
+{
+    size_t operator()(const AgpuCommon::ImmediateShaderCompilationParameters &ref) const
+    {
+        return ref.hash();
+    }
+};
+}
+
+namespace AgpuCommon
+{
 class ImmediateShaderLibrary
 {
 public:
-    agpu::shader_ref flatColorVertex;
-    agpu::shader_ref flatLightedColorVertex;
-    agpu::shader_ref flatColorFragment;
 
-    agpu::shader_ref flatTexturedVertex;
-    agpu::shader_ref flatLightedTexturedVertex;
-    agpu::shader_ref flatTexturedFragment;
+    agpu::shader_ref getOrCreateWithCompilationParameters(const agpu::device_ref &device, const ImmediateShaderCompilationParameters &params, agpu_shader_type type);
 
-    agpu::shader_ref smoothLightedColorVertex;
-    agpu::shader_ref smoothColorVertex;
-    agpu::shader_ref smoothColorFragment;
-
-    agpu::shader_ref smoothLightedTexturedVertex;
-    agpu::shader_ref smoothTexturedVertex;
-    agpu::shader_ref smoothTexturedFragment;
+private:
+    std::mutex shaderCompilationMutex;
+    std::unordered_map<ImmediateShaderCompilationParameters, agpu::shader_ref> vertexShaderCache;
+    std::unordered_map<ImmediateShaderCompilationParameters, agpu::shader_ref> fragmentShaderCache;
 };
 
 class ImmediateRendererSamplerState
@@ -60,8 +90,8 @@ struct ImmediateRenderingState
     ImmediateRenderingState()
         : activePrimitiveTopology(AGPU_POINTS),
           flatShading(false),
-          lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX),
           lightingEnabled(false),
+          lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX),
           texturingEnabled(false),
           skinningEnabled(false) {}
 
@@ -76,6 +106,7 @@ struct ImmediateRenderingState
     agpu::shader_resource_binding_ref extraRenderingStateBinding;
     agpu::shader_resource_binding_ref materialStateBinding;
     agpu::shader_resource_binding_ref transformationStateBinding;
+    agpu::shader_resource_binding_ref skinningStateBinding;
     agpu::texture_ref activeTexture;
 };
 
@@ -111,6 +142,30 @@ struct TransformationState
 };
 
 static_assert(sizeof(TransformationState) % 256 == 0, "TransformationState requires an aligned size of 256 bytes");
+
+struct SkinningState
+{
+    static constexpr int MaxNumberOfBones = 128;
+
+    SkinningState ()
+    {
+        for(int i = 0; i < 128; ++i)
+            boneMatrices[i] = Matrix4F::identity();
+    }
+
+    SkinningState(const SkinningState &other)
+    {
+        memcpy(boneMatrices, other.boneMatrices, sizeof(boneMatrices));
+    }
+
+    bool operator==(const SkinningState &other) const;
+    bool operator!=(const SkinningState &other) const;
+    size_t hash() const;
+
+    Matrix4F boneMatrices[128];
+};
+
+static_assert(sizeof(SkinningState) % 256 == 0, "SkinningState requires an aligned size of 256 bytes");
 
 struct LightState
 {
@@ -201,6 +256,7 @@ static_assert(sizeof(ExtraRenderingState) % 256 == 0, "ExtraRenderingState requi
 
 namespace std
 {
+
 template<>
 struct hash<AgpuCommon::TransformationState>
 {
@@ -246,6 +302,14 @@ struct hash<AgpuCommon::ExtraRenderingState>
     }
 };
 
+template<>
+struct hash<AgpuCommon::SkinningState>
+{
+    size_t operator()(const AgpuCommon::SkinningState &ref) const
+    {
+        return ref.hash();
+    }
+};
 }
 
 namespace AgpuCommon
@@ -499,6 +563,7 @@ private:
     void applyMatrix(const Matrix4F &matrix);
     void invalidateMatrix();
     agpu_error validateTransformationState();
+    agpu_error validateSkinningState();
     agpu_error validateLightingState();
     agpu_error validateMaterialState();
     agpu_error validateRenderingStates();
@@ -581,6 +646,9 @@ private:
 
     // Transformation state buffer
     ImmediateStateBuffer<TransformationState, 4> transformationStateBuffer;
+
+    // Skinning state buffer
+    ImmediateStateBuffer<SkinningState, 5> skinningStateBuffer;
 
     // Texture bindings
     std::vector<agpu::shader_resource_binding_ref> allocatedTextureBindings;

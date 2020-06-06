@@ -1,6 +1,7 @@
 #include "immediate_renderer.hpp"
 #include <stddef.h>
 #include <math.h>
+#include <memory>
 
 #ifndef M_PI
 #define M_PI 3.14159265359
@@ -9,12 +10,109 @@
 namespace AgpuCommon
 {
 
+static char uberShaderSourceCode[] =
+#include "uberShader.glsl"
+;
+
+bool ImmediateShaderCompilationParameters::operator==(const ImmediateShaderCompilationParameters &other) const
+{
+	return flatShading == other.flatShading &&
+		texturingEnabled == other.texturingEnabled &&
+		skinningEnabled == other.skinningEnabled &&
+		lightingEnabled == other.lightingEnabled &&
+		lightingModel == other.lightingModel;
+}
+
+size_t ImmediateShaderCompilationParameters::hash() const
+{
+	return std::hash<bool> ()(flatShading) ^
+		std::hash<bool> ()(texturingEnabled) ^
+		std::hash<bool> ()(skinningEnabled) ^
+		std::hash<bool> ()(lightingEnabled) ^
+		std::hash<uint> ()(static_cast<uint> (lightingModel));
+}
+
+std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shader_type type) const
+{
+	std::string options = "#version 450\n";
+
+	switch(type)
+	{
+	case AGPU_VERTEX_SHADER:
+		options += "#define BUILD_VERTEX_SHADER\n";
+		break;
+	case AGPU_FRAGMENT_SHADER:
+		options += "#define BUILD_FRAGMENT_SHADER\n";
+		break;
+	default:
+		break;
+	}
+
+	if(flatShading)
+		options += "#define FLAT_SHADING\n";
+	if(texturingEnabled)
+		options += "#define TEXTURING_ENABLED\n";
+	if(skinningEnabled)
+		options += "#define SKINNING_ENABLED\n";
+
+    if(lightingEnabled)
+	{
+		if(lightingEnabled)
+			options += "#define LIGHTING_ENABLED\n";
+		switch(lightingModel)
+		{
+		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX:
+			options += "#define PER_VERTEX_LIGHTING\n";
+			break;
+		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_FRAGMENT:
+			options += "#define PER_FRAGMENT_LIGHTING\n";
+			break;
+		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS:
+			options += "#define PBR_METALLIC_ROUGHNESS\n";
+			break;
+		default:
+			break;
+		}
+	}
+
+	return options;
+}
+
+agpu::shader_ref ImmediateShaderLibrary::getOrCreateWithCompilationParameters(const agpu::device_ref &device, const ImmediateShaderCompilationParameters &params, agpu_shader_type type)
+{
+	std::unique_lock<std::mutex> l(shaderCompilationMutex);
+	auto &shaderCache = (type == AGPU_VERTEX_SHADER) ? vertexShaderCache : fragmentShaderCache;
+	auto it = shaderCache.find(params);
+	if(it != shaderCache.end())
+		return it->second;
+
+	auto sourceCode = params.shaderOptionsString(type);
+	sourceCode += uberShaderSourceCode;
+
+	auto compiler = agpu::offline_shader_compiler_ref(device->createOfflineShaderCompiler());
+	compiler->setShaderSource(AGPU_SHADER_LANGUAGE_VGLSL, type, sourceCode.c_str(), sourceCode.size());
+	auto error = compiler->compileShader(AGPU_SHADER_LANGUAGE_DEVICE_SHADER, "");
+	if(error)
+	{
+		fprintf(stderr, "Failed to compile immediate renderer shader:\n%s\n", sourceCode.c_str());
+
+		auto logLength = compiler->getCompilationLogLength();
+		std::unique_ptr<char[]> log(new char[logLength + 1]);
+		compiler->getCompilationLog(logLength, log.get());
+		log[logLength] = 0;
+		fprintf(stderr, "Compilation error:\n%s\n", log.get());
+		abort();
+	}
+
+	auto result = agpu::shader_ref(compiler->getResultAsShader());
+	shaderCache.insert(std::make_pair(params, result));
+	return result;
+}
+
 inline bool isSyntheticTopology(agpu_primitive_topology type)
 {
 	return type >= AGPU_IMMEDIATE_TRIANGLE_FAN;
 }
-
-#include "shaders/compiled.inc"
 
 bool TransformationState::operator==(const TransformationState &other) const
 {
@@ -30,6 +128,24 @@ size_t TransformationState::hash() const
 		modelViewMatrix.hash() ^
 		inverseModelViewMatrix.hash() ^
 		textureMatrix.hash();
+}
+
+bool SkinningState::operator==(const SkinningState &other) const
+{
+	return memcmp(boneMatrices, other.boneMatrices, sizeof(boneMatrices)) == 0;
+}
+
+bool SkinningState::operator!=(const SkinningState &other) const
+{
+	return memcmp(boneMatrices, other.boneMatrices, sizeof(boneMatrices)) != 0;
+}
+
+size_t SkinningState::hash() const
+{
+	size_t result = 0;
+	for(auto &bone : boneMatrices)
+		result ^= bone.hash();
+	return result;
 }
 
 LightState::LightState()
@@ -190,17 +306,6 @@ agpu_vertex_attrib_description ImmediateVertexAttributes[] = {
     {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, offsetof(ImmediateRendererVertex, texcoord), 0},
 };
 
-static agpu::shader_ref loadSpirVShader(const agpu::device_ref &device, agpu_shader_type shaderType, const uint8_t *data, size_t dataSize)
-{
-    auto shader = agpu::shader_ref(device->createShader(shaderType));
-    shader->setShaderSource(AGPU_SHADER_LANGUAGE_SPIR_V, (agpu_string)data, dataSize);
-    auto error = shader->compileShader("");
-    if(error)
-        return agpu::shader_ref();
-
-    return shader;
-}
-
 bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 {
     std::unique_lock<std::mutex> l(immediateRendererObjectsMutex);
@@ -232,7 +337,11 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         builder->beginBindingBank(100000);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
 
-		// Textures.
+		// Skinning state (Set 5)
+        builder->beginBindingBank(1000);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
+
+		// Textures (Set 6).
         builder->beginBindingBank(1000);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
 
@@ -244,22 +353,6 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
     {
         immediateShaderLibrary.reset(new ImmediateShaderLibrary());
         if(!immediateShaderLibrary) return false;
-
-        immediateShaderLibrary->flatColorVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, flatColor_vert_spv, flatColor_vert_spv_len);
-        immediateShaderLibrary->flatLightedColorVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, flatLightedColor_vert_spv, flatLightedColor_vert_spv_len);
-        immediateShaderLibrary->flatColorFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, flatColor_frag_spv, flatColor_frag_spv_len);
-
-        immediateShaderLibrary->flatTexturedVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, flatTextured_vert_spv, flatTextured_vert_spv_len);
-        immediateShaderLibrary->flatLightedTexturedVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, flatLightedTextured_vert_spv, flatLightedTextured_vert_spv_len);
-        immediateShaderLibrary->flatTexturedFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, flatTextured_frag_spv, flatTextured_frag_spv_len);
-
-        immediateShaderLibrary->smoothColorVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, smoothColor_vert_spv, smoothColor_vert_spv_len);
-        immediateShaderLibrary->smoothLightedColorVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, smoothLightedColor_vert_spv, smoothLightedColor_vert_spv_len);
-        immediateShaderLibrary->smoothColorFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, smoothColor_frag_spv, smoothColor_frag_spv_len);
-
-        immediateShaderLibrary->smoothTexturedVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, smoothTextured_vert_spv, smoothTextured_vert_spv_len);
-        immediateShaderLibrary->smoothLightedTexturedVertex = loadSpirVShader(device, AGPU_VERTEX_SHADER, smoothLightedTextured_vert_spv, smoothLightedTextured_vert_spv_len);
-        immediateShaderLibrary->smoothTexturedFragment = loadSpirVShader(device, AGPU_FRAGMENT_SHADER, smoothTextured_frag_spv, smoothTextured_frag_spv_len);
     }
 
     {
@@ -301,7 +394,8 @@ ImmediateRenderer::ImmediateRenderer(const agpu::state_tracker_cache_ref &stateT
 	lightingStateBuffer(immediateShaderSignature),
     extraRenderingStateBuffer(immediateShaderSignature),
     materialStateBuffer(immediateShaderSignature),
-    transformationStateBuffer(immediateShaderSignature)
+    transformationStateBuffer(immediateShaderSignature),
+	skinningStateBuffer(immediateShaderSignature)
 {
     vertexBufferCapacity = 0;
     indexBufferCapacity = 0;
@@ -363,6 +457,9 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
 
 	// Reset the transformation state buffer.
     transformationStateBuffer.reset();
+
+	// Reset the skinning state buffer.
+	skinningStateBuffer.reset();
 
     // Reset the rendering state.
     currentRenderingState = ImmediateRenderingState();
@@ -697,7 +794,23 @@ agpu_error ImmediateRenderer::setSkinningEnabled(agpu_bool enabled)
 
 agpu_error ImmediateRenderer::setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose)
 {
-	printf("TODO: setSkinBones\n");
+	auto actualBoneCount = std::min(count, (agpu_uint)SkinningState::MaxNumberOfBones);
+	auto newState = SkinningState();
+
+	auto sourcePointer = matrices;
+	for(agpu_uint i = 0; i < actualBoneCount; ++i, sourcePointer += 16)
+	{
+		auto convertedMatrix = Matrix4F(
+			Vector4F(sourcePointer[0], sourcePointer[1], sourcePointer[2], sourcePointer[3]),
+			Vector4F(sourcePointer[4], sourcePointer[5], sourcePointer[6], sourcePointer[7]),
+			Vector4F(sourcePointer[8], sourcePointer[9], sourcePointer[10], sourcePointer[11]),
+			Vector4F(sourcePointer[12], sourcePointer[13], sourcePointer[14], sourcePointer[15]));
+		if(transpose)
+			convertedMatrix = convertedMatrix.transposed();
+		newState.boneMatrices[i] = convertedMatrix;
+	}
+
+	skinningStateBuffer.setState(newState);
 	return AGPU_OK;
 }
 
@@ -721,7 +834,7 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
     }
     else
     {
-        textureBinding = agpu::shader_resource_binding_ref(stateTrackerCache.as<StateTrackerCache> ()->immediateShaderSignature->createShaderResourceBinding(5));
+        textureBinding = agpu::shader_resource_binding_ref(stateTrackerCache.as<StateTrackerCache> ()->immediateShaderSignature->createShaderResourceBinding(6));
         allocatedTextureBindings.push_back(textureBinding);
         ++usedTextureBindingCount;
     }
@@ -965,6 +1078,9 @@ agpu_error ImmediateRenderer::validateRenderingStates()
     auto error = validateTransformationState();
     if(error) return error;
 
+	error = validateSkinningState();
+    if(error) return error;
+
     error = validateLightingState();
     if(error) return error;
 
@@ -1114,7 +1230,7 @@ void ImmediateRenderer::invalidateMatrix()
 agpu_error ImmediateRenderer::validateLightingState()
 {
     if(lightingStateBuffer.isDirty())
-		currentRenderingState.lightingStateBinding =lightingStateBuffer.validateCurrentState();
+		currentRenderingState.lightingStateBinding = lightingStateBuffer.validateCurrentState();
 
     return AGPU_OK;
 }
@@ -1123,6 +1239,14 @@ agpu_error ImmediateRenderer::validateMaterialState()
 {
     if(materialStateBuffer.isDirty())
         currentRenderingState.materialStateBinding = materialStateBuffer.validateCurrentState();
+
+    return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::validateSkinningState()
+{
+	if(skinningStateBuffer.isDirty())
+        currentRenderingState.skinningStateBinding = skinningStateBuffer.validateCurrentState();
 
     return AGPU_OK;
 }
@@ -1180,48 +1304,20 @@ agpu_error ImmediateRenderer::flushShadersForRenderingState(const ImmediateRende
 		// Do we need to flush this?
 		if(state.flatShading == lastFlushedRenderingState.flatShading &&
 			state.texturingEnabled == lastFlushedRenderingState.texturingEnabled &&
-			state.lightingEnabled == lastFlushedRenderingState.lightingEnabled)
+			state.lightingEnabled == lastFlushedRenderingState.lightingEnabled &&
+			state.lightingModel == lastFlushedRenderingState.lightingModel &&
+			state.skinningEnabled == lastFlushedRenderingState.skinningEnabled)
 			return AGPU_OK;
 	}
 
-	if(state.flatShading)
-    {
-        if(state.texturingEnabled)
-        {
-            if(state.lightingEnabled)
-                currentStateTracker->setVertexStage(immediateShaderLibrary->flatLightedTexturedVertex, "main");
-            else
-                currentStateTracker->setVertexStage(immediateShaderLibrary->flatTexturedVertex, "main");
-            currentStateTracker->setFragmentStage(immediateShaderLibrary->flatTexturedFragment, "main");
-        }
-        else
-        {
-            if(state.lightingEnabled)
-                currentStateTracker->setVertexStage(immediateShaderLibrary->flatLightedColorVertex, "main");
-            else
-                currentStateTracker->setVertexStage(immediateShaderLibrary->flatColorVertex, "main");
-            currentStateTracker->setFragmentStage(immediateShaderLibrary->flatColorFragment, "main");
-        }
-    }
-    else
-    {
-        if(state.texturingEnabled)
-        {
-            if(state.lightingEnabled)
-                currentStateTracker->setVertexStage(immediateShaderLibrary->smoothLightedTexturedVertex, "main");
-            else
-                currentStateTracker->setVertexStage(immediateShaderLibrary->smoothTexturedVertex, "main");
-            currentStateTracker->setFragmentStage(immediateShaderLibrary->smoothTexturedFragment, "main");
-        }
-        else
-        {
-            if(state.lightingEnabled)
-                currentStateTracker->setVertexStage(immediateShaderLibrary->smoothLightedColorVertex, "main");
-            else
-                currentStateTracker->setVertexStage(immediateShaderLibrary->smoothColorVertex, "main");
-            currentStateTracker->setFragmentStage(immediateShaderLibrary->smoothColorFragment, "main");
-        }
-    }
+	ImmediateShaderCompilationParameters parameters;
+	parameters.flatShading = state.flatShading;
+	parameters.texturingEnabled = state.texturingEnabled;
+	parameters.skinningEnabled = state.skinningEnabled;
+	parameters.lightingEnabled = state.lightingEnabled;
+	parameters.lightingModel = state.lightingModel;
+	currentStateTracker->setVertexStage(immediateShaderLibrary->getOrCreateWithCompilationParameters(device, parameters, AGPU_VERTEX_SHADER), "main");
+	currentStateTracker->setFragmentStage(immediateShaderLibrary->getOrCreateWithCompilationParameters(device, parameters, AGPU_FRAGMENT_SHADER), "main");
 
 	return AGPU_OK;
 }
@@ -1261,6 +1357,11 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
     if(state.texturingEnabled && (!haveFlushedRenderingState || state.activeTexture != lastFlushedRenderingState.activeTexture))
 	{
         currentStateTracker->useShaderResources(getValidTextureBindingFor(state.activeTexture));
+	}
+
+	if(state.skinningStateBinding && (!haveFlushedRenderingState || state.skinningStateBinding != lastFlushedRenderingState.skinningStateBinding))
+	{
+		currentStateTracker->useShaderResources(state.skinningStateBinding);
 	}
 
 	lastFlushedRenderingState = state;

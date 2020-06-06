@@ -132,7 +132,7 @@ enum CommandQueueType valueType: Int32; values: #{
 enum ImmediateRendererLightingModel valueType: Int32; values: #{
 	PerVertex: 0.
 	PerFragment: 1.
-	PerMetallicRoughness: 2.
+	MetallicRoughness: 2.
 }.
 
 enum RenderBufferBit valueType: Int32; values: #{
