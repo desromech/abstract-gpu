@@ -29,7 +29,7 @@ size_t ImmediateShaderCompilationParameters::hash() const
 		std::hash<bool> ()(texturingEnabled) ^
 		std::hash<bool> ()(skinningEnabled) ^
 		std::hash<bool> ()(lightingEnabled) ^
-		std::hash<uint32_t> ()(static_cast<uint> (lightingModel));
+		std::hash<uint32_t> ()(static_cast<uint32_t> (lightingModel));
 }
 
 std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shader_type type) const
