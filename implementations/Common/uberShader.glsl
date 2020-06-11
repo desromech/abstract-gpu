@@ -26,6 +26,7 @@ R"uberShader(
 #define OPT_FLAT
 #endif
 
+#ifdef LIGHTING_ENABLED
 struct LightState
 {
     vec4 ambientColor;
@@ -54,6 +55,7 @@ layout(std140, set=1, binding=0) uniform LightingStateBlock
 
     LightState lights[8];
 } LightingState;
+#endif
 
 const uint FogMode_None = 0;
 const uint FogMode_Linear = 1;
@@ -100,10 +102,12 @@ layout(set=4, binding=0) uniform TransformationStateBlock
     mat4 textureMatrix;
 } TransformationState;
 
-layout(set=4, binding=0) uniform SkinningStateBlock
+#ifdef SKINNING_ENABLED
+layout(set=5, binding=0) uniform SkinningStateBlock
 {
     mat4 boneMatrices[MAX_NUMBER_OF_BONES];
 } SkinningState;
+#endif
 
 #ifdef LIGHTING_ENABLED
 
@@ -183,16 +187,16 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec4 inColor;
 layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec2 inTexcoord;
-layout(location = 4) in vec2 inTexcoord2;
+//layout(location = 4) in vec2 inTexcoord2;
 
 #ifdef SKINNING_ENABLED
-layout(location = 5) in ivec4 inBoneIndices;
+layout(location = 5) in vec4 inBoneIndices;
 layout(location = 6) in vec4 inBoneWeights;
 #endif
 
 layout(location = 0) OPT_FLAT out vec4 outColor;
 layout(location = 1) out vec4 outTexcoord;
-layout(location = 2) out vec4 outTexcoord2;
+//layout(location = 2) out vec4 outTexcoord2;
 layout(location = 3) out vec4 outPosition;
 layout(location = 4) out vec3 outNormal;
 
@@ -202,15 +206,16 @@ void main()
     vec4 unskinnedPosition = vec4(inPosition, 1.0);
     vec4 unskinnedNormal = vec4(inNormal, 0.0);
 
-    vec3 modelPosition = (SkinningState.boneMatrices[inBoneIndices.x]*unskinnedPosition).xyz*inBoneWeights.x;
-    modelPosition += (SkinningState.boneMatrices[inBoneIndices.y]*unskinnedPosition).xyz*inBoneWeights.y;
-    modelPosition += (SkinningState.boneMatrices[inBoneIndices.z]*unskinnedPosition).xyz*inBoneWeights.z;
-    modelPosition += (SkinningState.boneMatrices[inBoneIndices.w]*unskinnedPosition).xyz*inBoneWeights.w;
+    ivec4 boneIndices = ivec4(inBoneIndices);
+    vec3 modelPosition = (SkinningState.boneMatrices[boneIndices.x]*unskinnedPosition).xyz*inBoneWeights.x;
+    modelPosition += (SkinningState.boneMatrices[boneIndices.y]*unskinnedPosition).xyz*inBoneWeights.y;
+    modelPosition += (SkinningState.boneMatrices[boneIndices.z]*unskinnedPosition).xyz*inBoneWeights.z;
+    modelPosition += (SkinningState.boneMatrices[boneIndices.w]*unskinnedPosition).xyz*inBoneWeights.w;
 
-    vec3 modelNormal = (SkinningState.boneMatrices[inBoneIndices.x]*unskinnedNormal).xyz*inBoneWeights.x;
-    modelNormal += (SkinningState.boneMatrices[inBoneIndices.y]*unskinnedNormal).xyz*inBoneWeights.y;
-    modelNormal += (SkinningState.boneMatrices[inBoneIndices.z]*unskinnedNormal).xyz*inBoneWeights.z;
-    modelNormal += (SkinningState.boneMatrices[inBoneIndices.w]*unskinnedNormal).xyz*inBoneWeights.w;
+    vec3 modelNormal = (SkinningState.boneMatrices[boneIndices.x]*unskinnedNormal).xyz*inBoneWeights.x;
+    modelNormal += (SkinningState.boneMatrices[boneIndices.y]*unskinnedNormal).xyz*inBoneWeights.y;
+    modelNormal += (SkinningState.boneMatrices[boneIndices.z]*unskinnedNormal).xyz*inBoneWeights.z;
+    modelNormal += (SkinningState.boneMatrices[boneIndices.w]*unskinnedNormal).xyz*inBoneWeights.w;
 #else
     vec3 modelPosition = inPosition;
     vec3 modelNormal = inNormal;
@@ -231,7 +236,7 @@ void main()
 
     outColor = color;
     outTexcoord = TransformationState.textureMatrix*vec4(inTexcoord, 0.0, 1.0);
-    outTexcoord2 = TransformationState.textureMatrix*vec4(inTexcoord2, 0.0, 1.0);
+    //outTexcoord2 = TransformationState.textureMatrix*vec4(inTexcoord2, 0.0, 1.0);
 
     outPosition = viewPosition;
     outNormal = viewNormal;
@@ -276,9 +281,9 @@ layout(set=6, binding=0) uniform texture2D Texture0;
 
 layout(location = 0) OPT_FLAT in vec4 inColor;
 layout(location = 1) in vec4 inTexcoord;
-layout(location = 2) in vec4 inTexcoord2;
+//layout(location = 2) in vec4 inTexcoord2;
 layout(location = 3) in vec4 inPosition;
-layout(location = 4) out vec3 outNormal;
+layout(location = 4) in vec3 inNormal;
 
 layout(location = 0) out vec4 outColor;
 

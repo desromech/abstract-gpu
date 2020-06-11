@@ -1447,6 +1447,9 @@ agpu_error ImmediateRenderer::flushRenderingData()
     error = extraRenderingStateBuffer.uploadData(device);
     if(error) return error;
 
+    error = skinningStateBuffer.uploadData(device);
+    if (error) return error;
+
     return AGPU_OK;
 }
 
