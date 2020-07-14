@@ -27,7 +27,7 @@ AVkDescriptorSetPoolBlock::~AVkDescriptorSetPoolBlock()
 
 AVkDescriptorSetPoolAllocation *AVkDescriptorSetPoolBlock::allocate()
 {
-    assert(this == owner->freeBlocks.last());
+    assert(this == owner->freeBlocks.back());
     if(freeList.empty())
     {
         if(remainingAllocationCount == 0)
