@@ -173,7 +173,14 @@ agpu_error AVkBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_po
 
 		uploadPointer += offset;
         memcpy(uploadPointer, data, size);
-        return unmapBuffer();
+        auto result = unmapBuffer();
+        if(!(description.mapping_flags & AGPU_MAP_COHERENT_BIT))
+        {
+            auto device = weakDevice.lock();
+            if(device)
+                vmaFlushAllocation(deviceForVk->sharedContext->memoryAllocator, allocation, offset, size);
+        }
+        return result;
     }
 
     auto device = weakDevice.lock();

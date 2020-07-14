@@ -16,16 +16,25 @@ AVkShaderResourceBinding::AVkShaderResourceBinding(const agpu::device_ref &devic
 
 AVkShaderResourceBinding::~AVkShaderResourceBinding()
 {
+    if(descriptorSetPool && descriptorSetAllocation)
+    {
+        descriptorSetPool->free(descriptorSetAllocation);
+        descriptorSetAllocation = nullptr;        
+    }
 }
 
-agpu::shader_resource_binding_ref AVkShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex, VkDescriptorSet descriptorSet, const ShaderSignatureElementDescription &elementDescription)
+agpu::shader_resource_binding_ref AVkShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex,
+    const AVkDescriptorSetPoolPtr &descriptorSetPool,
+    AVkDescriptorSetPoolAllocation *descriptorSetAllocation)
 {
     auto result = agpu::makeObject<AVkShaderResourceBinding> (device);
     auto resourceBinding = result.as<AVkShaderResourceBinding> ();
     resourceBinding->elementIndex = elementIndex;
     resourceBinding->signature = signature;
-    resourceBinding->descriptorSet = descriptorSet;
-    resourceBinding->bindingDescription = &elementDescription;
+    resourceBinding->descriptorSet = descriptorSetAllocation->descriptorSet;
+    resourceBinding->descriptorSetAllocation = descriptorSetAllocation;
+    resourceBinding->descriptorSetPool = descriptorSetPool;
+    resourceBinding->bindingDescription = &descriptorSetPool->setDescription;
     return result;
 }
 

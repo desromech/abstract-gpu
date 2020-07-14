@@ -3,6 +3,7 @@
 
 #include "device.hpp"
 #include "shader_signature_builder.hpp"
+#include "descriptor_pool.hpp"
 
 namespace AgpuVulkan
 {
@@ -20,8 +21,7 @@ public:
     agpu::device_ref device;
     VkPipelineLayout layout;
 
-    std::vector<ShaderSignatureElementDescription> elementDescription;
-    std::vector<VkDescriptorPool> elementPools;
+    std::vector<AVkDescriptorSetPoolPtr> descriptorPools;
 };
 
 } // End of namespace AgpuVulkan

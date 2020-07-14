@@ -3,6 +3,7 @@
 
 #include "device.hpp"
 #include "shader_signature_builder.hpp"
+#include "descriptor_pool.hpp"
 
 namespace AgpuVulkan
 {
@@ -13,7 +14,9 @@ public:
     AVkShaderResourceBinding(const agpu::device_ref &device);
     ~AVkShaderResourceBinding();
 
-    static agpu::shader_resource_binding_ref create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex, VkDescriptorSet descriptorSet, const ShaderSignatureElementDescription &elementDescription);
+    static agpu::shader_resource_binding_ref create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex,
+        const AVkDescriptorSetPoolPtr &descriptorSetPool,
+        AVkDescriptorSetPoolAllocation *descriptorSetAllocation);
 
     virtual agpu_error bindUniformBuffer(agpu_int location, const agpu::buffer_ref &uniform_buffer) override;
     virtual agpu_error bindUniformBufferRange(agpu_int location, const agpu::buffer_ref &uniform_buffer, agpu_size offset, agpu_size size) override;
@@ -27,6 +30,8 @@ public:
     agpu::shader_signature_ref signature;
     agpu_uint elementIndex;
     VkDescriptorSet descriptorSet;
+    AVkDescriptorSetPoolPtr descriptorSetPool;
+    AVkDescriptorSetPoolAllocation *descriptorSetAllocation;
     const ShaderSignatureElementDescription *bindingDescription;
 };
 

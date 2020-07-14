@@ -12,6 +12,8 @@ set(AGPU_Vulkan_SOURCES
     compute_pipeline_builder.cpp
     device.cpp
     device.hpp
+    descriptor_pool.cpp
+    descriptor_pool.hpp
     fence.cpp
     fence.hpp
     framebuffer.cpp
