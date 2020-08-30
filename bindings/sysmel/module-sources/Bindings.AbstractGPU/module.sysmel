@@ -1,0 +1,3 @@
+Compiler
+    addThirdPartyLibraryDependency: #"abstract-gpu";
+    loadPackage: #"AbstractGPU-Bindings".

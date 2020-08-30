@@ -9,4 +9,4 @@ phanapi/scripts/make_implementation_stubs_cpp.py definitions/api.xml include/AGP
 phanapi/scripts/make_icdloader.py definitions/api.xml implementations/Loader || exit 1
 phanapi/scripts/make_pharo_bindings.py definitions/api.xml tonel || exit 1
 phanapi/scripts/make_pharo_bindings.py -squeak definitions/api.xml tonel || exit 1
-phanapi/scripts/make_sysmel_bindings.py definitions/api.xml bindings/sysmel/Bindings.AbstractGPU/AbstractGPU-Bindings/bindings.sysmel || exit 1
+phanapi/scripts/make_sysmel_bindings.py definitions/api.xml bindings/sysmel/module-sources/Bindings.AbstractGPU/AbstractGPU-Bindings/bindings.sysmel || exit 1
