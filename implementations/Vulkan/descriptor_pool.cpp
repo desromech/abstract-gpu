@@ -48,6 +48,7 @@ AVkDescriptorSetPoolAllocation *AVkDescriptorSetPoolBlock::allocate()
             return nullptr;
         }
 
+        remainingAllocationCount = remainingAllocationCount - 1;
         auto newAllocation = new AVkDescriptorSetPoolAllocation;
         newAllocation->descriptorSet = descriptorSet;
         newAllocation->owner = this;
@@ -104,7 +105,7 @@ AVkDescriptorSetPoolAllocation *AVkDescriptorSetPool::allocate()
         auto newBlock = std::make_shared<AVkDescriptorSetPoolBlock> ();
         newBlock->owner = this;
         newBlock->poolHandle = poolHandle;
-        newBlock->remainingAllocationCount = poolCreateInfo.poolSizeCount;
+        newBlock->remainingAllocationCount = setDescription.maxBindings;
         allocationBlocks.push_back(newBlock);
         freeBlocks.push_back(newBlock);
     }
