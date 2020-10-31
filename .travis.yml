@@ -3,15 +3,15 @@ language: cpp
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: bionic
       sudo: required
       env: BUILD_MODE=Debug
     - os: linux
-      dist: trusty
+      dist: bionic
       sudo: required
       env: BUILD_MODE=RelWithDebInfo
     - os: linux
-      dist: trusty
+      dist: bionic
       sudo: required
       env: BUILD_MODE=Release
     - os: osx
