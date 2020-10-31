@@ -1,6 +1,7 @@
 #include "shader_signature.hpp"
 #include "shader_signature_builder.hpp"
 #include "shader_resource_binding.hpp"
+#include <map>
 
 namespace AgpuVulkan
 {
@@ -41,23 +42,25 @@ agpu::shader_signature_ref AVkShaderSignature::create(const agpu::device_ref &de
     signature->layout = layout;
 
     signature->descriptorPools.reserve(builder->elementDescription.size());
-    int descriptorTypes[VK_DESCRIPTOR_TYPE_RANGE_SIZE];
+    std::map<int, int> descriptorTypes;
     std::vector<VkDescriptorPoolSize> poolSizes;
     for (auto &element : builder->elementDescription)
     {
-        memset(descriptorTypes, 0, sizeof(descriptorTypes));
-        for(auto &bindingDesc : element.bindings)
-            ++descriptorTypes[bindingDesc.descriptorType];
+        descriptorTypes.clear();
+        for (auto& bindingDesc : element.bindings)
+        {
+            if (descriptorTypes.find(int(bindingDesc.descriptorType)) == descriptorTypes.end())
+                descriptorTypes[int(bindingDesc.descriptorType)] = 0;
+            ++descriptorTypes[int(bindingDesc.descriptorType)];
+        }
+ 
         poolSizes.clear();
 
-        for(int i = 0; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; ++i)
+        for(auto &pair : descriptorTypes)
         {
-            if(!descriptorTypes[i])
-                continue;
-
             VkDescriptorPoolSize poolSize;
-            poolSize.descriptorCount = descriptorTypes[i]*element.maxBindings;
-            poolSize.type = VkDescriptorType(VK_DESCRIPTOR_TYPE_BEGIN_RANGE + i);
+            poolSize.descriptorCount = pair.second*element.maxBindings;
+            poolSize.type = VkDescriptorType(pair.first);
             poolSizes.push_back(poolSize);
         }
 
