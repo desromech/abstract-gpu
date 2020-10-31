@@ -50,13 +50,9 @@ void printError(const char *format, ...)
     va_start(args, format);
     vsnprintf(buffer, 2048, format, args);
 #ifdef _WIN32
-    if(!GetConsoleCP())
-        OutputDebugStringA(buffer);
-    else
-        fputs(buffer, stderr);
-#else
-    fputs(buffer, stderr);
+    OutputDebugStringA(buffer);
 #endif
+    fputs(buffer, stderr);
     va_end(args);
 }
 
@@ -698,6 +694,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
 
     // Initialize the memory allocator.
     VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.instance = vulkanInstance;
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
     vmaCreateAllocator(&allocatorInfo, &sharedContext->memoryAllocator);
