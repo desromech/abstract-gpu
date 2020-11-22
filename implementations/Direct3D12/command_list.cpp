@@ -15,7 +15,7 @@ namespace AgpuD3D12
 {
 
 ADXCommandList::ADXCommandList(const agpu::device_ref &cdevice)
-    : device(cdevice)
+    : device(cdevice), currentShaderSignature(nullptr)
 {
 }
 
@@ -80,6 +80,7 @@ agpu_error ADXCommandList::setShaderSignature(const agpu::shader_signature_ref &
 		}
 	}
 
+    currentShaderSignature = adxSignature;
     return AGPU_OK;
 }
 
@@ -280,6 +281,7 @@ agpu_error ADXCommandList::close()
 {
 	while (!bufferTransitionStack.empty())
 		popBufferTransitionBarrier();
+    currentShaderSignature = nullptr;
 
     ERROR_IF_FAILED(commandList->Close());
     return AGPU_OK;
@@ -443,7 +445,7 @@ agpu_error ADXCommandList::resolveTexture(const agpu::texture_ref & sourceTextur
 		sourceRegion.pResource = adxSourceTexture->resource.Get();
 		sourceRegion.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		sourceRegion.SubresourceIndex = sourceSubresource;
-		
+
 		D3D12_TEXTURE_COPY_LOCATION destRegion = {};
 		destRegion.pResource = adxDestTexture->resource.Get();
 		destRegion.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
@@ -484,7 +486,17 @@ agpu_error ADXCommandList::resolveTexture(const agpu::texture_ref & sourceTextur
 
 agpu_error ADXCommandList::pushConstants(agpu_uint offset, agpu_uint size, agpu_pointer values)
 {
-    return AGPU_UNIMPLEMENTED;
+    if (!currentShaderSignature)
+        return AGPU_INVALID_OPERATION;
+
+    bool hasGraphicsSignature = type == AGPU_COMMAND_LIST_TYPE_DIRECT || type == AGPU_COMMAND_LIST_TYPE_BUNDLE;
+	bool hasComputeSignature = type == AGPU_COMMAND_LIST_TYPE_DIRECT || type == AGPU_COMMAND_LIST_TYPE_BUNDLE || type == AGPU_COMMAND_LIST_TYPE_COMPUTE;
+	if(hasGraphicsSignature)
+	    commandList->SetGraphicsRoot32BitConstants(currentShaderSignature->banks.size(), size / 4, values, offset/4);
+	if (hasComputeSignature)
+		commandList->SetComputeRoot32BitConstants(currentShaderSignature->banks.size(), size / 4, values, offset / 4);
+
+    return AGPU_OK;
 }
 
 agpu_error ADXCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)

@@ -7,6 +7,7 @@
 
 namespace AgpuD3D12
 {
+class ADXShaderSignature;
 
 inline D3D12_COMMAND_LIST_TYPE mapCommandListType(agpu_command_list_type type)
 {
@@ -87,7 +88,8 @@ private:
 
     agpu_error setCommonState();
 
-	std::vector<std::pair<agpu::buffer_ref, agpu_buffer_usage_mask>> bufferTransitionStack;
+    ADXShaderSignature *currentShaderSignature;
+    std::vector<std::pair<agpu::buffer_ref, agpu_buffer_usage_mask>> bufferTransitionStack;
 };
 
 } // End of namespace AgpuD3D12
