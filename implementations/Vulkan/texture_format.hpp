@@ -104,7 +104,7 @@ inline VkFormat mapTextureFormat(agpu_texture_format format)
 }
 inline VkSampleCountFlagBits mapSampleCount(agpu_uint sampleCount)
 {
-    return VkSampleCountFlagBits(1 << (std::max(1u, sampleCount) - 1));
+    return VkSampleCountFlagBits(std::max(1u, sampleCount));
 }
 
 } // End of namespace AgpuVulkan
