@@ -7,10 +7,48 @@ Class {
 		'mainDevice'
 	],
 	#classVars : [
+		'AllowVR',
+		'DebugLayerEnabled',
 		'UniqueInstance'
 	],
 	#category : #'AbstractGPU-CorePharo'
 }
+
+{ #category : #preferences }
+AGPU class >> agpuSettingsOn: aBuilder [
+	<systemsettings>
+	(aBuilder group: #agpu)
+		label: 'AbstractGPU';
+		description: 'AbstractGPU Settings';
+		with: [
+			(aBuilder setting: #debugLayerEnabled)
+				label: 'Debug Layer enabled';
+				description: 'This enables the graphics API debug layer (Vulkan Only).'.
+			(aBuilder setting: #allowVR)
+				label: 'Allow VR';
+				description: 'This enables the support for VR (OpenVR headsets such as the HTC Vive).'.
+		]
+]
+
+{ #category : #preferences }
+AGPU class >> allowVR [
+	^ AllowVR ifNil: [ AllowVR := false ]
+]
+
+{ #category : #preferences }
+AGPU class >> allowVR: aBoolean [
+	AllowVR := aBoolean
+]
+
+{ #category : #preferences }
+AGPU class >> debugLayerEnabled [
+	^ DebugLayerEnabled ifNil: [ DebugLayerEnabled := false ]
+]
+
+{ #category : #preferences }
+AGPU class >> debugLayerEnabled: aBoolean [
+	^ DebugLayerEnabled := aBoolean
+]
 
 { #category : #'platform querying' }
 AGPU class >> firstPlatform [
@@ -58,6 +96,11 @@ AGPU class >> uniqueInstance [
 ]
 
 { #category : #'main device' }
+AGPU >> allowVR [
+	^ self class allowVR
+]
+
+{ #category : #'main device' }
 AGPU >> checkSession [
 	(session ~~ Smalltalk session or: [mainDevice isNil]) ifTrue: [
 		self openMainDevice.
@@ -68,7 +111,7 @@ AGPU >> checkSession [
 
 { #category : #'main device' }
 AGPU >> debugLayerEnabled [
-	^ true
+	^ self class debugLayerEnabled
 ]
 
 { #category : #'platform querying' }
@@ -95,6 +138,10 @@ AGPU >> openMainDevice [
 	mainPlatform ifNil: [ self error: 'No AGPU platform is available.' ].
 
 	deviceOpenInfo := AGPUDeviceOpenInfo new debug_layer: self debugLayerEnabled asBit.
+	self allowVR ifTrue: [ 
+		deviceOpenInfo open_flags: (AGPUConstants bindingOf: #AGPU_DEVICE_OPEN_FLAG_ALLOW_VR) value.
+	].
+
 	mainDevice := mainPlatform openDevice: deviceOpenInfo.
 	mainDevice ifNil: [ self error: 'Failed to open the main AGPU device' ].
 
