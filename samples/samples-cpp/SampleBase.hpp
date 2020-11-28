@@ -99,8 +99,8 @@ protected:
     glm::mat4 frustum(float left, float right, float bottom, float top, float nearDistance, float farDistance)
     {
         glm::mat4 m(0.0f);
-        m[0][0] = 2.0*nearDistance / (right - left); m[2][0] = (right + left) / (right - left);
-        m[1][1] = 2.0*nearDistance / (top - bottom); m[2][1] = (top + bottom) / (top - bottom);
+        m[0][0] = 2.0f*nearDistance / (right - left); m[2][0] = (right + left) / (right - left);
+        m[1][1] = 2.0f*nearDistance / (top - bottom); m[2][1] = (top + bottom) / (top - bottom);
         m[2][2] = -farDistance / (farDistance - nearDistance); m[3][2] = -nearDistance * farDistance / (farDistance - nearDistance);
         m[2][3] = -1.0f;
 
@@ -116,8 +116,8 @@ protected:
 
     glm::mat4 perspective(float fovy, float aspect, float nearDistance, float farDistance)
     {
-        auto radians = fovy*(M_PI/180.0f*0.5f);
-        auto top = nearDistance * tan(radians);
+        auto radians = float(fovy*(M_PI/180.0f*0.5f));
+        auto top = nearDistance * float(tan(radians));
         auto right = top * aspect;
         return frustum(-right, right, -top, top, nearDistance, farDistance);
     }

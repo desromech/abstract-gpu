@@ -46,7 +46,7 @@ public:
         }
         else
         {
-            immediateRenderer->beginMeshWithVertices(vertices.size(), sizeof(SampleVertex), 3, &vertices[0].position);
+            immediateRenderer->beginMeshWithVertices((agpu_size)vertices.size(), (agpu_size)sizeof(SampleVertex), 3, &vertices[0].position);
             immediateRenderer->setCurrentMeshColors(sizeof(SampleVertex), 4, &vertices[0].color);
             immediateRenderer->setCurrentMeshNormals(sizeof(SampleVertex), 3, &vertices[0].normal);
             immediateRenderer->setCurrentMeshTexCoords(sizeof(SampleVertex), 2, &vertices[0].texcoord);
@@ -62,12 +62,12 @@ public:
         {
             immediateRenderer->setPrimitiveType(AGPU_TRIANGLES);
             for(auto &submesh : submeshes)
-                immediateRenderer->drawElements(submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+                immediateRenderer->drawElements(submesh.indexCount, (agpu_size)instanceCount, submesh.startIndex, 0, 0);
         }
         else
         {
             for(auto &submesh : submeshes)
-                immediateRenderer->drawElementsWithIndices(AGPU_TRIANGLES, &indices[0], submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+                immediateRenderer->drawElementsWithIndices(AGPU_TRIANGLES, &indices[0], submesh.indexCount, (agpu_size)instanceCount, submesh.startIndex, 0, 0);
         }
     }
 
@@ -83,7 +83,7 @@ public:
         stateTracker->useVertexBinding(vertexBinding);
         stateTracker->useIndexBuffer(indexBuffer);
         for(auto &submesh : submeshes)
-            stateTracker->drawElements(submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+            stateTracker->drawElements(submesh.indexCount, (agpu_size)instanceCount, submesh.startIndex, 0, 0);
     }
 
     void drawWithCommandList(const agpu_command_list_ref &commandList, size_t instanceCount = 1)
@@ -91,7 +91,7 @@ public:
         commandList->useVertexBinding(vertexBinding);
         commandList->useIndexBuffer(indexBuffer);
         for(auto &submesh : submeshes)
-            commandList->drawElements(submesh.indexCount, instanceCount, submesh.startIndex, 0, 0);
+            commandList->drawElements(submesh.indexCount, (agpu_size)instanceCount, submesh.startIndex, 0, 0);
     }
 
     agpu_buffer_ref vertexBuffer;
@@ -131,11 +131,11 @@ public:
         if(submeshes.empty())
         {
             SampleSubmesh submesh;
-            submesh.startIndex = indices.size();
+            submesh.startIndex = (uint32_t)indices.size();
             submeshes.push_back(submesh);
         }
 
-        baseVertex = vertices.size();
+        baseVertex = (uint32_t)vertices.size();
         return *this;
     }
 
@@ -227,7 +227,7 @@ public:
         if(!submeshes.empty())
         {
             auto &submesh = submeshes.back();
-            submesh.indexCount = indices.size() - submesh.startIndex;
+            submesh.indexCount = uint32_t(indices.size() - submesh.startIndex);
         }
 
         return *this;

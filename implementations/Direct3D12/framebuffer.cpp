@@ -29,6 +29,7 @@ agpu::framebuffer_ref ADXFramebuffer::create(const agpu::device_ref &device, agp
 
     // Describe and create a render target view (RTV) descriptor heap.
     ComPtr<ID3D12DescriptorHeap> heap;
+    if(heapSize > 0)
     {
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
         heapDesc.NumDescriptors = heapSize;

@@ -6,6 +6,9 @@ set(SampleCommon_SRC
 add_library(SampleCppCommon STATIC ${SampleCommon_SRC})
 target_link_libraries(SampleCppCommon ${AGPU_SAMPLES_LIBS})
 
+add_executable(Sample-Cpp-Compute1 SampleCompute1.cpp)
+target_link_libraries(Sample-Cpp-Compute1 SampleCppCommon)
+
 add_executable(Sample-Cpp-1 Sample1.cpp)
 target_link_libraries(Sample-Cpp-1 SampleCppCommon)
 

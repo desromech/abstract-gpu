@@ -9,7 +9,7 @@ namespace AgpuD3D12
 class ADXTextureView : public agpu::texture_view
 {
 public:
-    ADXTextureView(const agpu::device_ref &cdevice, const agpu::texture_ref &ctexture, const agpu_texture_view_description &cdescription);
+    ADXTextureView(const agpu::device_ref &cdevice, const agpu::texture_ref &ctexture, const agpu_texture_view_description &cdescription, UINT cshader4ComponentMapping);
     ~ADXTextureView();
 
     static agpu::texture_view_ref create(const agpu::device_ref &device, const agpu::texture_ref &texture, const agpu_texture_view_description &description);
@@ -22,6 +22,7 @@ public:
     agpu::device_ref device;
     agpu::texture_weakref texture;
     agpu_texture_view_description description;
+    UINT shader4ComponentMapping;
 };
 
 } // End of namespace AgpuD3D12

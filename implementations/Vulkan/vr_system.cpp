@@ -570,7 +570,7 @@ agpu_error AgpuVkVRSystemSubmissionCommandBuffer::submitEyeTexture ( vr::Hmd_Eye
 
     vulkanData.m_nWidth = avkTexture->description.width;
     vulkanData.m_nHeight = avkTexture->description.height;
-	vulkanData.m_nFormat = mapTextureFormat(avkTexture->description.format);
+	vulkanData.m_nFormat = mapTextureFormat(avkTexture->description.format, false);
     vulkanData.m_nSampleCount = avkTexture->description.sample_count;
 
     vr::Texture_t vrTexture= { &vulkanData, vr::TextureType_Vulkan, vr::ColorSpace_Auto };

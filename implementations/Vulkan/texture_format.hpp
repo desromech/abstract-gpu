@@ -5,7 +5,7 @@
 namespace AgpuVulkan
 {
 
-inline VkFormat mapTextureFormat(agpu_texture_format format)
+inline VkFormat mapTextureFormat(agpu_texture_format format, bool isDepthStencil)
 {
     switch (format)
     {
@@ -48,7 +48,7 @@ inline VkFormat mapTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_R16G16_UINT:               return VK_FORMAT_R16G16_UINT;
     case AGPU_TEXTURE_FORMAT_R16G16_SNORM:              return VK_FORMAT_R16G16_SNORM;
     case AGPU_TEXTURE_FORMAT_R16G16_SINT:               return VK_FORMAT_R16G16_SINT;
-    case AGPU_TEXTURE_FORMAT_R32_TYPELESS:              return VK_FORMAT_R32_UINT;
+    case AGPU_TEXTURE_FORMAT_R32_TYPELESS:              return isDepthStencil ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_R32_UINT;
     case AGPU_TEXTURE_FORMAT_D32_FLOAT:                 return VK_FORMAT_D32_SFLOAT;
     case AGPU_TEXTURE_FORMAT_R32_FLOAT:                 return VK_FORMAT_R32_SFLOAT;
     case AGPU_TEXTURE_FORMAT_R32_UINT:                  return VK_FORMAT_R32_UINT;
@@ -62,7 +62,7 @@ inline VkFormat mapTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_R8G8_UINT:                 return VK_FORMAT_R8G8_UINT;
     case AGPU_TEXTURE_FORMAT_R8G8_SNORM:                return VK_FORMAT_R8G8_SNORM;
     case AGPU_TEXTURE_FORMAT_R8G8_SINT:                 return VK_FORMAT_R8G8_SINT;
-    case AGPU_TEXTURE_FORMAT_R16_TYPELESS:              return VK_FORMAT_R16_UINT;
+    case AGPU_TEXTURE_FORMAT_R16_TYPELESS:              return isDepthStencil ? VK_FORMAT_D16_UNORM  : VK_FORMAT_R16_UINT;
     case AGPU_TEXTURE_FORMAT_R16_FLOAT:                 return VK_FORMAT_R16_SFLOAT;
     case AGPU_TEXTURE_FORMAT_D16_UNORM:                 return VK_FORMAT_D16_UNORM;
     case AGPU_TEXTURE_FORMAT_R16_UNORM:                 return VK_FORMAT_R16_UNORM;

@@ -84,6 +84,24 @@ inline D3D12_RESOURCE_STATES mapTextureUsageToResourceState(agpu_memory_heap_typ
     default: return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     }
 }
+
+inline D3D12_COMPARISON_FUNC mapCompareFunction(agpu_compare_function function)
+{
+    switch (function)
+    {
+    case AGPU_ALWAYS: return D3D12_COMPARISON_FUNC_ALWAYS;
+    case AGPU_NEVER: return D3D12_COMPARISON_FUNC_NEVER;
+    case AGPU_LESS:  return D3D12_COMPARISON_FUNC_LESS;
+    case AGPU_LESS_EQUAL: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    case AGPU_EQUAL: return D3D12_COMPARISON_FUNC_EQUAL;
+    case AGPU_NOT_EQUAL:  return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+    case AGPU_GREATER: return D3D12_COMPARISON_FUNC_GREATER;
+    case AGPU_GREATER_EQUAL: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+    default:
+        abort();
+    }
+}
+
 } // End of namespace AgpuD3D12
 
 #endif // AGPU_D3D12_CONSTANTS_HPP

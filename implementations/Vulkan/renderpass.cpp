@@ -48,7 +48,7 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
     if(colorCount > MaxRenderTargetAttachmentCount)
         return agpu::renderpass_ref();
 
-    std::array<agpu_texture_format, MaxRenderTargetAttachmentCount> colorAttachmentFormats;
+    std::array<agpu_texture_format, MaxRenderTargetAttachmentCount> colorAttachmentFormats = {};
     agpu_texture_format depthStencilFormat = AGPU_TEXTURE_FORMAT_UNKNOWN;
 
     agpu_uint sampleCount = 1;
@@ -64,7 +64,7 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
         auto &attachment = attachments[i];
         colorAttachmentFormats[i] = desc.format;
 
-        attachment.format = mapTextureFormat(desc.format);
+        attachment.format = mapTextureFormat(desc.format, false);
         attachment.samples = mapSampleCount(desc.sample_count);
         attachment.loadOp = mapLoadOp(desc.begin_action);
         attachment.storeOp = mapStoreOp(desc.end_action);
@@ -90,7 +90,7 @@ agpu::renderpass_ref AVkRenderPass::create(const agpu::device_ref &device, agpu_
         auto &attachment = attachments.back();
         auto hasStencil = hasStencilComponent(desc->format);
         depthStencilFormat = desc->format;
-        attachment.format = mapTextureFormat(desc->format);
+        attachment.format = mapTextureFormat(desc->format, true);
         attachment.samples = mapSampleCount(desc->sample_count);
         attachment.loadOp = mapLoadOp(desc->begin_action);
         attachment.storeOp = mapStoreOp(desc->end_action);

@@ -1,6 +1,7 @@
 #include "buffer.hpp"
 #include "common_commands.hpp"
 #include "constants.hpp"
+#include <assert.h>
 
 namespace AgpuD3D12
 {
@@ -233,6 +234,7 @@ agpu_error ADXBuffer::uploadBufferData(agpu_size offset, agpu_size size, agpu_po
         }
     });
 
+    assert(uploadResult);
     return uploadResult ? AGPU_OK : AGPU_ERROR;
 }
 

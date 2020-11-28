@@ -3,8 +3,24 @@
 namespace AgpuD3D12
 {
 
-ADXTextureView::ADXTextureView(const agpu::device_ref &cdevice, const agpu::texture_ref &ctexture, const agpu_texture_view_description &cdescription)
-    : device(cdevice), texture(ctexture), description(cdescription)
+inline D3D12_SHADER_COMPONENT_MAPPING mapSwizzleComponent(agpu_component_swizzle component, D3D12_SHADER_COMPONENT_MAPPING identity)
+{
+	switch (component)
+	{
+	case AGPU_COMPONENT_SWIZZLE_IDENTITY: return identity;
+	case AGPU_COMPONENT_SWIZZLE_ONE: return D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1;
+	case AGPU_COMPONENT_SWIZZLE_ZERO: return D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0;
+	case AGPU_COMPONENT_SWIZZLE_R: return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0;
+	case AGPU_COMPONENT_SWIZZLE_G: return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_1;
+	case AGPU_COMPONENT_SWIZZLE_B: return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_2;
+	case AGPU_COMPONENT_SWIZZLE_A: return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_3;
+	default: abort();
+	}
+}
+
+
+ADXTextureView::ADXTextureView(const agpu::device_ref &cdevice, const agpu::texture_ref &ctexture, const agpu_texture_view_description &cdescription, UINT cshader4ComponentMapping)
+    : device(cdevice), texture(ctexture), description(cdescription), shader4ComponentMapping(cshader4ComponentMapping)
 {
 }
 
@@ -14,7 +30,14 @@ ADXTextureView::~ADXTextureView()
 
 agpu::texture_view_ref ADXTextureView::create(const agpu::device_ref &device, const agpu::texture_ref &texture, const agpu_texture_view_description &description)
 {
-    return agpu::makeObject<ADXTextureView> (device, texture, description);
+	auto shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(
+		mapSwizzleComponent(description.components.r, D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0),
+		mapSwizzleComponent(description.components.g, D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_1),
+		mapSwizzleComponent(description.components.b, D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_2),
+		mapSwizzleComponent(description.components.a, D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_3)
+	);
+
+    return agpu::makeObject<ADXTextureView> (device, texture, description, shader4ComponentMapping);
 }
 
 agpu::texture_ptr ADXTextureView::getTexture()
@@ -26,7 +49,7 @@ agpu_error ADXTextureView::getSampledTextureViewDescription(D3D12_SHADER_RESOURC
 {
 	memset(out, 0, sizeof(D3D12_SHADER_RESOURCE_VIEW_DESC));
 	out->Format = (DXGI_FORMAT)description.format;
-	out->Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	out->Shader4ComponentMapping = shader4ComponentMapping;
 
 	bool isArray = description.subresource_range.layer_count > 1 || description.subresource_range.base_arraylayer > 0;
 
@@ -74,14 +97,14 @@ agpu_error ADXTextureView::getSampledTextureViewDescription(D3D12_SHADER_RESOURC
 		}
 		break;
 	case AGPU_TEXTURE_CUBE:
-		isArray = description.subresource_range.layer_count > 6 || description.subresource_range.base_arraylayer > 0;
+		isArray = description.subresource_range.layer_count > 1 || description.subresource_range.base_arraylayer > 0;
 		if (isArray)
 		{
 			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
 			out->TextureCubeArray.MostDetailedMip = description.subresource_range.base_miplevel;
 			out->TextureCubeArray.MipLevels = description.subresource_range.level_count;
 			out->TextureCubeArray.First2DArrayFace = description.subresource_range.base_arraylayer;
-			out->TextureCubeArray.NumCubes = description.subresource_range.layer_count;
+			out->TextureCubeArray.NumCubes = description.subresource_range.layer_count*6;
 			out->TextureCubeArray.ResourceMinLODClamp = lodClamp;
 		}
 		else
@@ -109,10 +132,34 @@ agpu_error ADXTextureView::getColorAttachmentViewDescription(D3D12_RENDER_TARGET
 {
     memset(out, 0, sizeof(D3D12_RENDER_TARGET_VIEW_DESC));
     out->Format = (DXGI_FORMAT)description.format;
-    if (description.sample_count > 1)
-        out->ViewDimension = description.subresource_range.layer_count > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D12_RTV_DIMENSION_TEXTURE2DMS;
-    else
-        out->ViewDimension = description.subresource_range.layer_count > 1 ? D3D12_RTV_DIMENSION_TEXTURE2DARRAY : D3D12_RTV_DIMENSION_TEXTURE2D;
+	if (description.sample_count > 1)
+	{
+		if (description.subresource_range.base_arraylayer > 0 || description.subresource_range.layer_count > 1)
+		{
+			out->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+			out->Texture2DMSArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+			out->Texture2DMSArray.ArraySize = description.subresource_range.layer_count;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+		}
+	}
+	else
+	{
+		if (description.subresource_range.base_arraylayer > 0 || description.subresource_range.layer_count > 1)
+		{
+			out->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+			out->Texture2DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+			out->Texture2DArray.ArraySize = description.subresource_range.layer_count;
+			out->Texture2DArray.MipSlice = description.subresource_range.base_miplevel;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			out->Texture2D.MipSlice = description.subresource_range.base_miplevel;
+		}
+	}
     return AGPU_OK;
 }
 
@@ -120,11 +167,36 @@ agpu_error ADXTextureView::getDepthStencilViewDescription(D3D12_DEPTH_STENCIL_VI
 {
     memset(out, 0, sizeof(D3D12_DEPTH_STENCIL_VIEW_DESC));
     out->Format = (DXGI_FORMAT)description.format;
-    if (description.sample_count > 1)
-        out->ViewDimension = description.subresource_range.layer_count > 1 ? D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY : D3D12_DSV_DIMENSION_TEXTURE2DMS;
-    else
-        out->ViewDimension = description.subresource_range.layer_count > 1 ? D3D12_DSV_DIMENSION_TEXTURE2DARRAY : D3D12_DSV_DIMENSION_TEXTURE2D;
-    return AGPU_OK;
+	if (description.sample_count > 1)
+	{
+		if (description.subresource_range.base_arraylayer > 0 || description.subresource_range.layer_count > 1)
+		{
+			out->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
+			out->Texture2DMSArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+			out->Texture2DMSArray.ArraySize = description.subresource_range.layer_count;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+		}
+	}
+	else
+	{
+		if (description.subresource_range.base_arraylayer > 0 || description.subresource_range.layer_count > 1)
+		{
+			out->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+			out->Texture2DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+			out->Texture2DArray.ArraySize = description.subresource_range.layer_count;
+			out->Texture2DArray.MipSlice = description.subresource_range.base_miplevel;
+		}
+		else
+		{
+			out->ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			out->Texture2D.MipSlice = description.subresource_range.base_miplevel;
+		}
+	}
+
+	return AGPU_OK;
 }
 
 

@@ -3,6 +3,7 @@
 #include "texture_formats.hpp"
 #include "common_commands.hpp"
 #include "constants.hpp"
+#include <assert.h>
 
 namespace AgpuD3D12
 {
@@ -40,21 +41,22 @@ static D3D12_SUBRESOURCE_FOOTPRINT getLevelFootprintExtent(const agpu_texture_de
     return footprint;
 }
 
-static void computeBufferImageTransferLayout(const agpu_texture_description &description, int level, D3D12_TEXTURE_COPY_LOCATION *bufferCopyLocation, size_t *transferSlicePitch, size_t *transferSize)
+static void computeBufferImageTransferLayout(const agpu_texture_description &description, int level, D3D12_TEXTURE_COPY_LOCATION *bufferCopyLocation, size_t *transferRows, size_t *transferSlicePitch, size_t *transferSize)
 {
     auto footprint = getLevelFootprintExtent(description, level);
     memset(bufferCopyLocation, 0, sizeof(*bufferCopyLocation));
 
-    if(isCompressedTextureFormat(description.format))
+    if (isCompressedTextureFormat(description.format))
     {
         auto compressedBlockSize = blockSizeOfCompressedTextureFormat(description.format);
         auto compressedBlockWidth = blockWidthOfCompressedTextureFormat(description.format);
         auto compressedBlockHeight = blockHeightOfCompressedTextureFormat(description.format);
 
-        footprint.Width = (uint32_t)std::max(compressedBlockWidth, (footprint.Width + compressedBlockWidth - 1)/compressedBlockWidth*compressedBlockWidth);
-        footprint.Height = (uint32_t)std::max(compressedBlockHeight, (footprint.Height + compressedBlockHeight - 1)/compressedBlockHeight*compressedBlockHeight);
-
+        footprint.Width = (uint32_t)std::max(compressedBlockWidth, (footprint.Width + compressedBlockWidth - 1) / compressedBlockWidth * compressedBlockWidth);
+        footprint.Height = (uint32_t)std::max(compressedBlockHeight, (footprint.Height + compressedBlockHeight - 1) / compressedBlockHeight * compressedBlockHeight);
+    
         footprint.RowPitch = alignedTo(footprint.Width / compressedBlockWidth * compressedBlockSize, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+        *transferRows = footprint.Height / compressedBlockHeight;
         *transferSlicePitch = footprint.RowPitch * (footprint.Height / compressedBlockHeight);
         *transferSize = (*transferSlicePitch) * footprint.Depth;
     }
@@ -62,6 +64,7 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
     {
         auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
         footprint.RowPitch = alignedTo(footprint.Width*uncompressedPixelSize, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+        *transferRows = footprint.Height;
         *transferSlicePitch = footprint.RowPitch * footprint.Height;
         *transferSize = (*transferSlicePitch) * footprint.Depth;
     }
@@ -100,11 +103,15 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
+    if (description->type == AGPU_TEXTURE_CUBE)
+        desc.DepthOrArraySize *= 6;
+
     auto usageModes = description->usage_modes;
     auto mainUsageMode = description->main_usage_mode;
     if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
+    auto isDepthStencil = (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) != 0;
+	if (isDepthStencil)
 	{
 		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		if ((usageModes & (AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STORAGE)) == 0)
@@ -122,7 +129,7 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
 
     // Compute the initial clear value.
     D3D12_CLEAR_VALUE clearValueData = {};
-	clearValueData.Format = desc.Format;
+	clearValueData.Format = (DXGI_FORMAT)defaultTypedFormatForTypeless(description->format, isDepthStencil);
     auto clearValuePointer = &clearValueData;
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
     {
@@ -197,9 +204,10 @@ agpu_error ADXTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, a
 
     // Compute the copy source footprint.
     D3D12_TEXTURE_COPY_LOCATION copyDestinationLocation = {};
+    size_t transferRows = 0;
     size_t transferSlicePitch = 0;
     size_t transferSize = 0;
-    computeBufferImageTransferLayout(description, level, &copyDestinationLocation, &transferSlicePitch, &transferSize);
+    computeBufferImageTransferLayout(description, level, &copyDestinationLocation, &transferRows, &transferSlicePitch, &transferSize);
 
     agpu_error resultCode = AGPU_OK;
     deviceForDX->withReadbackCommandListDo(transferSize, 1, [&](ADXImplicitResourceReadbackCommandList& readbackList) {
@@ -230,7 +238,7 @@ agpu_error ADXTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, a
         {
             auto srcRow = reinterpret_cast<uint8_t*> (bufferPointer);
             auto dstRow = reinterpret_cast<uint8_t*> (buffer);
-            for (uint32_t y = 0; y < copyFootprint.Height; ++y)
+            for (uint32_t y = 0; y < transferRows; ++y)
             {
                 memcpy(dstRow, srcRow, pitch);
                 dstRow += pitch;
@@ -238,43 +246,10 @@ agpu_error ADXTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, a
             }
         }
 
-        });
+    });
 
+    assert(resultCode == AGPU_OK);
     return resultCode;
-
-	/*    auto mappedPointer = mapLevel(level, arrayIndex, AGPU_READ_ONLY, nullptr);
-		if (!mappedPointer)
-			return AGPU_ERROR;
-
-		UINT subresource = subresourceIndexFor(mappedLevel, mappedArrayIndex);
-
-		D3D12_TEXTURE_COPY_LOCATION dst;
-		dst.pResource = readbackResource.Get();
-		dst.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		deviceForDX->d3dDevice->GetCopyableFootprints(&resourceDescription, subresource, 1, 0, &dst.PlacedFootprint, nullptr, nullptr, nullptr);
-
-		UINT srcNumRows = dst.PlacedFootprint.Footprint.Height;
-		UINT64 srcRowPitch = dst.PlacedFootprint.Footprint.RowPitch;
-		UINT64 srcSlicePitch = srcNumRows * srcRowPitch;
-		if (srcRowPitch == pitch && srcSlicePitch == slicePitch)
-		{
-			memcpy(buffer, mappedPointer, srcSlicePitch);
-		}
-		else
-		{
-			auto srcRow = reinterpret_cast<uint8_t*> (mappedPointer);
-			auto dstRow = reinterpret_cast<uint8_t*> (buffer);
-			for (int y = 0; y < srcNumRows; ++y)
-			{
-				memcpy(dstRow, srcRow, pitch);
-				srcRow += srcRowPitch;
-				dstRow += pitch;
-			}
-		}
-
-		unmapLevel();
-
-		return AGPU_OK;*/
 }
 
 agpu_error ADXTexture::uploadTextureData(agpu_int level, agpu_int arrayIndex, agpu_int pitch, agpu_int slicePitch, agpu_pointer data)
@@ -292,9 +267,10 @@ agpu_error ADXTexture::uploadTextureSubData(agpu_int level, agpu_int arrayIndex,
 
     // Compute the copy source footprint.
     D3D12_TEXTURE_COPY_LOCATION copySourceLocation = {};
+    size_t transferRows = 0;
     size_t transferSlicePitch = 0;
     size_t transferSize = 0;
-    computeBufferImageTransferLayout(description, level, &copySourceLocation, &transferSlicePitch, &transferSize);
+    computeBufferImageTransferLayout(description, level, &copySourceLocation, &transferRows, &transferSlicePitch, &transferSize);
 
     // Compute the copy destination footprint.
     D3D12_TEXTURE_COPY_LOCATION copyDestinationLocation = {};
@@ -320,7 +296,7 @@ agpu_error ADXTexture::uploadTextureSubData(agpu_int level, agpu_int arrayIndex,
         {
             auto srcRow = reinterpret_cast<uint8_t*> (data);
             auto dstRow = reinterpret_cast<uint8_t*> (bufferPointer);
-            for (uint32_t y = 0; y < copyFootprint.Height; ++y)
+            for (uint32_t y = 0; y < transferRows; ++y)
             {
                 memcpy(dstRow, srcRow, pitch);
                 srcRow += pitch;
@@ -336,6 +312,7 @@ agpu_error ADXTexture::uploadTextureSubData(agpu_int level, agpu_int arrayIndex,
         resultCode = success ? AGPU_OK : AGPU_ERROR;
     });
 
+    assert(resultCode == AGPU_OK);
     return resultCode;
 }
 

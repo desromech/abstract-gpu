@@ -126,11 +126,13 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     if (!description)
         return agpu::texture_ref();
 
+    auto isDepthStencil = (description->usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) != 0;
+
     // Create the image
     VkImageCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     createInfo.imageType = mapImageType(description->type);
-    createInfo.format = mapTextureFormat(description->format);
+    createInfo.format = mapTextureFormat(description->format, isDepthStencil);
     createInfo.extent.width = description->width;
     createInfo.extent.height = description->height;
     createInfo.extent.depth = description->depth;
@@ -159,7 +161,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
         createInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
     if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
         createInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
+    if (isDepthStencil)
     {
         createInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         imageAspect = 0;
@@ -270,7 +272,7 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = image;
     createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count);
-    createInfo.format = mapTextureFormat(viewDescription->format);
+    createInfo.format = mapTextureFormat(viewDescription->format, false);
 
     auto &components = createInfo.components;
     components.r = mapComponentSwizzle(viewDescription->components.r);

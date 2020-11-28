@@ -24,6 +24,15 @@
 namespace AgpuD3D12
 {
 
+
+agpu_error convertErrorCode(HRESULT errorCode)
+{
+    if (!FAILED(errorCode))
+        return AGPU_OK;
+
+    return AGPU_ERROR;
+}
+
 void printError(const char *format, ...)
 {
     char buffer[1024];

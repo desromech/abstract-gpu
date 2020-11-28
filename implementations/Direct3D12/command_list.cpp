@@ -338,11 +338,11 @@ agpu_error ADXCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
         transitionTextureUsageMode(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, getCurrentTextureUsageMode(depthStencilBuffer), depthStencilUsage);
 
         auto desc = adxFramebuffer->getDepthStencilCpuHandle();
-        commandList->OMSetRenderTargets((UINT)adxFramebuffer->colorBufferDescriptors.size(), &adxFramebuffer->colorBufferDescriptors[0], FALSE, &desc);
+        commandList->OMSetRenderTargets((UINT)adxFramebuffer->colorBufferDescriptors.size(), adxFramebuffer->colorBufferDescriptors.data(), FALSE, &desc);
     }
     else
     {
-        commandList->OMSetRenderTargets((UINT)adxFramebuffer->colorBufferDescriptors.size(), &adxFramebuffer->colorBufferDescriptors[0], FALSE, nullptr);
+        commandList->OMSetRenderTargets((UINT)adxFramebuffer->colorBufferDescriptors.size(), adxFramebuffer->colorBufferDescriptors.data(), FALSE, nullptr);
     }
 
     // Clear the color buffers
@@ -549,7 +549,7 @@ agpu_error ADXCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & 
 	auto adxBuffer = buffer.as<ADXBuffer>();
 	transitionBufferUsageMode(adxBuffer->resource.Get(), adxBuffer->description.heap_type, currentBufferUsage, new_usage);
 	bufferTransitionStack.push_back(std::make_pair(buffer, new_usage));
-	return AGPU_UNIMPLEMENTED;
+	return AGPU_OK;
 }
 
 agpu_error ADXCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)

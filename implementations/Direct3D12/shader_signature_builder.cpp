@@ -202,7 +202,7 @@ agpu_error ADXShaderSignatureBuilder::addBindingBankArrayElement(agpu_shader_bin
 
 		elementRange.BaseShaderRegister = element.baseDescriptorIndex;
 		elementRange.RegisterSpace = registerSpace;
-		elementRange.OffsetInDescriptorsFromTableStart = element.firstDescriptorOffset;
+		elementRange.OffsetInDescriptorsFromTableStart = element.baseDescriptorIndex;
 
 		bank.elements.push_back(element);
 		bank.descriptorRanges.push_back(elementRange);

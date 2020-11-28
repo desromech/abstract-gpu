@@ -37,7 +37,7 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     swapChainDesc.BufferCount = adxSwapChain->frameCount;
     swapChainDesc.BufferDesc.Width = adxSwapChain->windowWidth;
     swapChainDesc.BufferDesc.Height = adxSwapChain->windowHeight;
-    swapChainDesc.BufferDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format; // TODO: Pick a proper format
+    swapChainDesc.BufferDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format;
     swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
     swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
@@ -48,6 +48,12 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.Windowed = TRUE;
+
+    // The swap chain creation is failing with a SRGB format, so use the non-srgb variant and compensate on the texture view.
+    if (swapChainDesc.BufferDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
+        swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    if (swapChainDesc.BufferDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)
+        swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
     ComPtr<IDXGIFactory4> factory;
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))))

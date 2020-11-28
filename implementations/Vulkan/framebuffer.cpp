@@ -38,7 +38,7 @@ agpu::framebuffer_ref AVkFramebuffer::create(const agpu::device_ref &device, agp
             return agpu::framebuffer_ref();
 
         auto avkView = view.as<AVkTextureView>();
-        attachment.format = mapTextureFormat(avkView->description.format);
+        attachment.format = mapTextureFormat(avkView->description.format, false);
         attachment.samples = mapSampleCount(avkView->description.sample_count);
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -57,7 +57,7 @@ agpu::framebuffer_ref AVkFramebuffer::create(const agpu::device_ref &device, agp
 
         auto avkView = depthStencilView.as<AVkTextureView>();
         auto &attachment = attachments.back();
-        attachment.format = mapTextureFormat(avkView->description.format);
+        attachment.format = mapTextureFormat(avkView->description.format, true);
         attachment.samples = mapSampleCount(avkView->description.sample_count);
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

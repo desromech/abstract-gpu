@@ -115,7 +115,7 @@ agpu::pipeline_state_ptr AVkGraphicsPipelineBuilder::build()
     for (agpu_uint i = 0; i < renderTargetFormats.size(); ++i)
     {
         auto &attachment = attachments[i];
-        attachment.format = mapTextureFormat(renderTargetFormats[i]);
+        attachment.format = mapTextureFormat(renderTargetFormats[i], false);
         attachment.samples = multisampleState.rasterizationSamples;
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -128,7 +128,7 @@ agpu::pipeline_state_ptr AVkGraphicsPipelineBuilder::build()
     if (depthStencilFormat != AGPU_TEXTURE_FORMAT_UNKNOWN)
     {
         auto &attachment = attachments.back();
-        attachment.format = mapTextureFormat(depthStencilFormat);
+        attachment.format = mapTextureFormat(depthStencilFormat, true);
         attachment.samples = multisampleState.rasterizationSamples;
         attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -431,7 +431,7 @@ agpu_error AVkGraphicsPipelineBuilder::setVertexLayout(const agpu::vertex_layout
     {
         VkVertexInputAttributeDescription attribute;
         attribute.binding = rawAttribute.buffer;
-        attribute.format = mapTextureFormat(rawAttribute.format);
+        attribute.format = mapTextureFormat(rawAttribute.format, false);
         attribute.location = rawAttribute.binding;
         attribute.offset = rawAttribute.offset;
         vertexAttributes.push_back(attribute);

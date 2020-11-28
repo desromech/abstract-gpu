@@ -54,7 +54,7 @@ static agpu_error compileHlslShader(const agpu::device_ref& device, agpu_shader_
 		if (errorBlob)
 		{
 			const char* buffer = reinterpret_cast<const char*> (errorBlob->GetBufferPointer());
-			outErrorMessage += std::string(buffer, buffer + errorBlob->GetBufferSize());
+			outErrorMessage += std::string(buffer, buffer + errorBlob->GetBufferSize() - 1);
 			return AGPU_COMPILATION_ERROR;
 		}
 	}
@@ -271,6 +271,7 @@ agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref&
 	{
 		errorMessage += "Failed to convert Spir-V into HLSL\n";
 		errorMessage += compileError.what();
+		OutputDebugStringA(errorMessage.c_str());
 		return AGPU_COMPILATION_ERROR;
 	}
 
@@ -282,6 +283,7 @@ agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref&
 		errorMessage += "HLSL Shader source code generated from Spir-V shader:\n";
 		errorMessage += compiled;
 		errorMessage += "\n";
+		OutputDebugStringA(errorMessage.c_str());
 		return error;
 	}
 

@@ -1,10 +1,11 @@
 #include "sampler.hpp"
+#include "constants.hpp"
 
 namespace AgpuD3D12
 {
-inline D3D12_FILTER mapFilter(agpu_filter filter)
+inline D3D12_FILTER mapFilter(agpu_filter filter, bool comparisonEnabled)
 {
-	return (D3D12_FILTER)filter;
+	return (D3D12_FILTER)(uint32_t(filter) | (comparisonEnabled ? 0x80 : 0));
 }
 
 inline D3D12_TEXTURE_ADDRESS_MODE mapAddressMode(agpu_texture_address_mode mode)
@@ -26,8 +27,8 @@ agpu::sampler_ref ADXSampler::create(const agpu::device_ref &device, agpu_sample
     if(!description)
         return agpu::sampler_ref();
 
-	D3D12_SAMPLER_DESC desc;
-	desc.Filter = mapFilter(description->filter);
+	D3D12_SAMPLER_DESC desc = {};
+	desc.Filter = mapFilter(description->filter, description->comparison_enabled);
 	desc.AddressU = mapAddressMode(description->address_u);
 	desc.AddressV = mapAddressMode(description->address_v);
 	desc.AddressW = mapAddressMode(description->address_w);
@@ -37,6 +38,7 @@ agpu::sampler_ref ADXSampler::create(const agpu::device_ref &device, agpu_sample
 	desc.BorderColor[1] = description->border_color.g;
 	desc.BorderColor[2] = description->border_color.b;
 	desc.BorderColor[3] = description->border_color.a;
+	desc.ComparisonFunc = description->comparison_enabled ? mapCompareFunction(description->comparison_function) : D3D12_COMPARISON_FUNC_ALWAYS;
 	desc.MinLOD = description->min_lod;
 	desc.MaxLOD = description->max_lod;
 

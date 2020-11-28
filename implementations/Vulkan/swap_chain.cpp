@@ -213,7 +213,7 @@ agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const 
     agpu_texture_format actualFormat = createInfo->colorbuffer_format;
     if (formatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
     {
-        swapChain->format = mapTextureFormat(createInfo->colorbuffer_format);
+        swapChain->format = mapTextureFormat(createInfo->colorbuffer_format, false);
         if (swapChain->format == VK_FORMAT_UNDEFINED)
         {
             swapChain->format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -233,7 +233,7 @@ agpu::swap_chain_ref AVkSwapChain::create(const agpu::device_ref &device, const 
             actualFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
 
         // Try to select the expected format.
-        auto wantedFormat = mapTextureFormat(createInfo->colorbuffer_format);
+        auto wantedFormat = mapTextureFormat(createInfo->colorbuffer_format, false);
         for(size_t i = 0; i < formatCount; ++i)
         {
             auto &format = surfaceFormats[i];
