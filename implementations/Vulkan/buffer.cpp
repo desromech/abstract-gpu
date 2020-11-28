@@ -14,7 +14,11 @@ AVkBuffer::AVkBuffer(const agpu::device_ref &device)
 AVkBuffer::~AVkBuffer()
 {
     if (handle)
+    {
+        if (mapCount > 0)
+            vmaUnmapMemory(sharedContext->memoryAllocator, allocation);
         vmaDestroyBuffer(sharedContext->memoryAllocator, handle, allocation);
+    }
 }
 
 agpu::buffer_ref AVkBuffer::create(const agpu::device_ref &device, agpu_buffer_description* originalDescription, agpu_pointer initial_data)
