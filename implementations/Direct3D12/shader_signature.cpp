@@ -17,9 +17,9 @@ DescriptorTableMemoryAllocator::~DescriptorTableMemoryAllocator()
 
 void DescriptorTableMemoryAllocator::setup(uint32_t maxDescriptorCount)
 {
-
+	assert(maxDescriptorCount > 0);
 	freeList.resize(maxDescriptorCount, -1);
-	for (int i = 0; i < maxDescriptorCount - 1; ++i) {
+	for (uint32_t i = 0; i < maxDescriptorCount - 1; ++i) {
 		freeList[i] = i + 1;
 	}
 
@@ -89,7 +89,7 @@ bool ADXShaderSignature::constructDescriptorTableAllocators()
 	if (samplerHeapSize > 0)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = samplerHeapSize / deviceForDX->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		heapDesc.NumDescriptors = UINT(samplerHeapSize / deviceForDX->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER));
 		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -101,7 +101,7 @@ bool ADXShaderSignature::constructDescriptorTableAllocators()
 	if (srvHeapSize > 0)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = srvHeapSize / deviceForDX->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		heapDesc.NumDescriptors = UINT(srvHeapSize / deviceForDX->d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -215,7 +215,7 @@ agpu::shader_resource_binding_ptr ADXShaderSignature::createShaderResourceBindin
     if (tableIndex < 0)
         return nullptr;
 
-    UINT descriptorOffset = bank.descriptorTableSize * tableIndex;
+    UINT descriptorOffset = UINT(bank.descriptorTableSize * tableIndex);
 	auto gpuHandle = descriptorTableHeapGPUBaseAddress[bankIndex];
 	gpuHandle.ptr += descriptorOffset;
 

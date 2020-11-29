@@ -20,7 +20,7 @@ inline size_t nextPowerOfTwo(size_t v)
 
 inline size_t alignedTo(size_t value, size_t alignment)
 {
-    return (value + alignment - 1) & (-alignment);
+    return (value + alignment - 1) & size_t(-intptr_t(alignment));
 }
 } // End of namespace AgpuCommon
 

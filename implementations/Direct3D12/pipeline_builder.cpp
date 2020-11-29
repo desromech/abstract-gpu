@@ -228,12 +228,12 @@ agpu_error ADXPipelineBuilder::attachShaderWithEntryPoint(const agpu::shader_ref
 
 agpu_size ADXPipelineBuilder::getBuildingLogLength()
 {
-    return buildingLog.size();
+    return (agpu_size)buildingLog.size();
 }
 
 agpu_error ADXPipelineBuilder::getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
-    strncpy(buffer, buildingLog.c_str(), buffer_size);
+    strncpy_s(buffer, buffer_size, buildingLog.c_str(), buildingLog.size() + 1);
     return AGPU_OK;
 }
 
@@ -305,7 +305,7 @@ agpu_error ADXPipelineBuilder::setCullMode(agpu_cull_mode mode)
 
 agpu_error ADXPipelineBuilder::setDepthBias(agpu_float constant_factor, agpu_float clamp, agpu_float slope_factor)
 {
-    description.RasterizerState.DepthBias = constant_factor;
+    description.RasterizerState.DepthBias = (INT)constant_factor;
     description.RasterizerState.DepthBiasClamp = clamp;
     description.RasterizerState.SlopeScaledDepthBias = slope_factor;
     return AGPU_OK;

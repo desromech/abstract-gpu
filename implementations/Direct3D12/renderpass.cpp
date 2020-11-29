@@ -80,7 +80,7 @@ agpu_error ADXRenderPass::getColorAttachmentFormats(agpu_uint* color_attachment_
             formats[i] = this->colorAttachments[i].format;
     }
 
-    *color_attachment_count = this->colorAttachments.size();
+    *color_attachment_count = (agpu_uint)this->colorAttachments.size();
     return AGPU_OK;
 }
 

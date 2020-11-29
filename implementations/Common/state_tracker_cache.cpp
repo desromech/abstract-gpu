@@ -201,7 +201,7 @@ agpu_error GraphicsPipelineStateDescription::applyToBuilder(const agpu::pipeline
     error = tessellationEvaluationStage.attachTo(AGPU_TESSELLATION_EVALUATION_SHADER, builder); CHECK_ERROR();
 
     // Setup the color render target.
-    error = builder->setRenderTargetCount(renderTargetColorAttachmentCount); CHECK_ERROR();
+    error = builder->setRenderTargetCount(agpu_size(renderTargetColorAttachmentCount)); CHECK_ERROR();
     for(size_t i = 0; i < renderTargetColorAttachmentCount; ++i)
     {
         error = renderTargetColorAttachments[i].applyToBuilder(i, builder); CHECK_ERROR();

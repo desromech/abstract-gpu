@@ -140,13 +140,14 @@ agpu_error ADXShader::compileShader(agpu_cstring options)
 
 agpu_size ADXShader::getCompilationLogLength()
 {
-	return compilationLog.size();
+	return (agpu_size)compilationLog.size();
 }
 
 agpu_error ADXShader::getCompilationLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
 	CHECK_POINTER(buffer);
-	strncpy(buffer, compilationLog.c_str(), buffer_size);
+
+	strncpy_s(buffer, buffer_size, compilationLog.c_str(), compilationLog.size() + 1);
 	return AGPU_OK;
 }
 
@@ -248,8 +249,8 @@ agpu_error ADXShader::convertSpirVIntoBytecode(const agpu::shader_signature_ref&
 		std::vector<spirv_cross::RootConstants> pushConstantsLayout;
 		spirv_cross::RootConstants pushConstants = {};
 		pushConstants.start = 0;
-		pushConstants.end = adxShaderSignature->pushConstantCount*4;
-		pushConstants.space = adxShaderSignature->banks.size();
+		pushConstants.end = uint32_t(adxShaderSignature->pushConstantCount*4);
+		pushConstants.space = uint32_t(adxShaderSignature->banks.size());
 		pushConstants.binding = 0;
 		pushConstantsLayout.push_back(pushConstants);
 		hlsl.set_root_constant_layouts(pushConstantsLayout);

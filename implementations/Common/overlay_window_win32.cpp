@@ -4,7 +4,9 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#include <winapifamily.h>
 
+#if WINAPI_PARTITION_DESKTOP
 #include <thread>
 #include <mutex>
 
@@ -122,4 +124,15 @@ agpu_error OverlaySwapChainWin32Window::setPositionAndSize(int32_t newX, int32_t
 }
 
 } // End of namespace AgpuCommon
+
+#else
+namespace AgpuCommon
+{
+OverlaySwapChainWindowPtr createOverlaySwapChainWin32Window(agpu_swap_chain_create_info* createInfo)
+{
+	return OverlaySwapChainWindowPtr();
+}
+} // End of namespace AgpuCommon
+
+#endif //#ifdef WINAPI_PARTITION_DESKTOP
 #endif //_WIN32

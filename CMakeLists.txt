@@ -11,6 +11,19 @@ option(BUILD_VULKAN "Build the vulkan backend" ON)
 option(BUILD_OPENGL "Build the opengl backend" ON)
 option(BUILD_D3D12 "Build the d3d12 backend" ON)
 option(BUILD_METAL "Build the metal backend" ON)
+option(BUILD_WITH_OPENVR "Build with OpenVR support" ON)
+
+option(BUILD_MULTIPLE_BACKENDS "Build multiple backends" ON)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+	set(UWP YES)
+	set(BUILD_VULKAN OFF)
+	set(BUILD_OPENGL OFF)
+	set(BUILD_D3D12 YES)
+	set(BUILD_METAL OFF)
+	set(BUILD_WITH_OPENVR OFF)
+	set(BUILD_MULTIPLE_BACKENDS OFF)
+endif()
 
 # Check the build type
 if (CMAKE_BUILD_TYPE STREQUAL "")
@@ -133,13 +146,23 @@ endforeach()
 #endif()
 
 # Find OpenGL
-find_package(OpenGL)
+if(BUILD_OPENGL)
+	find_package(OpenGL)
+endif()
 
 # Find Direct3D 12
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-find_package(D3D12)
+if(UWP)
+	## Assume we will always have d3d12, so just set the required variables.
+	set(D3D12_INCLUDE_DIR)
+	set(DXGI_INCLUDE_DIR)
+	set(D3DCOMPILER_INCLUDE_DIR)
+	set(D3D12_FOUND YES)
+	set(D3D12_LIBRARIES d3d12.lib dxgi.lib d3dcompiler.lib)
+else()
+	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+	find_package(D3D12)
+endif()
 
-# Find the Direct3D
 # For VisualStudio in Window
 find_path(SDL2_INCLUDE_DIRS
   NAMES SDL.h

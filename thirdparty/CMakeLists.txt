@@ -7,4 +7,6 @@ add_subdirectory(glslang)
 add_subdirectory(spirv-cross)
 
 # Add openvr
-add_subdirectory(openvr)
+if(BUILD_WITH_OPENVR)
+    add_subdirectory(openvr)
+endif()

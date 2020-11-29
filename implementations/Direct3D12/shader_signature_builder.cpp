@@ -77,7 +77,7 @@ agpu::shader_signature_ptr ADXShaderSignatureBuilder::build()
 
 		if (!bank.descriptorRanges.empty())
 		{
-			parameter.DescriptorTable.NumDescriptorRanges = bank.descriptorRanges.size();
+			parameter.DescriptorTable.NumDescriptorRanges = (UINT)bank.descriptorRanges.size();
 			parameter.DescriptorTable.pDescriptorRanges = &bank.descriptorRanges[0];
 		}
 
@@ -90,15 +90,15 @@ agpu::shader_signature_ptr ADXShaderSignatureBuilder::build()
 		D3D12_ROOT_PARAMETER parameter = {};
 		parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 		parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-		parameter.Constants.Num32BitValues = pushConstantCount;
-		parameter.Constants.RegisterSpace = banks.size();
+		parameter.Constants.Num32BitValues = (UINT)pushConstantCount;
+		parameter.Constants.RegisterSpace = (UINT)banks.size();
 		parameter.Constants.ShaderRegister = 0;
 		rootParameters.push_back(parameter);
 	}
 
 	if (!rootParameters.empty())
 	{
-		rootDescription.NumParameters = rootParameters.size();
+		rootDescription.NumParameters = (UINT)rootParameters.size();
 		rootDescription.pParameters = &rootParameters[0];
 	}
 
@@ -201,7 +201,7 @@ agpu_error ADXShaderSignatureBuilder::addBindingBankArrayElement(agpu_shader_bin
 		element.firstDescriptorOffset = bank.descriptorTableSize;
 
 		elementRange.BaseShaderRegister = element.baseDescriptorIndex;
-		elementRange.RegisterSpace = registerSpace;
+		elementRange.RegisterSpace = (UINT)registerSpace;
 		elementRange.OffsetInDescriptorsFromTableStart = element.baseDescriptorIndex;
 
 		bank.elements.push_back(element);

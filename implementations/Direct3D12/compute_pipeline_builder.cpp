@@ -79,12 +79,12 @@ agpu_error ADXComputePipelineBuilder::attachShaderWithEntryPoint(const agpu::sha
 
 agpu_size ADXComputePipelineBuilder::getBuildingLogLength()
 {
-	return buildingLog.size();
+	return (agpu_size)buildingLog.size();
 }
 
 agpu_error ADXComputePipelineBuilder::getBuildingLog(agpu_size buffer_size, agpu_string_buffer buffer)
 {
-	strncpy(buffer, buildingLog.c_str(), buffer_size);
+	strncpy_s(buffer, buffer_size, buildingLog.c_str(), buildingLog.size() + 1);
 	return AGPU_OK;
 }
 

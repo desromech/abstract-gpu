@@ -74,9 +74,9 @@ agpu_error ADXCommandList::setShaderSignature(const agpu::shader_signature_ref &
 		for (size_t i = 0; i < adxSignature->nullDescriptorTables.size(); ++i)
 		{
 			if(hasGraphicsSignature)
-				commandList->SetGraphicsRootDescriptorTable(i, adxSignature->nullDescriptorTables[i]);
+				commandList->SetGraphicsRootDescriptorTable(UINT(i), adxSignature->nullDescriptorTables[i]);
 			if (hasComputeSignature)
-				commandList->SetComputeRootDescriptorTable(i, adxSignature->nullDescriptorTables[i]);
+				commandList->SetComputeRootDescriptorTable(UINT(i), adxSignature->nullDescriptorTables[i]);
 		}
 	}
 
@@ -492,9 +492,9 @@ agpu_error ADXCommandList::pushConstants(agpu_uint offset, agpu_uint size, agpu_
     bool hasGraphicsSignature = type == AGPU_COMMAND_LIST_TYPE_DIRECT || type == AGPU_COMMAND_LIST_TYPE_BUNDLE;
 	bool hasComputeSignature = type == AGPU_COMMAND_LIST_TYPE_DIRECT || type == AGPU_COMMAND_LIST_TYPE_BUNDLE || type == AGPU_COMMAND_LIST_TYPE_COMPUTE;
 	if(hasGraphicsSignature)
-	    commandList->SetGraphicsRoot32BitConstants(currentShaderSignature->banks.size(), size / 4, values, offset/4);
+	    commandList->SetGraphicsRoot32BitConstants((UINT)currentShaderSignature->banks.size(), size / 4, values, offset/4);
 	if (hasComputeSignature)
-		commandList->SetComputeRoot32BitConstants(currentShaderSignature->banks.size(), size / 4, values, offset / 4);
+		commandList->SetComputeRoot32BitConstants((UINT)currentShaderSignature->banks.size(), size / 4, values, offset / 4);
 
     return AGPU_OK;
 }

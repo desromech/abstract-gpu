@@ -52,27 +52,46 @@ set(AGPU_Vulkan_SOURCES
     vertex_layout.cpp
     vertex_layout.hpp
     vk_mem_alloc.h
-    vr_system.cpp
-    vr_system.hpp
 )
 
 include_directories(${VULKAN_INCLUDE_DIRS})
 
 add_definitions(
     -DAGPU_BUILD
-    -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
 )
+
+if(BUILD_WITH_OPENVR)
+    add_definitions(
+        -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
+        -DBUILD_WITH_OPENVR
+    )
+    set(AGPU_Vulkan_SOURCES ${AGPU_Vulkan_SOURCES}
+        vr_system.cpp
+        vr_system.hpp
+    )
+endif()
 
 if(WIN32)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions( -DWIN64 )
+    add_definitions(-DWIN64)
   endif()
 endif()
 
-add_library(AgpuVulkan SHARED ${AGPU_Vulkan_SOURCES})
-add_dependencies(AgpuVulkan openvr_embeddedapi ${AgpuCommonHighLevelInterfaces_DEPS})
-include_directories(${OPENVR_INCLUDE})
-target_link_libraries(AgpuVulkan
+if(BUILD_MULTIPLE_BACKENDS)
+    set(AgpuVulkan AgpuVulkan)
+else()
+    set(AgpuVulkan Agpu)
+endif()
+
+add_library(${AgpuVulkan} SHARED ${AGPU_Vulkan_SOURCES})
+add_dependencies(${AgpuVulkan} ${AgpuCommonHighLevelInterfaces_DEPS})
+
+if(BUILD_WITH_OPENVR)
+    add_dependencies(${AgpuVulkan} openvr_embeddedapi)
+    include_directories(${OPENVR_INCLUDE})
+    target_link_libraries(${AgpuVulkan}
+        $<TARGET_OBJECTS:openvr_embeddedapi>)
+endif()
+target_link_libraries(${AgpuVulkan}
     ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES}
-    $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS}
     ${AgpuCommonHighLevelInterfaces_LIBS})

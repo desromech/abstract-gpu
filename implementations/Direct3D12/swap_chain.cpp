@@ -27,42 +27,54 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     adxSwapChain->windowWidth = createInfo->width;
     adxSwapChain->windowHeight = createInfo->height;
 
+#if WINAPI_PARTITION_DESKTOP
     adxSwapChain->window = (HWND)createInfo->window;
 	if (adxSwapChain->overlayWindow)
 		adxSwapChain->window = (HWND)adxSwapChain->overlayWindow->getWindowHandle();
+#else
+    adxSwapChain->window = (IUnknown*)createInfo->window;
+#endif
     adxSwapChain->frameCount = createInfo->buffer_count;
-
     // Create the swap chain
-    DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-    swapChainDesc.BufferCount = adxSwapChain->frameCount;
-    swapChainDesc.BufferDesc.Width = adxSwapChain->windowWidth;
-    swapChainDesc.BufferDesc.Height = adxSwapChain->windowHeight;
-    swapChainDesc.BufferDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format;
-    swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-    swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-    swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-    swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+    swapChainDesc.BufferCount = (UINT)adxSwapChain->frameCount;
+    swapChainDesc.Width = adxSwapChain->windowWidth;
+    swapChainDesc.Height = adxSwapChain->windowHeight;
+    swapChainDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format;
+    swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = adxSwapChain->window;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.Windowed = TRUE;
 
     // The swap chain creation is failing with a SRGB format, so use the non-srgb variant and compensate on the texture view.
-    if (swapChainDesc.BufferDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
-        swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    if (swapChainDesc.BufferDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)
-        swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    if (swapChainDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
+        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    if (swapChainDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)
+        swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
     ComPtr<IDXGIFactory4> factory;
-    if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))))
+    
+    if (FAILED(CreateDXGIFactory2(device.as<ADXDevice>()->isDebugEnabled ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&factory))))
         return agpu::swap_chain_ref();
 
-    ComPtr<IDXGISwapChain> oldSwapChain;
-    if (FAILED(factory->CreateSwapChain(queue.as<ADXCommandQueue> ()->queue.Get(), &swapChainDesc, &oldSwapChain)))
-        return agpu::swap_chain_ref();
+#if WINAPI_PARTITION_DESKTOP
+    DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
+    fullscreenDesc.RefreshRate.Numerator = 60;
+    fullscreenDesc.RefreshRate.Denominator = 1;
+    fullscreenDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    fullscreenDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+    fullscreenDesc.Windowed = TRUE;
 
+    ComPtr<IDXGISwapChain1> oldSwapChain;
+    if (FAILED(factory->CreateSwapChainForHwnd(queue.as<ADXCommandQueue>()->queue.Get(), adxSwapChain->window, &swapChainDesc, &fullscreenDesc, nullptr, &oldSwapChain)))
+        return agpu::swap_chain_ref();
+#else
+    swapChainDesc.Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH;
+    ComPtr<IDXGISwapChain1> oldSwapChain;
+    if (FAILED(factory->CreateSwapChainForCoreWindow(queue.as<ADXCommandQueue>()->queue.Get(), adxSwapChain->window, &swapChainDesc, nullptr, &oldSwapChain)))
+        return agpu::swap_chain_ref();
+#endif
     if (FAILED(oldSwapChain.As(&adxSwapChain->swapChain)))
         return agpu::swap_chain_ref();
 
@@ -153,12 +165,12 @@ agpu::framebuffer_ptr ADXSwapChain::getCurrentBackBuffer()
 
 agpu_size ADXSwapChain::getCurrentBackBufferIndex()
 {
-    return frameIndex;
+    return (agpu_size)frameIndex;
 }
 
 agpu_size ADXSwapChain::getFramebufferCount()
 {
-    return framebuffers.size();
+    return (agpu_size)framebuffers.size();
 }
 
 agpu_error ADXSwapChain::setOverlayPosition(agpu_int x, agpu_int y)

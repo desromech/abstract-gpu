@@ -57,23 +57,42 @@ include_directories(${D3D12_INCLUDE_DIRS})
 
 add_definitions(
     -DAGPU_BUILD
-    -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
 )
+
+if(BUILD_OPENVR)
+    add_definitions(
+        -DVR_API_EXPORT=1 # We are embedding the api implementation, so this has to match
+        -DBUILD_WITH_OPENVR
+    )
+endif()
 
 if(WIN32)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions( -DWIN64 )
+    add_definitions(-DWIN64)
   endif()
 endif()
 
-add_library(AgpuDirect3D12 SHARED ${AGPU_Direct3D12_SOURCES})
-add_dependencies(AgpuDirect3D12
+if(BUILD_MULTIPLE_BACKENDS)
+    set(AgpuDirect3D12 AgpuDirect3D12)
+else()
+    set(AgpuDirect3D12 Agpu)
+endif()
+add_library(${AgpuDirect3D12} SHARED ${AGPU_Direct3D12_SOURCES})
+add_dependencies(${AgpuDirect3D12}
 	spirv-cross-core spirv-cross-glsl spirv-cross-hlsl
-	openvr_embeddedapi
-	${AgpuCommonHighLevelInterfaces_DEPS})
+	${AgpuCommonHighLevelInterfaces_DEPS}
+)
+if(BUILD_OPENVR)
+    add_dependencies(${AgpuDirect3D12} openvr_embeddedapi)
+endif()
+
 include_directories(${OPENVR_INCLUDE})
-target_link_libraries(AgpuDirect3D12
+target_link_libraries(${AgpuDirect3D12}
     ${D3D12_LIBRARIES}
 	$<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-hlsl> $<TARGET_OBJECTS:spirv-cross-glsl>
-    $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS}
-    ${AgpuCommonHighLevelInterfaces_LIBS})
+    ${AgpuCommonHighLevelInterfaces_LIBS}
+)
+
+if(BUILD_OPENVR)
+    add_dependencies(${AgpuDirect3D12} $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS})
+endif()

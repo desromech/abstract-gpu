@@ -26,8 +26,11 @@ public:
 public:
     agpu::device_ref device;
 
+#if WINAPI_PARTITION_DESKTOP
     HWND window;
-
+#else
+    IUnknown *window;
+#endif
     // Frame buffers
     ComPtr<IDXGISwapChain3> swapChain;
     std::vector<agpu::framebuffer_ref> framebuffers;
