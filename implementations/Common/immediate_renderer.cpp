@@ -68,6 +68,7 @@ std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shade
 			options += "#define PER_FRAGMENT_LIGHTING\n";
 			break;
 		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS:
+			options += "#define PER_FRAGMENT_LIGHTING\n";
 			options += "#define PBR_METALLIC_ROUGHNESS\n";
 			break;
 		default:
@@ -148,7 +149,7 @@ size_t SkinningState::hash() const
 	return result;
 }
 
-LightState::LightState()
+ClassicLightState::ClassicLightState()
     :
     ambientColor(0.0f, 0.0f, 0.0f, 1.0f),
     diffuseColor(0.0f, 0.0f, 0.0f, 1.0f),
@@ -166,7 +167,7 @@ LightState::LightState()
 {
 }
 
-size_t LightState::hash() const
+size_t ClassicLightState::hash() const
 {
     return
         ambientColor.hash() ^
@@ -184,7 +185,7 @@ size_t LightState::hash() const
     ;
 }
 
-bool LightState::operator==(const LightState &other) const
+bool ClassicLightState::operator==(const ClassicLightState &other) const
 {
     return
         ambientColor == other.ambientColor &&
@@ -201,11 +202,71 @@ bool LightState::operator==(const LightState &other) const
         quadraticAttenuation == other.quadraticAttenuation;
 }
 
+PBRLightState::PBRLightState()
+    :
+	intensity(0.0f, 0.0f, 0.0f, 1.0f),
+
+    position(0.0f, 0.0f, 1.0f, 0.0f),
+
+    spotDirection(0.0f, 0.0f, -1.0f),
+    spotCosCutoff(-1.0f),
+
+    spotExponent(0.0f),
+	spotInnerCosCutoff(-1.0f),
+    radius(1.0f),
+	padding()
+{
+}
+
+size_t PBRLightState::hash() const
+{
+    return
+        intensity.hash() ^
+
+        position.hash() ^
+        spotDirection.hash() ^
+        std::hash<float> ()(spotCosCutoff) ^
+        std::hash<float> ()(spotInnerCosCutoff) ^
+
+        std::hash<float> () (spotExponent) ^
+        std::hash<float> () (radius)
+    ;
+}
+
+bool PBRLightState::operator==(const PBRLightState &other) const
+{
+    return
+        intensity == other.intensity &&
+
+        position == other.position &&
+        spotDirection == other.spotDirection &&
+        spotCosCutoff == other.spotCosCutoff &&
+
+        spotExponent == other.spotExponent &&
+        spotInnerCosCutoff == other.spotInnerCosCutoff &&
+        radius == other.radius;
+}
+
+LightState::LightState()
+    : classic(ClassicLightState())
+{
+}
+
+size_t LightState::hash() const
+{
+    return classic.hash();
+}
+
+bool LightState::operator==(const LightState &other) const
+{
+    return classic == other.classic;
+}
+
 LightingState::LightingState()
     : ambientLighting(0.2f, 0.2f, 0.2f, 1.0f), enabledLightMask(1), padding()
 {
-    lights[0].diffuseColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
-    lights[0].specularColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
+    lights[0].classic.diffuseColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
+    lights[0].classic.specularColor = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 size_t LightingState::hash() const
@@ -228,17 +289,21 @@ bool LightingState::operator!=(const LightingState &other) const
     return !(*this == other);
 }
 
-MaterialState::MaterialState()
-    :
-    emission(0.0f, 0.0f, 0.0f, 1.0f),
-    ambient(0.2f, 0.2f, 0.2f, 1.0f),
-    diffuse(0.8f, 0.8f, 0.8f, 1.0f),
-    specular(0.0f, 0.0f, 0.0f, 1.0f),
-    shininess(0.0f),
-	padding()
-{}
+ClassicMaterialState ClassicMaterialState::defaultMaterial()
+{
+	auto result = ClassicMaterialState();
+	result.type = MaterialStateType::Classic;
+    result.shininess = 0.0f;
+	result.padding[0] = 0;
+	result.padding[1] = 0;
+    result.emission = Vector4F(0.0f, 0.0f, 0.0f, 1.0f);
+    result.ambient = Vector4F(0.2f, 0.2f, 0.2f, 1.0f);
+    result.diffuse = Vector4F(0.8f, 0.8f, 0.8f, 1.0f);
+    result.specular = Vector4F(0.0f, 0.0f, 0.0f, 1.0f);
+	return result;
+}
 
-size_t MaterialState::hash() const
+size_t ClassicMaterialState::hash() const
 {
     return
         emission.hash() ^
@@ -248,7 +313,7 @@ size_t MaterialState::hash() const
         std::hash<float> ()(shininess);
 }
 
-bool MaterialState::operator==(const MaterialState &other) const
+bool ClassicMaterialState::operator==(const ClassicMaterialState &other) const
 {
     return
         emission == other.emission &&
@@ -256,6 +321,77 @@ bool MaterialState::operator==(const MaterialState &other) const
         diffuse == other.diffuse &&
         specular == other.specular &&
         shininess == other.shininess;
+}
+
+bool ClassicMaterialState::operator!=(const ClassicMaterialState &other) const
+{
+    return !(*this == other);
+}
+
+MetallicRoughnessMaterialState MetallicRoughnessMaterialState::defaultMaterial()
+{
+	auto result = MetallicRoughnessMaterialState();
+	result.type = MaterialStateType::MetallicRoughness;
+    result.roughnessFactor = 0.0f;
+	result.metallicFactor = 0.0f;
+	result.padding = 0;
+    result.emission = Vector4F(0.0f, 0.0f, 0.0f, 1.0f);
+    result.baseColor = Vector4F(0.8f, 0.8f, 0.8f, 1.0f);
+	return result;
+}
+
+size_t MetallicRoughnessMaterialState::hash() const
+{
+    return
+        emission.hash() ^
+        baseColor.hash() ^
+		std::hash<float> ()(roughnessFactor) ^
+        std::hash<float> ()(metallicFactor);
+}
+
+bool MetallicRoughnessMaterialState::operator==(const MetallicRoughnessMaterialState &other) const
+{
+    return
+        emission == other.emission &&
+        baseColor == other.baseColor &&
+        roughnessFactor == other.roughnessFactor &&
+        metallicFactor == other.metallicFactor;
+}
+
+bool MetallicRoughnessMaterialState::operator!=(const MetallicRoughnessMaterialState &other) const
+{
+    return !(*this == other);
+}
+
+MaterialState::MaterialState()
+    : classic(ClassicMaterialState::defaultMaterial())
+{}
+
+size_t MaterialState::hash() const
+{
+	switch(type)
+	{
+	default:
+	case MaterialStateType::Classic:
+		return classic.hash();
+	case MaterialStateType::MetallicRoughness:
+		return metallicRoughness.hash();
+	}
+}
+
+bool MaterialState::operator==(const MaterialState &other) const
+{
+	if(type == other.type)
+		return false;
+
+	switch(type)
+	{
+	default:
+	case MaterialStateType::Classic:
+		return classic == other.classic;
+	case MaterialStateType::MetallicRoughness:
+		return metallicRoughness == other.metallicRoughness;
+	}
 }
 
 bool MaterialState::operator!=(const MaterialState &other) const
@@ -668,16 +804,31 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
         if(state)
         {
             auto &light = lightingStateBuffer.currentState.lights[index];
-            light.ambientColor = Vector4F(state->ambient);
-            light.diffuseColor = Vector4F(state->diffuse);
-            light.specularColor = Vector4F(state->specular);
-            light.position = modelViewMatrixStack.back()*Vector4F(state->position);
-            light.spotDirection = modelViewMatrixStack.back().transformDirection3(Vector3F(state->spot_direction));
-            light.spotExponent = state->spot_exponent;
-            light.spotCosCutoff = float(cos(state->spot_cutoff*M_PI/180.0));
-            light.constantAttenuation = state->constant_attenuation;
-            light.linearAttenuation = state->linear_attenuation;
-            light.quadraticAttenuation = state->quadratic_attenuation;
+			if(hasMetallicRoughnessLighting())
+			{
+				light.pbr = PBRLightState();
+	            light.pbr.intensity = Vector4F(state->pbr.intensity, 0);
+	            light.pbr.position = modelViewMatrixStack.back()*Vector4F(state->pbr.position);
+	            light.pbr.spotDirection = modelViewMatrixStack.back().transformDirection3(Vector3F(state->pbr.spot_direction));
+	            light.pbr.spotExponent = state->pbr.spot_exponent;
+	            light.pbr.spotCosCutoff = float(cos(state->pbr.spot_cutoff*M_PI/180.0));
+				light.pbr.spotInnerCosCutoff = float(cos(state->pbr.spot_inner_cutoff*M_PI/180.0));
+	            light.pbr.radius = state->pbr.radius;
+			}
+			else
+			{
+				light.classic = ClassicLightState();
+				light.classic.ambientColor = Vector4F(state->classic.ambient);
+	            light.classic.diffuseColor = Vector4F(state->classic.diffuse);
+	            light.classic.specularColor = Vector4F(state->classic.specular);
+	            light.classic.position = modelViewMatrixStack.back()*Vector4F(state->classic.position);
+	            light.classic.spotDirection = modelViewMatrixStack.back().transformDirection3(Vector3F(state->classic.spot_direction));
+	            light.classic.spotExponent = state->classic.spot_exponent;
+	            light.classic.spotCosCutoff = float(cos(state->classic.spot_cutoff*M_PI/180.0));
+	            light.classic.constantAttenuation = state->classic.constant_attenuation;
+	            light.classic.linearAttenuation = state->classic.linear_attenuation;
+	            light.classic.quadraticAttenuation = state->classic.quadratic_attenuation;
+			}
         }
     }
     else
@@ -765,11 +916,23 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
         return AGPU_NULL_POINTER;
 
     MaterialState newMaterialState;
-    newMaterialState.emission = Vector4F(state->emission);
-    newMaterialState.ambient = Vector4F(state->ambient);
-    newMaterialState.diffuse = Vector4F(state->diffuse);
-    newMaterialState.specular = Vector4F(state->specular);
-    newMaterialState.shininess = state->shininess;
+	if(hasMetallicRoughnessLighting())
+	{
+		newMaterialState.metallicRoughness = MetallicRoughnessMaterialState::defaultMaterial();
+		newMaterialState.metallicRoughness.emission = Vector4F(state->metallic_roughness.emission);
+	    newMaterialState.metallicRoughness.baseColor = Vector4F(state->metallic_roughness.base_color);
+	    newMaterialState.metallicRoughness.metallicFactor = state->metallic_roughness.metallic_factor;
+		newMaterialState.metallicRoughness.roughnessFactor = state->metallic_roughness.roughness_factor;
+	}
+	else
+	{
+		newMaterialState.classic = ClassicMaterialState::defaultMaterial();
+		newMaterialState.classic.emission = Vector4F(state->classic.emission);
+	    newMaterialState.classic.ambient = Vector4F(state->classic.ambient);
+	    newMaterialState.classic.diffuse = Vector4F(state->classic.diffuse);
+	    newMaterialState.classic.specular = Vector4F(state->classic.specular);
+	    newMaterialState.classic.shininess = state->classic.shininess;
+	}
     materialStateBuffer.setState(newMaterialState);
     return AGPU_OK;
 }

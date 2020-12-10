@@ -11,6 +11,7 @@ Class {
 		'agpu_framebuffer',
 		'agpu_swap_chain_create_info',
 		'agpu_vr_generic_event',
+		'agpu_immediate_renderer_material_classic',
 		'agpu_texture',
 		'agpu_quaternionf',
 		'agpu_string_length',
@@ -19,6 +20,7 @@ Class {
 		'agpu_buffer_mapping_flags',
 		'agpu_size2d',
 		'agpu_renderpass_description',
+		'agpu_vector2f',
 		'agpu_cstring_buffer',
 		'agpu_enum',
 		'agpu_shader_binding_type',
@@ -27,8 +29,10 @@ Class {
 		'agpu_renderpass_attachment_action',
 		'agpu_vr_event_type',
 		'agpu_depth_stencil_value',
+		'agpu_immediate_renderer_light_classic',
 		'agpu_immediate_renderer_lighting_model',
 		'agpu_immediate_renderer_material',
+		'agpu_state_tracker_cache',
 		'agpu_inheritance_info',
 		'agpu_color4f',
 		'agpu_float',
@@ -39,6 +43,7 @@ Class {
 		'agpu_state_tracker',
 		'agpu_renderpass_depth_stencil_description',
 		'agpu_vr_eye',
+		'agpu_swap_chain_presentation_mode',
 		'agpu_primitive_topology',
 		'agpu_byte',
 		'agpu_vr_event_data',
@@ -92,9 +97,10 @@ Class {
 		'agpu_components_swizzle',
 		'agpu_vr_system',
 		'agpu_command_queue_type',
-		'agpu_state_tracker_cache',
-		'agpu_vr_event',
 		'agpu_texture_type',
+		'agpu_immediate_renderer_light_pbr',
+		'agpu_vr_event',
+		'agpu_texture_clear_value',
 		'agpu_buffer_usage_mask',
 		'agpu_pointer',
 		'agpu_size3d',
@@ -122,7 +128,8 @@ Class {
 		'agpu_texture_description',
 		'agpu_string',
 		'agpu_blending_operation',
-		'agpu_render_buffer_bit'
+		'agpu_render_buffer_bit',
+		'agpu_immediate_renderer_material_metallic_roughness'
 	],
 	#superclass : #SharedPool,
 	#category : 'AbstractGPU-GeneratedPharo'
@@ -145,6 +152,7 @@ AGPUTypes class >> initialize [
 	agpu_framebuffer := #'void'.
 	agpu_swap_chain_create_info := AGPUSwapChainCreateInfo.
 	agpu_vr_generic_event := AGPUVrGenericEvent.
+	agpu_immediate_renderer_material_classic := AGPUImmediateRendererMaterialClassic.
 	agpu_texture := #'void'.
 	agpu_quaternionf := AGPUQuaternionf.
 	agpu_string_length := #'int'.
@@ -153,6 +161,7 @@ AGPUTypes class >> initialize [
 	agpu_buffer_mapping_flags := #int.
 	agpu_size2d := AGPUSize2d.
 	agpu_renderpass_description := AGPURenderpassDescription.
+	agpu_vector2f := AGPUVector2f.
 	agpu_cstring_buffer := #'char*'.
 	agpu_enum := #'int'.
 	agpu_shader_binding_type := #int.
@@ -161,8 +170,10 @@ AGPUTypes class >> initialize [
 	agpu_renderpass_attachment_action := #int.
 	agpu_vr_event_type := #int.
 	agpu_depth_stencil_value := AGPUDepthStencilValue.
+	agpu_immediate_renderer_light_classic := AGPUImmediateRendererLightClassic.
 	agpu_immediate_renderer_lighting_model := #int.
 	agpu_immediate_renderer_material := AGPUImmediateRendererMaterial.
+	agpu_state_tracker_cache := #'void'.
 	agpu_inheritance_info := AGPUInheritanceInfo.
 	agpu_color4f := AGPUColor4f.
 	agpu_float := #'float'.
@@ -173,6 +184,7 @@ AGPUTypes class >> initialize [
 	agpu_state_tracker := #'void'.
 	agpu_renderpass_depth_stencil_description := AGPURenderpassDepthStencilDescription.
 	agpu_vr_eye := #int.
+	agpu_swap_chain_presentation_mode := #int.
 	agpu_primitive_topology := #int.
 	agpu_byte := #'uchar'.
 	agpu_vr_event_data := AGPUVrEventData.
@@ -226,9 +238,10 @@ AGPUTypes class >> initialize [
 	agpu_components_swizzle := AGPUComponentsSwizzle.
 	agpu_vr_system := #'void'.
 	agpu_command_queue_type := #int.
-	agpu_state_tracker_cache := #'void'.
-	agpu_vr_event := AGPUVrEvent.
 	agpu_texture_type := #int.
+	agpu_immediate_renderer_light_pbr := AGPUImmediateRendererLightPbr.
+	agpu_vr_event := AGPUVrEvent.
+	agpu_texture_clear_value := AGPUTextureClearValue.
 	agpu_buffer_usage_mask := #int.
 	agpu_pointer := #'void*'.
 	agpu_size3d := AGPUSize3d.
@@ -257,5 +270,6 @@ AGPUTypes class >> initialize [
 	agpu_string := #'char*'.
 	agpu_blending_operation := #int.
 	agpu_render_buffer_bit := #int.
+	agpu_immediate_renderer_material_metallic_roughness := AGPUImmediateRendererMaterialMetallicRoughness.
 ]
 

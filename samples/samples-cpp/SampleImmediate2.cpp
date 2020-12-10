@@ -33,6 +33,7 @@ public:
     {
         draggingLeft = false;
         draggingRight = false;
+        lightingModel = AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX;
         cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
     }
 
@@ -63,6 +64,21 @@ public:
         immediateRenderer = stateTrackerCache->createImmediateRenderer();
 
         return true;
+    }
+
+    virtual void onKeyDown(const SDL_KeyboardEvent &event) override
+    {
+        switch(event.keysym.sym)
+        {
+        case SDLK_TAB:
+            lightingModel = agpu_immediate_renderer_lighting_model((lightingModel + 1) % AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT);
+            printf("Lighting model selected: %d\n", lightingModel);
+            break;
+        default:
+            break;
+        }
+
+        SampleBase::onKeyDown(event);
     }
 
     virtual void onMouseButtonDown(const SDL_MouseButtonEvent &event) override
@@ -141,8 +157,66 @@ public:
         // Setup the model view matrix.
         immediateRenderer->modelViewMatrixMode();
         immediateRenderer->loadIdentity();
+
+        // Setup the lighting model.
+        immediateRenderer->setLightingModel(lightingModel);
+
+        immediateRenderer->clearLights();
+
+        // Set the camera matrix.
         auto viewMatrix = glm::inverse(cameraModelMatrix());
         immediateRenderer->multiplyMatrix(&viewMatrix[0][0]);
+
+        // Set the directional light.
+        {
+            auto lightDirection = glm::normalize(glm::vec3(0.5f, 0.9f, -1.0f));
+            auto intensity = glm::vec3(0.8f);
+            agpu_immediate_renderer_light lightState = {};
+            if(hasMetallicRoughnessLighting())
+            {
+                lightState.pbr.intensity = {intensity.r, intensity.g, intensity.b};
+                lightState.pbr.position = {lightDirection.x, lightDirection.y, lightDirection.z, 0.0f};
+                lightState.pbr.spot_direction = {0.0f, 0.0f, -1.0f};
+                lightState.pbr.spot_cutoff = lightState.pbr.spot_inner_cutoff = 180.0f;
+                lightState.pbr.radius = 1.0f;
+            }
+            else
+            {
+                lightState.classic.diffuse = {intensity.r, intensity.g, intensity.b, 1.0f};
+                lightState.classic.specular = {intensity.r, intensity.g, intensity.b, 1.0f};
+                lightState.classic.position = {lightDirection.x, lightDirection.y, lightDirection.z, 0.0f};
+                lightState.classic.constant_attenuation = 1.0f;
+                lightState.classic.spot_direction = {0.0f, 0.0f, -1.0f};
+                lightState.classic.spot_cutoff = 180.0f;
+            }
+            immediateRenderer->setLight(0, true, &lightState);
+        }
+
+        // Set the center light.
+        {
+            auto center = glm::vec3(0.0f, 0.0f, -6.0f);
+            agpu_immediate_renderer_light lightState = {};
+            auto intensity = glm::vec3(2.0f);
+            if(hasMetallicRoughnessLighting())
+            {
+                lightState.pbr.intensity = {intensity.r, intensity.g, intensity.b};
+                lightState.pbr.position = {center.x, center.y, center.z, 1.0f};
+                lightState.pbr.spot_direction = {0.0f, 0.0f, -1.0f};
+                lightState.pbr.spot_cutoff = lightState.pbr.spot_inner_cutoff = 180.0f;
+                lightState.pbr.radius = 100.0f;
+            }
+            else
+            {
+                lightState.classic.diffuse = {intensity.r, intensity.g, intensity.b, 1.0f};
+                lightState.classic.specular = {intensity.r, intensity.g, intensity.b, 1.0f};
+                lightState.classic.position = {center.x, center.y, center.z, 0.0f};
+                lightState.classic.constant_attenuation = 1.0f;
+                lightState.classic.quadratic_attenuation = 0.01f;
+                lightState.classic.spot_direction = {0.0f, 0.0f, -1.0f};
+                lightState.classic.spot_cutoff = 180.0f;
+            }
+            immediateRenderer->setLight(1, true, &lightState);
+        }
 
         // Draw the cubes with implicit rendering.
         {
@@ -176,7 +250,7 @@ public:
     {
         auto gap = 2.0f;
         auto currentX = -(CubeAlbedoCount * gap / 2.0);
-        agpu_vector4f specular = {0.04f, 0.04f, 0.04f, 0.04f};
+        agpu_vector4f specular = {0.04f, 0.04f, 0.04f, 1.0f};
 
         for(size_t i = 0; i < CubeAlbedoCount; ++i, currentX += gap)
         {
@@ -184,9 +258,20 @@ public:
 
             agpu_vector4f albedo = {cubeAlbedo.x, cubeAlbedo.y, cubeAlbedo.z, cubeAlbedo.w};
             agpu_immediate_renderer_material material = {};
-            material.ambient = material.diffuse = albedo;
-            material.specular = specular;
-            material.shininess = 20.0f;
+            if(hasMetallicRoughnessLighting())
+            {
+                material.metallic_roughness.base_color = albedo;
+                material.metallic_roughness.roughness_factor = 0.4f;
+                material.metallic_roughness.metallic_factor = 0.0f;
+            }
+            else
+            {
+                auto diffuseFactor = 1.0f - 0.04f;
+                material.classic.ambient = albedo;
+                material.classic.diffuse = {albedo.x *diffuseFactor, albedo.y *diffuseFactor, albedo.z *diffuseFactor, albedo.w *diffuseFactor};
+                material.classic.specular = specular;
+                material.classic.shininess = 50.0f;
+            }
 
             immediateRenderer->pushMatrix();
             immediateRenderer->translate(currentX, 0.0f, 0.0f);
@@ -306,12 +391,18 @@ public:
         cubeMesh->endDrawingWithImmediateRenderer(immediateRenderer);
     }
 
+    bool hasMetallicRoughnessLighting()
+    {
+        return lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS;
+    }
+
     agpu_state_tracker_cache_ref stateTrackerCache;
     agpu_state_tracker_ref stateTracker;
     agpu_immediate_renderer_ref immediateRenderer;
 
     agpu_texture_ref diffuseTexture;
     agpu_renderpass_ref mainRenderPass;
+    agpu_immediate_renderer_lighting_model lightingModel;
 
     SampleMeshPtr cubeMesh;
 

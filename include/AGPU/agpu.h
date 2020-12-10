@@ -97,6 +97,14 @@ typedef enum {
 } agpu_swap_chain_flags;
 
 typedef enum {
+	AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT = 0,
+	AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE = 1,
+	AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX = 2,
+	AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO = 3,
+	AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO_RELAXED = 4,
+} agpu_swap_chain_presentation_mode;
+
+typedef enum {
 	AGPU_COMMAND_QUEUE_TYPE_GRAPHICS = 0,
 	AGPU_COMMAND_QUEUE_TYPE_COMPUTE = 1,
 	AGPU_COMMAND_QUEUE_TYPE_TRANSFER = 2,
@@ -638,6 +646,7 @@ typedef enum {
 	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX = 0,
 	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_FRAGMENT = 1,
 	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS = 2,
+	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT = 3,
 } agpu_immediate_renderer_lighting_model;
 
 typedef enum {
@@ -675,6 +684,8 @@ typedef struct agpu_swap_chain_create_info {
 	agpu_bool sample_buffers;
 	agpu_int samples;
 	agpu_swap_chain_flags flags;
+	agpu_swap_chain_presentation_mode presentation_mode;
+	agpu_swap_chain_presentation_mode fallback_presentation_mode;
 	agpu_int x;
 	agpu_int y;
 	agpu_swap_chain* old_swap_chain;
@@ -690,6 +701,26 @@ typedef struct agpu_buffer_description {
 	agpu_uint stride;
 } agpu_buffer_description;
 
+/* Structure agpu_color4f. */
+typedef struct agpu_color4f {
+	agpu_float r;
+	agpu_float g;
+	agpu_float b;
+	agpu_float a;
+} agpu_color4f;
+
+/* Structure agpu_depth_stencil_value. */
+typedef struct agpu_depth_stencil_value {
+	agpu_float depth;
+	agpu_byte stencil;
+} agpu_depth_stencil_value;
+
+/* Union agpu_texture_clear_value. */
+typedef union agpu_texture_clear_value {
+	agpu_color4f color;
+	agpu_depth_stencil_value depth_stencil;
+} agpu_texture_clear_value;
+
 /* Structure agpu_texture_description. */
 typedef struct agpu_texture_description {
 	agpu_texture_type type;
@@ -704,6 +735,7 @@ typedef struct agpu_texture_description {
 	agpu_memory_heap_type heap_type;
 	agpu_uint sample_count;
 	agpu_uint sample_quality;
+	agpu_texture_clear_value clear_value;
 } agpu_texture_description;
 
 /* Structure agpu_components_swizzle. */
@@ -749,20 +781,6 @@ typedef struct agpu_vertex_attrib_description {
 	agpu_size offset;
 	agpu_uint divisor;
 } agpu_vertex_attrib_description;
-
-/* Structure agpu_color4f. */
-typedef struct agpu_color4f {
-	agpu_float r;
-	agpu_float g;
-	agpu_float b;
-	agpu_float a;
-} agpu_color4f;
-
-/* Structure agpu_depth_stencil_value. */
-typedef struct agpu_depth_stencil_value {
-	agpu_float depth;
-	agpu_byte stencil;
-} agpu_depth_stencil_value;
 
 /* Structure agpu_sampler_description. */
 typedef struct agpu_sampler_description {
@@ -813,6 +831,12 @@ typedef struct agpu_inheritance_info {
 	agpu_int flat;
 	agpu_renderpass* renderpass;
 } agpu_inheritance_info;
+
+/* Structure agpu_vector2f. */
+typedef struct agpu_vector2f {
+	agpu_float x;
+	agpu_float y;
+} agpu_vector2f;
 
 /* Structure agpu_vector3f. */
 typedef struct agpu_vector3f {
@@ -945,8 +969,8 @@ typedef struct agpu_vr_event {
 	agpu_vr_event_data data;
 } agpu_vr_event;
 
-/* Structure agpu_immediate_renderer_light. */
-typedef struct agpu_immediate_renderer_light {
+/* Structure agpu_immediate_renderer_light_classic. */
+typedef struct agpu_immediate_renderer_light_classic {
 	agpu_vector4f ambient;
 	agpu_vector4f diffuse;
 	agpu_vector4f specular;
@@ -957,15 +981,50 @@ typedef struct agpu_immediate_renderer_light {
 	agpu_float constant_attenuation;
 	agpu_float linear_attenuation;
 	agpu_float quadratic_attenuation;
+} agpu_immediate_renderer_light_classic;
+
+/* Structure agpu_immediate_renderer_light_pbr. */
+typedef struct agpu_immediate_renderer_light_pbr {
+	agpu_vector4f reserved_ambient;
+	agpu_vector3f intensity;
+	agpu_float reserved;
+	agpu_vector4f reserved_specular;
+	agpu_vector4f position;
+	agpu_vector3f spot_direction;
+	agpu_float spot_exponent;
+	agpu_float spot_cutoff;
+	agpu_float spot_inner_cutoff;
+	agpu_float radius;
+	agpu_float reserved_attenuation;
+} agpu_immediate_renderer_light_pbr;
+
+/* Union agpu_immediate_renderer_light. */
+typedef union agpu_immediate_renderer_light {
+	agpu_immediate_renderer_light_classic classic;
+	agpu_immediate_renderer_light_pbr pbr;
 } agpu_immediate_renderer_light;
 
-/* Structure agpu_immediate_renderer_material. */
-typedef struct agpu_immediate_renderer_material {
+/* Structure agpu_immediate_renderer_material_classic. */
+typedef struct agpu_immediate_renderer_material_classic {
 	agpu_vector4f emission;
 	agpu_vector4f ambient;
 	agpu_vector4f diffuse;
 	agpu_vector4f specular;
 	agpu_float shininess;
+} agpu_immediate_renderer_material_classic;
+
+/* Structure agpu_immediate_renderer_material_metallic_roughness. */
+typedef struct agpu_immediate_renderer_material_metallic_roughness {
+	agpu_vector4f emission;
+	agpu_vector4f base_color;
+	agpu_float metallic_factor;
+	agpu_float roughness_factor;
+} agpu_immediate_renderer_material_metallic_roughness;
+
+/* Union agpu_immediate_renderer_material. */
+typedef union agpu_immediate_renderer_material {
+	agpu_immediate_renderer_material_classic classic;
+	agpu_immediate_renderer_material_metallic_roughness metallic_roughness;
 } agpu_immediate_renderer_material;
 
 /* Global functions. */

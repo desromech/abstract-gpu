@@ -25,6 +25,7 @@ AGPUTextureDescription class >> fields [
 		(heap_type 'long')
 		(sample_count 'ulong')
 		(sample_quality 'ulong')
+		(clear_value 'AGPUTextureClearValue')
 	)
 ]
 

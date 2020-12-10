@@ -26,6 +26,7 @@ AGPUTextureDescription class >> fieldsDesc [
 		 agpu_memory_heap_type heap_type;
 		 agpu_uint sample_count;
 		 agpu_uint sample_quality;
+		 agpu_texture_clear_value clear_value;
 	)
 ]
 

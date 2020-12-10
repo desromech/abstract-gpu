@@ -25,6 +25,8 @@ AGPUSwapChainCreateInfo class >> fields [
 		(sample_buffers 'long')
 		(samples 'long')
 		(flags 'long')
+		(presentation_mode 'long')
+		(fallback_presentation_mode 'long')
 		(x 'long')
 		(y 'long')
 		(old_swap_chain 'void*')

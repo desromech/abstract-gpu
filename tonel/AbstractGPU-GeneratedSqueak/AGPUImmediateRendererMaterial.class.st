@@ -3,7 +3,7 @@ Class {
 	#pools : [
 		'AGPUConstants'
 	],
-	#superclass : #ExternalStructure,
+	#superclass : #ExternalUnion,
 	#category : 'AbstractGPU-GeneratedSqueak'
 }
 
@@ -13,11 +13,8 @@ AGPUImmediateRendererMaterial class >> fields [
 	self defineFields
 	"
     ^ #(
-		(emission 'AGPUVector4f')
-		(ambient 'AGPUVector4f')
-		(diffuse 'AGPUVector4f')
-		(specular 'AGPUVector4f')
-		(shininess 'float')
+		(classic 'AGPUImmediateRendererMaterialClassic')
+		(metallic_roughness 'AGPUImmediateRendererMaterialMetallicRoughness')
 	)
 ]
 

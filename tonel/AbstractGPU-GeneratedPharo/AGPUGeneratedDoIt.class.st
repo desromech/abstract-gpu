@@ -17,19 +17,21 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUDeviceOpenInfo rebuildFieldAccessors.
 	AGPUSwapChainCreateInfo rebuildFieldAccessors.
 	AGPUBufferDescription rebuildFieldAccessors.
+	AGPUColor4f rebuildFieldAccessors.
+	AGPUDepthStencilValue rebuildFieldAccessors.
+	AGPUTextureClearValue rebuildFieldAccessors.
 	AGPUTextureDescription rebuildFieldAccessors.
 	AGPUComponentsSwizzle rebuildFieldAccessors.
 	AGPUSubresourceRange rebuildFieldAccessors.
 	AGPUTextureViewDescription rebuildFieldAccessors.
 	AGPUDrawElementsCommand rebuildFieldAccessors.
 	AGPUVertexAttribDescription rebuildFieldAccessors.
-	AGPUColor4f rebuildFieldAccessors.
-	AGPUDepthStencilValue rebuildFieldAccessors.
 	AGPUSamplerDescription rebuildFieldAccessors.
 	AGPURenderpassColorAttachmentDescription rebuildFieldAccessors.
 	AGPURenderpassDepthStencilDescription rebuildFieldAccessors.
 	AGPURenderpassDescription rebuildFieldAccessors.
 	AGPUInheritanceInfo rebuildFieldAccessors.
+	AGPUVector2f rebuildFieldAccessors.
 	AGPUVector3f rebuildFieldAccessors.
 	AGPUVector4f rebuildFieldAccessors.
 	AGPUQuaternionf rebuildFieldAccessors.
@@ -46,7 +48,11 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrDualAnalogEvent rebuildFieldAccessors.
 	AGPUVrEventData rebuildFieldAccessors.
 	AGPUVrEvent rebuildFieldAccessors.
+	AGPUImmediateRendererLightClassic rebuildFieldAccessors.
+	AGPUImmediateRendererLightPbr rebuildFieldAccessors.
 	AGPUImmediateRendererLight rebuildFieldAccessors.
+	AGPUImmediateRendererMaterialClassic rebuildFieldAccessors.
+	AGPUImmediateRendererMaterialMetallicRoughness rebuildFieldAccessors.
 	AGPUImmediateRendererMaterial rebuildFieldAccessors.
 ]
 

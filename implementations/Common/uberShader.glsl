@@ -1,12 +1,18 @@
 R"uberShader(
 #line 3
 
+#define PI 3.141592653589793
+#define PI_RECIPROCAL 0.3183098861837907
+#define SquareRootOfTwoOverPi 0.7978845608028654
+
 // Flat Shading
 // #define FLAT_SHADING.
 
 // Enable lighting.
 // #define LIGHTING_ENABLED
 // #define PER_VERTEX_LIGHTING
+// #define PER_FRAGMENT_LIGHTING
+// #define PBR_METALLIC_ROUGHNESS
 
 // Enable/disable skinning.
 // #define SKINNING_ENABLED
@@ -29,6 +35,20 @@ R"uberShader(
 #ifdef LIGHTING_ENABLED
 struct LightState
 {
+#ifdef PBR_METALLIC_ROUGHNESS
+    vec4 intensity;
+
+    vec4 position;
+
+    vec3 spotDirection;
+    float spotCosCutoff;
+
+    float spotExponent;
+    float spotInnerCosCutoff;
+    float radius;
+    float padding;
+    vec4 padding2[2];
+#else
     vec4 ambientColor;
     vec4 diffuseColor;
     vec4 specularColor;
@@ -42,6 +62,7 @@ struct LightState
     float constantAttenuation;
     float linearAttenuation;
     float quadraticAttenuation;
+#endif
 };
 
 layout(std140, set=1, binding=0) uniform LightingStateBlock
@@ -81,15 +102,25 @@ layout(set=2, binding=0) uniform ExtraRenderingStateBlock
 
 layout(std140, set=3, binding=0) uniform MaterialStateBlock
 {
+#ifdef PBR_METALLIC_ROUGHNESS
+    uint type;
+    float roughnessFactor;
+    float metallicFactor;
+    uint padding;
+
+    vec4 emission;
+    vec4 baseColor;
+#else
+    uint type;
+    float shininess;
+    uint padding1;
+    uint padding2;
+
     vec4 emission;
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
-
-    float shininess;
-    uint padding1;
-    uint padding2;
-    uint padding3;
+#endif
 } MaterialState;
 
 layout(set=4, binding=0) uniform TransformationStateBlock
@@ -113,21 +144,86 @@ layout(set=5, binding=0) uniform SkinningStateBlock
 
 struct LightingParameters
 {
+    vec4 baseColor;
+    vec4 diffuse;
+#ifdef PBR_METALLIC_ROUGHNESS
+    vec4 Cdiffuse;
+    vec3 F0;
+    float alpha;
+    float k;
+    float NdotV;
+#else
+    vec4 specular;
+#endif
     vec3 P;
     vec3 V;
     vec3 N;
 };
 
+vec3 fresnelSchlick(vec3 F0, float cosTheta)
+{
+    float powFactor = 1.0f - cosTheta;
+    float powFactor2 = powFactor * powFactor;
+    float powFactor4 = powFactor2 * powFactor2;
+    float powValue = powFactor4 * powFactor;
+
+    return F0 + (vec3(1.0) - F0) * powValue;
+}
+
+float ggxSpecularDistribution(float alpha, float cosTheta)
+{
+	float alphaSquare = alpha*alpha;
+	float den = cosTheta*cosTheta*(alphaSquare - 1.0) + 1.0;
+	return alphaSquare / (PI * den*den);
+}
+
+float smithSchlickBeckmannReciprocalFunction(float k, float cosTheta)
+{
+    return cosTheta*(1.0 - k) + k;
+}
+
+float cookTorranceSmithSchlickGGXMasking(float k, float NdotL, float NdotV)
+{
+	return 1.0 / (4.0*smithSchlickBeckmannReciprocalFunction(k, NdotL)*smithSchlickBeckmannReciprocalFunction(k, NdotV));
+}
+
+float computeLightAttenuation(in LightState light, float distance)
+{
+#ifdef PBR_METALLIC_ROUGHNESS
+    float a = distance / light.radius;
+    float a2 = a*a;
+    float a4 = a2*a2;
+    float num = clamp(1.0f - a4, 0.0, 1.0);
+    return num*num / (distance*distance + 1.0);
+#else
+    return 1.0 / (light.constantAttenuation + distance*(light.linearAttenuation + distance*light.quadraticAttenuation));
+#endif
+}
+
 vec4 computeLightContributionWith(in LightState light, in LightingParameters parameters)
 {
-    // Compute the ambient contribution.
-    vec4 lightContribution = MaterialState.ambient*light.ambientColor;
-
     vec3 P = parameters.P;
     vec3 V = parameters.V;
     vec3 N = parameters.N;
-    vec3 lightVector = light.position.xyz - parameters.P*light.position.w;
-    vec3 L = normalize(lightVector);
+
+    vec3 L = light.position.xyz;
+    float lightDistance = 0.0;
+    if(light.position.w != 0.0)
+    {
+        L = L - parameters.P;
+        lightDistance = length(L);
+        L = L / lightDistance;
+    }
+    else
+    {
+        L = normalize(L);
+    }
+
+    // Compute the ambient contribution.
+    vec4 lightContribution = vec4(0.0);
+#ifndef PBR_METALLIC_ROUGHNESS
+    lightContribution = MaterialState.ambient*light.ambientColor;
+#endif
 
     // Compute the diffuse contribution.
     float NdotL = max(dot(N, L), 0.0);
@@ -147,27 +243,55 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
         // Only apply the lighting computation if inside of the spot light.
         if(spotEffect > 0.0)
         {
-            float lightDistance = length(lightVector);
-            float attenuation = spotEffect/(light.constantAttenuation + lightDistance*(light.linearAttenuation + lightDistance*light.quadraticAttenuation));
-            lightContribution += (attenuation*NdotL) * MaterialState.diffuse * light.diffuseColor;
+            float attenuation = spotEffect*computeLightAttenuation(light, lightDistance);
 
             // Compute the specular contribution.
-            vec3 H = normalize(V + L);
+            vec3 H = normalize(L + V);
             float NdotH = max(dot(N, H), 0.0);
-            if(NdotH > 0.0)
-            {
-                lightContribution += (attenuation * pow(NdotH, MaterialState.shininess)) * MaterialState.specular * light.specularColor;
-            }
+
+#if defined(PBR_METALLIC_ROUGHNESS)
+            float VdotH = max(dot(V, H), 0.0);
+
+            vec3 F = fresnelSchlick(parameters.F0, VdotH);
+            float D = ggxSpecularDistribution(parameters.alpha, NdotH);
+            float G = cookTorranceSmithSchlickGGXMasking(parameters.k, NdotL, parameters.NdotV);
+
+            lightContribution = vec4(light.intensity.rgb * (parameters.diffuse.rgb + F*D*G) * (attenuation*NdotL*PI), 1.0);
+#else
+            float D = NdotH > 0.0 ? pow(NdotH, MaterialState.shininess) : 0.0;
+            lightContribution += (attenuation*NdotL)*(parameters.diffuse * light.diffuseColor + D*parameters.specular * light.specularColor);
+#endif
         }
     }
 
     return lightContribution;
 }
 
-vec4 computingLightingWith(in LightingParameters parameters)
+vec4 computeLightingWith(in LightingParameters parameters)
 {
-    vec4 color = MaterialState.emission +
-        MaterialState.ambient*LightingState.ambientLighting;
+#ifdef PBR_METALLIC_ROUGHNESS
+    vec3 dielecticF0 = vec3(0.04);
+    parameters.baseColor *= MaterialState.baseColor;
+    parameters.Cdiffuse = vec4(mix(parameters.baseColor.rgb * (1.0 - dielecticF0), vec3(0.0), MaterialState.metallicFactor), parameters.baseColor.a);
+    parameters.diffuse = parameters.Cdiffuse * PI_RECIPROCAL;
+    parameters.F0 = mix(dielecticF0, parameters.baseColor.rgb, MaterialState.metallicFactor);
+
+    float directRoughness = mix(0.05, 1.0, MaterialState.roughnessFactor);
+    parameters.alpha = directRoughness*directRoughness;
+
+    float kRoughness = (directRoughness + 1.0);
+    parameters.k = kRoughness*kRoughness / 8.0;
+
+    parameters.NdotV = clamp(dot(parameters.N, parameters.V), 0.0, 1.0);
+
+    vec4 color = MaterialState.emission + LightingState.ambientLighting * parameters.baseColor;
+#else
+    parameters.diffuse = MaterialState.diffuse*parameters.baseColor;
+    parameters.specular = MaterialState.specular;
+
+    vec4 color = (MaterialState.emission +
+        MaterialState.ambient*LightingState.ambientLighting) * parameters.baseColor;
+#endif
 
     uint enabledLightMask = LightingState.enabledLightMask;
     for(int i = 0; i < 8 && (enabledLightMask != 0); ++i, enabledLightMask >>=1)
@@ -178,7 +302,11 @@ vec4 computingLightingWith(in LightingParameters parameters)
         color += computeLightContributionWith(LightingState.lights[i], parameters);
     }
 
-    return clamp(color, 0.0, 1.0)*MaterialState.diffuse.a;
+#ifdef PBR_METALLIC_ROUGHNESS
+    return vec4(color.rgb, parameters.baseColor.a);
+#else
+    return clamp(color, 0.0, 1.0)*parameters.diffuse.a;
+#endif
 }
 #endif
 
@@ -226,10 +354,11 @@ void main()
 
 #if defined(LIGHTING_ENABLED) && defined(PER_VERTEX_LIGHTING)
     LightingParameters parameters;
+    parameters.baseColor = vec4(1.0f);
     parameters.P = viewPosition.xyz;
     parameters.V = normalize(-viewPosition.xyz);
-    parameters.N = viewNormal;
-    vec4 color = computingLightingWith(parameters);
+    parameters.N = normalize(viewNormal);
+    vec4 color = computeLightingWith(parameters);
 #else
     vec4 color = inColor;
 #endif
@@ -292,6 +421,15 @@ void main()
     vec4 color = inColor;
 #ifdef TEXTURING_ENABLED
     color = color*textureProj(sampler2D(Texture0, Sampler0), inTexcoord);
+#endif
+
+#if defined(LIGHTING_ENABLED) && defined(PER_FRAGMENT_LIGHTING)
+    LightingParameters parameters;
+    parameters.baseColor = color;
+    parameters.P = inPosition.xyz;
+    parameters.V = normalize(-inPosition.xyz);
+    parameters.N = normalize(inNormal);
+    color = computeLightingWith(parameters);
 #endif
 
     outColor = applyFog(color, inPosition.xyz);

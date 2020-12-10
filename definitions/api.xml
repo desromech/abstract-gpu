@@ -88,9 +88,11 @@
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
             <field name="flags" type="swap_chain_flags" />
+            <field name="old_swap_chain" type="swap_chain*" />
+            <field name="presentation_mode" type="swap_chain_presentation_mode" />
+            <field name="fallback_presentation_mode" type="swap_chain_presentation_mode" />
             <field name="x" type="int" />
             <field name="y" type="int" />
-            <field name="old_swap_chain" type="swap_chain*" />
         </struct>
 
 		<struct name="buffer_description">
@@ -101,6 +103,23 @@
 			<field name="mapping_flags" type="bitfield" bits="buffer_mapping_flags" />
 			<field name="stride" type="uint" />
 		</struct>
+
+        <struct name="color4f">
+            <field name="r" type="float" />
+            <field name="g" type="float" />
+            <field name="b" type="float" />
+            <field name="a" type="float" />
+        </struct>
+
+        <struct name="depth_stencil_value">
+            <field name="depth" type="float" />
+            <field name="stencil" type="byte" />
+        </struct>
+
+        <union name="texture_clear_value">
+            <field name="color" type="color4f" />
+            <field name="depth_stencil" type="depth_stencil_value" />
+        </union>
 
         <struct name="texture_description">
             <field name="type" type="texture_type" />
@@ -115,6 +134,7 @@
             <field name="heap_type" type="memory_heap_type" />
             <field name="sample_count" type="uint" />
             <field name="sample_quality" type="uint" />
+            <field name="clear_value" type="texture_clear_value" />
         </struct>
 
         <struct name="components_swizzle">
@@ -154,18 +174,6 @@
             <field name="format" type="texture_format" />
             <field name="offset" type="size" />
             <field name="divisor" type="uint" />
-        </struct>
-
-        <struct name="color4f">
-            <field name="r" type="float" />
-            <field name="g" type="float" />
-            <field name="b" type="float" />
-            <field name="a" type="float" />
-        </struct>
-
-        <struct name="depth_stencil_value">
-            <field name="depth" type="float" />
-            <field name="stencil" type="byte" />
         </struct>
 
         <struct name="sampler_description">
@@ -211,6 +219,11 @@
         <struct name="inheritance_info">
             <field name="flat" type="int" />
             <field name="renderpass" type="renderpass*" />
+        </struct>
+
+        <struct name="vector2f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
         </struct>
 
         <struct name="vector3f">
@@ -330,7 +343,7 @@
             <field name="data" type="vr_event_data" />
         </struct>
 
-        <struct name="immediate_renderer_light">
+        <struct name="immediate_renderer_light_classic">
             <field name="ambient" type="vector4f" />
             <field name="diffuse" type="vector4f" />
             <field name="specular" type="vector4f" />
@@ -343,13 +356,46 @@
             <field name="quadratic_attenuation" type="float" />
         </struct>
 
-        <struct name="immediate_renderer_material">
+        <struct name="immediate_renderer_light_pbr">
+            <field name="reserved_ambient" type="vector4f" />
+
+            <field name="intensity" type="vector3f" />
+            <field name="reserved" type="float" />
+
+            <field name="reserved_specular" type="vector4f" />
+            <field name="position" type="vector4f" />
+            <field name="spot_direction" type="vector3f" />
+            <field name="spot_exponent" type="float" />
+            <field name="spot_cutoff" type="float" />
+            <field name="spot_inner_cutoff" type="float" />
+            <field name="radius" type="float" />
+            <field name="reserved_attenuation" type="float" />
+        </struct>
+
+        <union name="immediate_renderer_light">
+            <field name="classic" type="immediate_renderer_light_classic" />
+            <field name="pbr" type="immediate_renderer_light_pbr" />
+        </union>
+
+        <struct name="immediate_renderer_material_classic">
             <field name="emission" type="vector4f" />
             <field name="ambient" type="vector4f" />
             <field name="diffuse" type="vector4f" />
             <field name="specular" type="vector4f" />
             <field name="shininess" type="float" />
         </struct>
+
+        <struct name="immediate_renderer_material_metallic_roughness">
+            <field name="emission" type="vector4f" />
+            <field name="base_color" type="vector4f" />
+            <field name="metallic_factor" type="float" />
+            <field name="roughness_factor" type="float" />
+        </struct>
+
+        <union name="immediate_renderer_material">
+            <field name="classic" type="immediate_renderer_material_classic" />
+            <field name="metallic_roughness" type="immediate_renderer_material_metallic_roughness" />
+        </union>
 	</structs>
 
     <constants>
@@ -379,6 +425,15 @@
         <enum name="swap_chain_flags" optionalPrefix="SwapChainFlag">
             <constant name="SwapChainFlagNone" value="0" />
             <constant name="SwapChainFlagOverlayWindow" value="1" />
+            <constant name="SwapChainFlagFetchResolutionFromWindow" value="2" />
+        </enum>
+
+        <enum name="swap_chain_presentation_mode" optionalPrefix="SwapChainPresentationMode">
+            <constant name="SwapChainPresentationModeDefault" value="0" />
+            <constant name="SwapChainPresentationModeImmediate" value="1" />
+            <constant name="SwapChainPresentationModeMailbox" value="2" />
+            <constant name="SwapChainPresentationModeFifo" value="3" />
+            <constant name="SwapChainPresentationModeFifoRelaxed" value="4" />
         </enum>
 
         <enum name="command_queue_type" optionalPrefix="CommandQueueType">
@@ -957,6 +1012,7 @@
             <constant name="ImmediateRendererLightingModelPerVertex" value="0" />
             <constant name="ImmediateRendererLightingModelPerFragment" value="1" />
             <constant name="ImmediateRendererLightingModelMetallicRoughness" value="2" />
+            <constant name="ImmediateRendererLightingModelCount" value="3" />
         </enum>
 
         <enum name="immediate_renderer_fog_mode" optionalPrefix="ImmediateRendererFogMode">

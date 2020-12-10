@@ -1,5 +1,5 @@
 Class {
-	#name : #AGPUImmediateRendererLight,
+	#name : #AGPUTextureClearValue,
 	#pools : [
 		'AGPUConstants'
 	],
@@ -8,13 +8,13 @@ Class {
 }
 
 { #category : #'definition' }
-AGPUImmediateRendererLight class >> fields [
+AGPUTextureClearValue class >> fields [
 	"
 	self defineFields
 	"
     ^ #(
-		(classic 'AGPUImmediateRendererLightClassic')
-		(pbr 'AGPUImmediateRendererLightPbr')
+		(color 'AGPUColor4f')
+		(depth_stencil 'AGPUDepthStencilValue')
 	)
 ]
 

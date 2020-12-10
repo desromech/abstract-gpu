@@ -167,12 +167,12 @@ struct SkinningState
 
 static_assert(sizeof(SkinningState) % 256 == 0, "SkinningState requires an aligned size of 256 bytes");
 
-struct LightState
+struct ClassicLightState
 {
-    LightState();
+    ClassicLightState();
 
     size_t hash() const;
-    bool operator==(const LightState &other) const;
+    bool operator==(const ClassicLightState &other) const;
 
     Vector4F ambientColor;
     Vector4F diffuseColor;
@@ -186,6 +186,41 @@ struct LightState
     float constantAttenuation;
     float linearAttenuation;
     float quadraticAttenuation;
+};
+static_assert(sizeof(ClassicLightState) == 96, "For manual alignment");
+
+struct PBRLightState
+{
+    PBRLightState();
+
+    size_t hash() const;
+    bool operator==(const PBRLightState &other) const;
+
+    Vector4F intensity;
+
+    Vector4F position;
+    Vector3F spotDirection;
+    float spotCosCutoff;
+
+    float spotExponent;
+    float spotInnerCosCutoff;
+    float radius;
+    float padding[9];
+};
+static_assert(sizeof(PBRLightState) == sizeof(ClassicLightState), "For manual alignment");
+
+struct LightState
+{
+    LightState();
+
+    size_t hash() const;
+    bool operator==(const LightState &other) const;
+
+    union
+    {
+        ClassicLightState classic;
+        PBRLightState pbr;
+    };
 };
 
 static_assert(sizeof(LightState) == 96, "For manual alignment");
@@ -210,6 +245,47 @@ struct LightingState
 
 static_assert(sizeof(LightingState) % 256 == 0, "LightingState requires an aligned size of 256 bytes");
 
+enum MaterialStateType : uint32_t
+{
+    Classic = 0,
+    MetallicRoughness
+};
+
+struct ClassicMaterialState
+{
+    static ClassicMaterialState defaultMaterial();
+
+    size_t hash() const;
+    bool operator==(const ClassicMaterialState &other) const;
+    bool operator!=(const ClassicMaterialState &other) const;
+
+    MaterialStateType type;
+    float shininess;
+    uint32_t padding[2];
+
+    Vector4F emission;
+    Vector4F ambient;
+    Vector4F diffuse;
+    Vector4F specular;
+};
+
+struct MetallicRoughnessMaterialState
+{
+    static MetallicRoughnessMaterialState defaultMaterial();
+
+    size_t hash() const;
+    bool operator==(const MetallicRoughnessMaterialState &other) const;
+    bool operator!=(const MetallicRoughnessMaterialState &other) const;
+
+    MaterialStateType type;
+    float roughnessFactor;
+    float metallicFactor;
+    uint32_t padding;
+
+    Vector4F emission;
+    Vector4F baseColor;
+};
+
 struct MaterialState
 {
     MaterialState();
@@ -218,13 +294,13 @@ struct MaterialState
     bool operator==(const MaterialState &other) const;
     bool operator!=(const MaterialState &other) const;
 
-    Vector4F emission;
-    Vector4F ambient;
-    Vector4F diffuse;
-    Vector4F specular;
+    union
+    {
+        MaterialStateType type;
 
-    float shininess;
-    uint32_t padding[3];
+        ClassicMaterialState classic;
+        MetallicRoughnessMaterialState metallicRoughness;
+    };
 
     uint8_t extraPadding[176];
 };
@@ -583,6 +659,11 @@ private:
             return AGPU_INVALID_OPERATION;
         pendingRenderingCommands.push_back(f);
         return AGPU_OK;
+    }
+
+    bool hasMetallicRoughnessLighting() const
+    {
+        return currentRenderingState.lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS;
     }
 
     // Common state

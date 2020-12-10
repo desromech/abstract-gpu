@@ -123,6 +123,12 @@ class ImmediateRenderer definition: {}.
 ################################################################################
 ## Enums.
 ################################################################################
+enum RenderpassAttachmentAction valueType: Int32; values: #{
+	Keep: 0.
+	Clear: 1.
+	Discard: 2.
+}.
+
 enum CommandQueueType valueType: Int32; values: #{
 	Graphics: 0.
 	Compute: 1.
@@ -133,6 +139,7 @@ enum ImmediateRendererLightingModel valueType: Int32; values: #{
 	PerVertex: 0.
 	PerFragment: 1.
 	MetallicRoughness: 2.
+	Count: 3.
 }.
 
 enum RenderBufferBit valueType: Int32; values: #{
@@ -458,10 +465,12 @@ enum BlendingOperation valueType: Int32; values: #{
 	Max: 5.
 }.
 
-enum RenderpassAttachmentAction valueType: Int32; values: #{
-	Keep: 0.
-	Clear: 1.
-	Discard: 2.
+enum SwapChainPresentationMode valueType: Int32; values: #{
+	Default: 0.
+	Immediate: 1.
+	Mailbox: 2.
+	Fifo: 3.
+	FifoRelaxed: 4.
 }.
 
 enum VrTrackedDeviceRole valueType: Int32; values: #{
@@ -727,6 +736,8 @@ struct SwapChainCreateInfo definition: {
 	public field sample_buffers type: Int32.
 	public field samples type: Int32.
 	public field flags type: SwapChainFlags.
+	public field presentation_mode type: SwapChainPresentationMode.
+	public field fallback_presentation_mode type: SwapChainPresentationMode.
 	public field x type: Int32.
 	public field y type: Int32.
 	public field old_swap_chain type: SwapChain pointer.
@@ -739,6 +750,23 @@ struct BufferDescription definition: {
 	public field main_usage_mode type: BufferUsageMask.
 	public field mapping_flags type: UInt32.
 	public field stride type: UInt32.
+}.
+
+struct Color4f definition: {
+	public field r type: Float32.
+	public field g type: Float32.
+	public field b type: Float32.
+	public field a type: Float32.
+}.
+
+struct DepthStencilValue definition: {
+	public field depth type: Float32.
+	public field stencil type: UInt8.
+}.
+
+union TextureClearValue definition: {
+	public field color type: Color4f.
+	public field depth_stencil type: DepthStencilValue.
 }.
 
 struct TextureDescription definition: {
@@ -754,6 +782,7 @@ struct TextureDescription definition: {
 	public field heap_type type: MemoryHeapType.
 	public field sample_count type: UInt32.
 	public field sample_quality type: UInt32.
+	public field clear_value type: TextureClearValue.
 }.
 
 struct ComponentsSwizzle definition: {
@@ -793,18 +822,6 @@ struct VertexAttribDescription definition: {
 	public field format type: TextureFormat.
 	public field offset type: UInt32.
 	public field divisor type: UInt32.
-}.
-
-struct Color4f definition: {
-	public field r type: Float32.
-	public field g type: Float32.
-	public field b type: Float32.
-	public field a type: Float32.
-}.
-
-struct DepthStencilValue definition: {
-	public field depth type: Float32.
-	public field stencil type: UInt8.
 }.
 
 struct SamplerDescription definition: {
@@ -850,6 +867,11 @@ struct RenderpassDescription definition: {
 struct InheritanceInfo definition: {
 	public field flat type: Int32.
 	public field renderpass type: Renderpass pointer.
+}.
+
+struct Vector2f definition: {
+	public field x type: Float32.
+	public field y type: Float32.
 }.
 
 struct Vector3f definition: {
@@ -967,7 +989,7 @@ struct VrEvent definition: {
 	public field data type: VrEventData.
 }.
 
-struct ImmediateRendererLight definition: {
+struct ImmediateRendererLightClassic definition: {
 	public field ambient type: Vector4f.
 	public field diffuse type: Vector4f.
 	public field specular type: Vector4f.
@@ -980,12 +1002,43 @@ struct ImmediateRendererLight definition: {
 	public field quadratic_attenuation type: Float32.
 }.
 
-struct ImmediateRendererMaterial definition: {
+struct ImmediateRendererLightPbr definition: {
+	public field reserved_ambient type: Vector4f.
+	public field intensity type: Vector3f.
+	public field reserved type: Float32.
+	public field reserved_specular type: Vector4f.
+	public field position type: Vector4f.
+	public field spot_direction type: Vector3f.
+	public field spot_exponent type: Float32.
+	public field spot_cutoff type: Float32.
+	public field spot_inner_cutoff type: Float32.
+	public field radius type: Float32.
+	public field reserved_attenuation type: Float32.
+}.
+
+union ImmediateRendererLight definition: {
+	public field classic type: ImmediateRendererLightClassic.
+	public field pbr type: ImmediateRendererLightPbr.
+}.
+
+struct ImmediateRendererMaterialClassic definition: {
 	public field emission type: Vector4f.
 	public field ambient type: Vector4f.
 	public field diffuse type: Vector4f.
 	public field specular type: Vector4f.
 	public field shininess type: Float32.
+}.
+
+struct ImmediateRendererMaterialMetallicRoughness definition: {
+	public field emission type: Vector4f.
+	public field base_color type: Vector4f.
+	public field metallic_factor type: Float32.
+	public field roughness_factor type: Float32.
+}.
+
+union ImmediateRendererMaterial definition: {
+	public field classic type: ImmediateRendererMaterialClassic.
+	public field metallic_roughness type: ImmediateRendererMaterialMetallicRoughness.
 }.
 
 ################################################################################
