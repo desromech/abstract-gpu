@@ -237,7 +237,7 @@ AGPUTypes class >> initialize [
 	agpu_shader_language := #int.
 	agpu_vector4f := AGPUVector4f.
 	agpu_command_list := #'void'.
-	agpu_string_buffer := #'char*'.
+	agpu_string_buffer := #'byte*'.
 	agpu_vertex_binding := #'void'.
 	agpu_swap_chain := #'void'.
 	agpu_fence := #'void'.
