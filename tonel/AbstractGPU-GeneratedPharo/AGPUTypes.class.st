@@ -254,7 +254,7 @@ AGPUTypes class >> initialize [
 	agpu_component_swizzle := #int.
 	agpu_command_allocator := #'void'.
 	agpu_texture_description := AGPUTextureDescription.
-	agpu_string := #'char*'.
+	agpu_string := #'byte*'.
 	agpu_blending_operation := #int.
 	agpu_render_buffer_bit := #int.
 ]
