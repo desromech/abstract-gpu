@@ -250,7 +250,7 @@ AGPUTypes class >> initialize [
 	agpu_shader_language := #int.
 	agpu_vector4f := AGPUVector4f.
 	agpu_command_list := #'void'.
-	agpu_string_buffer := #'char*'.
+	agpu_string_buffer := #'byte*'.
 	agpu_vertex_binding := #'void'.
 	agpu_swap_chain := #'void'.
 	agpu_fence := #'void'.
@@ -267,7 +267,7 @@ AGPUTypes class >> initialize [
 	agpu_component_swizzle := #int.
 	agpu_command_allocator := #'void'.
 	agpu_texture_description := AGPUTextureDescription.
-	agpu_string := #'char*'.
+	agpu_string := #'byte*'.
 	agpu_blending_operation := #int.
 	agpu_render_buffer_bit := #int.
 	agpu_immediate_renderer_material_metallic_roughness := AGPUImmediateRendererMaterialMetallicRoughness.

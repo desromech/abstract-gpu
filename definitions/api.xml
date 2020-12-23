@@ -55,11 +55,11 @@
         <typedef name="bitfield" ctype="unsigned int" sysmelType="UInt32" />
 
         <typedef name="cstring" ctype="const char*" sysmelType="Char8 const pointer" />
-        <typedef name="string" ctype="const char*" sysmelType="Char8 const pointer" />
+        <typedef name="string" ctype="const char*" pharoType="byte*" sysmelType="Char8 const pointer" />
         <typedef name="string_length" ctype="int" sysmelType="UInt32" />
 
         <typedef name="cstring_buffer" ctype="char*" sysmelType="Char8 pointer" />
-        <typedef name="string_buffer" ctype="char*" sysmelType="Char8 pointer" />
+        <typedef name="string_buffer" ctype="char*" pharoType="byte*" sysmelType="Char8 pointer" />
     </types>
 
 	<structs>
