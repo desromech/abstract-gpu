@@ -26,11 +26,11 @@ AGPUSwapChainCreateInfo class >> fieldsDesc [
 		 agpu_bool sample_buffers;
 		 agpu_int samples;
 		 agpu_swap_chain_flags flags;
+		 agpu_swap_chain* old_swap_chain;
 		 agpu_swap_chain_presentation_mode presentation_mode;
 		 agpu_swap_chain_presentation_mode fallback_presentation_mode;
 		 agpu_int x;
 		 agpu_int y;
-		 agpu_swap_chain* old_swap_chain;
 	)
 ]
 

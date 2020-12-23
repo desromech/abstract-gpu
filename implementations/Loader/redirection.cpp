@@ -2729,12 +2729,28 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled ( agpu_immediate_r
 	return (*dispatchTable)->agpuImmediateRendererSetTextureEnabled ( immediate_renderer, enabled );
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetTangentSpaceEnabled ( agpu_immediate_renderer* immediate_renderer, agpu_bool enabled )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererSetTangentSpaceEnabled ( immediate_renderer, enabled );
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture ( agpu_immediate_renderer* immediate_renderer, agpu_texture* texture )
 {
 	if (immediate_renderer == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
 	return (*dispatchTable)->agpuImmediateRendererBindTexture ( immediate_renderer, texture );
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererBindTextureIn ( agpu_immediate_renderer* immediate_renderer, agpu_texture* texture, agpu_immediate_renderer_texture_binding binding )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateRendererBindTextureIn ( immediate_renderer, texture, binding );
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane ( agpu_immediate_renderer* immediate_renderer, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4 )

@@ -106,7 +106,7 @@ layout(std140, set=3, binding=0) uniform MaterialStateBlock
     uint type;
     float roughnessFactor;
     float metallicFactor;
-    uint padding;
+    float occlusionFactor;
 
     vec4 emission;
     vec4 baseColor;
@@ -152,6 +152,7 @@ struct LightingParameters
     float alpha;
     float k;
     float NdotV;
+    float occlusion;
 #else
     vec4 specular;
 #endif
@@ -271,6 +272,7 @@ vec4 computeLightingWith(in LightingParameters parameters)
 {
 #ifdef PBR_METALLIC_ROUGHNESS
     vec3 dielecticF0 = vec3(0.04);
+    parameters.occlusion *= MaterialState.occlusionFactor;
     parameters.baseColor *= MaterialState.baseColor;
     parameters.Cdiffuse = vec4(mix(parameters.baseColor.rgb * (1.0 - dielecticF0), vec3(0.0), MaterialState.metallicFactor), parameters.baseColor.a);
     parameters.diffuse = parameters.Cdiffuse * PI_RECIPROCAL;
@@ -284,7 +286,7 @@ vec4 computeLightingWith(in LightingParameters parameters)
 
     parameters.NdotV = clamp(dot(parameters.N, parameters.V), 0.0, 1.0);
 
-    vec4 color = MaterialState.emission + LightingState.ambientLighting * parameters.baseColor;
+    vec4 color = MaterialState.emission + LightingState.ambientLighting * parameters.baseColor * parameters.occlusion;
 #else
     parameters.diffuse = MaterialState.diffuse*parameters.baseColor;
     parameters.specular = MaterialState.specular;
@@ -354,7 +356,7 @@ void main()
 
 #if defined(LIGHTING_ENABLED) && defined(PER_VERTEX_LIGHTING)
     LightingParameters parameters;
-    parameters.baseColor = vec4(1.0f);
+    parameters.baseColor = vec4(1.0);
     parameters.P = viewPosition.xyz;
     parameters.V = normalize(-viewPosition.xyz);
     parameters.N = normalize(viewNormal);
@@ -426,6 +428,9 @@ void main()
 #if defined(LIGHTING_ENABLED) && defined(PER_FRAGMENT_LIGHTING)
     LightingParameters parameters;
     parameters.baseColor = color;
+#   if defined(PBR_METALLIC_ROUGHNESS)
+    parameters.occlusion = 1.0;
+#   endif
     parameters.P = inPosition.xyz;
     parameters.V = normalize(-inPosition.xyz);
     parameters.N = normalize(inNormal);

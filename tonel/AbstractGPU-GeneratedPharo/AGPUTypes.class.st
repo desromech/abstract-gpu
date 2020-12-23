@@ -107,6 +107,7 @@ Class {
 		'agpu_texture_address_mode',
 		'agpu_vector3f',
 		'agpu_shader_language',
+		'agpu_immediate_renderer_texture_binding',
 		'agpu_vector4f',
 		'agpu_command_list',
 		'agpu_string_buffer',
@@ -248,6 +249,7 @@ AGPUTypes class >> initialize [
 	agpu_texture_address_mode := #int.
 	agpu_vector3f := AGPUVector3f.
 	agpu_shader_language := #int.
+	agpu_immediate_renderer_texture_binding := #int.
 	agpu_vector4f := AGPUVector4f.
 	agpu_command_list := #'void'.
 	agpu_string_buffer := #'byte*'.

@@ -263,6 +263,7 @@ public:
                 material.metallic_roughness.base_color = albedo;
                 material.metallic_roughness.roughness_factor = 0.4f;
                 material.metallic_roughness.metallic_factor = 0.0f;
+                material.metallic_roughness.occlusion_factor = 1.0f;
             }
             else
             {

@@ -390,6 +390,7 @@
             <field name="base_color" type="vector4f" />
             <field name="metallic_factor" type="float" />
             <field name="roughness_factor" type="float" />
+            <field name="occlusion_factor" type="float" />
         </struct>
 
         <union name="immediate_renderer_material">
@@ -1006,6 +1007,7 @@
             <constant name="ImmediateRendererVertexAttributeTexcoord2" value="4" />
             <constant name="ImmediateRendererVertexAttributeBoneIndices" value="5" />
             <constant name="ImmediateRendererVertexAttributeBoneWeights" value="6" />
+            <constant name="ImmediateRendererVertexAttributeTangent4" value="7" />
         </enum>
 
         <enum name="immediate_renderer_lighting_model" optionalPrefix="ImmediateRendererLightingModel">
@@ -1020,6 +1022,13 @@
             <constant name="ImmediateRendererFogModeLinear" value="1" />
             <constant name="ImmediateRendererFogModeExponential" value="2" />
             <constant name="ImmediateRendererFogModeExponentialSquared" value="3" />
+        </enum>
+
+        <enum name="immediate_renderer_texture_binding" optionalPrefix="ImmediateRendererTextureBinding">
+            <constant name="ImmediateRendererTextureBindingAlbedo" value="0" />
+            <constant name="ImmediateRendererTextureBindingEmission" value="1" />
+            <constant name="ImmediateRendererTextureBindingNormal" value="2" />
+            <constant name="ImmediateRendererTextureBindingRoughnessMetallicAmbient" value="3" />
         </enum>
     </constants>
 
@@ -2653,8 +2662,17 @@
                 <arg name="enabled" type="bool" />
             </method>
 
+            <method name="setTangentSpaceEnabled" cname="ImmediateRendererSetTangentSpaceEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
             <method name="bindTexture" cname="ImmediateRendererBindTexture" returnType="error">
                 <arg name="texture" type="texture*" />
+            </method>
+
+            <method name="bindTextureIn" cname="ImmediateRendererBindTextureIn" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="binding" type="immediate_renderer_texture_binding" />
             </method>
 
             <method name="setClipPlane" cname="ImmediateRendererSetClipPlane" returnType="error">

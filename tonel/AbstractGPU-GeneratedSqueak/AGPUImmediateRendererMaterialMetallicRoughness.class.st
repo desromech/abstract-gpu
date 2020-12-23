@@ -17,6 +17,7 @@ AGPUImmediateRendererMaterialMetallicRoughness class >> fields [
 		(base_color 'AGPUVector4f')
 		(metallic_factor 'float')
 		(roughness_factor 'float')
+		(occlusion_factor 'float')
 	)
 ]
 

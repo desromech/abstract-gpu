@@ -313,9 +313,23 @@ AGPUImmediateRenderer >> setTexturingEnabled: enabled [
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> setTangentSpaceEnabled: enabled [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setTangentSpaceEnabled_immediate_renderer: (self validHandle) enabled: enabled.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> bindTexture: texture [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance bindTexture_immediate_renderer: (self validHandle) texture: (self validHandleOf: texture).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUImmediateRenderer >> bindTextureIn: texture binding: binding [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance bindTextureIn_immediate_renderer: (self validHandle) texture: (self validHandleOf: texture) binding: binding.
 	self checkErrorCode: resultValue_
 ]
 

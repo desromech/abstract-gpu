@@ -17,6 +17,7 @@ struct ImmediateShaderCompilationParameters
     ImmediateShaderCompilationParameters()
         : flatShading(false),
         texturingEnabled(false),
+        tangentSpaceEnabled(false),
         skinningEnabled(false),
         lightingEnabled(false),
         lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX)
@@ -29,6 +30,7 @@ struct ImmediateShaderCompilationParameters
 
     bool flatShading;
     bool texturingEnabled;
+    bool tangentSpaceEnabled;
     bool skinningEnabled;
     bool lightingEnabled;
     agpu_immediate_renderer_lighting_model lightingModel;
@@ -93,6 +95,7 @@ struct ImmediateRenderingState
           lightingEnabled(false),
           lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX),
           texturingEnabled(false),
+          tangentSpaceEnabled(false),
           skinningEnabled(false) {}
 
     agpu_primitive_topology activePrimitiveTopology;
@@ -100,6 +103,7 @@ struct ImmediateRenderingState
     bool lightingEnabled;
     agpu_immediate_renderer_lighting_model lightingModel;
     bool texturingEnabled;
+    bool tangentSpaceEnabled;
     bool skinningEnabled;
 
     agpu::shader_resource_binding_ref lightingStateBinding;
@@ -280,7 +284,7 @@ struct MetallicRoughnessMaterialState
     MaterialStateType type;
     float roughnessFactor;
     float metallicFactor;
-    uint32_t padding;
+    float occlusionFactor;
 
     Vector4F emission;
     Vector4F baseColor;
@@ -604,7 +608,9 @@ public:
     virtual agpu_error setSkinningEnabled(agpu_bool enabled) override;
 	virtual agpu_error setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose) override;
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
+	virtual agpu_error setTangentSpaceEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
+	virtual agpu_error bindTextureIn(const agpu::texture_ref & texture, agpu_immediate_renderer_texture_binding binding) override;
     virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) override;
     virtual agpu_error setFogMode(agpu_immediate_renderer_fog_mode mode) override;
 	virtual agpu_error setFogColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a) override;

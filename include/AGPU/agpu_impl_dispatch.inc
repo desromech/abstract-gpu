@@ -2091,10 +2091,22 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetTextureEnabled(agpu_immediate_ren
 	return asRef(agpu::immediate_renderer, self)->setTexturingEnabled(enabled);
 }
 
+AGPU_EXPORT agpu_error agpuImmediateRendererSetTangentSpaceEnabled(agpu_immediate_renderer* self, agpu_bool enabled)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setTangentSpaceEnabled(enabled);
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererBindTexture(agpu_immediate_renderer* self, agpu_texture* texture)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::immediate_renderer, self)->bindTexture(asRef(agpu::texture, texture));
+}
+
+AGPU_EXPORT agpu_error agpuImmediateRendererBindTextureIn(agpu_immediate_renderer* self, agpu_texture* texture, agpu_immediate_renderer_texture_binding binding)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->bindTextureIn(asRef(agpu::texture, texture), binding);
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererSetClipPlane(agpu_immediate_renderer* self, agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4)

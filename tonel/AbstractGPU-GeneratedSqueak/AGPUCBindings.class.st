@@ -2054,8 +2054,20 @@ AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enab
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setTangentSpaceEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	<cdecl: long 'agpuImmediateRendererSetTangentSpaceEnabled' (void* long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> bindTexture_immediate_renderer: immediate_renderer texture: texture [
 	<cdecl: long 'agpuImmediateRendererBindTexture' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> bindTextureIn_immediate_renderer: immediate_renderer texture: texture binding: binding [
+	<cdecl: long 'agpuImmediateRendererBindTextureIn' (void* void* long)>
 	^ self externalCallFailed
 ]
 

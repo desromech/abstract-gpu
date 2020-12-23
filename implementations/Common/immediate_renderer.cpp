@@ -18,6 +18,7 @@ bool ImmediateShaderCompilationParameters::operator==(const ImmediateShaderCompi
 {
 	return flatShading == other.flatShading &&
 		texturingEnabled == other.texturingEnabled &&
+		tangentSpaceEnabled == other.tangentSpaceEnabled &&
 		skinningEnabled == other.skinningEnabled &&
 		lightingEnabled == other.lightingEnabled &&
 		lightingModel == other.lightingModel;
@@ -27,6 +28,7 @@ size_t ImmediateShaderCompilationParameters::hash() const
 {
 	return std::hash<bool> ()(flatShading) ^
 		std::hash<bool> ()(texturingEnabled) ^
+		std::hash<bool> ()(tangentSpaceEnabled) ^
 		std::hash<bool> ()(skinningEnabled) ^
 		std::hash<bool> ()(lightingEnabled) ^
 		std::hash<uint32_t> ()(static_cast<uint32_t> (lightingModel));
@@ -52,6 +54,8 @@ std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shade
 		options += "#define FLAT_SHADING\n";
 	if(texturingEnabled)
 		options += "#define TEXTURING_ENABLED\n";
+	if(tangentSpaceEnabled)
+		options += "#define TANGENT_SPACE_ENABLED\n";
 	if(skinningEnabled)
 		options += "#define SKINNING_ENABLED\n";
 
@@ -334,7 +338,7 @@ MetallicRoughnessMaterialState MetallicRoughnessMaterialState::defaultMaterial()
 	result.type = MaterialStateType::MetallicRoughness;
     result.roughnessFactor = 0.0f;
 	result.metallicFactor = 0.0f;
-	result.padding = 0;
+	result.occlusionFactor = 1.0f;
     result.emission = Vector4F(0.0f, 0.0f, 0.0f, 1.0f);
     result.baseColor = Vector4F(0.8f, 0.8f, 0.8f, 1.0f);
 	return result;
@@ -346,7 +350,8 @@ size_t MetallicRoughnessMaterialState::hash() const
         emission.hash() ^
         baseColor.hash() ^
 		std::hash<float> ()(roughnessFactor) ^
-        std::hash<float> ()(metallicFactor);
+        std::hash<float> ()(metallicFactor) ^
+		std::hash<float> ()(occlusionFactor);
 }
 
 bool MetallicRoughnessMaterialState::operator==(const MetallicRoughnessMaterialState &other) const
@@ -355,7 +360,8 @@ bool MetallicRoughnessMaterialState::operator==(const MetallicRoughnessMaterialS
         emission == other.emission &&
         baseColor == other.baseColor &&
         roughnessFactor == other.roughnessFactor &&
-        metallicFactor == other.metallicFactor;
+        metallicFactor == other.metallicFactor &&
+		occlusionFactor == other.occlusionFactor;
 }
 
 bool MetallicRoughnessMaterialState::operator!=(const MetallicRoughnessMaterialState &other) const
@@ -923,6 +929,7 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
 	    newMaterialState.metallicRoughness.baseColor = Vector4F(state->metallic_roughness.base_color);
 	    newMaterialState.metallicRoughness.metallicFactor = state->metallic_roughness.metallic_factor;
 		newMaterialState.metallicRoughness.roughnessFactor = state->metallic_roughness.roughness_factor;
+		newMaterialState.metallicRoughness.occlusionFactor = state->metallic_roughness.occlusion_factor;
 	}
 	else
 	{
@@ -943,10 +950,26 @@ agpu_error ImmediateRenderer::setTexturingEnabled(agpu_bool enabled)
     return AGPU_OK;
 }
 
+agpu_error ImmediateRenderer::setTangentSpaceEnabled(agpu_bool enabled)
+{
+    currentRenderingState.tangentSpaceEnabled = enabled;
+    return AGPU_OK;
+}
+
 agpu_error ImmediateRenderer::bindTexture(const agpu::texture_ref &texture)
 {
-    currentRenderingState.activeTexture = texture;
-    return AGPU_OK;
+    return bindTextureIn(texture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO);
+}
+
+agpu_error ImmediateRenderer::bindTextureIn(const agpu::texture_ref & texture, agpu_immediate_renderer_texture_binding binding)
+{
+	switch(binding)
+	{
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO:
+	    currentRenderingState.activeTexture = texture;
+		return AGPU_OK;
+	default: return AGPU_UNSUPPORTED;
+	}
 }
 
 agpu_error ImmediateRenderer::setSkinningEnabled(agpu_bool enabled)

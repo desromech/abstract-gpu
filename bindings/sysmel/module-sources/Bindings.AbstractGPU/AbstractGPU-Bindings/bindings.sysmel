@@ -521,6 +521,13 @@ enum VrDualAnalogWhich valueType: Int32; values: #{
 	Right: 1.
 }.
 
+enum ImmediateRendererTextureBinding valueType: Int32; values: #{
+	Albedo: 0.
+	Emission: 1.
+	Normal: 2.
+	RoughnessMetallicAmbient: 3.
+}.
+
 enum Filter valueType: Int32; values: #{
 	MinNearestMagNearestMipmapNearest: 16r0.
 	MinNearestMagNearestMipmapLinear: 16r1.
@@ -572,6 +579,7 @@ enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
 	Texcoord2: 4.
 	BoneIndices: 5.
 	BoneWeights: 6.
+	Tangent4: 7.
 }.
 
 enum CompareFunction valueType: Int32; values: #{
@@ -631,6 +639,7 @@ enum BlendingFactor valueType: Int32; values: #{
 enum SwapChainFlags valueType: Int32; values: #{
 	None: 0.
 	OverlayWindow: 1.
+	FetchResolutionFromWindow: 2.
 }.
 
 enum BufferUsageMask valueType: Int32; values: #{
@@ -736,11 +745,11 @@ struct SwapChainCreateInfo definition: {
 	public field sample_buffers type: Int32.
 	public field samples type: Int32.
 	public field flags type: SwapChainFlags.
+	public field old_swap_chain type: SwapChain pointer.
 	public field presentation_mode type: SwapChainPresentationMode.
 	public field fallback_presentation_mode type: SwapChainPresentationMode.
 	public field x type: Int32.
 	public field y type: Int32.
-	public field old_swap_chain type: SwapChain pointer.
 }.
 
 struct BufferDescription definition: {
@@ -1034,6 +1043,7 @@ struct ImmediateRendererMaterialMetallicRoughness definition: {
 	public field base_color type: Vector4f.
 	public field metallic_factor type: Float32.
 	public field roughness_factor type: Float32.
+	public field occlusion_factor type: Float32.
 }.
 
 union ImmediateRendererMaterial definition: {
@@ -1386,7 +1396,9 @@ function agpuImmediateRendererSetMaterial externC (immediate_renderer: Immediate
 function agpuImmediateRendererSetSkinningEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
 function agpuImmediateRendererSetSkinBones externC (immediate_renderer: ImmediateRenderer pointer, count: UInt32, matrices: Float32 pointer, transpose: Int32) => Error.
 function agpuImmediateRendererSetTextureEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetTangentSpaceEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
 function agpuImmediateRendererBindTexture externC (immediate_renderer: ImmediateRenderer pointer, texture: Texture pointer) => Error.
+function agpuImmediateRendererBindTextureIn externC (immediate_renderer: ImmediateRenderer pointer, texture: Texture pointer, binding: ImmediateRendererTextureBinding) => Error.
 function agpuImmediateRendererSetClipPlane externC (immediate_renderer: ImmediateRenderer pointer, index: UInt32, enabled: Int32, p1: Float32, p2: Float32, p3: Float32, p4: Float32) => Error.
 function agpuImmediateRendererSetFogMode externC (immediate_renderer: ImmediateRenderer pointer, mode: ImmediateRendererFogMode) => Error.
 function agpuImmediateRendererSetFogColor externC (immediate_renderer: ImmediateRenderer pointer, r: Float32, g: Float32, b: Float32, a: Float32) => Error.
@@ -2546,8 +2558,14 @@ ImmediateRenderer extend: {
 	inline method setTexturingEnabled: (enabled: Int32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetTextureEnabled(self address, enabled)).
 
+	inline method setTangentSpaceEnabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetTangentSpaceEnabled(self address, enabled)).
+
 	inline method bindTexture: (texture: TextureRef const ref) ::=> Void
 		:= throwIfError: (agpuImmediateRendererBindTexture(self address, texture getPointer)).
+
+	inline method bindTextureIn: (texture: TextureRef const ref) binding: (binding: ImmediateRendererTextureBinding) ::=> Void
+		:= throwIfError: (agpuImmediateRendererBindTextureIn(self address, texture getPointer, binding)).
 
 	inline method setClipPlane: (index: UInt32) enabled: (enabled: Int32) p1: (p1: Float32) p2: (p2: Float32) p3: (p3: Float32) p4: (p4: Float32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetClipPlane(self address, index, enabled, p1, p2, p3, p4)).

@@ -18,6 +18,7 @@ AGPUImmediateRendererMaterialMetallicRoughness class >> fieldsDesc [
 		 agpu_vector4f base_color;
 		 agpu_float metallic_factor;
 		 agpu_float roughness_factor;
+		 agpu_float occlusion_factor;
 	)
 ]
 

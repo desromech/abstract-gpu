@@ -2115,9 +2115,19 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererSetTextureEnabled(this, enabled));
 	}
 
+	inline void setTangentSpaceEnabled(agpu_bool enabled)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererSetTangentSpaceEnabled(this, enabled));
+	}
+
 	inline void bindTexture(const agpu_ref<agpu_texture>& texture)
 	{
 		agpuThrowIfFailed(agpuImmediateRendererBindTexture(this, texture.get()));
+	}
+
+	inline void bindTextureIn(const agpu_ref<agpu_texture>& texture, agpu_immediate_renderer_texture_binding binding)
+	{
+		agpuThrowIfFailed(agpuImmediateRendererBindTextureIn(this, texture.get(), binding));
 	}
 
 	inline void setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4)
