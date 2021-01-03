@@ -36,8 +36,8 @@ R"uberShader(
 struct LightState
 {
 #ifdef PBR_METALLIC_ROUGHNESS
+    vec4 ambientColor;
     vec4 intensity;
-
     vec4 position;
 
     vec3 spotDirection;
@@ -47,7 +47,7 @@ struct LightState
     float spotInnerCosCutoff;
     float radius;
     float padding;
-    vec4 padding2[2];
+    vec4 padding2;
 #else
     vec4 ambientColor;
     vec4 diffuseColor;
@@ -144,6 +144,7 @@ layout(set=5, binding=0) uniform SkinningStateBlock
 
 struct LightingParameters
 {
+    vec4 ambientColor;
     vec4 baseColor;
     vec4 diffuse;
 #ifdef PBR_METALLIC_ROUGHNESS
@@ -240,9 +241,7 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
         return lightContribution;
 
     // Compute the ambient contribution.
-#ifndef PBR_METALLIC_ROUGHNESS
-    lightContribution = MaterialState.ambient*light.ambientColor;
-#endif
+    lightContribution = parameters.ambientColor*light.ambientColor;
 
     // Compute the diffuse contribution.
     float NdotL = max(dot(N, L), 0.0);
@@ -290,15 +289,17 @@ vec4 computeLightingWith(in LightingParameters parameters)
     parameters.k = kRoughness*kRoughness / 8.0;
 
     parameters.NdotV = clamp(dot(parameters.N, parameters.V), 0.0, 1.0);
+    parameters.ambientColor = parameters.baseColor * parameters.occlusion;
 
-    vec4 color = MaterialState.emission + LightingState.ambientLighting * parameters.baseColor * parameters.occlusion;
+    vec4 color = MaterialState.emission;
 #else
+    parameters.ambientColor = MaterialState.ambient * parameters.baseColor;
     parameters.diffuse = MaterialState.diffuse*parameters.baseColor;
     parameters.specular = MaterialState.specular;
 
-    vec4 color = (MaterialState.emission +
-        MaterialState.ambient*LightingState.ambientLighting) * parameters.baseColor;
+    vec4 color = MaterialState.emission*parameters.baseColor;
 #endif
+    color += LightingState.ambientLighting * parameters.ambientColor;
 
     uint enabledLightMask = LightingState.enabledLightMask;
     for(int i = 0; i < 8 && (enabledLightMask != 0); ++i, enabledLightMask >>=1)

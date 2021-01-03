@@ -200,6 +200,7 @@ struct PBRLightState
     size_t hash() const;
     bool operator==(const PBRLightState &other) const;
 
+    Vector4F ambient;
     Vector4F intensity;
 
     Vector4F position;
@@ -209,7 +210,7 @@ struct PBRLightState
     float spotExponent;
     float spotInnerCosCutoff;
     float radius;
-    float padding[9];
+    float padding[5];
 };
 static_assert(sizeof(PBRLightState) == sizeof(ClassicLightState), "For manual alignment");
 

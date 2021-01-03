@@ -208,6 +208,7 @@ bool ClassicLightState::operator==(const ClassicLightState &other) const
 
 PBRLightState::PBRLightState()
     :
+	ambient(0.0f, 0.0f, 0.0f, 1.0f),
 	intensity(0.0f, 0.0f, 0.0f, 1.0f),
 
     position(0.0f, 0.0f, 1.0f, 0.0f),
@@ -225,6 +226,7 @@ PBRLightState::PBRLightState()
 size_t PBRLightState::hash() const
 {
     return
+		ambient.hash() ^
         intensity.hash() ^
 
         position.hash() ^
@@ -240,6 +242,7 @@ size_t PBRLightState::hash() const
 bool PBRLightState::operator==(const PBRLightState &other) const
 {
     return
+		ambient == other.ambient &&
         intensity == other.intensity &&
 
         position == other.position &&
@@ -813,6 +816,7 @@ agpu_error ImmediateRenderer::setLight(agpu_uint index, agpu_bool enabled, agpu_
 			if(hasMetallicRoughnessLighting())
 			{
 				light.pbr = PBRLightState();
+				light.pbr.ambient = Vector4F(state->pbr.ambient, 0);
 	            light.pbr.intensity = Vector4F(state->pbr.intensity, 0);
 	            light.pbr.position = modelViewMatrixStack.back()*Vector4F(state->pbr.position);
 	            light.pbr.spotDirection = modelViewMatrixStack.back().transformDirection3(Vector3F(state->pbr.spot_direction));

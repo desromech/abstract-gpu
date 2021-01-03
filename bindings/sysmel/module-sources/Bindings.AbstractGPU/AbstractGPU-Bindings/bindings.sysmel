@@ -3,90 +3,90 @@ namespace AGPU definition:
 {
 
 template SmartRefPtr(PT: Type)
-	:= struct definition: {
-	compileTime constant PointedType := PT.
-	compileTime constant PointerType := PointedType pointer.
-	compileTime constant SmartPointerType := SelfType.
+    := struct definition: {
+    compileTime constant PointedType := PT.
+    compileTime constant PointerType := PointedType pointer.
+    compileTime constant SmartPointerType := SelfType.
 
-	private field pointer_ type: PointerType.
+    private field pointer_ type: PointerType.
 
-	meta extend: {
-		inline method for: (pointer: PointerType) ::=> SmartPointerType
-			:= SmartPointerType basicNewValue initializeWith: pointer; yourself.
-		macro method nil := ``(`,self basicNewValue).
-	}.
+    meta extend: {
+        inline method for: (pointer: PointerType) ::=> SmartPointerType
+            := SmartPointerType basicNewValue initializeWith: pointer; yourself.
+        macro method nil := ``(`,self basicNewValue).
+    }.
 
-	inline method finalize => Void := {
-		if: pointer_ ~~ nil then: {
-			pointer_ _ release.
-		}.
-	}.
+    inline method finalize => Void := {
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release.
+        }.
+    }.
 
-	inline method initializeWith: (pointer: PointerType) ::=> Void := {
-		pointer_ := pointer
-	}.
+    inline method initializeWith: (pointer: PointerType) ::=> Void := {
+        pointer_ := pointer
+    }.
 
-	inline method initializeCopyingFrom: (o: SelfType const ref) ::=> Void := {
-		pointer_ := o __private pointer_.
-		if: pointer_ ~~ nil then: {
-			pointer_ _ addReference
-		}.
-	}.
+    inline method initializeCopyingFrom: (o: SelfType const ref) ::=> Void := {
+        pointer_ := o __private pointer_.
+        if: pointer_ ~~ nil then: {
+            pointer_ _ addReference
+        }.
+    }.
 
-	inline method initializeMovingFrom: (o: SelfType tempRef) ::=> Void := {
-		pointer_ := o __private pointer_.
-		o __private pointer_ := nil
-	}.
+    inline method initializeMovingFrom: (o: SelfType tempRef) ::=> Void := {
+        pointer_ := o __private pointer_.
+        o __private pointer_ := nil
+    }.
 
-	inline const method _ => PointedType ref
-		:= pointer_ _.
+    inline const method _ => PointedType ref
+        := pointer_ _.
 
-	inline const method getPointer => PointerType
-		:= pointer_.
+    inline const method getPointer => PointerType
+        := pointer_.
 
-	inline method reset: (newPointer: PointerType) ::=> Void := {
-		if: pointer_ ~~ nil then: {
-			pointer_ _ release
-		}.
+    inline method reset: (newPointer: PointerType) ::=> Void := {
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release
+        }.
 
-		pointer_ := newPointer
-	}.
+        pointer_ := newPointer
+    }.
 
-	inline method reset => Void
-		:=  self reset: nil.
+    inline method reset => Void
+        :=  self reset: nil.
 
-	inline method assignValue: (o: SelfType const ref) ::=> SelfType const ref := {
-		let newPointer := o __private pointer_.
-		if: newPointer ~~ nil then: {
-			newPointer _ addReference
-		}.
-		if: pointer_ ~~ nil then: {
-			pointer_ _ release
-		}.
+    inline method assignValue: (o: SelfType const ref) ::=> SelfType const ref := {
+        let newPointer := o __private pointer_.
+        if: newPointer ~~ nil then: {
+            newPointer _ addReference
+        }.
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release
+        }.
 
-		pointer_ := newPointer.
-		self
-	}.
+        pointer_ := newPointer.
+        self
+    }.
 
-	inline method assignValue: (o: SelfType tempRef) ::=> SelfType const ref := {
-		let newPointer := o __private pointer_.
-		o __private pointer_ := nil.
-		if: pointer_ ~~ nil then: {
-			pointer_ _ release
-		}.
+    inline method assignValue: (o: SelfType tempRef) ::=> SelfType const ref := {
+        let newPointer := o __private pointer_.
+        o __private pointer_ := nil.
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release
+        }.
 
-		pointer_ := newPointer.
-		self
-	}.
+        pointer_ := newPointer.
+        self
+    }.
 
-	## Some convenience macros.
-	macro method isNil := ``(`,self getPointer isNil).
-	macro method isNotNil := ``(`,self getPointer isNotNil).
+    ## Some convenience macros.
+    macro method isNil := ``(`,self getPointer isNil).
+    macro method isNotNil := ``(`,self getPointer isNotNil).
 
-	macro method ifNil: nilAction := ``(`,self getPointer ifNil: `,nilAction).
-	macro method ifNil: nilAction ifNotNil: notNilAction := ``(`,self getPointer ifNil: `,nilAction ifNotNil: `, notNilAction).
-	macro method ifNotNil: notNilAction := ``(`,self getPointer ifNotNil: `,notNilAction).
-	macro method ifNotNil: notNilAction ifNil: nilAction  := ``(`,self getPointer ifNotNil: `,notNilAction ifNil: `,nilAction).
+    macro method ifNil: nilAction := ``(`,self getPointer ifNil: `,nilAction).
+    macro method ifNil: nilAction ifNotNil: notNilAction := ``(`,self getPointer ifNil: `,nilAction ifNotNil: `, notNilAction).
+    macro method ifNotNil: notNilAction := ``(`,self getPointer ifNotNil: `,notNilAction).
+    macro method ifNotNil: notNilAction ifNil: nilAction  := ``(`,self getPointer ifNotNil: `,notNilAction ifNil: `,nilAction).
 }.
 
 ################################################################################
@@ -123,40 +123,6 @@ class ImmediateRenderer definition: {}.
 ################################################################################
 ## Enums.
 ################################################################################
-enum RenderpassAttachmentAction valueType: Int32; values: #{
-	Keep: 0.
-	Clear: 1.
-	Discard: 2.
-}.
-
-enum CommandQueueType valueType: Int32; values: #{
-	Graphics: 0.
-	Compute: 1.
-	Transfer: 2.
-}.
-
-enum ImmediateRendererLightingModel valueType: Int32; values: #{
-	PerVertex: 0.
-	PerFragment: 1.
-	MetallicRoughness: 2.
-	Count: 3.
-}.
-
-enum RenderBufferBit valueType: Int32; values: #{
-	DepthBufferBit: 1.
-	StencilBufferBit: 2.
-	ColorBufferBit: 4.
-}.
-
-enum TextureType valueType: Int32; values: #{
-	TextureUnknown: 0.
-	TextureBuffer: 1.
-	Texture1D: 2.
-	Texture2D: 3.
-	TextureCube: 4.
-	Texture3D: 5.
-}.
-
 enum Error valueType: Int32; values: #{
 	Ok: 0.
 	Error: -1.
@@ -175,6 +141,98 @@ enum Error valueType: Int32; values: #{
 	Suboptimal: -14.
 }.
 
+enum DeviceOpenFlags valueType: Int32; values: #{
+	None: 0.
+	AllowVR: 1.
+}.
+
+enum SwapChainFlags valueType: Int32; values: #{
+	None: 0.
+	OverlayWindow: 1.
+	FetchResolutionFromWindow: 2.
+}.
+
+enum SwapChainPresentationMode valueType: Int32; values: #{
+	Default: 0.
+	Immediate: 1.
+	Mailbox: 2.
+	Fifo: 3.
+	FifoRelaxed: 4.
+}.
+
+enum CommandQueueType valueType: Int32; values: #{
+	Graphics: 0.
+	Compute: 1.
+	Transfer: 2.
+}.
+
+enum AccessFlags valueType: Int32; values: #{
+	IndirectCommandRead: 1.
+	IndexRead: 2.
+	VertexAttributeRead: 4.
+	UniformRead: 8.
+	InputAttachmentRead: 16.
+	ShaderRead: 32.
+	ShaderWrite: 64.
+	ColorAttachmentRead: 128.
+	ColorAttachmentWrite: 256.
+	DepthStencilAttachmentRead: 512.
+	DepthStencilAttachmentWrite: 1024.
+	TransferRead: 2048.
+	TransferWrite: 4096.
+	HostRead: 8192.
+	HostWrite: 16384.
+	MemoryRead: 32768.
+	MemoryWrite: 65536.
+	TransformFeedbackWrite: 33554432.
+	TransformFeedbackCounterRead: 67108864.
+	TransformFeedbackCounterWrite: 134217728.
+}.
+
+enum PipelineStageFlags valueType: Int32; values: #{
+	TopOfPipe: 1.
+	DrawIndirect: 2.
+	VertexInput: 4.
+	VertexShader: 8.
+	TessellationControl: 16.
+	TessellationEvaluation: 32.
+	GeometryShader: 64.
+	FragmentShader: 128.
+	EarlyFragmentTests: 256.
+	LateFragmentTests: 512.
+	ColorAttachmentOutput: 1024.
+	ComputeShader: 2048.
+	Transfer: 4096.
+	BottomOfPipe: 8192.
+	Host: 16384.
+	AllGraphics: 32768.
+	AllCommands: 65536.
+	TransformFeedback: 16777216.
+	ConditionalRendering: 262144.
+}.
+
+enum PrimitiveTopology valueType: Int32; values: #{
+	Points: 0.
+	Lines: 1.
+	LinesAdjacency: 2.
+	LineStrip: 3.
+	LineStripAdjacency: 4.
+	Triangles: 5.
+	TrianglesAdjacency: 6.
+	TriangleStrip: 7.
+	TriangleStripAdjacency: 8.
+	Patches: 9.
+	ImmediateTriangleFan: 100.
+	ImmediateQuads: 101.
+	ImmediatePolygon: 102.
+}.
+
+enum PolygonMode valueType: Int32; values: #{
+	Fill: 0.
+	Line: 1.
+	Point: 2.
+}.
+
 enum Feature valueType: Int32; values: #{
 	PersistentMemoryMapping: 1.
 	CoherentMemoryMapping: 2.
@@ -185,48 +243,49 @@ enum Feature valueType: Int32; values: #{
 	VRInputDevices: 7.
 }.
 
-enum DeviceOpenFlags valueType: Int32; values: #{
-	None: 0.
-	AllowVR: 1.
+enum Limit valueType: Int32; values: #{
+	NonCoherentAtomSize: 1.
+	MinMemoryMapAlignment: 2.
+	MinTexelBufferOffsetAlignment: 3.
+	MinUniformBufferOffsetAlignment: 4.
+	MinStorageBufferOffsetAlignment: 5.
 }.
 
-enum ShaderBindingType valueType: Int32; values: #{
-	SampledImage: 0.
-	StorageImage: 1.
-	UniformTexelBuffer: 2.
-	StorageTexelBuffer: 3.
-	UniformBuffer: 4.
-	StorageBuffer: 5.
-	Sampler: 6.
-	Count: 7.
+enum RenderpassAttachmentAction valueType: Int32; values: #{
+	Keep: 0.
+	Clear: 1.
+	Discard: 2.
 }.
 
-enum VrButton valueType: Int32; values: #{
-	System: 0.
-	ApplicationMenu: 1.
-	Grip: 2.
-	DpadLeft: 3.
-	DpadUp: 4.
-	DpadRight: 5.
-	DpadDown: 6.
-	A: 7.
-	ProximitySensor: 31.
-	Axis0: 32.
-	Axis1: 33.
-	Axis2: 34.
-	Axis3: 35.
-	Axis4: 36.
-	SteamVrTouchpad: 32.
-	SteamVrTrigger: 33.
-	DashboardBack: 2.
-	KnucklesA: 2.
-	KnucklesB: 1.
-	KnucklesJoyStick: 35.
+enum StencilOperation valueType: Int32; values: #{
+	Keep: 0.
+	Zero: 1.
+	Replace: 2.
+	Invert: 3.
+	Increase: 4.
+	IncreaseWrap: 5.
+	Decrease: 6.
+	DecreaseWrap: 7.
 }.
 
-enum FaceWinding valueType: Int32; values: #{
-	CounterClockwise: 0.
-	Clockwise: 1.
+enum CompareFunction valueType: Int32; values: #{
+	Always: 0.
+	Never: 1.
+	Less: 2.
+	LessEqual: 3.
+	Equal: 4.
+	NotEqual: 5.
+	Greater: 6.
+	GreaterEqual: 7.
+}.
+
+enum TextureType valueType: Int32; values: #{
+	TextureUnknown: 0.
+	TextureBuffer: 1.
+	Texture1D: 2.
+	Texture2D: 3.
+	TextureCube: 4.
+	Texture3D: 5.
 }.
 
 enum TextureUsageModeMask valueType: Int32; values: #{
@@ -243,12 +302,98 @@ enum TextureUsageModeMask valueType: Int32; values: #{
 	Present: 128.
 }.
 
-enum TextureAddressMode valueType: Int32; values: #{
-	Wrap: 1.
-	Mirror: 2.
-	Clamp: 3.
-	Border: 4.
-	MirrorOnce: 5.
+enum ShaderType valueType: Int32; values: #{
+	Vertex: 0.
+	Fragment: 1.
+	Geometry: 2.
+	Compute: 3.
+	TessellationControl: 4.
+	TessellationEvaluation: 5.
+	Library: 6.
+}.
+
+enum MemoryHeapType valueType: Int32; values: #{
+	DeviceLocal: 0.
+	HostToDevice: 1.
+	DeviceToHost: 2.
+	Host: 3.
+	Custom: 4.
+	StagingUpload: 3.
+	Static: 0.
+	Dynamic: 1.
+	Stream: 1.
+}.
+
+enum BufferUsageMask valueType: Int32; values: #{
+	CopyDestinationBuffer: 1.
+	CopySourceBuffer: 2.
+	GenericDataBuffer: 3.
+	ArrayBuffer: 4.
+	ElementArrayBuffer: 8.
+	UniformBuffer: 16.
+	DrawIndirectBuffer: 32.
+	StorageBuffer: 64.
+	UniformTexelBuffer: 128.
+	StorageTexelBuffer: 256.
+	ComputeDispatchIndirectBuffer: 512.
+}.
+
+enum BufferMappingFlags valueType: Int32; values: #{
+	ReadBit: 1.
+	WriteBit: 2.
+	PersistentBit: 4.
+	CoherentBit: 8.
+	DynamicStorageBit: 16.
+}.
+
+enum MappingAccess valueType: Int32; values: #{
+	ReadOnly: 1.
+	WriteOnly: 2.
+	ReadWrite: 3.
+}.
+
+enum RenderBufferBit valueType: Int32; values: #{
+	DepthBufferBit: 1.
+	StencilBufferBit: 2.
+	ColorBufferBit: 4.
+}.
+
+enum ShaderBindingType valueType: Int32; values: #{
+	SampledImage: 0.
+	StorageImage: 1.
+	UniformTexelBuffer: 2.
+	StorageTexelBuffer: 3.
+	UniformBuffer: 4.
+	StorageBuffer: 5.
+	Sampler: 6.
+	Count: 7.
+}.
+
+enum ShaderLanguage valueType: Int32; values: #{
+	None: 0.
+	Glsl: 1.
+	Eglsl: 2.
+	Vglsl: 3.
+	SpirV: 4.
+	Hlsl: 5.
+	Metal: 6.
+	MetalAir: 7.
+	Binary: 8.
+	SpirVAssembly: 9.
+	DeviceShader: 10.
+}.
+
+enum FieldType valueType: Int32; values: #{
+	Float: 0.
+	HalfFloat: 1.
+	Double: 2.
+	Fixed: 3.
+	Byte: 4.
+	UnsignedByte: 5.
+	Short: 6.
+	UnsignedShort: 7.
+	Int: 8.
+	UnsignedInt: 9.
 }.
 
 enum TextureFormat valueType: Int32; values: #{
@@ -382,6 +527,140 @@ enum TextureFormat valueType: Int32; values: #{
 	ASTC12X12_UNormSRGB: 257.
 }.
 
+enum Filter valueType: Int32; values: #{
+	MinNearestMagNearestMipmapNearest: 16r0.
+	MinNearestMagNearestMipmapLinear: 16r1.
+	MinNearestMagLinearMipmapNearest: 16r4.
+	MinNearestMagLinearMipmapLinear: 16r5.
+	MinLinearMagNearestMipmapNearest: 16r10.
+	MinLinearMagNearestMipmapLinear: 16r11.
+	MinLinearMagLinearMipmapNearest: 16r14.
+	MinLinearMagLinearMipmapLinear: 16r15.
+	Anisotropic: 16r55.
+}.
+
+enum TextureAddressMode valueType: Int32; values: #{
+	Wrap: 1.
+	Mirror: 2.
+	Clamp: 3.
+	Border: 4.
+	MirrorOnce: 5.
+}.
+
+enum TextureAspect valueType: Int32; values: #{
+	Color: 1.
+	Depth: 2.
+	Stencil: 4.
+	All: -1.
+}.
+
+enum CommandListType valueType: Int32; values: #{
+	Direct: 1.
+	Bundle: 2.
+	Compute: 3.
+	Copy: 4.
+}.
+
+enum BlendingFactor valueType: Int32; values: #{
+	Zero: 1.
+	One: 2.
+	SrcColor: 3.
+	InvertedSrcColor: 4.
+	SrcAlpha: 5.
+	InvertedSrcAlpha: 6.
+	DestAlpha: 7.
+	InvertedDestAlpha: 8.
+	DestColor: 9.
+	InvertedDestColor: 10.
+	SrcAlphaSat: 11.
+	ConstantFactor: 14.
+	InvertedConstantFactor: 15.
+	Src1Color: 16.
+	InvertedSrc1Color: 17.
+	Src1Alpha: 18.
+	InvertedSrc1Alpha: 19.
+}.
+
+enum BlendingOperation valueType: Int32; values: #{
+	Add: 1.
+	Subtract: 2.
+	ReverseSubtract: 3.
+	Min: 4.
+	Max: 5.
+}.
+
+enum ComponentSwizzle valueType: Int32; values: #{
+	Identity: 0.
+	One: 1.
+	Zero: 2.
+	R: 3.
+	G: 4.
+	B: 5.
+	A: 6.
+}.
+
+enum FaceWinding valueType: Int32; values: #{
+	CounterClockwise: 0.
+	Clockwise: 1.
+}.
+
+enum CullMode valueType: Int32; values: #{
+	None: 0.
+	Front: 1.
+	Back: 2.
+	FrontAndBack: 3.
+}.
+
+enum VrEye valueType: Int32; values: #{
+	Left: 0.
+	Right: 1.
+}.
+
+enum VrTrackedDeviceClass valueType: Int32; values: #{
+	Invalid: 0.
+	Hmd: 1.
+	Controller: 2.
+	GenericTracker: 3.
+	TrackingReference: 4.
+	DisplayRedirect: 5.
+}.
+
+enum VrTrackedDeviceRole valueType: Int32; values: #{
+	Invalid: 0.
+	LeftHand: 1.
+	RightHand: 2.
+	OptOut: 3.
+	Threadmill: 4.
+}.
+
+enum VrButton valueType: Int32; values: #{
+	System: 0.
+	ApplicationMenu: 1.
+	Grip: 2.
+	DpadLeft: 3.
+	DpadUp: 4.
+	DpadRight: 5.
+	DpadDown: 6.
+	A: 7.
+	ProximitySensor: 31.
+	Axis0: 32.
+	Axis1: 33.
+	Axis2: 34.
+	Axis3: 35.
+	Axis4: 36.
+	SteamVrTouchpad: 32.
+	SteamVrTrigger: 33.
+	DashboardBack: 2.
+	KnucklesA: 2.
+	KnucklesB: 1.
+	KnucklesJoyStick: 35.
+}.
+
+enum VrDualAnalogWhich valueType: Int32; values: #{
+	Left: 0.
+	Right: 1.
+}.
+
 enum VrEventType valueType: Int32; values: #{
 	Invalid: 0.
 	TrackedDeviceActivated: 100.
@@ -409,168 +688,6 @@ enum VrEventType valueType: Int32; values: #{
 	DualAnalogCancel: 257.
 }.
 
-enum ComponentSwizzle valueType: Int32; values: #{
-	Identity: 0.
-	One: 1.
-	Zero: 2.
-	R: 3.
-	G: 4.
-	B: 5.
-	A: 6.
-}.
-
-enum ShaderType valueType: Int32; values: #{
-	Vertex: 0.
-	Fragment: 1.
-	Geometry: 2.
-	Compute: 3.
-	TessellationControl: 4.
-	TessellationEvaluation: 5.
-	Library: 6.
-}.
-
-enum ShaderLanguage valueType: Int32; values: #{
-	None: 0.
-	Glsl: 1.
-	Eglsl: 2.
-	Vglsl: 3.
-	SpirV: 4.
-	Hlsl: 5.
-	Metal: 6.
-	MetalAir: 7.
-	Binary: 8.
-	SpirVAssembly: 9.
-	DeviceShader: 10.
-}.
-
-enum MappingAccess valueType: Int32; values: #{
-	ReadOnly: 1.
-	WriteOnly: 2.
-	ReadWrite: 3.
-}.
-
-enum BufferMappingFlags valueType: Int32; values: #{
-	ReadBit: 1.
-	WriteBit: 2.
-	PersistentBit: 4.
-	CoherentBit: 8.
-	DynamicStorageBit: 16.
-}.
-
-enum BlendingOperation valueType: Int32; values: #{
-	Add: 1.
-	Subtract: 2.
-	ReverseSubtract: 3.
-	Min: 4.
-	Max: 5.
-}.
-
-enum SwapChainPresentationMode valueType: Int32; values: #{
-	Default: 0.
-	Immediate: 1.
-	Mailbox: 2.
-	Fifo: 3.
-	FifoRelaxed: 4.
-}.
-
-enum VrTrackedDeviceRole valueType: Int32; values: #{
-	Invalid: 0.
-	LeftHand: 1.
-	RightHand: 2.
-	OptOut: 3.
-	Threadmill: 4.
-}.
-
-enum PolygonMode valueType: Int32; values: #{
-	Fill: 0.
-	Line: 1.
-	Point: 2.
-}.
-
-enum ImmediateRendererFogMode valueType: Int32; values: #{
-	None: 0.
-	Linear: 1.
-	Exponential: 2.
-	ExponentialSquared: 3.
-}.
-
-enum PipelineStageFlags valueType: Int32; values: #{
-	TopOfPipe: 1.
-	DrawIndirect: 2.
-	VertexInput: 4.
-	VertexShader: 8.
-	TessellationControl: 16.
-	TessellationEvaluation: 32.
-	GeometryShader: 64.
-	FragmentShader: 128.
-	EarlyFragmentTests: 256.
-	LateFragmentTests: 512.
-	ColorAttachmentOutput: 1024.
-	ComputeShader: 2048.
-	Transfer: 4096.
-	BottomOfPipe: 8192.
-	Host: 16384.
-	AllGraphics: 32768.
-	AllCommands: 65536.
-	TransformFeedback: 16777216.
-	ConditionalRendering: 262144.
-}.
-
-enum VrDualAnalogWhich valueType: Int32; values: #{
-	Left: 0.
-	Right: 1.
-}.
-
-enum ImmediateRendererTextureBinding valueType: Int32; values: #{
-	Albedo: 0.
-	Emission: 1.
-	Normal: 2.
-	RoughnessMetallicAmbient: 3.
-}.
-
-enum Filter valueType: Int32; values: #{
-	MinNearestMagNearestMipmapNearest: 16r0.
-	MinNearestMagNearestMipmapLinear: 16r1.
-	MinNearestMagLinearMipmapNearest: 16r4.
-	MinNearestMagLinearMipmapLinear: 16r5.
-	MinLinearMagNearestMipmapNearest: 16r10.
-	MinLinearMagNearestMipmapLinear: 16r11.
-	MinLinearMagLinearMipmapNearest: 16r14.
-	MinLinearMagLinearMipmapLinear: 16r15.
-	Anisotropic: 16r55.
-}.
-
-enum MemoryHeapType valueType: Int32; values: #{
-	DeviceLocal: 0.
-	HostToDevice: 1.
-	DeviceToHost: 2.
-	Host: 3.
-	Custom: 4.
-	StagingUpload: 3.
-	Static: 0.
-	Dynamic: 1.
-	Stream: 1.
-}.
-
-enum Limit valueType: Int32; values: #{
-	NonCoherentAtomSize: 1.
-	MinMemoryMapAlignment: 2.
-	MinTexelBufferOffsetAlignment: 3.
-	MinUniformBufferOffsetAlignment: 4.
-	MinStorageBufferOffsetAlignment: 5.
-}.
-
-enum StencilOperation valueType: Int32; values: #{
-	Keep: 0.
-	Zero: 1.
-	Replace: 2.
-	Invert: 3.
-	Increase: 4.
-	IncreaseWrap: 5.
-	Decrease: 6.
-	DecreaseWrap: 7.
-}.
-
 enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
 	Position: 0.
 	Color: 1.
@@ -582,142 +699,25 @@ enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
 	Tangent4: 7.
 }.
 
-enum CompareFunction valueType: Int32; values: #{
-	Always: 0.
-	Never: 1.
-	Less: 2.
-	LessEqual: 3.
-	Equal: 4.
-	NotEqual: 5.
-	Greater: 6.
-	GreaterEqual: 7.
+enum ImmediateRendererLightingModel valueType: Int32; values: #{
+	PerVertex: 0.
+	PerFragment: 1.
+	MetallicRoughness: 2.
+	Count: 3.
 }.
 
-enum TextureAspect valueType: Int32; values: #{
-	Color: 1.
-	Depth: 2.
-	Stencil: 4.
-	All: -1.
-}.
-
-enum PrimitiveTopology valueType: Int32; values: #{
-	Points: 0.
-	Lines: 1.
-	LinesAdjacency: 2.
-	LineStrip: 3.
-	LineStripAdjacency: 4.
-	Triangles: 5.
-	TrianglesAdjacency: 6.
-	TriangleStrip: 7.
-	TriangleStripAdjacency: 8.
-	Patches: 9.
-	ImmediateTriangleFan: 100.
-	ImmediateQuads: 101.
-	ImmediatePolygon: 102.
-}.
-
-enum BlendingFactor valueType: Int32; values: #{
-	Zero: 1.
-	One: 2.
-	SrcColor: 3.
-	InvertedSrcColor: 4.
-	SrcAlpha: 5.
-	InvertedSrcAlpha: 6.
-	DestAlpha: 7.
-	InvertedDestAlpha: 8.
-	DestColor: 9.
-	InvertedDestColor: 10.
-	SrcAlphaSat: 11.
-	ConstantFactor: 14.
-	InvertedConstantFactor: 15.
-	Src1Color: 16.
-	InvertedSrc1Color: 17.
-	Src1Alpha: 18.
-	InvertedSrc1Alpha: 19.
-}.
-
-enum SwapChainFlags valueType: Int32; values: #{
+enum ImmediateRendererFogMode valueType: Int32; values: #{
 	None: 0.
-	OverlayWindow: 1.
-	FetchResolutionFromWindow: 2.
+	Linear: 1.
+	Exponential: 2.
+	ExponentialSquared: 3.
 }.
 
-enum BufferUsageMask valueType: Int32; values: #{
-	CopyDestinationBuffer: 1.
-	CopySourceBuffer: 2.
-	GenericDataBuffer: 3.
-	ArrayBuffer: 4.
-	ElementArrayBuffer: 8.
-	UniformBuffer: 16.
-	DrawIndirectBuffer: 32.
-	StorageBuffer: 64.
-	UniformTexelBuffer: 128.
-	StorageTexelBuffer: 256.
-	ComputeDispatchIndirectBuffer: 512.
-}.
-
-enum CullMode valueType: Int32; values: #{
-	None: 0.
-	Front: 1.
-	Back: 2.
-	FrontAndBack: 3.
-}.
-
-enum CommandListType valueType: Int32; values: #{
-	Direct: 1.
-	Bundle: 2.
-	Compute: 3.
-	Copy: 4.
-}.
-
-enum VrEye valueType: Int32; values: #{
-	Left: 0.
-	Right: 1.
-}.
-
-enum VrTrackedDeviceClass valueType: Int32; values: #{
-	Invalid: 0.
-	Hmd: 1.
-	Controller: 2.
-	GenericTracker: 3.
-	TrackingReference: 4.
-	DisplayRedirect: 5.
-}.
-
-enum FieldType valueType: Int32; values: #{
-	Float: 0.
-	HalfFloat: 1.
-	Double: 2.
-	Fixed: 3.
-	Byte: 4.
-	UnsignedByte: 5.
-	Short: 6.
-	UnsignedShort: 7.
-	Int: 8.
-	UnsignedInt: 9.
-}.
-
-enum AccessFlags valueType: Int32; values: #{
-	IndirectCommandRead: 1.
-	IndexRead: 2.
-	VertexAttributeRead: 4.
-	UniformRead: 8.
-	InputAttachmentRead: 16.
-	ShaderRead: 32.
-	ShaderWrite: 64.
-	ColorAttachmentRead: 128.
-	ColorAttachmentWrite: 256.
-	DepthStencilAttachmentRead: 512.
-	DepthStencilAttachmentWrite: 1024.
-	TransferRead: 2048.
-	TransferWrite: 4096.
-	HostRead: 8192.
-	HostWrite: 16384.
-	MemoryRead: 32768.
-	MemoryWrite: 65536.
-	TransformFeedbackWrite: 33554432.
-	TransformFeedbackCounterRead: 67108864.
-	TransformFeedbackCounterWrite: 134217728.
+enum ImmediateRendererTextureBinding valueType: Int32; values: #{
+	Albedo: 0.
+	Emission: 1.
+	Normal: 2.
+	RoughnessMetallicAmbient: 3.
 }.
 
 struct DeviceOpenInfo definition: {
@@ -1012,9 +1012,10 @@ struct ImmediateRendererLightClassic definition: {
 }.
 
 struct ImmediateRendererLightPbr definition: {
-	public field reserved_ambient type: Vector4f.
+	public field ambient type: Vector3f.
+	public field ambient_reserved type: Float32.
 	public field intensity type: Vector3f.
-	public field reserved type: Float32.
+	public field intensity_reserved type: Float32.
 	public field reserved_specular type: Vector4f.
 	public field position type: Vector4f.
 	public field spot_direction type: Vector3f.

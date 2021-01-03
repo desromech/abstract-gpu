@@ -994,9 +994,10 @@ typedef struct agpu_immediate_renderer_light_classic {
 
 /* Structure agpu_immediate_renderer_light_pbr. */
 typedef struct agpu_immediate_renderer_light_pbr {
-	agpu_vector4f reserved_ambient;
+	agpu_vector3f ambient;
+	agpu_float ambient_reserved;
 	agpu_vector3f intensity;
-	agpu_float reserved;
+	agpu_float intensity_reserved;
 	agpu_vector4f reserved_specular;
 	agpu_vector4f position;
 	agpu_vector3f spot_direction;

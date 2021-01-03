@@ -13,9 +13,10 @@ AGPUImmediateRendererLightPbr class >> fields [
 	self defineFields
 	"
     ^ #(
-		(reserved_ambient 'AGPUVector4f')
+		(ambient 'AGPUVector3f')
+		(ambient_reserved 'float')
 		(intensity 'AGPUVector3f')
-		(reserved 'float')
+		(intensity_reserved 'float')
 		(reserved_specular 'AGPUVector4f')
 		(position 'AGPUVector4f')
 		(spot_direction 'AGPUVector3f')

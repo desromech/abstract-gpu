@@ -357,10 +357,10 @@
         </struct>
 
         <struct name="immediate_renderer_light_pbr">
-            <field name="reserved_ambient" type="vector4f" />
-
+            <field name="ambient" type="vector3f" />
+            <field name="ambient_reserved" type="float" />
             <field name="intensity" type="vector3f" />
-            <field name="reserved" type="float" />
+            <field name="intensity_reserved" type="float" />
 
             <field name="reserved_specular" type="vector4f" />
             <field name="position" type="vector4f" />
