@@ -207,6 +207,7 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
     vec3 V = parameters.V;
     vec3 N = parameters.N;
 
+    // Compute the light vector.
     vec3 L = light.position.xyz;
     float lightDistance = 0.0;
     if(light.position.w != 0.0)
@@ -220,8 +221,25 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
         L = normalize(L);
     }
 
-    // Compute the ambient contribution.
     vec4 lightContribution = vec4(0.0);
+
+    // Compute the spot light effect.
+    float spotEffect = 1.0;
+    if(light.spotCosCutoff > -0.5)
+    {
+        float spotCos = dot(L, light.spotDirection);
+        if(spotCos < light.spotCosCutoff)
+            return lightContribution;
+
+        spotEffect = pow(spotEffect, light.spotExponent);
+    }
+
+    // Compute the full attenuation factor.
+    float attenuation = spotEffect*computeLightAttenuation(light, lightDistance);
+    if(attenuation <= 0.0)
+        return lightContribution;
+
+    // Compute the ambient contribution.
 #ifndef PBR_METALLIC_ROUGHNESS
     lightContribution = MaterialState.ambient*light.ambientColor;
 #endif
@@ -230,22 +248,9 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
     float NdotL = max(dot(N, L), 0.0);
     if(NdotL > 0.0)
     {
-        // Compute the spot light effect.
-        float spotEffect = 1.0;
-        if(light.spotCosCutoff > -0.5)
-        {
-            float spotCos = dot(L, light.spotDirection);
-            if(spotCos < light.spotCosCutoff)
-                spotEffect = 0.0;
-            else
-                spotEffect = pow(spotEffect, light.spotExponent);
-        }
-
         // Only apply the lighting computation if inside of the spot light.
         if(spotEffect > 0.0)
         {
-            float attenuation = spotEffect*computeLightAttenuation(light, lightDistance);
-
             // Compute the specular contribution.
             vec3 H = normalize(L + V);
             float NdotH = max(dot(N, H), 0.0);
@@ -257,15 +262,15 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
             float D = ggxSpecularDistribution(parameters.alpha, NdotH);
             float G = cookTorranceSmithSchlickGGXMasking(parameters.k, NdotL, parameters.NdotV);
 
-            lightContribution = vec4(light.intensity.rgb * (parameters.diffuse.rgb + F*D*G) * (attenuation*NdotL*PI), 1.0);
+            lightContribution += vec4(light.intensity.rgb * (parameters.diffuse.rgb + F*D*G) * (NdotL*PI), 1.0);
 #else
             float D = NdotH > 0.0 ? pow(NdotH, MaterialState.shininess) : 0.0;
-            lightContribution += (attenuation*NdotL)*(parameters.diffuse * light.diffuseColor + D*parameters.specular * light.specularColor);
+            lightContribution += NdotL*(parameters.diffuse * light.diffuseColor + D*parameters.specular * light.specularColor);
 #endif
         }
     }
 
-    return lightContribution;
+    return lightContribution*attenuation;
 }
 
 vec4 computeLightingWith(in LightingParameters parameters)

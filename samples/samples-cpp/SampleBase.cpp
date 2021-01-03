@@ -538,7 +538,7 @@ agpu_renderpass_ref SampleBase::createMainPass(const glm::vec4 &clearColor)
 {
     // Color attachment
     agpu_renderpass_color_attachment_description colorAttachment = {};
-    colorAttachment.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+    colorAttachment.format = ColorBufferFormat;
     colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
     colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
     colorAttachment.clear_value.r = clearColor.r;

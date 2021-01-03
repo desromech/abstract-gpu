@@ -484,7 +484,7 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
 
 		// Textures (Set 6).
-        builder->beginBindingBank(1000);
+        builder->beginBindingBank(10000);
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
 
         immediateShaderSignature = agpu::shader_signature_ref(builder->build());
