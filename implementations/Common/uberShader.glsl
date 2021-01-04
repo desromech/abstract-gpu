@@ -276,6 +276,7 @@ vec4 computeLightingWith(in LightingParameters parameters)
 {
 #ifdef PBR_METALLIC_ROUGHNESS
     vec3 dielecticF0 = vec3(0.04);
+    vec4 emissionColor = parameters.baseColor;
     parameters.occlusion *= MaterialState.occlusionFactor;
     parameters.baseColor *= MaterialState.baseColor;
     parameters.Cdiffuse = vec4(mix(parameters.baseColor.rgb * (1.0 - dielecticF0), vec3(0.0), MaterialState.metallicFactor), parameters.baseColor.a);
@@ -291,7 +292,7 @@ vec4 computeLightingWith(in LightingParameters parameters)
     parameters.NdotV = clamp(dot(parameters.N, parameters.V), 0.0, 1.0);
     parameters.ambientColor = parameters.baseColor * parameters.occlusion;
 
-    vec4 color = MaterialState.emission;
+    vec4 color = MaterialState.emission*emissionColor;
 #else
     parameters.ambientColor = MaterialState.ambient * parameters.baseColor;
     parameters.diffuse = MaterialState.diffuse*parameters.baseColor;

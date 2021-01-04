@@ -129,16 +129,24 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
 
     // Compute the initial clear value.
     D3D12_CLEAR_VALUE clearValueData = {};
+    auto& descriptionClearValue = description->clear_value;
 	clearValueData.Format = (DXGI_FORMAT)defaultTypedFormatForTypeless(description->format, isDepthStencil);
     auto clearValuePointer = &clearValueData;
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
     {
-        clearValueData.DepthStencil.Depth = 1;
-        clearValueData.DepthStencil.Stencil = 0;
+        clearValueData.DepthStencil.Depth = descriptionClearValue.depth_stencil.depth;
+        clearValueData.DepthStencil.Stencil = descriptionClearValue.depth_stencil.stencil;
     }
     else if((usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT) == 0)
     {
         clearValuePointer = nullptr;
+    }
+    else
+    {
+        clearValueData.Color[0] = descriptionClearValue.color.r;
+        clearValueData.Color[1] = descriptionClearValue.color.g;
+        clearValueData.Color[2] = descriptionClearValue.color.b;
+        clearValueData.Color[3] = descriptionClearValue.color.a;
     }
 
     auto initialState = mapTextureUsageToResourceState(description->heap_type, description->main_usage_mode);
