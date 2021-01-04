@@ -106,6 +106,8 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
     depthStencilDesc.miplevels = 1;
     depthStencilDesc.sample_count = 1;
+    depthStencilDesc.clear_value.depth_stencil.depth = 1.0f;
+    depthStencilDesc.clear_value.depth_stencil.stencil = 0;
     bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
     bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
     if (hasDepth)

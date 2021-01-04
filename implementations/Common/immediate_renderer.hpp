@@ -17,6 +17,7 @@ struct ImmediateShaderCompilationParameters
     ImmediateShaderCompilationParameters()
         : flatShading(false),
         texturingEnabled(false),
+        tangentSpaceEnabled(false),
         skinningEnabled(false),
         lightingEnabled(false),
         lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX)
@@ -29,6 +30,7 @@ struct ImmediateShaderCompilationParameters
 
     bool flatShading;
     bool texturingEnabled;
+    bool tangentSpaceEnabled;
     bool skinningEnabled;
     bool lightingEnabled;
     agpu_immediate_renderer_lighting_model lightingModel;
@@ -93,6 +95,7 @@ struct ImmediateRenderingState
           lightingEnabled(false),
           lightingModel(AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX),
           texturingEnabled(false),
+          tangentSpaceEnabled(false),
           skinningEnabled(false) {}
 
     agpu_primitive_topology activePrimitiveTopology;
@@ -100,6 +103,7 @@ struct ImmediateRenderingState
     bool lightingEnabled;
     agpu_immediate_renderer_lighting_model lightingModel;
     bool texturingEnabled;
+    bool tangentSpaceEnabled;
     bool skinningEnabled;
 
     agpu::shader_resource_binding_ref lightingStateBinding;
@@ -167,12 +171,12 @@ struct SkinningState
 
 static_assert(sizeof(SkinningState) % 256 == 0, "SkinningState requires an aligned size of 256 bytes");
 
-struct LightState
+struct ClassicLightState
 {
-    LightState();
+    ClassicLightState();
 
     size_t hash() const;
-    bool operator==(const LightState &other) const;
+    bool operator==(const ClassicLightState &other) const;
 
     Vector4F ambientColor;
     Vector4F diffuseColor;
@@ -186,6 +190,42 @@ struct LightState
     float constantAttenuation;
     float linearAttenuation;
     float quadraticAttenuation;
+};
+static_assert(sizeof(ClassicLightState) == 96, "For manual alignment");
+
+struct PBRLightState
+{
+    PBRLightState();
+
+    size_t hash() const;
+    bool operator==(const PBRLightState &other) const;
+
+    Vector4F ambient;
+    Vector4F intensity;
+
+    Vector4F position;
+    Vector3F spotDirection;
+    float spotCosCutoff;
+
+    float spotExponent;
+    float spotInnerCosCutoff;
+    float radius;
+    float padding[5];
+};
+static_assert(sizeof(PBRLightState) == sizeof(ClassicLightState), "For manual alignment");
+
+struct LightState
+{
+    LightState();
+
+    size_t hash() const;
+    bool operator==(const LightState &other) const;
+
+    union
+    {
+        ClassicLightState classic;
+        PBRLightState pbr;
+    };
 };
 
 static_assert(sizeof(LightState) == 96, "For manual alignment");
@@ -210,6 +250,47 @@ struct LightingState
 
 static_assert(sizeof(LightingState) % 256 == 0, "LightingState requires an aligned size of 256 bytes");
 
+enum MaterialStateType : uint32_t
+{
+    Classic = 0,
+    MetallicRoughness
+};
+
+struct ClassicMaterialState
+{
+    static ClassicMaterialState defaultMaterial();
+
+    size_t hash() const;
+    bool operator==(const ClassicMaterialState &other) const;
+    bool operator!=(const ClassicMaterialState &other) const;
+
+    MaterialStateType type;
+    float shininess;
+    uint32_t padding[2];
+
+    Vector4F emission;
+    Vector4F ambient;
+    Vector4F diffuse;
+    Vector4F specular;
+};
+
+struct MetallicRoughnessMaterialState
+{
+    static MetallicRoughnessMaterialState defaultMaterial();
+
+    size_t hash() const;
+    bool operator==(const MetallicRoughnessMaterialState &other) const;
+    bool operator!=(const MetallicRoughnessMaterialState &other) const;
+
+    MaterialStateType type;
+    float roughnessFactor;
+    float metallicFactor;
+    float occlusionFactor;
+
+    Vector4F emission;
+    Vector4F baseColor;
+};
+
 struct MaterialState
 {
     MaterialState();
@@ -218,13 +299,13 @@ struct MaterialState
     bool operator==(const MaterialState &other) const;
     bool operator!=(const MaterialState &other) const;
 
-    Vector4F emission;
-    Vector4F ambient;
-    Vector4F diffuse;
-    Vector4F specular;
+    union
+    {
+        MaterialStateType type;
 
-    float shininess;
-    uint32_t padding[3];
+        ClassicMaterialState classic;
+        MetallicRoughnessMaterialState metallicRoughness;
+    };
 
     uint8_t extraPadding[176];
 };
@@ -528,7 +609,9 @@ public:
     virtual agpu_error setSkinningEnabled(agpu_bool enabled) override;
 	virtual agpu_error setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose) override;
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
+	virtual agpu_error setTangentSpaceEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
+	virtual agpu_error bindTextureIn(const agpu::texture_ref & texture, agpu_immediate_renderer_texture_binding binding) override;
     virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) override;
     virtual agpu_error setFogMode(agpu_immediate_renderer_fog_mode mode) override;
 	virtual agpu_error setFogColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a) override;
@@ -583,6 +666,11 @@ private:
             return AGPU_INVALID_OPERATION;
         pendingRenderingCommands.push_back(f);
         return AGPU_OK;
+    }
+
+    bool hasMetallicRoughnessLighting() const
+    {
+        return currentRenderingState.lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS;
     }
 
     // Common state

@@ -1714,8 +1714,18 @@ AGPUCBindings >> setTexturingEnabled_immediate_renderer: immediate_renderer enab
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setTangentSpaceEnabled_immediate_renderer: immediate_renderer enabled: enabled [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererSetTangentSpaceEnabled (agpu_immediate_renderer* immediate_renderer , agpu_bool enabled) )
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> bindTexture_immediate_renderer: immediate_renderer texture: texture [
 	^ self ffiCall: #(agpu_error agpuImmediateRendererBindTexture (agpu_immediate_renderer* immediate_renderer , agpu_texture* texture) )
+]
+
+{ #category : #'immediate_renderer' }
+AGPUCBindings >> bindTextureIn_immediate_renderer: immediate_renderer texture: texture binding: binding [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererBindTextureIn (agpu_immediate_renderer* immediate_renderer , agpu_texture* texture , agpu_immediate_renderer_texture_binding binding) )
 ]
 
 { #category : #'immediate_renderer' }

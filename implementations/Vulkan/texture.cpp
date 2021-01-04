@@ -181,49 +181,53 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     if(error)
         return agpu::texture_ref();
 
-    VkImageSubresourceRange wholeImageSubresource;
-    memset(&wholeImageSubresource, 0, sizeof(wholeImageSubresource));
+    VkImageSubresourceRange wholeImageSubresource = {};
     wholeImageSubresource.layerCount = createInfo.arrayLayers;
     wholeImageSubresource.levelCount = description->miplevels;
     wholeImageSubresource.aspectMask = imageAspect;
 
     bool success = false;
+    auto& descriptionClearValue = description->clear_value;
+    VkClearColorValue colorClearValue = {};
+    colorClearValue.float32[0] = descriptionClearValue.color.r;
+    colorClearValue.float32[1] = descriptionClearValue.color.g;
+    colorClearValue.float32[2] = descriptionClearValue.color.b;
+    colorClearValue.float32[3] = descriptionClearValue.color.a;
+
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
     {
-        VkClearDepthStencilValue clearValue;
-        clearValue.depth = 1.0;
-        clearValue.stencil = 0;
+        VkClearDepthStencilValue depthStencilClearValue = {};
+        depthStencilClearValue.depth = descriptionClearValue.depth_stencil.depth;
+        depthStencilClearValue.stencil = descriptionClearValue.depth_stencil.stencil;
         deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
             success =
                 setupList.setupCommandBuffer() &&
                 setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_NONE, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
-                setupList.clearImageWithDepthStencil(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
+                setupList.clearImageWithDepthStencil(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &depthStencilClearValue) &&
                 setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
                 setupList.submitCommandBuffer();
         });
     }
     else if (usageModes == AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
     {
-        VkClearColorValue clearValue = {};
         deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
             success =
                 setupList.setupCommandBuffer() &&
                 setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
-                setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
+                setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &colorClearValue) &&
                 setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
                 setupList.submitCommandBuffer();
         });
     }
     else
     {
-        VkClearColorValue clearValue = {};
         if(!isCompressedTextureFormat(description->format))
         {
             deviceForVk->withSetupCommandListDo([&] (AVkImplicitResourceSetupCommandList &setupList) {
                 success =
                     setupList.setupCommandBuffer() &&
                     setupList.transitionImageUsageMode(image, usageModes, initialUsageMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, wholeImageSubresource) &&
-                    setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &clearValue) &&
+                    setupList.clearImageWithColor(image, wholeImageSubresource, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &colorClearValue) &&
                     setupList.transitionImageUsageMode(image, usageModes, AGPU_TEXTURE_USAGE_COPY_DESTINATION, mainUsageMode, wholeImageSubresource) &&
                     setupList.submitCommandBuffer();
             });

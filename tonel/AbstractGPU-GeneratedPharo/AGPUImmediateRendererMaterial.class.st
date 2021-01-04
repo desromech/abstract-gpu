@@ -4,7 +4,7 @@ Class {
 		'AGPUConstants',
 		'AGPUTypes'
 	],
-	#superclass : #FFIExternalStructure,
+	#superclass : #FFIExternalUnion,
 	#category : 'AbstractGPU-GeneratedPharo'
 }
 
@@ -14,11 +14,8 @@ AGPUImmediateRendererMaterial class >> fieldsDesc [
 	self rebuildFieldAccessors
 	"
     ^ #(
-		 agpu_vector4f emission;
-		 agpu_vector4f ambient;
-		 agpu_vector4f diffuse;
-		 agpu_vector4f specular;
-		 agpu_float shininess;
+		 agpu_immediate_renderer_material_classic classic;
+		 agpu_immediate_renderer_material_metallic_roughness metallic_roughness;
 	)
 ]
 

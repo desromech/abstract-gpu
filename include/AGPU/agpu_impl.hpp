@@ -1007,7 +1007,9 @@ public:
 	virtual agpu_error setSkinningEnabled(agpu_bool enabled) = 0;
 	virtual agpu_error setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose) = 0;
 	virtual agpu_error setTexturingEnabled(agpu_bool enabled) = 0;
+	virtual agpu_error setTangentSpaceEnabled(agpu_bool enabled) = 0;
 	virtual agpu_error bindTexture(const texture_ref & texture) = 0;
+	virtual agpu_error bindTextureIn(const texture_ref & texture, agpu_immediate_renderer_texture_binding binding) = 0;
 	virtual agpu_error setClipPlane(agpu_uint index, agpu_bool enabled, agpu_float p1, agpu_float p2, agpu_float p3, agpu_float p4) = 0;
 	virtual agpu_error setFogMode(agpu_immediate_renderer_fog_mode mode) = 0;
 	virtual agpu_error setFogColor(agpu_float r, agpu_float g, agpu_float b, agpu_float a) = 0;

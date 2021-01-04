@@ -16,7 +16,7 @@ std::string readWholeFile(const std::string &fileName);
 class AbstractSampleBase
 {
 public:
-    static const agpu_texture_format ColorBufferFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+    static const agpu_texture_format ColorBufferFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
     static const agpu_texture_format DepthStencilBufferFormat = AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT;
 
     agpu_shader_ref compileShaderFromFile(const char *fileName, agpu_shader_type type);

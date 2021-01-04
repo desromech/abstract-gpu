@@ -3,6 +3,17 @@
 
 namespace AgpuVulkan
 {
+inline agpu_uint mapMaxBindingsToBindingPoolBlockSize(agpu_uint maxBindings)
+{
+    if (maxBindings <= 64u)
+        return maxBindings;
+    if (maxBindings <= 256u)
+        return 256u;
+    if (maxBindings <= 4096u)
+        return 4096u;
+
+    return 1u<<16;
+}
 
 inline VkDescriptorType mapDescriptorType(agpu_shader_binding_type type)
 {
@@ -121,7 +132,7 @@ agpu_error AVkShaderSignatureBuilder::beginBindingBank ( agpu_uint maxBindings )
     if(error != AGPU_OK)
         return error;
 
-    elementDescription.push_back(ShaderSignatureElementDescription(true, maxBindings));
+    elementDescription.push_back(ShaderSignatureElementDescription(true, mapMaxBindingsToBindingPoolBlockSize(maxBindings)));
     currentElementSet = &elementDescription.back();
     return AGPU_OK;
 }

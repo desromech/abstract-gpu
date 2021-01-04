@@ -16,19 +16,21 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUDeviceOpenInfo defineFields.
 	AGPUSwapChainCreateInfo defineFields.
 	AGPUBufferDescription defineFields.
+	AGPUColor4f defineFields.
+	AGPUDepthStencilValue defineFields.
+	AGPUTextureClearValue defineFields.
 	AGPUTextureDescription defineFields.
 	AGPUComponentsSwizzle defineFields.
 	AGPUSubresourceRange defineFields.
 	AGPUTextureViewDescription defineFields.
 	AGPUDrawElementsCommand defineFields.
 	AGPUVertexAttribDescription defineFields.
-	AGPUColor4f defineFields.
-	AGPUDepthStencilValue defineFields.
 	AGPUSamplerDescription defineFields.
 	AGPURenderpassColorAttachmentDescription defineFields.
 	AGPURenderpassDepthStencilDescription defineFields.
 	AGPURenderpassDescription defineFields.
 	AGPUInheritanceInfo defineFields.
+	AGPUVector2f defineFields.
 	AGPUVector3f defineFields.
 	AGPUVector4f defineFields.
 	AGPUQuaternionf defineFields.
@@ -45,7 +47,11 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrDualAnalogEvent defineFields.
 	AGPUVrEventData defineFields.
 	AGPUVrEvent defineFields.
+	AGPUImmediateRendererLightClassic defineFields.
+	AGPUImmediateRendererLightPbr defineFields.
 	AGPUImmediateRendererLight defineFields.
+	AGPUImmediateRendererMaterialClassic defineFields.
+	AGPUImmediateRendererMaterialMetallicRoughness defineFields.
 	AGPUImmediateRendererMaterial defineFields.
 ]
 

@@ -76,6 +76,9 @@ struct Vector4F
     explicit Vector4F(const agpu_vector4f &v)
         : x(v.x), y(v.y), z(v.z), w(v.w){}
 
+    explicit Vector4F(const agpu_vector3f &v, float cw)
+        : x(v.x), y(v.y), z(v.z), w(cw){}
+
     Vector4F(float cx = 0.0f, float cy = 0.0f, float cz = 0.0f, float cw=0.0f)
         : x(cx), y(cy), z(cz), w(cw) {}
 
@@ -285,7 +288,7 @@ i
     {
         return c1.hash() ^ c2.hash() ^ c3.hash() ^ c4.hash();
     }
-    
+
     bool operator==(const Matrix4F &o) const
     {
         return c1 == o.c1 && c2 == o.c2 && c3 == o.c3 && c4 == o.c4;
