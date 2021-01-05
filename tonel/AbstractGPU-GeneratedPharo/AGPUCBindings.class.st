@@ -314,6 +314,11 @@ AGPUCBindings >> getCurrentBackBuffer_swap_chain: swap_chain [
 ]
 
 { #category : #'swap_chain' }
+AGPUCBindings >> getCurrentBackBufferForLayer_swap_chain: swap_chain layer: layer [
+	^ self ffiCall: #(agpu_framebuffer* agpuGetCurrentBackBufferForLayer (agpu_swap_chain* swap_chain , agpu_uint layer) )
+]
+
+{ #category : #'swap_chain' }
 AGPUCBindings >> getCurrentBackBufferIndex_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_size agpuGetCurrentBackBufferIndex (agpu_swap_chain* swap_chain) )
 ]
@@ -321,6 +326,21 @@ AGPUCBindings >> getCurrentBackBufferIndex_swap_chain: swap_chain [
 { #category : #'swap_chain' }
 AGPUCBindings >> getFramebufferCount_swap_chain: swap_chain [
 	^ self ffiCall: #(agpu_size agpuGetFramebufferCount (agpu_swap_chain* swap_chain) )
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> getWidth_swap_chain: swap_chain [
+	^ self ffiCall: #(agpu_uint agpuGetSwapChainWidth (agpu_swap_chain* swap_chain) )
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> getHeight_swap_chain: swap_chain [
+	^ self ffiCall: #(agpu_uint agpuGetSwapChainHeight (agpu_swap_chain* swap_chain) )
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> getLayerCount_swap_chain: swap_chain [
+	^ self ffiCall: #(agpu_uint agpuGetSwapChainLayerCount (agpu_swap_chain* swap_chain) )
 ]
 
 { #category : #'swap_chain' }
@@ -946,6 +966,16 @@ AGPUCBindings >> addReference_framebuffer: framebuffer [
 { #category : #'framebuffer' }
 AGPUCBindings >> release_framebuffer: framebuffer [
 	^ self ffiCall: #(agpu_error agpuReleaseFramebuffer (agpu_framebuffer* framebuffer) )
+]
+
+{ #category : #'framebuffer' }
+AGPUCBindings >> getWidth_framebuffer: framebuffer [
+	^ self ffiCall: #(agpu_uint agpuGetFramebufferWidth (agpu_framebuffer* framebuffer) )
+]
+
+{ #category : #'framebuffer' }
+AGPUCBindings >> getHeight_framebuffer: framebuffer [
+	^ self ffiCall: #(agpu_uint agpuGetFramebufferHeight (agpu_framebuffer* framebuffer) )
 ]
 
 { #category : #'renderpass' }

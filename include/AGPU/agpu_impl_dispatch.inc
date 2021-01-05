@@ -346,6 +346,11 @@ AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer(agpu_swap_chain* self)
 	return reinterpret_cast<agpu_framebuffer*> (asRef(agpu::swap_chain, self)->getCurrentBackBuffer());
 }
 
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBufferForLayer(agpu_swap_chain* self, agpu_uint layer)
+{
+	return reinterpret_cast<agpu_framebuffer*> (asRef(agpu::swap_chain, self)->getCurrentBackBufferForLayer(layer));
+}
+
 AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex(agpu_swap_chain* self)
 {
 	return asRef(agpu::swap_chain, self)->getCurrentBackBufferIndex();
@@ -354,6 +359,21 @@ AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex(agpu_swap_chain* self)
 AGPU_EXPORT agpu_size agpuGetFramebufferCount(agpu_swap_chain* self)
 {
 	return asRef(agpu::swap_chain, self)->getFramebufferCount();
+}
+
+AGPU_EXPORT agpu_uint agpuGetSwapChainWidth(agpu_swap_chain* self)
+{
+	return asRef(agpu::swap_chain, self)->getWidth();
+}
+
+AGPU_EXPORT agpu_uint agpuGetSwapChainHeight(agpu_swap_chain* self)
+{
+	return asRef(agpu::swap_chain, self)->getHeight();
+}
+
+AGPU_EXPORT agpu_uint agpuGetSwapChainLayerCount(agpu_swap_chain* self)
+{
+	return asRef(agpu::swap_chain, self)->getLayerCount();
 }
 
 AGPU_EXPORT agpu_error agpuSetSwapChainOverlayPosition(agpu_swap_chain* self, agpu_int x, agpu_int y)
@@ -1150,6 +1170,16 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer(agpu_framebuffer* self)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRefCounter(agpu::framebuffer, self)->release();
+}
+
+AGPU_EXPORT agpu_uint agpuGetFramebufferWidth(agpu_framebuffer* self)
+{
+	return asRef(agpu::framebuffer, self)->getWidth();
+}
+
+AGPU_EXPORT agpu_uint agpuGetFramebufferHeight(agpu_framebuffer* self)
+{
+	return asRef(agpu::framebuffer, self)->getHeight();
 }
 
 //==============================================================================

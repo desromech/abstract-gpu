@@ -18,3 +18,17 @@ AGPUFramebuffer >> primitiveRelease [
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUFramebuffer >> getWidth [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getWidth_framebuffer: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUFramebuffer >> getHeight [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getHeight_framebuffer: (self validHandle).
+	^ resultValue_
+]
+

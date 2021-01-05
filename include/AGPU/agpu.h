@@ -689,6 +689,7 @@ typedef struct agpu_swap_chain_create_info {
 	agpu_texture_format depth_stencil_format;
 	agpu_uint width;
 	agpu_uint height;
+	agpu_uint layers;
 	agpu_uint buffer_count;
 	agpu_bool sample_buffers;
 	agpu_int samples;
@@ -1171,16 +1172,24 @@ typedef agpu_error (*agpuAddSwapChainReference_FUN) (agpu_swap_chain* swap_chain
 typedef agpu_error (*agpuReleaseSwapChain_FUN) (agpu_swap_chain* swap_chain);
 typedef agpu_error (*agpuSwapBuffers_FUN) (agpu_swap_chain* swap_chain);
 typedef agpu_framebuffer* (*agpuGetCurrentBackBuffer_FUN) (agpu_swap_chain* swap_chain);
+typedef agpu_framebuffer* (*agpuGetCurrentBackBufferForLayer_FUN) (agpu_swap_chain* swap_chain, agpu_uint layer);
 typedef agpu_size (*agpuGetCurrentBackBufferIndex_FUN) (agpu_swap_chain* swap_chain);
 typedef agpu_size (*agpuGetFramebufferCount_FUN) (agpu_swap_chain* swap_chain);
+typedef agpu_uint (*agpuGetSwapChainWidth_FUN) (agpu_swap_chain* swap_chain);
+typedef agpu_uint (*agpuGetSwapChainHeight_FUN) (agpu_swap_chain* swap_chain);
+typedef agpu_uint (*agpuGetSwapChainLayerCount_FUN) (agpu_swap_chain* swap_chain);
 typedef agpu_error (*agpuSetSwapChainOverlayPosition_FUN) (agpu_swap_chain* swap_chain, agpu_int x, agpu_int y);
 
 AGPU_EXPORT agpu_error agpuAddSwapChainReference(agpu_swap_chain* swap_chain);
 AGPU_EXPORT agpu_error agpuReleaseSwapChain(agpu_swap_chain* swap_chain);
 AGPU_EXPORT agpu_error agpuSwapBuffers(agpu_swap_chain* swap_chain);
 AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer(agpu_swap_chain* swap_chain);
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBufferForLayer(agpu_swap_chain* swap_chain, agpu_uint layer);
 AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex(agpu_swap_chain* swap_chain);
 AGPU_EXPORT agpu_size agpuGetFramebufferCount(agpu_swap_chain* swap_chain);
+AGPU_EXPORT agpu_uint agpuGetSwapChainWidth(agpu_swap_chain* swap_chain);
+AGPU_EXPORT agpu_uint agpuGetSwapChainHeight(agpu_swap_chain* swap_chain);
+AGPU_EXPORT agpu_uint agpuGetSwapChainLayerCount(agpu_swap_chain* swap_chain);
 AGPU_EXPORT agpu_error agpuSetSwapChainOverlayPosition(agpu_swap_chain* swap_chain, agpu_int x, agpu_int y);
 
 /* Methods for interface agpu_compute_pipeline_builder. */
@@ -1469,9 +1478,13 @@ AGPU_EXPORT agpu_error agpuGetShaderCompilationLog(agpu_shader* shader, agpu_siz
 /* Methods for interface agpu_framebuffer. */
 typedef agpu_error (*agpuAddFramebufferReference_FUN) (agpu_framebuffer* framebuffer);
 typedef agpu_error (*agpuReleaseFramebuffer_FUN) (agpu_framebuffer* framebuffer);
+typedef agpu_uint (*agpuGetFramebufferWidth_FUN) (agpu_framebuffer* framebuffer);
+typedef agpu_uint (*agpuGetFramebufferHeight_FUN) (agpu_framebuffer* framebuffer);
 
 AGPU_EXPORT agpu_error agpuAddFramebufferReference(agpu_framebuffer* framebuffer);
 AGPU_EXPORT agpu_error agpuReleaseFramebuffer(agpu_framebuffer* framebuffer);
+AGPU_EXPORT agpu_uint agpuGetFramebufferWidth(agpu_framebuffer* framebuffer);
+AGPU_EXPORT agpu_uint agpuGetFramebufferHeight(agpu_framebuffer* framebuffer);
 
 /* Methods for interface agpu_renderpass. */
 typedef agpu_error (*agpuAddRenderPassReference_FUN) (agpu_renderpass* renderpass);
@@ -1923,8 +1936,12 @@ typedef struct _agpu_icd_dispatch {
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;
 	agpuGetCurrentBackBuffer_FUN agpuGetCurrentBackBuffer;
+	agpuGetCurrentBackBufferForLayer_FUN agpuGetCurrentBackBufferForLayer;
 	agpuGetCurrentBackBufferIndex_FUN agpuGetCurrentBackBufferIndex;
 	agpuGetFramebufferCount_FUN agpuGetFramebufferCount;
+	agpuGetSwapChainWidth_FUN agpuGetSwapChainWidth;
+	agpuGetSwapChainHeight_FUN agpuGetSwapChainHeight;
+	agpuGetSwapChainLayerCount_FUN agpuGetSwapChainLayerCount;
 	agpuSetSwapChainOverlayPosition_FUN agpuSetSwapChainOverlayPosition;
 	agpuAddComputePipelineBuilderReference_FUN agpuAddComputePipelineBuilderReference;
 	agpuReleaseComputePipelineBuilder_FUN agpuReleaseComputePipelineBuilder;
@@ -2050,6 +2067,8 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetShaderCompilationLog_FUN agpuGetShaderCompilationLog;
 	agpuAddFramebufferReference_FUN agpuAddFramebufferReference;
 	agpuReleaseFramebuffer_FUN agpuReleaseFramebuffer;
+	agpuGetFramebufferWidth_FUN agpuGetFramebufferWidth;
+	agpuGetFramebufferHeight_FUN agpuGetFramebufferHeight;
 	agpuAddRenderPassReference_FUN agpuAddRenderPassReference;
 	agpuReleaseRenderPass_FUN agpuReleaseRenderPass;
 	agpuSetDepthStencilClearValue_FUN agpuSetDepthStencilClearValue;

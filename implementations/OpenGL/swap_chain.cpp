@@ -134,6 +134,13 @@ agpu_error GLSwapChain::swapBuffers()
 
 agpu::framebuffer_ptr GLSwapChain::getCurrentBackBuffer ()
 {
+    return getCurrentBackBufferForLayer(0);
+}
+
+agpu::framebuffer_ptr GLSwapChain::getCurrentBackBufferForLayer (agpu_uint layer)
+{
+    if(layer != 0)
+        return nullptr;
     return framebuffers[backBufferIndex].disownedNewRef();
 }
 
@@ -150,6 +157,21 @@ agpu_size GLSwapChain::getFramebufferCount ()
 agpu_error GLSwapChain::setOverlayPosition(agpu_int x, agpu_int y)
 {
     return AGPU_OK;
+}
+
+agpu_size GLSwapChain::getWidth()
+{
+    return width;
+}
+
+agpu_size GLSwapChain::getHeight()
+{
+    return height;
+}
+
+agpu_size GLSwapChain::getLayerCount()
+{
+    return 1;
 }
 
 } // End of namespace AgpuGL

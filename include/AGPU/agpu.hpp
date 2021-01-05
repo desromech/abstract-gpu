@@ -462,6 +462,11 @@ public:
 		return agpuGetCurrentBackBuffer(this);
 	}
 
+	inline agpu_ref<agpu_framebuffer> getCurrentBackBufferForLayer(agpu_uint layer)
+	{
+		return agpuGetCurrentBackBufferForLayer(this, layer);
+	}
+
 	inline agpu_size getCurrentBackBufferIndex()
 	{
 		return agpuGetCurrentBackBufferIndex(this);
@@ -470,6 +475,21 @@ public:
 	inline agpu_size getFramebufferCount()
 	{
 		return agpuGetFramebufferCount(this);
+	}
+
+	inline agpu_uint getWidth()
+	{
+		return agpuGetSwapChainWidth(this);
+	}
+
+	inline agpu_uint getHeight()
+	{
+		return agpuGetSwapChainHeight(this);
+	}
+
+	inline agpu_uint getLayerCount()
+	{
+		return agpuGetSwapChainLayerCount(this);
 	}
 
 	inline void setOverlayPosition(agpu_int x, agpu_int y)
@@ -1249,6 +1269,16 @@ public:
 	inline void release()
 	{
 		agpuThrowIfFailed(agpuReleaseFramebuffer(this));
+	}
+
+	inline agpu_uint getWidth()
+	{
+		return agpuGetFramebufferWidth(this);
+	}
+
+	inline agpu_uint getHeight()
+	{
+		return agpuGetFramebufferHeight(this);
 	}
 
 };
