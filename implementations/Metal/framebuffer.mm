@@ -21,7 +21,7 @@ agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, ag
         return agpu::framebuffer_ref();;
 
     // Check the presence of the color buffers.
-    for(int i = 0; i < colorCount; ++i)
+    for(agpu_uint i = 0; i < colorCount; ++i)
     {
         if(!colorViews[0])
             return agpu::framebuffer_ref();
@@ -34,7 +34,7 @@ agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, ag
     // Add the color buffer references.
     framebuffer->colorBuffers.resize(colorCount);
     framebuffer->colorBufferViews.resize(colorCount);
-    for(int i = 0; i < colorCount; ++i)
+    for(agpu_uint i = 0; i < colorCount; ++i)
     {
         auto &view = colorViews[i];
 
@@ -96,6 +96,16 @@ id<MTLTexture> AMtlFramebuffer::getColorTexture(agpu_uint index)
     if(ownedBySwapChain)
         return drawableTexture;
     return colorBuffers[index].as<AMtlTexture> ()->handle;
+}
+
+agpu_uint AMtlFramebuffer::getWidth()
+{
+    return width;
+}
+
+agpu_uint AMtlFramebuffer::getHeight()
+{
+    return height;
 }
 
 } // End of namespace AgpuMetal
