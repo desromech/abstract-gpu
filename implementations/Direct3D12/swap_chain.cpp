@@ -162,7 +162,14 @@ agpu_error ADXSwapChain::swapBuffers()
 
 agpu::framebuffer_ptr ADXSwapChain::getCurrentBackBuffer()
 {
-	return framebuffers[frameIndex].disownedNewRef();
+	return getCurrentBackBufferForLayer(0);
+}
+
+agpu::framebuffer_ptr ADXSwapChain::getCurrentBackBufferForLayer(agpu_uint layer)
+{
+    if (layer != 0)
+        return nullptr;
+    return framebuffers[frameIndex].disownedNewRef();
 }
 
 agpu_size ADXSwapChain::getCurrentBackBufferIndex()
@@ -173,6 +180,21 @@ agpu_size ADXSwapChain::getCurrentBackBufferIndex()
 agpu_size ADXSwapChain::getFramebufferCount()
 {
     return (agpu_size)framebuffers.size();
+}
+
+agpu_uint ADXSwapChain::getWidth()
+{
+    return windowWidth;
+}
+
+agpu_uint ADXSwapChain::getHeight()
+{
+    return windowHeight;
+}
+
+agpu_uint ADXSwapChain::getLayerCount()
+{
+    return 1;
 }
 
 agpu_error ADXSwapChain::setOverlayPosition(agpu_int x, agpu_int y)

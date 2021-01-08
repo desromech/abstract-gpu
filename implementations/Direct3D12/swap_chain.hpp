@@ -18,8 +18,12 @@ public:
 
     virtual agpu_error swapBuffers() override;
     virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+    virtual agpu::framebuffer_ptr getCurrentBackBufferForLayer(agpu_uint layer) override;
     virtual agpu_size getCurrentBackBufferIndex() override;
     virtual agpu_size getFramebufferCount() override;
+    virtual agpu_uint getWidth() override;
+    virtual agpu_uint getHeight() override;
+    virtual agpu_uint getLayerCount() override;
 
     virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) override;
 
