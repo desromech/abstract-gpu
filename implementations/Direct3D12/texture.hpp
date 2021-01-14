@@ -32,6 +32,7 @@ public:
 public:
     UINT subresourceIndexFor(agpu_uint level, agpu_uint arrayIndex);
     bool isArray();
+    void releaseTextureHandle();
 
     agpu::device_ref device;
     agpu_texture_description description;

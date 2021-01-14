@@ -327,6 +327,9 @@ int SampleBase::main(int argc, const char **argv)
     currentSwapChainCreateInfo.width = screenWidth;
     currentSwapChainCreateInfo.height = screenHeight;
     currentSwapChainCreateInfo.buffer_count = 3;
+    if (UseOverlayWindow)
+        currentSwapChainCreateInfo.flags = AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW;
+
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debug_layer= true;

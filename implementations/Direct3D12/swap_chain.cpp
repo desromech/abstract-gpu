@@ -7,6 +7,15 @@
 namespace AgpuD3D12
 {
 
+inline DXGI_FORMAT sanitizeSwapChainFormat(DXGI_FORMAT format)
+{
+    switch (format)
+    {
+    case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return DXGI_FORMAT_R8G8B8A8_UNORM;
+    case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: return DXGI_FORMAT_B8G8R8A8_UNORM;
+    default: return format;
+    }
+}
 ADXSwapChain::ADXSwapChain(const agpu::device_ref &cdevice)
     : device(cdevice), window(NULL), frameIndex(0), frameCount(0), windowWidth(0), windowHeight(0)
 {
@@ -16,7 +25,15 @@ ADXSwapChain::~ADXSwapChain()
 {
 }
 
-agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const agpu::command_queue_ref &queue, agpu_swap_chain_create_info *createInfo)
+agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref& device, const agpu::command_queue_ref& queue, agpu_swap_chain_create_info* createInfo)
+{
+    if (createInfo->old_swap_chain)
+        return createResizedSwapChain(device, queue, createInfo);
+
+    return createNewSwapChain(device, queue, createInfo);
+}
+
+agpu::swap_chain_ref ADXSwapChain::createNewSwapChain(const agpu::device_ref &device, const agpu::command_queue_ref &queue, agpu_swap_chain_create_info *createInfo)
 {
     auto swapChain = agpu::makeObject<ADXSwapChain> (device);
     auto adxSwapChain = swapChain.as<ADXSwapChain> ();
@@ -40,18 +57,12 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     swapChainDesc.BufferCount = (UINT)adxSwapChain->frameCount;
     swapChainDesc.Width = adxSwapChain->windowWidth;
     swapChainDesc.Height = adxSwapChain->windowHeight;
-    swapChainDesc.Format = (DXGI_FORMAT)createInfo->colorbuffer_format;
+    swapChainDesc.Format = sanitizeSwapChainFormat((DXGI_FORMAT)createInfo->colorbuffer_format);
     swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
-
-    // The swap chain creation is failing with a SRGB format, so use the non-srgb variant and compensate on the texture view.
-    if (swapChainDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
-        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    if (swapChainDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)
-        swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
     ComPtr<IDXGIFactory4> factory;
     
@@ -66,20 +77,73 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     fullscreenDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
     fullscreenDesc.Windowed = TRUE;
 
-    ComPtr<IDXGISwapChain1> oldSwapChain;
-    if (FAILED(factory->CreateSwapChainForHwnd(queue.as<ADXCommandQueue>()->queue.Get(), adxSwapChain->window, &swapChainDesc, &fullscreenDesc, nullptr, &oldSwapChain)))
+    ComPtr<IDXGISwapChain1> oldSwapChainInterface;
+    if (FAILED(factory->CreateSwapChainForHwnd(queue.as<ADXCommandQueue>()->queue.Get(), adxSwapChain->window, &swapChainDesc, &fullscreenDesc, nullptr, &oldSwapChainInterface)))
         return agpu::swap_chain_ref();
 #else
     swapChainDesc.Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH;
-    ComPtr<IDXGISwapChain1> oldSwapChain;
-    if (FAILED(factory->CreateSwapChainForCoreWindow(queue.as<ADXCommandQueue>()->queue.Get(), adxSwapChain->window, &swapChainDesc, nullptr, &oldSwapChain)))
+    ComPtr<IDXGISwapChain1> oldSwapChainInterface;
+    if (FAILED(factory->CreateSwapChainForCoreWindow(queue.as<ADXCommandQueue>()->queue.Get(), adxSwapChain->window, &swapChainDesc, nullptr, &oldSwapChainInterface)))
         return agpu::swap_chain_ref();
 #endif
-    if (FAILED(oldSwapChain.As(&adxSwapChain->swapChain)))
+    if (FAILED(oldSwapChainInterface.As(&adxSwapChain->swapChain)))
         return agpu::swap_chain_ref();
 
-    auto &dxSwapChain = adxSwapChain->swapChain;
-    adxSwapChain->frameIndex = dxSwapChain->GetCurrentBackBufferIndex();
+    if(!adxSwapChain->createFrameBuffers(createInfo))
+        return agpu::swap_chain_ref();
+
+    return swapChain;
+}
+
+agpu::swap_chain_ref ADXSwapChain::createResizedSwapChain(const agpu::device_ref& device, const agpu::command_queue_ref& queue, agpu_swap_chain_create_info* createInfo)
+{
+    auto oldSwapChain = agpu::swap_chain_ref::import(createInfo->old_swap_chain);
+    auto oldAdxSwapChain = oldSwapChain.as<ADXSwapChain>();
+    if (!oldAdxSwapChain->swapChain)
+        return agpu::swap_chain_ref();
+
+    auto swapChain = agpu::makeObject<ADXSwapChain>(device);
+    auto adxSwapChain = swapChain.as<ADXSwapChain>();
+
+    adxSwapChain->frameCount = createInfo->buffer_count;
+    adxSwapChain->overlayWindow = oldAdxSwapChain->overlayWindow;
+    adxSwapChain->windowWidth = createInfo->width;
+    adxSwapChain->windowHeight = createInfo->height;
+    adxSwapChain->swapChain = oldAdxSwapChain->swapChain;
+
+    oldAdxSwapChain->disconnect();
+    if (adxSwapChain->overlayWindow)
+    {
+        adxSwapChain->overlayWindow->setSize(adxSwapChain->windowWidth, adxSwapChain->windowHeight);
+    }
+
+    DXGI_FORMAT newFormat = sanitizeSwapChainFormat((DXGI_FORMAT)createInfo->colorbuffer_format);
+    UINT swapChainFlags = 0;
+    if (FAILED(adxSwapChain->swapChain->ResizeBuffers(
+        UINT(adxSwapChain->frameCount), adxSwapChain->windowWidth, adxSwapChain->windowHeight, newFormat, swapChainFlags)))
+        return agpu::swap_chain_ref();
+
+    if (!adxSwapChain->createFrameBuffers(createInfo))
+        return agpu::swap_chain_ref();
+
+    return swapChain;
+}
+
+void ADXSwapChain::disconnect()
+{
+    for (auto& colorBuffer : colorBuffers)
+    {
+        colorBuffer.as<ADXTexture>()->releaseTextureHandle();
+    }
+
+    colorBuffers.clear();
+    framebuffers.clear();
+    swapChain.Reset();
+}
+
+bool ADXSwapChain::createFrameBuffers(agpu_swap_chain_create_info* createInfo)
+{
+    this->frameIndex = swapChain->GetCurrentBackBufferIndex();
 
     // Color buffer description.
     agpu_texture_description colorDesc = {};
@@ -123,34 +187,36 @@ agpu::swap_chain_ref ADXSwapChain::create(const agpu::device_ref &device, const 
     {
         depthStencilBuffer = ADXTexture::create(device, &depthStencilDesc);
         if (!depthStencilBuffer)
-            return agpu::swap_chain_ref();
+            return false;
 
         // Get the depth stencil buffer view description.
         depthStencilView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
     }
 
     // Create the main frame buffers.
-    adxSwapChain->framebuffers.reserve(adxSwapChain->frameCount);
-    for (int i = 0; i < adxSwapChain->frameCount; ++i)
+    this->framebuffers.reserve(frameCount);
+    this->colorBuffers.reserve(frameCount);
+    for (int i = 0; i < this->frameCount; ++i)
     {
         ComPtr<ID3D12Resource> colorBufferResource;
-        if (FAILED(dxSwapChain->GetBuffer(i, IID_PPV_ARGS(&colorBufferResource))))
-            return agpu::swap_chain_ref();
+        if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&colorBufferResource))))
+            return false;
 
         // Create the color buffer.
         auto colorBuffer = ADXTexture::createFromResource(device, &colorDesc, colorBufferResource);
         if (!colorBuffer)
-            return agpu::swap_chain_ref();
+            return false;
 
         // Get the color buffer view description.
         auto colorBufferView = agpu::texture_view_ref(colorBuffer->getOrCreateFullView());
 
-        auto framebuffer = ADXFramebuffer::create(device, adxSwapChain->windowWidth, adxSwapChain->windowHeight, 1, &colorBufferView, depthStencilView);
-        framebuffer.as<ADXFramebuffer> ()->swapChainBuffer = true;
-        adxSwapChain->framebuffers.push_back(framebuffer);
+        auto framebuffer = ADXFramebuffer::create(device, this->windowWidth, this->windowHeight, 1, &colorBufferView, depthStencilView);
+        framebuffer.as<ADXFramebuffer>()->swapChainBuffer = true;
+        this->framebuffers.push_back(framebuffer);
+        this->colorBuffers.push_back(colorBuffer);
     }
 
-    return swapChain;
+    return true;
 }
 
 agpu_error ADXSwapChain::swapBuffers()
