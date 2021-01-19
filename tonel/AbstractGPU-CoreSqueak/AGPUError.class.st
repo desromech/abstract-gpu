@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'errorCode'
 	],
-	#category : #'AbstractGPU-CorePharo'
+	#category : #'AbstractGPU-CoreSqueak'
 }
 
 { #category : #accessing }
