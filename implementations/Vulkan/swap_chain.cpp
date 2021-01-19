@@ -13,6 +13,19 @@ namespace AgpuVulkan
 {
 using namespace AgpuCommon;
 
+inline VkPresentModeKHR mapPresentationMode(agpu_swap_chain_presentation_mode mode)
+{
+    switch(mode)
+    {
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT:
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO_RELAXED:
+    default: return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE: return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX: return VK_PRESENT_MODE_MAILBOX_KHR;
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO: return VK_PRESENT_MODE_FIFO_KHR;
+    }
+}
 AVkSwapChain::AVkSwapChain(const agpu::device_ref &device)
     : device(device)
 {
@@ -289,20 +302,24 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         createInfo->height = swapChainHeight = swapchainExtent.height;
     }
 
+    createInfo->layers = swapChainLayers = std::min(std::max(1u, createInfo->layers), surfaceCapabilities.maxImageArrayLayers);
+
     VkPresentModeKHR swapchainPresentMode = presentModes[0];
+    if(createInfo->presentation_mode == AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT)
+        createInfo->presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX;
+    if(createInfo->fallback_presentation_mode == AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT)
+        createInfo->fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO_RELAXED;
+
+    auto presentationMode = mapPresentationMode(createInfo->presentation_mode);
+    auto fallbackPresentationMode = mapPresentationMode(createInfo->fallback_presentation_mode);
     for (size_t i = 0; i < presentModeCount; i++) {
-        if (presentModes[i] == VK_PRESENT_MODE_FIFO_KHR && swapchainPresentMode != VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
-            swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-        }
-
-        if (presentModes[i] == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
-            swapchainPresentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+        if (presentModes[i] == presentationMode) {
+            swapchainPresentMode = presentationMode;
             break;
         }
 
-        if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-            break;
+        if (presentModes[i] == fallbackPresentationMode) {
+            swapchainPresentMode = fallbackPresentationMode;
         }
     }
 
@@ -358,7 +375,7 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
     colorDesc.width = createInfo->width;
     colorDesc.height = createInfo->height;
     colorDesc.depth = 1;
-    colorDesc.layers = 1;
+    colorDesc.layers = createInfo->layers;
     colorDesc.format = agpuFormat;
     colorDesc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT | AGPU_TEXTURE_USAGE_PRESENT);
     colorDesc.main_usage_mode = AGPU_TEXTURE_USAGE_PRESENT;
@@ -425,7 +442,6 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         bool clearResult = false;
         deviceForVk->withSetupCommandListDo([&](AVkImplicitResourceSetupCommandList &setupList) {
-            //clearResult = setupList.clearImageWithColor(colorImage, range, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VkAccessFlagBits(0), &clearColor);
             clearResult =
                 setupList.setupCommandBuffer() &&
                 setupList.transitionImageUsageMode(colorImage, colorDesc.usage_modes, AGPU_TEXTURE_USAGE_NONE, AGPU_TEXTURE_USAGE_COPY_DESTINATION, range) &&
@@ -445,14 +461,25 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
             avkColorBuffer->imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 
-        auto colorBufferView = agpu::texture_view_ref(colorBuffer->getOrCreateFullView());
-        auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorBufferView, depthStencilBufferView);
-        framebuffer.as<AVkFramebuffer> ()->swapChainFramebuffer = true;
-        framebuffers[i] = framebuffer;
+        agpu_texture_view_description colorBufferViewDescription;
+        colorBuffer->getFullViewDescription(&colorBufferViewDescription);
+        colorBufferViewDescription.subresource_range.layer_count = 1;
 
-        // Release the references to the buffers.
-        if (!framebuffer)
-            return false;
+        framebuffers[i].resize(swapChainLayers);
+        for(size_t layerIndex = 0; layerIndex < swapChainLayers; ++layerIndex)
+        {
+            colorBufferViewDescription.subresource_range.base_arraylayer = layerIndex;
+            auto colorBufferView = agpu::texture_view_ref(colorBuffer->createView(&colorBufferViewDescription));
+
+            auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorBufferView, depthStencilBufferView);
+            framebuffer.as<AVkFramebuffer> ()->swapChainFramebuffer = true;
+            framebuffers[i][layerIndex] = framebuffer;
+
+            // Release the references to the buffers.
+            if (!framebuffer)
+                return false;
+
+        }
     }
 
     auto nextBackBufferError = getNextBackBufferIndex();
@@ -522,7 +549,14 @@ agpu_error AVkSwapChain::swapBuffers()
 
 agpu::framebuffer_ptr AVkSwapChain::getCurrentBackBuffer()
 {
-    return framebuffers[currentBackBufferIndex].disownedNewRef();
+    return getCurrentBackBufferForLayer(0);
+}
+
+agpu::framebuffer_ptr AVkSwapChain::getCurrentBackBufferForLayer(agpu_uint layer)
+{
+    if(layer >= swapChainLayers)
+        return nullptr;
+    return framebuffers[currentBackBufferIndex][layer].disownedNewRef();
 }
 
 agpu_size AVkSwapChain::getCurrentBackBufferIndex ( )
@@ -533,6 +567,21 @@ agpu_size AVkSwapChain::getCurrentBackBufferIndex ( )
 agpu_size AVkSwapChain::getFramebufferCount ( )
 {
     return (agpu_size)framebuffers.size();
+}
+
+agpu_size AVkSwapChain::getWidth()
+{
+    return swapChainWidth;
+}
+
+agpu_size AVkSwapChain::getHeight()
+{
+    return swapChainHeight;
+}
+
+agpu_size AVkSwapChain::getLayerCount()
+{
+    return swapChainLayers;
 }
 
 agpu_error AVkSwapChain::setOverlayPosition(agpu_int x, agpu_int y)

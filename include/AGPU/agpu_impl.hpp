@@ -589,8 +589,12 @@ public:
 	typedef swap_chain main_interface;
 	virtual agpu_error swapBuffers() = 0;
 	virtual framebuffer_ptr getCurrentBackBuffer() = 0;
+	virtual framebuffer_ptr getCurrentBackBufferForLayer(agpu_uint layer) = 0;
 	virtual agpu_size getCurrentBackBufferIndex() = 0;
 	virtual agpu_size getFramebufferCount() = 0;
+	virtual agpu_uint getWidth() = 0;
+	virtual agpu_uint getHeight() = 0;
+	virtual agpu_uint getLayerCount() = 0;
 	virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) = 0;
 };
 
@@ -800,6 +804,8 @@ struct framebuffer : base_interface
 {
 public:
 	typedef framebuffer main_interface;
+	virtual agpu_uint getWidth() = 0;
+	virtual agpu_uint getHeight() = 0;
 };
 
 

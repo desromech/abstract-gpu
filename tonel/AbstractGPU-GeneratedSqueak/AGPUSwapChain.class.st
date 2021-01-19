@@ -33,6 +33,13 @@ AGPUSwapChain >> getCurrentBackBuffer [
 ]
 
 { #category : #'wrappers' }
+AGPUSwapChain >> getCurrentBackBufferForLayer: layer [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getCurrentBackBufferForLayer_swap_chain: (self validHandle) layer: layer.
+	^ AGPUFramebuffer forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUSwapChain >> getCurrentBackBufferIndex [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getCurrentBackBufferIndex_swap_chain: (self validHandle).
@@ -43,6 +50,27 @@ AGPUSwapChain >> getCurrentBackBufferIndex [
 AGPUSwapChain >> getFramebufferCount [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getFramebufferCount_swap_chain: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUSwapChain >> getWidth [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getWidth_swap_chain: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUSwapChain >> getHeight [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getHeight_swap_chain: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUSwapChain >> getLayerCount [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getLayerCount_swap_chain: (self validHandle).
 	^ resultValue_
 ]
 

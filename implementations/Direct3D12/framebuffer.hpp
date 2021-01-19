@@ -15,6 +15,9 @@ public:
 
     static agpu::framebuffer_ref create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref* colorViews, const agpu::texture_view_ref &depthStencilView);
 
+    virtual agpu_uint getWidth() override;
+    virtual agpu_uint getHeight() override;
+
     agpu_error attachColorBuffer(agpu_int index, const agpu::texture_view_ref &textureView);
     agpu_error attachDepthStencilBuffer(const agpu::texture_view_ref &textureView);
 

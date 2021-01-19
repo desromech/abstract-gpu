@@ -19,8 +19,9 @@ AGPUBindingsCommon class >> validHandleOf: anObject [
 { #category : #'error checking' }
 AGPUBindingsCommon >> checkErrorCode: errorCode [
 	errorCode < 0 ifTrue: [
-		Transcript show: 'Got an error from AGPU: ' , errorCode printString; cr.
-		self error: 'Got an error from AGPU.'
+		^ AGPUError new
+			errorCode: errorCode;
+			signal: 'AGPU error code: ' , errorCode asString
 	]
 ]
 

@@ -22,6 +22,7 @@ AGPUSwapChainCreateInfo class >> fieldsDesc [
 		 agpu_texture_format depth_stencil_format;
 		 agpu_uint width;
 		 agpu_uint height;
+		 agpu_uint layers;
 		 agpu_uint buffer_count;
 		 agpu_bool sample_buffers;
 		 agpu_int samples;

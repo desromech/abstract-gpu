@@ -371,4 +371,10 @@ agpu::texture_view_ptr ADXTexture::getOrCreateFullView()
 	return fullTextureView.disownedNewRef();
 }
 
+void ADXTexture::releaseTextureHandle()
+{
+    resource.Reset();
+    allocation.Reset();
+}
+
 } // End of namespace AgpuD3D12

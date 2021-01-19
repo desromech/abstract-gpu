@@ -741,6 +741,7 @@ struct SwapChainCreateInfo definition: {
 	public field depth_stencil_format type: TextureFormat.
 	public field width type: UInt32.
 	public field height type: UInt32.
+	public field layers type: UInt32.
 	public field buffer_count type: UInt32.
 	public field sample_buffers type: Int32.
 	public field samples type: Int32.
@@ -1117,8 +1118,12 @@ function agpuAddSwapChainReference externC (swap_chain: SwapChain pointer) => Er
 function agpuReleaseSwapChain externC (swap_chain: SwapChain pointer) => Error.
 function agpuSwapBuffers externC (swap_chain: SwapChain pointer) => Error.
 function agpuGetCurrentBackBuffer externC (swap_chain: SwapChain pointer) => Framebuffer pointer.
+function agpuGetCurrentBackBufferForLayer externC (swap_chain: SwapChain pointer, layer: UInt32) => Framebuffer pointer.
 function agpuGetCurrentBackBufferIndex externC (swap_chain: SwapChain pointer) => UInt32.
 function agpuGetFramebufferCount externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetSwapChainWidth externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetSwapChainHeight externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetSwapChainLayerCount externC (swap_chain: SwapChain pointer) => UInt32.
 function agpuSetSwapChainOverlayPosition externC (swap_chain: SwapChain pointer, x: Int32, y: Int32) => Error.
 function agpuAddComputePipelineBuilderReference externC (compute_pipeline_builder: ComputePipelineBuilder pointer) => Error.
 function agpuReleaseComputePipelineBuilder externC (compute_pipeline_builder: ComputePipelineBuilder pointer) => Error.
@@ -1244,6 +1249,8 @@ function agpuGetShaderCompilationLogLength externC (shader: Shader pointer) => U
 function agpuGetShaderCompilationLog externC (shader: Shader pointer, buffer_size: UInt32, buffer: Char8 pointer) => Error.
 function agpuAddFramebufferReference externC (framebuffer: Framebuffer pointer) => Error.
 function agpuReleaseFramebuffer externC (framebuffer: Framebuffer pointer) => Error.
+function agpuGetFramebufferWidth externC (framebuffer: Framebuffer pointer) => UInt32.
+function agpuGetFramebufferHeight externC (framebuffer: Framebuffer pointer) => UInt32.
 function agpuAddRenderPassReference externC (renderpass: Renderpass pointer) => Error.
 function agpuReleaseRenderPass externC (renderpass: Renderpass pointer) => Error.
 function agpuSetDepthStencilClearValue externC (renderpass: Renderpass pointer, value: DepthStencilValue) => Error.
@@ -1644,17 +1651,29 @@ SwapChain extend: {
 	inline method release ::=> Void
 		:= throwIfError: (agpuReleaseSwapChain(self address)).
 
-	inline method swapBuffers ::=> Void
-		:= throwIfError: (agpuSwapBuffers(self address)).
+	inline method swapBuffers ::=> Error
+		:= agpuSwapBuffers(self address).
 
 	inline method getCurrentBackBuffer ::=> FramebufferRef
 		:= FramebufferRef for: (agpuGetCurrentBackBuffer(self address)).
+
+	inline method getCurrentBackBufferForLayer: (layer: UInt32) ::=> FramebufferRef
+		:= FramebufferRef for: (agpuGetCurrentBackBufferForLayer(self address, layer)).
 
 	inline method getCurrentBackBufferIndex ::=> UInt32
 		:= agpuGetCurrentBackBufferIndex(self address).
 
 	inline method getFramebufferCount ::=> UInt32
 		:= agpuGetFramebufferCount(self address).
+
+	inline method getWidth ::=> UInt32
+		:= agpuGetSwapChainWidth(self address).
+
+	inline method getHeight ::=> UInt32
+		:= agpuGetSwapChainHeight(self address).
+
+	inline method getLayerCount ::=> UInt32
+		:= agpuGetSwapChainLayerCount(self address).
 
 	inline method setOverlayPosition: (x: Int32) y: (y: Int32) ::=> Void
 		:= throwIfError: (agpuSetSwapChainOverlayPosition(self address, x, y)).
@@ -2055,7 +2074,7 @@ Shader extend: {
 	inline method setShaderSource: (language: ShaderLanguage) sourceText: (sourceText: Char8 const pointer) sourceTextLength: (sourceTextLength: UInt32) ::=> Void
 		:= throwIfError: (agpuSetShaderSource(self address, language, sourceText, sourceTextLength)).
 
-	inline method compileShader: (options: Char8 const pointer) ::=> Void
+	inline method compileShader: (options: Char8 const pointer) ::=> Error
 		:= agpuCompileShader(self address, options).
 
 	inline method getCompilationLogLength ::=> UInt32
@@ -2072,6 +2091,12 @@ Framebuffer extend: {
 
 	inline method release ::=> Void
 		:= throwIfError: (agpuReleaseFramebuffer(self address)).
+
+	inline method getWidth ::=> UInt32
+		:= agpuGetFramebufferWidth(self address).
+
+	inline method getHeight ::=> UInt32
+		:= agpuGetFramebufferHeight(self address).
 
 }.
 
@@ -2199,7 +2224,7 @@ OfflineShaderCompiler extend: {
 	inline method setShaderSource: (language: ShaderLanguage) stage: (stage: ShaderType) sourceText: (sourceText: Char8 const pointer) sourceTextLength: (sourceTextLength: UInt32) ::=> Void
 		:= throwIfError: (agpuSetOfflineShaderCompilerSource(self address, language, stage, sourceText, sourceTextLength)).
 
-	inline method compileShader: (target_language: ShaderLanguage) options: (options: Char8 const pointer) ::=> Void
+	inline method compileShader: (target_language: ShaderLanguage) options: (options: Char8 const pointer) ::=> Error
 		:= agpuCompileOfflineShader(self address, target_language, options).
 
 	inline method getCompilationLogLength ::=> UInt32

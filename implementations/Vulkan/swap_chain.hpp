@@ -22,10 +22,15 @@ public:
 
     virtual agpu_error swapBuffers() override;
     virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+	virtual agpu::framebuffer_ptr getCurrentBackBufferForLayer(agpu_uint layer) override;
     virtual agpu_size getCurrentBackBufferIndex() override;
     virtual agpu_size getFramebufferCount() override;
 
     virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) override;
+
+	virtual agpu_size getWidth() override;
+	virtual agpu_size getHeight() override;
+	virtual agpu_size getLayerCount() override;
 
     agpu::device_ref device;
     VkSurfaceKHR surface;
@@ -34,13 +39,14 @@ public:
 
     agpu_uint swapChainWidth;
     agpu_uint swapChainHeight;
+    agpu_uint swapChainLayers;
     agpu_texture_format agpuFormat;
     VkFormat format;
     VkColorSpaceKHR colorSpace;
 
     VkSwapchainKHR handle;
     std::vector<VkSemaphore> semaphores;
-    std::vector<agpu::framebuffer_ref> framebuffers;
+    std::vector<std::vector<agpu::framebuffer_ref> > framebuffers;
 
     uint32_t imageCount;
     uint32_t currentBackBufferIndex;

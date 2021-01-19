@@ -227,8 +227,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName)
     if (!convertedSurface)
         return nullptr;
 
-    agpu_texture_description desc;
-    memset(&desc, 0, sizeof(desc));
+    agpu_texture_description desc = {};
     desc.type = AGPU_TEXTURE_2D;
     desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
     desc.width = convertedSurface->w;
@@ -298,8 +297,7 @@ int SampleBase::main(int argc, const char **argv)
     SDL_GetWindowWMInfo(window, &windowInfo);
 
     // Open the device
-    agpu_device_open_info openInfo;
-    memset(&openInfo, 0, sizeof(openInfo));
+    agpu_device_open_info openInfo = {};
     memset(&currentSwapChainCreateInfo, 0, sizeof(currentSwapChainCreateInfo));
     switch(windowInfo.subsystem)
     {
@@ -329,6 +327,9 @@ int SampleBase::main(int argc, const char **argv)
     currentSwapChainCreateInfo.width = screenWidth;
     currentSwapChainCreateInfo.height = screenHeight;
     currentSwapChainCreateInfo.buffer_count = 3;
+    if (UseOverlayWindow)
+        currentSwapChainCreateInfo.flags = AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW;
+
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debug_layer= true;
@@ -579,8 +580,7 @@ int ComputeSampleBase::main(int argc, const char **argv)
     printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
 
     // Open the device
-    agpu_device_open_info openInfo;
-    memset(&openInfo, 0, sizeof(openInfo));
+    agpu_device_open_info openInfo = {};
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
     openInfo.debug_layer= true;

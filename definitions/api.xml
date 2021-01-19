@@ -84,6 +84,7 @@
             <field name="depth_stencil_format" type="texture_format" />
             <field name="width" type="uint" />
             <field name="height" type="uint" />
+            <field name="layers" type="uint" />
             <field name="buffer_count" type="uint" />
             <field name="sample_buffers" type="bool" />
             <field name="samples" type="int" />
@@ -1268,16 +1269,29 @@
             <method name="release" cname="ReleaseSwapChain" returnType="error">
             </method>
 
-            <method name="swapBuffers" cname="SwapBuffers" returnType="error">
+            <method name="swapBuffers" cname="SwapBuffers" returnType="error" errorIsNotException="true">
             </method>
 
             <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
+            </method>
+
+            <method name="getCurrentBackBufferForLayer" cname="GetCurrentBackBufferForLayer" returnType="framebuffer*">
+                <arg name="layer" type="uint" />
             </method>
 
             <method name="getCurrentBackBufferIndex" cname="GetCurrentBackBufferIndex" returnType="size">
             </method>
 
             <method name="getFramebufferCount" cname="GetFramebufferCount" returnType="size">
+            </method>
+
+            <method name="getWidth" cname="GetSwapChainWidth" returnType="uint">
+            </method>
+
+            <method name="getHeight" cname="GetSwapChainHeight" returnType="uint">
+            </method>
+
+            <method name="getLayerCount" cname="GetSwapChainLayerCount" returnType="uint">
             </method>
 
             <method name="setOverlayPosition" cname="SetSwapChainOverlayPosition" returnType="error">
@@ -1892,6 +1906,12 @@
             </method>
 
             <method name="release" cname="ReleaseFramebuffer" returnType="error">
+            </method>
+
+            <method name="getWidth" cname="GetFramebufferWidth" returnType="uint">
+            </method>
+
+            <method name="getHeight" cname="GetFramebufferHeight" returnType="uint">
             </method>
         </interface>
 

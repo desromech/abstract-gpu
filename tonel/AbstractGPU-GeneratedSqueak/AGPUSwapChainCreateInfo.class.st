@@ -21,6 +21,7 @@ AGPUSwapChainCreateInfo class >> fields [
 		(depth_stencil_format 'long')
 		(width 'ulong')
 		(height 'ulong')
+		(layers 'ulong')
 		(buffer_count 'ulong')
 		(sample_buffers 'long')
 		(samples 'long')

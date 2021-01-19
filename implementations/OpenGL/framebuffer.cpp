@@ -81,6 +81,16 @@ agpu::framebuffer_ref GLFramebuffer::create(const agpu::device_ref &device, agpu
 	return result;
 }
 
+agpu_uint GLFramebuffer::getWidth()
+{
+	return width;
+}
+
+agpu_uint GLFramebuffer::getHeight()
+{
+	return height;
+}
+
 void GLFramebuffer::bind(GLenum target)
 {
     deviceForGL->glBindFramebuffer(target, handle);

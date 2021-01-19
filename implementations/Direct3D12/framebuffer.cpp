@@ -6,9 +6,8 @@ namespace AgpuD3D12
 {
 
 ADXFramebuffer::ADXFramebuffer(const agpu::device_ref &cdevice)
-    : device(cdevice)
+    : device(cdevice), width(0), height(0), hasDepth(false), hasStencil(false), descriptorSize(0), swapChainBuffer(false)
 {
-    swapChainBuffer = false;
 }
 
 ADXFramebuffer::~ADXFramebuffer()
@@ -82,6 +81,16 @@ agpu::framebuffer_ref ADXFramebuffer::create(const agpu::device_ref &device, agp
     }
 
     return framebuffer;
+}
+
+agpu_uint ADXFramebuffer::getWidth()
+{
+    return width;
+}
+
+agpu_uint ADXFramebuffer::getHeight()
+{
+    return height;
 }
 
 agpu_error ADXFramebuffer::attachColorBuffer(agpu_int index, const agpu::texture_view_ref &textureView)

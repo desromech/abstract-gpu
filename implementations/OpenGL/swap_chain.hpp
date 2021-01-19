@@ -16,6 +16,7 @@ public:
     static agpu::swap_chain_ref create(const agpu::device_ref &device, const agpu::command_queue_ref &commandQueue, agpu_swap_chain_create_info *create_info);
 
     virtual agpu::framebuffer_ptr getCurrentBackBuffer() override;
+    virtual agpu::framebuffer_ptr getCurrentBackBufferForLayer(agpu_uint layer) override;
     virtual agpu_size getCurrentBackBufferIndex() override;
     virtual agpu_size getFramebufferCount() override;
 
@@ -23,6 +24,10 @@ public:
 
 	virtual agpu_error setOverlayPosition(agpu_int x, agpu_int y) override;
 
+    virtual agpu_size getWidth() override;
+	virtual agpu_size getHeight() override;
+	virtual agpu_size getLayerCount() override;
+    
 public:
     agpu::device_ref device;
     agpu_pointer window;

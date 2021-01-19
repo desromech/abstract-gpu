@@ -489,6 +489,14 @@ AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBuffer ( agpu_swap_chain* swap_c
 	return (*dispatchTable)->agpuGetCurrentBackBuffer ( swap_chain );
 }
 
+AGPU_EXPORT agpu_framebuffer* agpuGetCurrentBackBufferForLayer ( agpu_swap_chain* swap_chain, agpu_uint layer )
+{
+	if (swap_chain == nullptr)
+		return (agpu_framebuffer*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
+	return (*dispatchTable)->agpuGetCurrentBackBufferForLayer ( swap_chain, layer );
+}
+
 AGPU_EXPORT agpu_size agpuGetCurrentBackBufferIndex ( agpu_swap_chain* swap_chain )
 {
 	if (swap_chain == nullptr)
@@ -503,6 +511,30 @@ AGPU_EXPORT agpu_size agpuGetFramebufferCount ( agpu_swap_chain* swap_chain )
 		return (agpu_size)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
 	return (*dispatchTable)->agpuGetFramebufferCount ( swap_chain );
+}
+
+AGPU_EXPORT agpu_uint agpuGetSwapChainWidth ( agpu_swap_chain* swap_chain )
+{
+	if (swap_chain == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
+	return (*dispatchTable)->agpuGetSwapChainWidth ( swap_chain );
+}
+
+AGPU_EXPORT agpu_uint agpuGetSwapChainHeight ( agpu_swap_chain* swap_chain )
+{
+	if (swap_chain == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
+	return (*dispatchTable)->agpuGetSwapChainHeight ( swap_chain );
+}
+
+AGPU_EXPORT agpu_uint agpuGetSwapChainLayerCount ( agpu_swap_chain* swap_chain )
+{
+	if (swap_chain == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (swap_chain);
+	return (*dispatchTable)->agpuGetSwapChainLayerCount ( swap_chain );
 }
 
 AGPU_EXPORT agpu_error agpuSetSwapChainOverlayPosition ( agpu_swap_chain* swap_chain, agpu_int x, agpu_int y )
@@ -1503,6 +1535,22 @@ AGPU_EXPORT agpu_error agpuReleaseFramebuffer ( agpu_framebuffer* framebuffer )
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
 	return (*dispatchTable)->agpuReleaseFramebuffer ( framebuffer );
+}
+
+AGPU_EXPORT agpu_uint agpuGetFramebufferWidth ( agpu_framebuffer* framebuffer )
+{
+	if (framebuffer == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
+	return (*dispatchTable)->agpuGetFramebufferWidth ( framebuffer );
+}
+
+AGPU_EXPORT agpu_uint agpuGetFramebufferHeight ( agpu_framebuffer* framebuffer )
+{
+	if (framebuffer == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (framebuffer);
+	return (*dispatchTable)->agpuGetFramebufferHeight ( framebuffer );
 }
 
 AGPU_EXPORT agpu_error agpuAddRenderPassReference ( agpu_renderpass* renderpass )

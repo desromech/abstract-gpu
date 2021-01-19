@@ -374,6 +374,12 @@ AGPUCBindings >> getCurrentBackBuffer_swap_chain: swap_chain [
 ]
 
 { #category : #'swap_chain' }
+AGPUCBindings >> getCurrentBackBufferForLayer_swap_chain: swap_chain layer: layer [
+	<cdecl: void* 'agpuGetCurrentBackBufferForLayer' (void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'swap_chain' }
 AGPUCBindings >> getCurrentBackBufferIndex_swap_chain: swap_chain [
 	<cdecl: ulong 'agpuGetCurrentBackBufferIndex' (void*)>
 	^ self externalCallFailed
@@ -382,6 +388,24 @@ AGPUCBindings >> getCurrentBackBufferIndex_swap_chain: swap_chain [
 { #category : #'swap_chain' }
 AGPUCBindings >> getFramebufferCount_swap_chain: swap_chain [
 	<cdecl: ulong 'agpuGetFramebufferCount' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> getWidth_swap_chain: swap_chain [
+	<cdecl: ulong 'agpuGetSwapChainWidth' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> getHeight_swap_chain: swap_chain [
+	<cdecl: ulong 'agpuGetSwapChainHeight' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'swap_chain' }
+AGPUCBindings >> getLayerCount_swap_chain: swap_chain [
+	<cdecl: ulong 'agpuGetSwapChainLayerCount' (void*)>
 	^ self externalCallFailed
 ]
 
@@ -1132,6 +1156,18 @@ AGPUCBindings >> addReference_framebuffer: framebuffer [
 { #category : #'framebuffer' }
 AGPUCBindings >> release_framebuffer: framebuffer [
 	<cdecl: long 'agpuReleaseFramebuffer' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'framebuffer' }
+AGPUCBindings >> getWidth_framebuffer: framebuffer [
+	<cdecl: ulong 'agpuGetFramebufferWidth' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'framebuffer' }
+AGPUCBindings >> getHeight_framebuffer: framebuffer [
+	<cdecl: ulong 'agpuGetFramebufferHeight' (void*)>
 	^ self externalCallFailed
 ]
 

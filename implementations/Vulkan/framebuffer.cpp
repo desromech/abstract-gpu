@@ -141,4 +141,15 @@ agpu::framebuffer_ref AVkFramebuffer::create(const agpu::device_ref &device, agp
     return result;
 }
 
+agpu_uint AVkFramebuffer::getWidth()
+{
+    return width;
+}
+
+agpu_uint AVkFramebuffer::getHeight()
+{
+    return height;
+}
+
+
 } // End of namespace AgpuVulkan
