@@ -114,7 +114,7 @@ agpu::swap_chain_ref ADXSwapChain::createResizedSwapChain(const agpu::device_ref
     oldAdxSwapChain->disconnect();
     if (adxSwapChain->overlayWindow)
     {
-        adxSwapChain->overlayWindow->setSize(adxSwapChain->windowWidth, adxSwapChain->windowHeight);
+        adxSwapChain->overlayWindow->setPositionAndSize(createInfo->x, createInfo->y, adxSwapChain->windowWidth, adxSwapChain->windowHeight);
     }
 
     DXGI_FORMAT newFormat = sanitizeSwapChainFormat((DXGI_FORMAT)createInfo->colorbuffer_format);
