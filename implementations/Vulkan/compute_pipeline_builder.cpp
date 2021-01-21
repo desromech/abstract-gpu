@@ -29,7 +29,7 @@ agpu::pipeline_state_ptr AVkComputePipelineBuilder::build ()
 		return nullptr;
 
 	VkPipeline pipeline;
-	auto error = vkCreateComputePipelines(deviceForVk->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+	auto error = vkCreateComputePipelines(deviceForVk->device, deviceForVk->defaultPipelineCache, 1, &pipelineInfo, nullptr, &pipeline);
 	if (error)
 	{
 		return nullptr;

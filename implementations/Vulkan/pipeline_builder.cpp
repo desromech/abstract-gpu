@@ -175,8 +175,7 @@ agpu::pipeline_state_ptr AVkGraphicsPipelineBuilder::build()
     }
 
     // Render pass
-    VkRenderPassCreateInfo renderPassCreateInfo;
-    memset(&renderPassCreateInfo, 0, sizeof(renderPassCreateInfo));
+    VkRenderPassCreateInfo renderPassCreateInfo = {};
     renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassCreateInfo.attachmentCount = (uint32_t)attachments.size();
     renderPassCreateInfo.pAttachments = &attachments[0];
@@ -193,7 +192,7 @@ agpu::pipeline_state_ptr AVkGraphicsPipelineBuilder::build()
     pipelineInfo.renderPass = renderPass;
 
     VkPipeline pipeline;
-    error = vkCreateGraphicsPipelines(deviceForVk->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+    error = vkCreateGraphicsPipelines(deviceForVk->device, deviceForVk->defaultPipelineCache, 1, &pipelineInfo, nullptr, &pipeline);
     if (error)
     {
         vkDestroyRenderPass(deviceForVk->device, renderPass, nullptr);
