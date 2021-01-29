@@ -27,6 +27,7 @@ public:
     VkInstance vulkanInstance;
     VkDevice device;
     VmaAllocator memoryAllocator;
+    VkPipelineCache defaultPipelineCache;
     vr::IVRSystem *vrSystem;
 };
 
@@ -93,6 +94,7 @@ public:
 
     VkInstance vulkanInstance;
     VkDevice device;
+    VkPipelineCache defaultPipelineCache;
     VkPhysicalDevice physicalDevice;
     VkPhysicalDeviceFeatures deviceFeatures;
     VkPhysicalDeviceProperties deviceProperties;

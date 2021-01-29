@@ -57,7 +57,7 @@ void printError(const char *format, ...)
 }
 
 const char *validationLayerNames[] = {
-    "VK_LAYER_LUNARG_standard_validation",
+    "VK_LAYER_KHRONOS_validation",
 };
 
 constexpr size_t validationLayerCount = sizeof(validationLayerNames) / sizeof(validationLayerNames[0]);
@@ -188,6 +188,9 @@ AVkDeviceSharedContext::~AVkDeviceSharedContext()
         fpDestroyDebugReportCallbackEXT(vulkanInstance, debugReportCallback, nullptr);
 
     // Destroy the vulkan devices
+    if (defaultPipelineCache)
+        vkDestroyPipelineCache(device, defaultPipelineCache, nullptr);
+
     if(device)
         vkDestroyDevice(device, nullptr);
 
@@ -201,9 +204,10 @@ AVkDevice::AVkDevice()
     implicitResourceUploadCommandList(*this),
     implicitResourceReadbackCommandList(*this)
 {
-    vulkanInstance = nullptr;
-    physicalDevice = nullptr;
-    device = nullptr;
+    vulkanInstance = VK_NULL_HANDLE;
+    physicalDevice = VK_NULL_HANDLE;
+    device = VK_NULL_HANDLE;
+    defaultPipelineCache = VK_NULL_HANDLE;
 
     isVRDisplaySupported = false;
     isVRInputDevicesSupported = false;
@@ -640,7 +644,17 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     error = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
     if (error)
         return false;
+
     sharedContext->device = device;
+    // Create the default pipeline cache.
+    {
+        VkPipelineCacheCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+        error = vkCreatePipelineCache(device, &createInfo, nullptr, &defaultPipelineCache);
+        if (error)
+            return false;
+        sharedContext->defaultPipelineCache = defaultPipelineCache;
+    }
 
     GET_DEVICE_PROC_ADDR(CreateSwapchainKHR);
     GET_DEVICE_PROC_ADDR(DestroySwapchainKHR);
