@@ -58,7 +58,7 @@ std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shade
         if (tangentSpaceEnabled)
             options += "#define TANGENT_SPACE_ENABLED\n";
     }
-		
+
 	if(skinningEnabled)
 		options += "#define SKINNING_ENABLED\n";
 
@@ -559,8 +559,7 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 		desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
         desc.clear_value.color = { 1, 1, 1, 1 };
 		auto texture = agpu::texture_ref(device->createTexture(&desc));
-		if (!texture)
-			return nullptr;
+		if (!texture) return false;
 
         uint32_t color = 0xFFFFFFFF;
         texture->uploadTextureData(0, 0, 4, 4, &color);
@@ -585,8 +584,7 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 		desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
 		desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
     	auto texture = agpu::texture_ref(device->createTexture(&desc));
-		if (!texture)
-			return nullptr;
+		if (!texture) return false;
 
         uint32_t color = 0x808080FF;
         texture->uploadTextureData(0, 0, 4, 4, &color);
