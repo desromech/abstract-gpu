@@ -13,9 +13,10 @@ agpu_vertex_attrib_description SampleVertex::Description[] = {
     {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, offsetof(SampleVertex, texcoord), 0},
     {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_BONE_INDICES, AGPU_TEXTURE_FORMAT_R32G32B32A32_UINT, offsetof(SampleVertex, boneIndices), 0},
     {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_BONE_WEIGHTS, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, offsetof(SampleVertex, boneWeights), 0},
+    {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TANGENT_4, AGPU_TEXTURE_FORMAT_R32G32B32A32_FLOAT, offsetof(SampleVertex, tangent4), 0},
 };
 
-const int SampleVertex::DescriptionSize = 4;
+const int SampleVertex::DescriptionSize = sizeof(Description) / sizeof(Description[0]);
 
 void printMessage(const char *format, ...)
 {
