@@ -48,6 +48,10 @@ public:
             diffuseTexture = loadTexture("data/textures/checkboard.bmp");
             if(!diffuseTexture)
                 return false;
+
+            normalTexture = loadTexture("data/textures/checkboard-normal.bmp");
+            if (!normalTexture)
+                return false;
         }
 
         // Create the cube mesh
@@ -303,6 +307,7 @@ public:
     {
         // Begin drawing the mesh.
         cubeMesh->beginDrawingWithImmediateRenderer(immediateRenderer, explicitBuffers);
+        immediateRenderer->setTangentSpaceEnabled(explicitBuffers);
 
         // First row: without texture.
         immediateRenderer->setTexturingEnabled(false);
@@ -315,7 +320,8 @@ public:
 
         // Second row: with textures.
         immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
+        immediateRenderer->bindTextureIn(diffuseTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO);
+        immediateRenderer->bindTextureIn(normalTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_NORMAL);
         {
             immediateRenderer->pushMatrix();
             immediateRenderer->translate(0.0f, 0.0f, -2.0f);
@@ -338,7 +344,8 @@ public:
 
         // Fourth row: with textures and fog
         immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
+        immediateRenderer->bindTextureIn(diffuseTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO);
+        immediateRenderer->bindTextureIn(normalTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_NORMAL);
         {
             immediateRenderer->pushMatrix();
             immediateRenderer->translate(0.0f, 0.0f, -6.0f);
@@ -359,7 +366,8 @@ public:
 
         // Sixth row: with textures and fog
         immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
+        immediateRenderer->bindTextureIn(diffuseTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO);
+        immediateRenderer->bindTextureIn(normalTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_NORMAL);
         {
             immediateRenderer->pushMatrix();
             immediateRenderer->translate(0.0f, 0.0f, -10.0f);
@@ -380,7 +388,8 @@ public:
 
         // Eight row: with textures and fog
         immediateRenderer->setTexturingEnabled(true);
-        immediateRenderer->bindTexture(diffuseTexture);
+        immediateRenderer->bindTextureIn(diffuseTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO);
+        immediateRenderer->bindTextureIn(normalTexture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_NORMAL);
         {
             immediateRenderer->pushMatrix();
             immediateRenderer->translate(0.0f, 0.0f, -14.0f);
@@ -402,6 +411,7 @@ public:
     agpu_immediate_renderer_ref immediateRenderer;
 
     agpu_texture_ref diffuseTexture;
+    agpu_texture_ref normalTexture;
     agpu_renderpass_ref mainRenderPass;
     agpu_immediate_renderer_lighting_model lightingModel;
 

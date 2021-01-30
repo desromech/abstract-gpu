@@ -52,10 +52,13 @@ std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shade
 
 	if(flatShading)
 		options += "#define FLAT_SHADING\n";
-	if(texturingEnabled)
-		options += "#define TEXTURING_ENABLED\n";
-	if(tangentSpaceEnabled)
-		options += "#define TANGENT_SPACE_ENABLED\n";
+    if (texturingEnabled)
+    {
+        options += "#define TEXTURING_ENABLED\n";
+        if (tangentSpaceEnabled)
+            options += "#define TANGENT_SPACE_ENABLED\n";
+    }
+
 	if(skinningEnabled)
 		options += "#define SKINNING_ENABLED\n";
 
@@ -117,6 +120,26 @@ agpu::shader_ref ImmediateShaderLibrary::getOrCreateWithCompilationParameters(co
 inline bool isSyntheticTopology(agpu_primitive_topology type)
 {
 	return type >= AGPU_IMMEDIATE_TRIANGLE_FAN;
+}
+
+size_t ImmediateTextureBindingSet::hash() const
+{
+    return std::hash<agpu::texture_ref>()(albedoTexture) ^
+        std::hash<agpu::texture_ref>()(emissionTexture) ^
+        std::hash<agpu::texture_ref>()(normalTexture) ^
+        std::hash<agpu::texture_ref>()(rmaTexture);
+}
+
+bool ImmediateTextureBindingSet::operator==(const ImmediateTextureBindingSet& other) const
+{
+    return albedoTexture == other.albedoTexture &&
+        emissionTexture == other.emissionTexture &&
+        normalTexture == other.normalTexture &&
+        rmaTexture == other.rmaTexture;
+}
+bool ImmediateTextureBindingSet::operator!=(const ImmediateTextureBindingSet& other) const
+{
+    return !(*this == other);
 }
 
 bool TransformationState::operator==(const TransformationState &other) const
@@ -488,7 +511,10 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 
 		// Textures (Set 6).
         builder->beginBindingBank(10000);
-        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Albedo
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Emission
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Normal
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // RMA
 
         immediateShaderSignature = agpu::shader_signature_ref(builder->build());
         if(!immediateShaderSignature) return false;
@@ -517,6 +543,53 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         immediateSharedRenderingStates->linearSampler.binding = samplerBinding;
     }
 
+	// Create the default white texture.
+	{
+		agpu_texture_description desc = {};
+		desc.type = AGPU_TEXTURE_2D;
+		desc.format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+		desc.width = 1;
+		desc.height = 1;
+		desc.depth = 1;
+		desc.layers = 1;
+		desc.miplevels = 1;
+		desc.sample_count = 1;
+		desc.sample_quality = 0;
+		desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
+		desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+        desc.clear_value.color = { 1, 1, 1, 1 };
+		auto texture = agpu::texture_ref(device->createTexture(&desc));
+		if (!texture) return false;
+
+        uint32_t color = 0xFFFFFFFF;
+        texture->uploadTextureData(0, 0, 4, 4, &color);
+
+		immediateSharedRenderingStates->defaultAlbedoTexture = texture;
+		immediateSharedRenderingStates->defaultEmissionTexture = texture;
+		immediateSharedRenderingStates->defaultRMATexture = texture;
+	}
+
+	// Create the default normal texture.
+	{
+		agpu_texture_description desc = {};
+		desc.type = AGPU_TEXTURE_2D;
+		desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+		desc.width = 1;
+		desc.height = 1;
+		desc.depth = 1;
+		desc.layers = 1;
+		desc.miplevels = 1;
+		desc.sample_count = 1;
+		desc.sample_quality = 0;
+		desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
+		desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+    	auto texture = agpu::texture_ref(device->createTexture(&desc));
+		if (!texture) return false;
+
+        uint32_t color = 0x808080FF;
+        texture->uploadTextureData(0, 0, 4, 4, &color);
+		immediateSharedRenderingStates->defaultNormalTexture = texture;
+	}
     // Create the immediate vertex layout.
     {
         immediateVertexLayout = agpu::vertex_layout_ref(device->createVertexLayout());
@@ -962,7 +1035,10 @@ agpu_error ImmediateRenderer::setTangentSpaceEnabled(agpu_bool enabled)
 
 agpu_error ImmediateRenderer::bindTexture(const agpu::texture_ref &texture)
 {
-    return bindTextureIn(texture, AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO);
+    // For compatibility with existent OpenGL behavior, bind as albedo and emission.
+    currentRenderingState.textureBindingSet.albedoTexture = texture;
+    currentRenderingState.textureBindingSet.emissionTexture = texture;
+    return AGPU_OK;
 }
 
 agpu_error ImmediateRenderer::bindTextureIn(const agpu::texture_ref & texture, agpu_immediate_renderer_texture_binding binding)
@@ -970,7 +1046,16 @@ agpu_error ImmediateRenderer::bindTextureIn(const agpu::texture_ref & texture, a
 	switch(binding)
 	{
 	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO:
-	    currentRenderingState.activeTexture = texture;
+	    currentRenderingState.textureBindingSet.albedoTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_EMISSION:
+	    currentRenderingState.textureBindingSet.emissionTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_NORMAL:
+	    currentRenderingState.textureBindingSet.normalTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ROUGHNESS_METALLIC_AMBIENT:
+	    currentRenderingState.textureBindingSet.rmaTexture = texture;
 		return AGPU_OK;
 	default: return AGPU_UNSUPPORTED;
 	}
@@ -1004,15 +1089,20 @@ agpu_error ImmediateRenderer::setSkinBones(agpu_uint count, agpu_float* matrices
 	return AGPU_OK;
 }
 
-agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(const agpu::texture_ref &texture)
+agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(const ImmediateTextureBindingSet &bindingSet)
 {
-    if(!texture)
-    {
-        abort();
-    }
+	auto sanitizedBindingSet = bindingSet;
+    if(!sanitizedBindingSet.albedoTexture)
+		sanitizedBindingSet.albedoTexture = immediateSharedRenderingStates->defaultAlbedoTexture;
+	if(!sanitizedBindingSet.emissionTexture)
+		sanitizedBindingSet.emissionTexture = immediateSharedRenderingStates->defaultEmissionTexture;
+	if(!sanitizedBindingSet.normalTexture)
+		sanitizedBindingSet.normalTexture = immediateSharedRenderingStates->defaultNormalTexture;
+	if(!sanitizedBindingSet.rmaTexture)
+		sanitizedBindingSet.rmaTexture = immediateSharedRenderingStates->defaultRMATexture;
 
     // Do we have an existing binding.
-    auto it = usedTextureBindingMap.find(texture);
+    auto it = usedTextureBindingMap.find(sanitizedBindingSet);
     if(it != usedTextureBindingMap.end())
         return it->second;
 
@@ -1030,8 +1120,11 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
     }
 
     // Bind the texture on the binding point.
-    textureBinding->bindSampledTextureView(0, agpu::texture_view_ref(texture->getOrCreateFullView()));
-    usedTextureBindingMap[texture] = textureBinding;
+    textureBinding->bindSampledTextureView(0, agpu::texture_view_ref(sanitizedBindingSet.albedoTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(1, agpu::texture_view_ref(sanitizedBindingSet.emissionTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(2, agpu::texture_view_ref(sanitizedBindingSet.normalTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(3, agpu::texture_view_ref(sanitizedBindingSet.rmaTexture->getOrCreateFullView()));
+    usedTextureBindingMap[sanitizedBindingSet] = textureBinding;
 
     return textureBinding;
 }
@@ -1503,7 +1596,8 @@ agpu_error ImmediateRenderer::flushShadersForRenderingState(const ImmediateRende
 	ImmediateShaderCompilationParameters parameters;
 	parameters.flatShading = state.flatShading;
 	parameters.texturingEnabled = state.texturingEnabled;
-	parameters.skinningEnabled = state.skinningEnabled;
+    parameters.tangentSpaceEnabled = state.tangentSpaceEnabled;
+    parameters.skinningEnabled = state.skinningEnabled;
 	parameters.lightingEnabled = state.lightingEnabled;
 	parameters.lightingModel = state.lightingModel;
 	currentStateTracker->setVertexStage(immediateShaderLibrary->getOrCreateWithCompilationParameters(device, parameters, AGPU_VERTEX_SHADER), "main");
@@ -1544,9 +1638,9 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
 		currentStateTracker->useShaderResources(immediateSharedRenderingStates->linearSampler.binding);
 	}
 
-    if(state.texturingEnabled && (!haveFlushedRenderingState || state.activeTexture != lastFlushedRenderingState.activeTexture))
+    if(state.texturingEnabled && (!haveFlushedRenderingState || state.textureBindingSet != lastFlushedRenderingState.textureBindingSet))
 	{
-        currentStateTracker->useShaderResources(getValidTextureBindingFor(state.activeTexture));
+        currentStateTracker->useShaderResources(getValidTextureBindingFor(state.textureBindingSet));
 	}
 
 	if(state.skinningStateBinding && (!haveFlushedRenderingState || state.skinningStateBinding != lastFlushedRenderingState.skinningStateBinding))

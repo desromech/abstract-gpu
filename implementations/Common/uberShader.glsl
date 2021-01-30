@@ -14,6 +14,9 @@ R"uberShader(
 // #define PER_FRAGMENT_LIGHTING
 // #define PBR_METALLIC_ROUGHNESS
 
+// Enable tangent space normal mapping.
+// #define TANGENT_SPACE_ENABLED
+
 // Enable/disable skinning.
 // #define SKINNING_ENABLED
 
@@ -145,15 +148,20 @@ layout(set=5, binding=0) uniform SkinningStateBlock
 struct LightingParameters
 {
     vec4 ambientColor;
+    vec4 emissionColor;
     vec4 baseColor;
     vec4 diffuse;
+
 #ifdef PBR_METALLIC_ROUGHNESS
     vec4 Cdiffuse;
     vec3 F0;
     float alpha;
+
     float k;
     float NdotV;
     float occlusion;
+    float roughness;
+    float metallic;
 #else
     vec4 specular;
 #endif
@@ -276,14 +284,12 @@ vec4 computeLightingWith(in LightingParameters parameters)
 {
 #ifdef PBR_METALLIC_ROUGHNESS
     vec3 dielecticF0 = vec3(0.04);
-    vec4 emissionColor = parameters.baseColor;
-    parameters.occlusion *= MaterialState.occlusionFactor;
-    parameters.baseColor *= MaterialState.baseColor;
-    parameters.Cdiffuse = vec4(mix(parameters.baseColor.rgb * (1.0 - dielecticF0), vec3(0.0), MaterialState.metallicFactor), parameters.baseColor.a);
-    parameters.diffuse = parameters.Cdiffuse * PI_RECIPROCAL;
-    parameters.F0 = mix(dielecticF0, parameters.baseColor.rgb, MaterialState.metallicFactor);
 
-    float directRoughness = mix(0.05, 1.0, MaterialState.roughnessFactor);
+    parameters.Cdiffuse = vec4(mix(parameters.baseColor.rgb * (1.0 - dielecticF0), vec3(0.0), parameters.metallic), parameters.baseColor.a);
+    parameters.diffuse = parameters.Cdiffuse * PI_RECIPROCAL;
+    parameters.F0 = mix(dielecticF0, parameters.baseColor.rgb, parameters.metallic);
+
+    float directRoughness = mix(0.01, 1.0, parameters.roughness);
     parameters.alpha = directRoughness*directRoughness;
 
     float kRoughness = (directRoughness + 1.0);
@@ -292,14 +298,12 @@ vec4 computeLightingWith(in LightingParameters parameters)
     parameters.NdotV = clamp(dot(parameters.N, parameters.V), 0.0, 1.0);
     parameters.ambientColor = parameters.baseColor * parameters.occlusion;
 
-    vec4 color = MaterialState.emission*emissionColor;
 #else
     parameters.ambientColor = MaterialState.ambient * parameters.baseColor;
     parameters.diffuse = MaterialState.diffuse*parameters.baseColor;
     parameters.specular = MaterialState.specular;
-
-    vec4 color = MaterialState.emission*parameters.baseColor;
 #endif
+    vec4 color = parameters.emissionColor;
     color += LightingState.ambientLighting * parameters.ambientColor;
 
     uint enabledLightMask = LightingState.enabledLightMask;
@@ -331,11 +335,20 @@ layout(location = 5) in vec4 inBoneIndices;
 layout(location = 6) in vec4 inBoneWeights;
 #endif
 
+#ifdef TANGENT_SPACE_ENABLED
+layout(location = 7) in vec4 inTangent4;
+#endif
+
 layout(location = 0) OPT_FLAT out vec4 outColor;
 layout(location = 1) out vec4 outTexcoord;
 //layout(location = 2) out vec4 outTexcoord2;
 layout(location = 3) out vec4 outPosition;
 layout(location = 4) out vec3 outNormal;
+
+#ifdef TANGENT_SPACE_ENABLED
+layout(location = 5) out vec3 outTangent;
+layout(location = 6) out vec3 outBitangent;
+#endif
 
 void main()
 {
@@ -353,17 +366,34 @@ void main()
     modelNormal += (SkinningState.boneMatrices[boneIndices.y]*unskinnedNormal).xyz*inBoneWeights.y;
     modelNormal += (SkinningState.boneMatrices[boneIndices.z]*unskinnedNormal).xyz*inBoneWeights.z;
     modelNormal += (SkinningState.boneMatrices[boneIndices.w]*unskinnedNormal).xyz*inBoneWeights.w;
+
+#   ifdef TANGENT_SPACE_ENABLED
+    vec4 unskinnedTangent = vec4(inTangent4.xyz, 0.0);
+    vec3 modelTangent = (SkinningState.boneMatrices[boneIndices.x]*unskinnedTangent).xyz*inBoneWeights.x;
+    modelNormal += (SkinningState.boneMatrices[boneIndices.y]*unskinnedTangent).xyz*inBoneWeights.y;
+    modelNormal += (SkinningState.boneMatrices[boneIndices.z]*unskinnedTangent).xyz*inBoneWeights.z;
+    modelNormal += (SkinningState.boneMatrices[boneIndices.w]*unskinnedTangent).xyz*inBoneWeights.w;
+#   endif
 #else
     vec3 modelPosition = inPosition;
     vec3 modelNormal = inNormal;
+#   ifdef TANGENT_SPACE_ENABLED
+    vec3 modelTangent = inTangent4.xyz;
+#   endif
 #endif
 
     vec4 viewPosition = TransformationState.modelViewMatrix * vec4(modelPosition, 1.0);
     vec3 viewNormal = (TransformationState.modelViewMatrix * vec4(modelNormal, 0.0)).xyz;
 
+#ifdef TANGENT_SPACE_ENABLED
+    vec3 viewTangent = (TransformationState.modelViewMatrix * vec4(modelTangent, 0.0)).xyz;
+    vec3 viewBitangent = cross(viewNormal, viewTangent) * inTangent4.w;
+#endif
+
 #if defined(LIGHTING_ENABLED) && defined(PER_VERTEX_LIGHTING)
     LightingParameters parameters;
     parameters.baseColor = vec4(1.0);
+    parameters.emissionColor = MaterialState.emission;
     parameters.P = viewPosition.xyz;
     parameters.V = normalize(-viewPosition.xyz);
     parameters.N = normalize(viewNormal);
@@ -378,6 +408,11 @@ void main()
 
     outPosition = viewPosition;
     outNormal = viewNormal;
+#ifdef TANGENT_SPACE_ENABLED
+    outTangent = viewTangent;
+    outBitangent = viewBitangent;
+#endif
+
     gl_ClipDistance[0] = dot(ExtraRenderingState.userClipPlane, outPosition);
     gl_Position = TransformationState.projectionMatrix * outPosition;
 }
@@ -415,13 +450,20 @@ vec4 applyFog(vec4 cleanColor, vec3 inPosition)
 }
 
 layout(set=0, binding=0) uniform sampler Sampler0;
-layout(set=6, binding=0) uniform texture2D Texture0;
+layout(set=6, binding=0) uniform texture2D AlbedoTexture;
+layout(set=6, binding=1) uniform texture2D EmissionTexture;
+layout(set=6, binding=2) uniform texture2D NormalTexture;
+layout(set=6, binding=3) uniform texture2D RMATexture;
 
 layout(location = 0) OPT_FLAT in vec4 inColor;
 layout(location = 1) in vec4 inTexcoord;
 //layout(location = 2) in vec4 inTexcoord2;
 layout(location = 3) in vec4 inPosition;
 layout(location = 4) in vec3 inNormal;
+#ifdef TANGENT_SPACE_ENABLED
+layout(location = 5) in vec3 inTangent;
+layout(location = 6) in vec3 inBitangent;
+#endif
 
 layout(location = 0) out vec4 outColor;
 
@@ -429,18 +471,45 @@ void main()
 {
     vec4 color = inColor;
 #ifdef TEXTURING_ENABLED
-    color = color*textureProj(sampler2D(Texture0, Sampler0), inTexcoord);
+    color *= textureProj(sampler2D(AlbedoTexture, Sampler0), inTexcoord);
 #endif
 
 #if defined(LIGHTING_ENABLED) && defined(PER_FRAGMENT_LIGHTING)
+    vec4 emissionColor = MaterialState.emission*inColor;
+#   ifdef TEXTURING_ENABLED
+    emissionColor *= textureProj(sampler2D(EmissionTexture, Sampler0), inTexcoord);
+#   endif
+
     LightingParameters parameters;
     parameters.baseColor = color;
+    parameters.emissionColor = emissionColor;
+
 #   if defined(PBR_METALLIC_ROUGHNESS)
-    parameters.occlusion = 1.0;
+    parameters.baseColor *= MaterialState.baseColor;
+    parameters.occlusion = MaterialState.occlusionFactor;
+    parameters.roughness = MaterialState.roughnessFactor;
+    parameters.metallic = MaterialState.metallicFactor;
+
+#       ifdef TEXTURING_ENABLED
+    vec4 rma = textureProj(sampler2D(RMATexture, Sampler0), inTexcoord);
+    parameters.occlusion *= rma.r;
+    parameters.roughness *= rma.g;
+    parameters.metallic *= rma.b;
+#       endif
 #   endif
     parameters.P = inPosition.xyz;
     parameters.V = normalize(-inPosition.xyz);
+
+#ifdef TANGENT_SPACE_ENABLED
+    vec3 t = normalize(inTangent);
+    vec3 b = normalize(inBitangent);
+    vec3 n = normalize(inNormal);
+    vec3 tangentNormal = textureProj(sampler2D(NormalTexture, Sampler0), inTexcoord).xyz*2.0 - 1.0;
+    parameters.N = normalize(mat3(t,b,n)*tangentNormal);
+#else
     parameters.N = normalize(inNormal);
+#endif
+
     color = computeLightingWith(parameters);
 #endif
 

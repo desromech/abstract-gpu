@@ -35,6 +35,19 @@ struct ImmediateShaderCompilationParameters
     bool lightingEnabled;
     agpu_immediate_renderer_lighting_model lightingModel;
 };
+
+struct ImmediateTextureBindingSet
+{
+    agpu::texture_ref albedoTexture;
+    agpu::texture_ref emissionTexture;
+    agpu::texture_ref normalTexture;
+    agpu::texture_ref rmaTexture;
+
+    size_t hash() const;
+    bool operator==(const ImmediateTextureBindingSet& other) const;
+    bool operator!=(const ImmediateTextureBindingSet& other) const;
+};
+
 }
 
 namespace std
@@ -43,6 +56,15 @@ template<>
 struct hash<AgpuCommon::ImmediateShaderCompilationParameters>
 {
     size_t operator()(const AgpuCommon::ImmediateShaderCompilationParameters &ref) const
+    {
+        return ref.hash();
+    }
+};
+
+template<>
+struct hash<AgpuCommon::ImmediateTextureBindingSet>
+{
+    size_t operator()(const AgpuCommon::ImmediateTextureBindingSet& ref) const
     {
         return ref.hash();
     }
@@ -74,6 +96,10 @@ class ImmediateSharedRenderingStates
 {
 public:
     ImmediateRendererSamplerState linearSampler;
+    agpu::texture_ref defaultAlbedoTexture;
+    agpu::texture_ref defaultEmissionTexture;
+    agpu::texture_ref defaultNormalTexture;
+    agpu::texture_ref defaultRMATexture;
 };
 
 /**
@@ -86,6 +112,7 @@ struct ImmediateRendererVertex
     Vector3F position;
     Vector4F color;
 };
+
 
 struct ImmediateRenderingState
 {
@@ -111,7 +138,7 @@ struct ImmediateRenderingState
     agpu::shader_resource_binding_ref materialStateBinding;
     agpu::shader_resource_binding_ref transformationStateBinding;
     agpu::shader_resource_binding_ref skinningStateBinding;
-    agpu::texture_ref activeTexture;
+    ImmediateTextureBindingSet textureBindingSet;
 };
 
 struct TransformationState
@@ -657,7 +684,7 @@ private:
     agpu_error flushImmediateVertexRenderingState();
     agpu_error flushRenderingData();
 
-    agpu::shader_resource_binding_ref getValidTextureBindingFor(const agpu::texture_ref &texture);
+    agpu::shader_resource_binding_ref getValidTextureBindingFor(const ImmediateTextureBindingSet &bindingSet);
 
     template<typename FT>
     agpu_error delegateToStateTracker(const FT &f)
@@ -740,7 +767,7 @@ private:
 
     // Texture bindings
     std::vector<agpu::shader_resource_binding_ref> allocatedTextureBindings;
-    std::unordered_map<agpu::texture_ref, agpu::shader_resource_binding_ref> usedTextureBindingMap;
+    std::unordered_map<ImmediateTextureBindingSet, agpu::shader_resource_binding_ref> usedTextureBindingMap;
     size_t usedTextureBindingCount;
 };
 

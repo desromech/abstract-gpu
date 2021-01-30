@@ -7,7 +7,7 @@
 struct SampleVertex
 {
     SampleVertex(const glm::vec3 &position, const glm::vec3 &normal, const glm::vec4 &color, const glm::vec2 &texcoord)
-        : position(position), normal(normal), color(color), texcoord(texcoord), boneWeights(1, 0, 0, 0) {}
+        : position(position), normal(normal), color(color), texcoord(texcoord), boneWeights(1, 0, 0, 0), tangent4(1, 0, 0, 1) {}
 
     glm::vec3 position;
     glm::vec3 normal;
@@ -15,6 +15,7 @@ struct SampleVertex
     glm::vec2 texcoord;
     glm::ivec4 boneIndices;
     glm::vec4 boneWeights;
+    glm::vec4 tangent4;
 
     static SampleVertex onlyColor(float x, float y, float z, float r, float g, float b, float a)
     {
