@@ -1347,6 +1347,7 @@ agpu_error ImmediateRenderer::beginPrimitives(agpu_primitive_topology type)
     lastDrawnVertexIndex = vertices.size();
 
     auto stateToRender = currentRenderingState;
+	stateToRender.tangentSpaceEnabled = false;
     pendingRenderingCommands.push_back([=]{
         flushRenderingState(stateToRender);
     });
@@ -1589,7 +1590,8 @@ agpu_error ImmediateRenderer::flushShadersForRenderingState(const ImmediateRende
 			state.texturingEnabled == lastFlushedRenderingState.texturingEnabled &&
 			state.lightingEnabled == lastFlushedRenderingState.lightingEnabled &&
 			state.lightingModel == lastFlushedRenderingState.lightingModel &&
-			state.skinningEnabled == lastFlushedRenderingState.skinningEnabled)
+			state.skinningEnabled == lastFlushedRenderingState.skinningEnabled &&
+			state.tangentSpaceEnabled == lastFlushedRenderingState.tangentSpaceEnabled)
 			return AGPU_OK;
 	}
 
@@ -1747,7 +1749,6 @@ agpu_error ImmediateRenderer::beginMeshWithVertices(agpu_size vertexCount, agpu_
 	haveExplicitIndexBuffer = false;
     currentImmediateMeshBaseVertex = vertices.size();
     currentImmediateMeshVertexCount = vertexCount;
-    //printf("beginMeshWithVertices baseVertex %d\n", (int)currentImmediateMeshBaseVertex);
     vertices.reserve(vertexCount);
 
     auto positionsBytes = reinterpret_cast<const uint8_t*> (positionsPointer);
