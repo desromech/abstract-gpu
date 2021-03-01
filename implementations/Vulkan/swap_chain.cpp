@@ -17,12 +17,12 @@ inline VkPresentModeKHR mapPresentationMode(agpu_swap_chain_presentation_mode mo
 {
     switch(mode)
     {
-    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT:
     case AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO_RELAXED:
     default: return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
 
     case AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE: return VK_PRESENT_MODE_IMMEDIATE_KHR;
     case AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX: return VK_PRESENT_MODE_MAILBOX_KHR;
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT:
     case AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO: return VK_PRESENT_MODE_FIFO_KHR;
     }
 }
@@ -36,7 +36,13 @@ AVkSwapChain::AVkSwapChain(const agpu::device_ref &device)
 
 AVkSwapChain::~AVkSwapChain()
 {
-    for(auto semaphore : semaphores)
+    for(auto semaphore : imageAvailableSemaphores)
+    {
+        if(semaphore)
+            vkDestroySemaphore(deviceForVk->device, semaphore, nullptr);
+    }
+
+    for(auto semaphore : renderingFinishedSemaphores)
     {
         if(semaphore)
             vkDestroySemaphore(deviceForVk->device, semaphore, nullptr);
@@ -306,9 +312,9 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
 
     VkPresentModeKHR swapchainPresentMode = presentModes[0];
     if(createInfo->presentation_mode == AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT)
-        createInfo->presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX;
+        createInfo->presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO;
     if(createInfo->fallback_presentation_mode == AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT)
-        createInfo->fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO_RELAXED;
+        createInfo->fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO;
 
     auto presentationMode = mapPresentationMode(createInfo->presentation_mode);
     auto fallbackPresentationMode = mapPresentationMode(createInfo->fallback_presentation_mode);
@@ -345,7 +351,7 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
     swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     swapchainInfo.preTransform = (VkSurfaceTransformFlagBitsKHR)preTransform;
     swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchainInfo.imageArrayLayers = 1;
+    swapchainInfo.imageArrayLayers = createInfo->layers;
     swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchainInfo.presentMode = swapchainPresentMode;
     swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
@@ -408,11 +414,16 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
     VkSemaphoreCreateInfo semaphoreInfo;
     memset(&semaphoreInfo, 0, sizeof(semaphoreInfo));
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphores.resize(imageCount, VK_NULL_HANDLE);
+    imageAvailableSemaphores.resize(imageCount, VK_NULL_HANDLE);
+    renderingFinishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
     currentSemaphoreIndex = 0;
     for (size_t i = 0; i < imageCount; ++i)
     {
-        error = vkCreateSemaphore(deviceForVk->device, &semaphoreInfo, nullptr, &semaphores[i]);
+        error = vkCreateSemaphore(deviceForVk->device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]);
+        if(error)
+            return false;
+
+        error = vkCreateSemaphore(deviceForVk->device, &semaphoreInfo, nullptr, &renderingFinishedSemaphores[i]);
         if(error)
             return false;
     }
@@ -468,17 +479,19 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
         framebuffers[i].resize(swapChainLayers);
         for(size_t layerIndex = 0; layerIndex < swapChainLayers; ++layerIndex)
         {
-            colorBufferViewDescription.subresource_range.base_arraylayer = layerIndex;
+            colorBufferViewDescription.subresource_range.base_arraylayer = agpu_uint(layerIndex);
             auto colorBufferView = agpu::texture_view_ref(colorBuffer->createView(&colorBufferViewDescription));
 
             auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorBufferView, depthStencilBufferView);
-            framebuffer.as<AVkFramebuffer> ()->swapChainFramebuffer = true;
+            auto avkFramebuffer = framebuffer.as<AVkFramebuffer> ();
+            avkFramebuffer->swapChainFramebuffer = true;
+            avkFramebuffer->waitSemaphore = imageAvailableSemaphores[i];
+            avkFramebuffer->signalSemaphore = renderingFinishedSemaphores[i];
             framebuffers[i][layerIndex] = framebuffer;
 
             // Release the references to the buffers.
             if (!framebuffer)
                 return false;
-
         }
     }
 
@@ -488,8 +501,7 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
 
 agpu_error AVkSwapChain::getNextBackBufferIndex()
 {
-    auto semaphore = semaphores[currentSemaphoreIndex];
-    currentSemaphoreIndex = (currentSemaphoreIndex + 1) % semaphores.size();
+    auto semaphore = imageAvailableSemaphores[currentSemaphoreIndex];
     auto error = deviceForVk->fpAcquireNextImageKHR(deviceForVk->device, handle, UINT64_MAX, semaphore, VK_NULL_HANDLE, &currentBackBufferIndex);
     agpu_error result = AGPU_OK;
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
@@ -505,46 +517,44 @@ agpu_error AVkSwapChain::getNextBackBufferIndex()
         CONVERT_VULKAN_ERROR(error);
     }
 
-    {
-        VkSubmitInfo submit;
-        memset(&submit, 0, sizeof(submit));
-        submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit.waitSemaphoreCount = 1;
-        submit.pWaitSemaphores = &semaphore;
-
-        VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        submit.pWaitDstStageMask = &waitDstStageMask;
-
-        vkQueueSubmit(graphicsQueue.as<AVkCommandQueue> ()->queue, 1, &submit, VK_NULL_HANDLE);
-    }
-
     return result;
 }
 
 agpu_error AVkSwapChain::swapBuffers()
 {
+    auto semaphore = renderingFinishedSemaphores[currentSemaphoreIndex];
+
     // Present.
-    VkPresentInfoKHR presentInfo;
-    memset(&presentInfo, 0, sizeof(presentInfo));
+    VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.swapchainCount = 1;
+    presentInfo.waitSemaphoreCount = 1;
     presentInfo.pSwapchains = &handle;
     presentInfo.pImageIndices = &currentBackBufferIndex;
-    auto error = deviceForVk->fpQueuePresentKHR(presentationQueue.as<AVkCommandQueue> ()->queue, &presentInfo);
+    presentInfo.pWaitSemaphores = &semaphore;
+    presentInfo.swapchainCount = 1;
 
+    auto error = deviceForVk->fpQueuePresentKHR(presentationQueue.as<AVkCommandQueue> ()->queue, &presentInfo);
+    currentSemaphoreIndex = (currentSemaphoreIndex + 1) % imageAvailableSemaphores.size();
+
+    bool isSuboptimal = false;
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
         return AGPU_OUT_OF_DATE;
     }
     else if (error == VK_SUBOPTIMAL_KHR)
     {
+        isSuboptimal = true;
     }
     else if (error)
     {
         CONVERT_VULKAN_ERROR(error);
     }
 
-    return getNextBackBufferIndex();
+    auto agpuError = getNextBackBufferIndex();
+    if (agpuError)
+        return agpuError;
+
+    return isSuboptimal ? AGPU_SUBOPTIMAL : AGPU_OK;
 }
 
 agpu::framebuffer_ptr AVkSwapChain::getCurrentBackBuffer()

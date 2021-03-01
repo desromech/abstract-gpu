@@ -164,6 +164,8 @@ void AVkCommandList::resetState()
     drawIndirectBuffer.reset();
     computeDispatchIndirectBuffer.reset();
     shaderSignature.reset();
+    waitSemaphores.clear();
+    signalSemaphores.clear();
 
     isSecondaryContent = false;
 
@@ -454,6 +456,10 @@ agpu_error AVkCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
         passBeginInfo.pClearValues = &avkRenderPass->clearValues[0];
     }
 
+    // Wait for the semaphore
+    if(avkCurrentFramebuffer->waitSemaphore)
+        addWaitSemaphore(avkCurrentFramebuffer->waitSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
     vkCmdBeginRenderPass(commandBuffer, &passBeginInfo, secondaryContent ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
     return AGPU_OK;
 }
@@ -498,6 +504,10 @@ agpu_error AVkCommandList::endRenderPass()
         auto depthStencilUsageMode = depthStencilAttachment->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
         transitionImageUsageMode(depthStencilAttachment->image, depthStencilAttachment->description.usage_modes, agpu_texture_usage_mode_mask(depthStencilUsageMode), depthStencilAttachment->description.main_usage_mode, range);
     }
+
+    // Signal the semaphore
+    if(avkCurrentFramebuffer->signalSemaphore)
+        addSignalSemaphore(avkCurrentFramebuffer->signalSemaphore);
 
     // Unset the current framebuffer
     currentFramebuffer.reset();
@@ -685,6 +695,32 @@ agpu_error AVkCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, 
 agpu_error AVkCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
 {
     return AGPU_UNIMPLEMENTED;
+}
+
+void AVkCommandList::addWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags dstStageMask)
+{
+    for(size_t i = 0; i < waitSemaphores.size(); ++i)
+    {
+        if (waitSemaphores[i] == semaphore)
+        {
+            waitSemaphoresDstStageMask[i] |= dstStageMask;
+            return;
+        }
+    }
+
+    waitSemaphores.push_back(semaphore);
+    waitSemaphoresDstStageMask.push_back(dstStageMask);
+}
+
+void AVkCommandList::addSignalSemaphore(VkSemaphore semaphore)
+{
+    for(auto s : signalSemaphores)
+    {
+        if(s == semaphore)
+            return;
+    }
+
+    signalSemaphores.push_back(semaphore);
 }
 
 } // End of namespace AgpuVulkan

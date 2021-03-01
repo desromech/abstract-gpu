@@ -41,11 +41,15 @@ agpu_error AVkCommandQueue::addCommandList(const agpu::command_list_ref &command
     if (avkCommandList->queueFamilyIndex != queueFamilyIndex)
         return AGPU_INVALID_PARAMETER;
 
-    VkSubmitInfo submitInfo;
-    memset(&submitInfo, 0, sizeof(VkSubmitInfo));
+    VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = avkCommandList->waitSemaphores.size();
+    submitInfo.pWaitSemaphores = avkCommandList->waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = avkCommandList->waitSemaphoresDstStageMask.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &avkCommandList->commandBuffer;
+    submitInfo.signalSemaphoreCount = avkCommandList->signalSemaphores.size();
+    submitInfo.pSignalSemaphores = avkCommandList->signalSemaphores.data();
 
     auto error = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CONVERT_VULKAN_ERROR(error);

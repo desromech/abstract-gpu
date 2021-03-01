@@ -12,6 +12,8 @@ AVkFramebuffer::AVkFramebuffer(const agpu::device_ref &device)
     renderPass = VK_NULL_HANDLE;
     framebuffer = VK_NULL_HANDLE;
     swapChainFramebuffer = false;
+    waitSemaphore = VK_NULL_HANDLE;
+    signalSemaphore= VK_NULL_HANDLE;
 }
 
 AVkFramebuffer::~AVkFramebuffer()

@@ -16,6 +16,23 @@ inline DXGI_FORMAT sanitizeSwapChainFormat(DXGI_FORMAT format)
     default: return format;
     }
 }
+
+inline UINT mapPresentationModeToSyncInterval(agpu_swap_chain_presentation_mode mode)
+{
+    switch (mode)
+    {
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO:;
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_DEFAULT:
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_FIFO_RELAXED:
+    default:
+        return 1;
+
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE:
+    case AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX:
+        return 0;
+    }
+}
+
 ADXSwapChain::ADXSwapChain(const agpu::device_ref &cdevice)
     : device(cdevice), window(NULL), frameIndex(0), frameCount(0), windowWidth(0), windowHeight(0)
 {
@@ -52,6 +69,8 @@ agpu::swap_chain_ref ADXSwapChain::createNewSwapChain(const agpu::device_ref &de
     adxSwapChain->window = (IUnknown*)createInfo->window;
 #endif
     adxSwapChain->frameCount = createInfo->buffer_count;
+    adxSwapChain->syncInterval = mapPresentationModeToSyncInterval(createInfo->presentation_mode);
+
     // Create the swap chain
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
     swapChainDesc.BufferCount = (UINT)adxSwapChain->frameCount;
@@ -110,6 +129,7 @@ agpu::swap_chain_ref ADXSwapChain::createResizedSwapChain(const agpu::device_ref
     adxSwapChain->windowWidth = createInfo->width;
     adxSwapChain->windowHeight = createInfo->height;
     adxSwapChain->swapChain = oldAdxSwapChain->swapChain;
+    adxSwapChain->syncInterval = mapPresentationModeToSyncInterval(createInfo->presentation_mode);
 
     oldAdxSwapChain->disconnect();
     if (adxSwapChain->overlayWindow)
@@ -221,7 +241,7 @@ bool ADXSwapChain::createFrameBuffers(agpu_swap_chain_create_info* createInfo)
 
 agpu_error ADXSwapChain::swapBuffers()
 {
-    ERROR_IF_FAILED(swapChain->Present(1, 0));
+    ERROR_IF_FAILED(swapChain->Present(syncInterval, 0));
     frameIndex = (frameIndex + 1) % frameCount;
     return AGPU_OK;
 }

@@ -26,6 +26,8 @@ public:
     agpu_uint height;
     VkRenderPass renderPass;
     VkFramebuffer framebuffer;
+    VkSemaphore waitSemaphore;
+    VkSemaphore signalSemaphore;
 
     // We are keeping these references for life cycle management purposes.
     std::vector<agpu::texture_view_ref> attachmentViews;

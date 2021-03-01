@@ -49,6 +49,7 @@ public:
     size_t frameCount;
     uint32_t windowWidth, windowHeight;
 	AgpuCommon::OverlaySwapChainWindowPtr overlayWindow;
+    UINT syncInterval;
 };
 
 } // End of namespace AgpuD3D12

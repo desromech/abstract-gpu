@@ -45,7 +45,8 @@ public:
     VkColorSpaceKHR colorSpace;
 
     VkSwapchainKHR handle;
-    std::vector<VkSemaphore> semaphores;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderingFinishedSemaphores;
     std::vector<std::vector<agpu::framebuffer_ref> > framebuffers;
 
     uint32_t imageCount;

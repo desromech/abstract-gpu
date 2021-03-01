@@ -55,11 +55,18 @@ public:
     virtual agpu_error copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region) override;
     virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
 
+    void addWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags dstStageMask);
+    void addSignalSemaphore(VkSemaphore semaphore);
+
     agpu::device_ref device;
     agpu::command_allocator_ref allocator;
     agpu_command_list_type type;
     agpu_uint queueFamilyIndex;
     VkCommandBuffer commandBuffer;
+
+    std::vector<VkSemaphore> waitSemaphores;
+    std::vector<VkPipelineStageFlags> waitSemaphoresDstStageMask;
+    std::vector<VkSemaphore> signalSemaphores;
 
 private:
     agpu_buffer_usage_mask getCurrentBufferUsageMode(const agpu::buffer_ref &buffer);
