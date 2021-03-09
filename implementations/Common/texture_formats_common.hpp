@@ -297,6 +297,9 @@ inline size_t blockSizeOfCompressedTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_BC1_TYPELESS:
     case AGPU_TEXTURE_FORMAT_BC1_UNORM:
     case AGPU_TEXTURE_FORMAT_BC1_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC4_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC4_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC4_SNORM:
         return 8;
     case AGPU_TEXTURE_FORMAT_BC2_TYPELESS:
     case AGPU_TEXTURE_FORMAT_BC2_UNORM:
@@ -304,6 +307,9 @@ inline size_t blockSizeOfCompressedTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_BC3_TYPELESS:
     case AGPU_TEXTURE_FORMAT_BC3_UNORM:
     case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC5_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC5_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC5_SNORM:
         return 16;
     default:
         abort(); // Not yet supported.
@@ -323,6 +329,12 @@ inline size_t blockWidthOfCompressedTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_BC3_TYPELESS:
     case AGPU_TEXTURE_FORMAT_BC3_UNORM:
     case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC4_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC4_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC4_SNORM:
+    case AGPU_TEXTURE_FORMAT_BC5_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC5_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC5_SNORM:
         return 4;
     default:
         abort(); // Not yet supported.
@@ -342,6 +354,12 @@ inline size_t blockHeightOfCompressedTextureFormat(agpu_texture_format format)
     case AGPU_TEXTURE_FORMAT_BC3_TYPELESS:
     case AGPU_TEXTURE_FORMAT_BC3_UNORM:
     case AGPU_TEXTURE_FORMAT_BC3_UNORM_SRGB:
+    case AGPU_TEXTURE_FORMAT_BC4_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC4_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC4_SNORM:
+    case AGPU_TEXTURE_FORMAT_BC5_TYPELESS:
+    case AGPU_TEXTURE_FORMAT_BC5_UNORM:
+    case AGPU_TEXTURE_FORMAT_BC5_SNORM:
         return 4;
     default:
         abort(); // Not yet supported.
