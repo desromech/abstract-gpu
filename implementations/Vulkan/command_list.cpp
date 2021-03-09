@@ -528,6 +528,12 @@ agpu_error AVkCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destF
         avkSourceFramebuffer->height != avkDestFramebuffer->height)
         return AGPU_INVALID_PARAMETER;
 
+    if(avkDestFramebuffer->waitSemaphore)
+        addWaitSemaphore(avkDestFramebuffer->waitSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+    if(avkDestFramebuffer->signalSemaphore)
+        addSignalSemaphore(avkDestFramebuffer->signalSemaphore);
+
     return resolveTexture(avkSourceFramebuffer->attachmentTextures[0], 0, 0,
             avkDestFramebuffer->attachmentTextures[0], 0, 0,
             1, 1, AGPU_TEXTURE_ASPECT_COLOR);
