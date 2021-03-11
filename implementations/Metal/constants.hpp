@@ -24,11 +24,10 @@ inline MTLBlendFactor mapBlendFactor(agpu_blending_factor factor, bool alpha)
     case AGPU_BLENDING_SRC_ALPHA_SAT: return MTLBlendFactorSourceAlphaSaturated;
     case AGPU_BLENDING_CONSTANT_FACTOR: return alpha ? MTLBlendFactorBlendColor : MTLBlendFactorBlendAlpha;
     case AGPU_BLENDING_INVERTED_CONSTANT_FACTOR: return alpha ? MTLBlendFactorOneMinusBlendColor : MTLBlendFactorOneMinusBlendAlpha;
-/*    case AGPU_BLENDING_SRC_1COLOR: return MTLBlendFactorSource1Color;
+    case AGPU_BLENDING_SRC_1COLOR: return MTLBlendFactorSource1Color;
     case AGPU_BLENDING_INVERTED_SRC_1COLOR: return MTLBlendFactorOneMinusSource1Color;
     case AGPU_BLENDING_SRC_1ALPHA: return MTLBlendFactorSource1Alpha;
     case AGPU_BLENDING_INVERTED_SRC_1ALPHA: return MTLBlendFactorOneMinusSource1Alpha;
-    */
     default: abort();
     }
 }

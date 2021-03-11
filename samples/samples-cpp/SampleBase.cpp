@@ -329,8 +329,9 @@ int SampleBase::main(int argc, const char **argv)
     currentSwapChainCreateInfo.width = screenWidth;
     currentSwapChainCreateInfo.height = screenHeight;
     currentSwapChainCreateInfo.buffer_count = 3;
+    currentSwapChainCreateInfo.flags = AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI;
     if (UseOverlayWindow)
-        currentSwapChainCreateInfo.flags = AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW;
+        currentSwapChainCreateInfo.flags = agpu_swap_chain_flags(currentSwapChainCreateInfo.flags | AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW);
 
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
@@ -356,6 +357,9 @@ int SampleBase::main(int argc, const char **argv)
         printError("Failed to create the swap chain\n");
         return false;
     }
+
+    screenWidth = swapChain->getWidth();
+    screenHeight = swapChain->getHeight();
 
     // Get the preferred shader language.
     preferredShaderLanguage = device->getPreferredIntermediateShaderLanguage();
@@ -497,15 +501,16 @@ void SampleBase::recreateSwapChain()
 {
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
-    screenWidth = std::max(w, 4);
-    screenHeight = std::max(h, 4);
 
     device->finishExecution();
     auto newSwapChainCreateInfo = currentSwapChainCreateInfo;
-    newSwapChainCreateInfo.width = screenWidth;
-    newSwapChainCreateInfo.height = screenHeight;
+    newSwapChainCreateInfo.width = w;
+    newSwapChainCreateInfo.height = h;
     newSwapChainCreateInfo.old_swap_chain = swapChain.get();
     swapChain = device->createSwapChain(commandQueue, &newSwapChainCreateInfo);
+    
+    screenWidth = swapChain->getWidth();
+    screenHeight = swapChain->getHeight();
 }
 
 void SampleBase::render()

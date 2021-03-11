@@ -7,43 +7,53 @@
 @implementation AGPUSwapChainView
 -(AGPUSwapChainView*) initWithSwapChain: (AgpuMetal::AMtlSwapChain*)theSwapChain
 {
-    swapChain = theSwapChain;
-    auto &swapChainInfo = swapChain->swapChainInfo;
+    auto &swapChainInfo = theSwapChain->swapChainInfo;
 
     if(![self initWithFrame: NSMakeRect(swapChainInfo.x, swapChainInfo.y, swapChainInfo.width, swapChainInfo.height)])
         return nil;
 
-    CGSize drawableSize;
-    drawableSize.width = swapChainInfo.width;
-    drawableSize.height = swapChainInfo.height;
+    [self createLayerFor: theSwapChain];
     
-    auto metalLayer = [CAMetalLayer new];
+    return self;
+}
+
+-(void) createLayerFor: (AgpuMetal::AMtlSwapChain*)theSwapChain
+{
+    swapChain = theSwapChain;
+    auto &swapChainInfo = swapChain->swapChainInfo;
+
+    auto metalLayer = [CAMetalLayer layer];
     metalLayer.device = theSwapChain->deviceForMetal->device;
     metalLayer.framebufferOnly = YES;
-    metalLayer.drawableSize = drawableSize;
     metalLayer.pixelFormat = AgpuMetal::mapTextureFormat(swapChainInfo.colorbuffer_format);
     if(metalLayer.pixelFormat == MTLPixelFormatInvalid)
         metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     [self setLayer: metalLayer];
     [self setWantsLayer: YES];
     swapChain->metalLayer = metalLayer;
-    return self;
+
+    CGSize creationSize = {};
+    creationSize.width = swapChainInfo.width;
+    creationSize.height = swapChainInfo.height;
+
+    CGRect bounds = {};
+    bounds.size = creationSize;
+    metalLayer.bounds = bounds;
+
+    if((swapChainInfo.flags & AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI) == 0)
+    {
+        metalLayer.contentsScale = 1.0;
+        metalLayer.drawableSize = creationSize;
+    }
 }
 
 - (void) swapChainRecreatedInto: (AgpuMetal::AMtlSwapChain*)theNewSwapChain
 {
-    auto metalLayer = swapChain->metalLayer;
     swapChain->metalLayer = nil;
-    theNewSwapChain->metalLayer = metalLayer;
-    swapChain = theNewSwapChain;
-    
+
     auto &swapChainInfo = theNewSwapChain->swapChainInfo;
     self.frame = NSMakeRect(swapChainInfo.x, swapChainInfo.y, swapChainInfo.width, swapChainInfo.height);
-    
-    CGSize drawableSize;
-    drawableSize.width = swapChainInfo.width;
-    drawableSize.height = swapChainInfo.height;
-    metalLayer.drawableSize = drawableSize;
+    [self createLayerFor: theNewSwapChain];
 }
 
 @end
@@ -110,6 +120,17 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
         }        
     }
 
+    auto drawable = [amtlSwapChain->metalLayer nextDrawable];
+    if(!drawable)
+        return agpu::swap_chain_ref();
+
+    // Fetch the actual drawable size.
+    CGSize drawableSize = amtlSwapChain->metalLayer.drawableSize;
+    agpu_uint drawableWidth = drawableSize.width;
+    agpu_uint drawableHeight = drawableSize.height;
+    amtlSwapChain->swapChainInfo.width = drawableWidth;
+    amtlSwapChain->swapChainInfo.height = drawableHeight;
+
     // Create the depth stencil buffer
     agpu::texture_ref depthStencilBuffer;
     agpu::texture_view_ref depthStencilBufferView;
@@ -120,8 +141,8 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
         // Depth stencil buffer descriptions.
         agpu_texture_description depthStencilDesc = {};
         depthStencilDesc.type = AGPU_TEXTURE_2D;
-        depthStencilDesc.width = createInfo->width;
-        depthStencilDesc.height = createInfo->height;
+        depthStencilDesc.width = drawableWidth;
+        depthStencilDesc.height = drawableHeight;
         depthStencilDesc.depth = 1;
         depthStencilDesc.layers = 1;
         depthStencilDesc.format = createInfo->depth_stencil_format;
@@ -145,7 +166,7 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
     for(agpu_uint i = 0; i < createInfo->buffer_count; ++i)
     {
         // Create the framebuffer
-        auto framebuffer = AMtlFramebuffer::createForSwapChain(device, createInfo->width, createInfo->height, depthStencilBufferView);
+        auto framebuffer = AMtlFramebuffer::createForSwapChain(device, drawableWidth, drawableHeight, depthStencilBufferView);
         if(!framebuffer)
             return agpu::swap_chain_ref();
 
@@ -159,11 +180,7 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
         oldMtlSwapChain->framebuffers[oldMtlSwapChain->currentFramebufferIndex]
             .as<AMtlFramebuffer> ()->releaseDrawable();
     }
-    
-    auto drawable = [amtlSwapChain->metalLayer nextDrawable];
-    if(!drawable)
-        return agpu::swap_chain_ref();
-        
+            
     amtlSwapChain->currentFramebufferIndex = 0;
     const auto &fb = amtlSwapChain->framebuffers[amtlSwapChain->currentFramebufferIndex];
     fb.as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
