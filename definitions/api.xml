@@ -427,7 +427,7 @@
         <enum name="swap_chain_flags" optionalPrefix="SwapChainFlag">
             <constant name="SwapChainFlagNone" value="0" />
             <constant name="SwapChainFlagOverlayWindow" value="1" />
-            <constant name="SwapChainFlagFetchResolutionFromWindow" value="2" />
+            <constant name="SwapChainFlagApplyScaleFactorForHiDPI" value="2" />
         </enum>
 
         <enum name="swap_chain_presentation_mode" optionalPrefix="SwapChainPresentationMode">

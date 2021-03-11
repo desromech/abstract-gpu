@@ -149,7 +149,7 @@ enum DeviceOpenFlags valueType: Int32; values: #{
 enum SwapChainFlags valueType: Int32; values: #{
 	None: 0.
 	OverlayWindow: 1.
-	FetchResolutionFromWindow: 2.
+	ApplyScaleFactorForHiDPI: 2.
 }.
 
 enum SwapChainPresentationMode valueType: Int32; values: #{
