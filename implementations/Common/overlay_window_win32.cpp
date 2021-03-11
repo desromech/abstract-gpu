@@ -62,7 +62,7 @@ OverlaySwapChainWindowPtr createOverlaySwapChainWin32Window(agpu_swap_chain_crea
 	});
 
 	HINSTANCE hInstance = GetModuleHandle(nullptr);
-	HWND overlayHwnd = CreateWindowExW(WS_EX_TRANSPARENT, L"AGPUSwapChainOverlayWindowClass", L"AGPUOverlay", WS_CHILD | WS_VISIBLE | WS_DISABLED , createInfo->x, createInfo->y, createInfo->width, createInfo->height, (HWND)createInfo->window, NULL, hInstance, NULL);
+	HWND overlayHwnd = CreateWindowExW(0, L"AGPUSwapChainOverlayWindowClass", L"AGPUOverlay", WS_CHILD | WS_VISIBLE | WS_DISABLED , createInfo->x, createInfo->y, createInfo->width, createInfo->height, (HWND)createInfo->window, NULL, hInstance, NULL);
 	if (!overlayHwnd)
 		return nullptr;
 
