@@ -648,7 +648,8 @@ typedef enum {
 	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX = 0,
 	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_FRAGMENT = 1,
 	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS = 2,
-	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT = 3,
+	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_FLAT_COLOR = 3,
+	AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT = 4,
 } agpu_immediate_renderer_lighting_model;
 
 typedef enum {
@@ -1033,10 +1034,16 @@ typedef struct agpu_immediate_renderer_material_metallic_roughness {
 	agpu_float occlusion_factor;
 } agpu_immediate_renderer_material_metallic_roughness;
 
+/* Structure agpu_immediate_renderer_material_flat_color. */
+typedef struct agpu_immediate_renderer_material_flat_color {
+	agpu_vector4f color;
+} agpu_immediate_renderer_material_flat_color;
+
 /* Union agpu_immediate_renderer_material. */
 typedef union agpu_immediate_renderer_material {
 	agpu_immediate_renderer_material_classic classic;
 	agpu_immediate_renderer_material_metallic_roughness metallic_roughness;
+	agpu_immediate_renderer_material_flat_color flat_color;
 } agpu_immediate_renderer_material;
 
 /* Global functions. */

@@ -703,7 +703,8 @@ enum ImmediateRendererLightingModel valueType: Int32; values: #{
 	PerVertex: 0.
 	PerFragment: 1.
 	MetallicRoughness: 2.
-	Count: 3.
+	FlatColor: 3.
+	Count: 4.
 }.
 
 enum ImmediateRendererFogMode valueType: Int32; values: #{
@@ -1048,9 +1049,14 @@ struct ImmediateRendererMaterialMetallicRoughness definition: {
 	public field occlusion_factor type: Float32.
 }.
 
+struct ImmediateRendererMaterialFlatColor definition: {
+	public field color type: Vector4f.
+}.
+
 union ImmediateRendererMaterial definition: {
 	public field classic type: ImmediateRendererMaterialClassic.
 	public field metallic_roughness type: ImmediateRendererMaterialMetallicRoughness.
+	public field flat_color type: ImmediateRendererMaterialFlatColor.
 }.
 
 ################################################################################

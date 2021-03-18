@@ -186,7 +186,8 @@ struct SkinningState
 
     SkinningState(const SkinningState &other)
     {
-        memcpy(boneMatrices, other.boneMatrices, sizeof(boneMatrices));
+        for(int i = 0; i < 128; ++i)
+            boneMatrices[i] = other.boneMatrices[i];
     }
 
     bool operator==(const SkinningState &other) const;
@@ -280,7 +281,8 @@ static_assert(sizeof(LightingState) % 256 == 0, "LightingState requires an align
 enum MaterialStateType : uint32_t
 {
     Classic = 0,
-    MetallicRoughness
+    MetallicRoughness,
+    FlatColor
 };
 
 struct ClassicMaterialState
@@ -318,6 +320,20 @@ struct MetallicRoughnessMaterialState
     Vector4F baseColor;
 };
 
+struct FlatColorMaterialState
+{
+    static FlatColorMaterialState defaultMaterial();
+
+    size_t hash() const;
+    bool operator==(const FlatColorMaterialState &other) const;
+    bool operator!=(const FlatColorMaterialState &other) const;
+
+    MaterialStateType type;
+    uint32_t padding[3];
+
+    Vector4F color;
+};
+
 struct MaterialState
 {
     MaterialState();
@@ -332,6 +348,7 @@ struct MaterialState
 
         ClassicMaterialState classic;
         MetallicRoughnessMaterialState metallicRoughness;
+        FlatColorMaterialState flat;
     };
 
     uint8_t extraPadding[176];
@@ -698,6 +715,11 @@ private:
     bool hasMetallicRoughnessLighting() const
     {
         return currentRenderingState.lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS;
+    }
+
+    bool hasFlatColorLightingMode() const
+    {
+        return currentRenderingState.lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_FLAT_COLOR;
     }
 
     // Common state

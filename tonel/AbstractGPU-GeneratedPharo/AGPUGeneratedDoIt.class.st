@@ -53,6 +53,7 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUImmediateRendererLight rebuildFieldAccessors.
 	AGPUImmediateRendererMaterialClassic rebuildFieldAccessors.
 	AGPUImmediateRendererMaterialMetallicRoughness rebuildFieldAccessors.
+	AGPUImmediateRendererMaterialFlatColor rebuildFieldAccessors.
 	AGPUImmediateRendererMaterial rebuildFieldAccessors.
 ]
 

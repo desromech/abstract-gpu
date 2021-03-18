@@ -64,22 +64,29 @@ std::string ImmediateShaderCompilationParameters::shaderOptionsString(agpu_shade
 
     if(lightingEnabled)
 	{
-		if(lightingEnabled)
-			options += "#define LIGHTING_ENABLED\n";
-		switch(lightingModel)
+		if(lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_FLAT_COLOR)
 		{
-		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX:
-			options += "#define PER_VERTEX_LIGHTING\n";
-			break;
-		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_FRAGMENT:
-			options += "#define PER_FRAGMENT_LIGHTING\n";
-			break;
-		case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS:
-			options += "#define PER_FRAGMENT_LIGHTING\n";
-			options += "#define PBR_METALLIC_ROUGHNESS\n";
-			break;
-		default:
-			break;
+			options += "#define FLAT_COLOR_MATERIAL\n";
+		}
+		else
+		{
+			if(lightingEnabled)
+				options += "#define LIGHTING_ENABLED\n";
+			switch(lightingModel)
+			{
+			case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX:
+				options += "#define PER_VERTEX_LIGHTING\n";
+				break;
+			case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_FRAGMENT:
+				options += "#define PER_FRAGMENT_LIGHTING\n";
+				break;
+			case AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS:
+				options += "#define PER_FRAGMENT_LIGHTING\n";
+				options += "#define PBR_METALLIC_ROUGHNESS\n";
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
@@ -395,6 +402,29 @@ bool MetallicRoughnessMaterialState::operator!=(const MetallicRoughnessMaterialS
     return !(*this == other);
 }
 
+FlatColorMaterialState FlatColorMaterialState::defaultMaterial()
+{
+	auto result = FlatColorMaterialState();
+	result.type = MaterialStateType::FlatColor;
+    result.color = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
+	return result;
+}
+
+size_t FlatColorMaterialState::hash() const
+{
+    return color.hash();
+}
+
+bool FlatColorMaterialState::operator==(const FlatColorMaterialState &other) const
+{
+    return color == other.color;
+}
+
+bool FlatColorMaterialState::operator!=(const FlatColorMaterialState &other) const
+{
+    return !(*this == other);
+}
+
 MaterialState::MaterialState()
     : classic(ClassicMaterialState::defaultMaterial())
 {}
@@ -408,6 +438,8 @@ size_t MaterialState::hash() const
 		return classic.hash();
 	case MaterialStateType::MetallicRoughness:
 		return metallicRoughness.hash();
+	case MaterialStateType::FlatColor:
+		return flat.hash();
 	}
 }
 
@@ -423,6 +455,8 @@ bool MaterialState::operator==(const MaterialState &other) const
 		return classic == other.classic;
 	case MaterialStateType::MetallicRoughness:
 		return metallicRoughness == other.metallicRoughness;
+	case MaterialStateType::FlatColor:
+		return flat == other.flat;
 	}
 }
 
@@ -1007,6 +1041,11 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
 	    newMaterialState.metallicRoughness.metallicFactor = state->metallic_roughness.metallic_factor;
 		newMaterialState.metallicRoughness.roughnessFactor = state->metallic_roughness.roughness_factor;
 		newMaterialState.metallicRoughness.occlusionFactor = state->metallic_roughness.occlusion_factor;
+	}
+	else if(hasFlatColorLightingMode())
+	{
+		newMaterialState.flat = FlatColorMaterialState::defaultMaterial();
+		newMaterialState.flat.color = Vector4F(state->flat_color.color);
 	}
 	else
 	{

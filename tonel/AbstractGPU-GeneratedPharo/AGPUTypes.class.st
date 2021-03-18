@@ -130,6 +130,7 @@ Class {
 		'agpu_immediate_renderer_light',
 		'agpu_immediate_renderer_material_classic',
 		'agpu_immediate_renderer_material_metallic_roughness',
+		'agpu_immediate_renderer_material_flat_color',
 		'agpu_immediate_renderer_material'
 	],
 	#superclass : #SharedPool,
@@ -272,6 +273,7 @@ AGPUTypes class >> initialize [
 	agpu_immediate_renderer_light := AGPUImmediateRendererLight.
 	agpu_immediate_renderer_material_classic := AGPUImmediateRendererMaterialClassic.
 	agpu_immediate_renderer_material_metallic_roughness := AGPUImmediateRendererMaterialMetallicRoughness.
+	agpu_immediate_renderer_material_flat_color := AGPUImmediateRendererMaterialFlatColor.
 	agpu_immediate_renderer_material := AGPUImmediateRendererMaterial.
 ]
 

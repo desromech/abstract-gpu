@@ -8,6 +8,9 @@ R"uberShader(
 // Flat Shading
 // #define FLAT_SHADING.
 
+// Enable flat color material
+// #define FLAT_COLOR_MATERIAL
+
 // Enable lighting.
 // #define LIGHTING_ENABLED
 // #define PER_VERTEX_LIGHTING
@@ -105,7 +108,7 @@ layout(set=2, binding=0) uniform ExtraRenderingStateBlock
 
 layout(std140, set=3, binding=0) uniform MaterialStateBlock
 {
-#ifdef PBR_METALLIC_ROUGHNESS
+#if defined(PBR_METALLIC_ROUGHNESS)
     uint type;
     float roughnessFactor;
     float metallicFactor;
@@ -113,6 +116,13 @@ layout(std140, set=3, binding=0) uniform MaterialStateBlock
 
     vec4 emission;
     vec4 baseColor;
+#elif defined(FLAT_COLOR_MATERIAL)
+    uint type;
+    uint padding1;
+    uint padding2;
+    uint padding3;
+
+    vec4 color;
 #else
     uint type;
     float shininess;
@@ -400,6 +410,9 @@ void main()
     vec4 color = computeLightingWith(parameters);
 #else
     vec4 color = inColor;
+#   if defined(FLAT_COLOR_MATERIAL)
+    color *= MaterialState.color;
+#   endif
 #endif
 
     outColor = color;
