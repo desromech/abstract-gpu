@@ -394,9 +394,14 @@
             <field name="occlusion_factor" type="float" />
         </struct>
 
+        <struct name="immediate_renderer_material_flat_color">
+            <field name="color" type="vector4f" />
+        </struct>
+
         <union name="immediate_renderer_material">
             <field name="classic" type="immediate_renderer_material_classic" />
             <field name="metallic_roughness" type="immediate_renderer_material_metallic_roughness" />
+            <field name="flat_color" type="immediate_renderer_material_flat_color" />
         </union>
 	</structs>
 
@@ -1015,7 +1020,8 @@
             <constant name="ImmediateRendererLightingModelPerVertex" value="0" />
             <constant name="ImmediateRendererLightingModelPerFragment" value="1" />
             <constant name="ImmediateRendererLightingModelMetallicRoughness" value="2" />
-            <constant name="ImmediateRendererLightingModelCount" value="3" />
+            <constant name="ImmediateRendererLightingModelFlatColor" value="3" />
+            <constant name="ImmediateRendererLightingModelCount" value="4" />
         </enum>
 
         <enum name="immediate_renderer_fog_mode" optionalPrefix="ImmediateRendererFogMode">

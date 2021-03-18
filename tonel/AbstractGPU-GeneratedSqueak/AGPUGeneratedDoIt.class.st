@@ -52,6 +52,7 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUImmediateRendererLight defineFields.
 	AGPUImmediateRendererMaterialClassic defineFields.
 	AGPUImmediateRendererMaterialMetallicRoughness defineFields.
+	AGPUImmediateRendererMaterialFlatColor defineFields.
 	AGPUImmediateRendererMaterial defineFields.
 ]
 

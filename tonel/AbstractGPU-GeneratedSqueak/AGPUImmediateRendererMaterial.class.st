@@ -15,6 +15,7 @@ AGPUImmediateRendererMaterial class >> fields [
     ^ #(
 		(classic 'AGPUImmediateRendererMaterialClassic')
 		(metallic_roughness 'AGPUImmediateRendererMaterialMetallicRoughness')
+		(flat_color 'AGPUImmediateRendererMaterialFlatColor')
 	)
 ]
 

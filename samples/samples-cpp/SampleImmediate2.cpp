@@ -172,6 +172,7 @@ public:
         immediateRenderer->multiplyMatrix(&viewMatrix[0][0]);
 
         // Set the directional light.
+        if(!hasFlatColorLightingMode())
         {
             auto lightDirection = glm::normalize(glm::vec3(0.5f, 0.9f, -1.0f));
             auto intensity = glm::vec3(0.8f);
@@ -197,6 +198,7 @@ public:
         }
 
         // Set the center light.
+        if(!hasFlatColorLightingMode())
         {
             auto center = glm::vec3(0.0f, 0.0f, -6.0f);
             agpu_immediate_renderer_light lightState = {};
@@ -268,6 +270,10 @@ public:
                 material.metallic_roughness.roughness_factor = 0.4f;
                 material.metallic_roughness.metallic_factor = 0.0f;
                 material.metallic_roughness.occlusion_factor = 1.0f;
+            }
+            else if(hasFlatColorLightingMode())
+            {
+                material.flat_color.color = albedo;
             }
             else
             {
@@ -404,6 +410,11 @@ public:
     bool hasMetallicRoughnessLighting()
     {
         return lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS;
+    }
+
+    bool hasFlatColorLightingMode()
+    {
+        return lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_FLAT_COLOR;
     }
 
     agpu_state_tracker_cache_ref stateTrackerCache;

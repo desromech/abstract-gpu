@@ -16,6 +16,7 @@ AGPUImmediateRendererMaterial class >> fieldsDesc [
     ^ #(
 		 agpu_immediate_renderer_material_classic classic;
 		 agpu_immediate_renderer_material_metallic_roughness metallic_roughness;
+		 agpu_immediate_renderer_material_flat_color flat_color;
 	)
 ]
 
