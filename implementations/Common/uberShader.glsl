@@ -114,20 +114,25 @@ layout(std140, set=3, binding=0) uniform MaterialStateBlock
     float metallicFactor;
     float occlusionFactor;
 
+    float alphaCutoff;
+    float padding;
+    float padding2;
+    float padding3;
+
     vec4 emission;
     vec4 baseColor;
 #elif defined(FLAT_COLOR_MATERIAL)
     uint type;
-    uint padding1;
+    float alphaCutoff;
+    uint padding;
     uint padding2;
-    uint padding3;
 
     vec4 color;
 #else
     uint type;
     float shininess;
-    uint padding1;
-    uint padding2;
+    float alphaCutoff;
+    uint padding;
 
     vec4 emission;
     vec4 ambient;
@@ -485,6 +490,12 @@ void main()
     vec4 color = inColor;
 #ifdef TEXTURING_ENABLED
     color *= textureProj(sampler2D(AlbedoTexture, Sampler0), inTexcoord);
+#endif
+
+    // Alpha cutoff.
+#if defined(FLAT_COLOR_MATERIAL) || defined(LIGHTING_ENABLED)
+    if(color.a < MaterialState.alphaCutoff)
+        discard;
 #endif
 
 #if defined(LIGHTING_ENABLED) && defined(PER_FRAGMENT_LIGHTING)

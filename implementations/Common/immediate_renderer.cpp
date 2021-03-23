@@ -331,8 +331,8 @@ ClassicMaterialState ClassicMaterialState::defaultMaterial()
 	auto result = ClassicMaterialState();
 	result.type = MaterialStateType::Classic;
     result.shininess = 0.0f;
-	result.padding[0] = 0;
-	result.padding[1] = 0;
+	result.alphaCutoff = 0;
+	result.padding = 0;
     result.emission = Vector4F(0.0f, 0.0f, 0.0f, 1.0f);
     result.ambient = Vector4F(0.2f, 0.2f, 0.2f, 1.0f);
     result.diffuse = Vector4F(0.8f, 0.8f, 0.8f, 1.0f);
@@ -347,7 +347,8 @@ size_t ClassicMaterialState::hash() const
         ambient.hash() ^
         diffuse.hash() ^
         specular.hash() ^
-        std::hash<float> ()(shininess);
+        std::hash<float> ()(shininess) ^
+		std::hash<float> ()(alphaCutoff);
 }
 
 bool ClassicMaterialState::operator==(const ClassicMaterialState &other) const
@@ -357,7 +358,8 @@ bool ClassicMaterialState::operator==(const ClassicMaterialState &other) const
         ambient == other.ambient &&
         diffuse == other.diffuse &&
         specular == other.specular &&
-        shininess == other.shininess;
+        shininess == other.shininess &&
+		alphaCutoff == other.alphaCutoff;
 }
 
 bool ClassicMaterialState::operator!=(const ClassicMaterialState &other) const
@@ -372,6 +374,12 @@ MetallicRoughnessMaterialState MetallicRoughnessMaterialState::defaultMaterial()
     result.roughnessFactor = 0.0f;
 	result.metallicFactor = 0.0f;
 	result.occlusionFactor = 1.0f;
+
+	result.alphaCutoff = 0.0f;
+	result.padding[0] = 0;
+	result.padding[1] = 0;
+	result.padding[2] = 0;
+
     result.emission = Vector4F(0.0f, 0.0f, 0.0f, 1.0f);
     result.baseColor = Vector4F(0.8f, 0.8f, 0.8f, 1.0f);
 	return result;
@@ -384,7 +392,8 @@ size_t MetallicRoughnessMaterialState::hash() const
         baseColor.hash() ^
 		std::hash<float> ()(roughnessFactor) ^
         std::hash<float> ()(metallicFactor) ^
-		std::hash<float> ()(occlusionFactor);
+		std::hash<float> ()(occlusionFactor) ^
+		std::hash<float> ()(alphaCutoff);
 }
 
 bool MetallicRoughnessMaterialState::operator==(const MetallicRoughnessMaterialState &other) const
@@ -394,7 +403,8 @@ bool MetallicRoughnessMaterialState::operator==(const MetallicRoughnessMaterialS
         baseColor == other.baseColor &&
         roughnessFactor == other.roughnessFactor &&
         metallicFactor == other.metallicFactor &&
-		occlusionFactor == other.occlusionFactor;
+		occlusionFactor == other.occlusionFactor &&
+		alphaCutoff == other.alphaCutoff;
 }
 
 bool MetallicRoughnessMaterialState::operator!=(const MetallicRoughnessMaterialState &other) const
@@ -406,13 +416,16 @@ FlatColorMaterialState FlatColorMaterialState::defaultMaterial()
 {
 	auto result = FlatColorMaterialState();
 	result.type = MaterialStateType::FlatColor;
+	result.alphaCutoff = 0.0f;
+	result.padding[0] = 0;
+	result.padding[1] = 0;
     result.color = Vector4F(1.0f, 1.0f, 1.0f, 1.0f);
 	return result;
 }
 
 size_t FlatColorMaterialState::hash() const
 {
-    return color.hash();
+    return color.hash() ^ std::hash<float> ()(alphaCutoff);
 }
 
 bool FlatColorMaterialState::operator==(const FlatColorMaterialState &other) const
@@ -1102,11 +1115,13 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
 	    newMaterialState.metallicRoughness.metallicFactor = state->metallic_roughness.metallic_factor;
 		newMaterialState.metallicRoughness.roughnessFactor = state->metallic_roughness.roughness_factor;
 		newMaterialState.metallicRoughness.occlusionFactor = state->metallic_roughness.occlusion_factor;
+		newMaterialState.metallicRoughness.alphaCutoff = state->metallic_roughness.alpha_cutoff;
 	}
 	else if(hasFlatColorLightingMode())
 	{
 		newMaterialState.flat = FlatColorMaterialState::defaultMaterial();
 		newMaterialState.flat.color = Vector4F(state->flat_color.color);
+		newMaterialState.flat.alphaCutoff = state->metallic_roughness.alpha_cutoff;
 	}
 	else
 	{
@@ -1116,6 +1131,7 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
 	    newMaterialState.classic.diffuse = Vector4F(state->classic.diffuse);
 	    newMaterialState.classic.specular = Vector4F(state->classic.specular);
 	    newMaterialState.classic.shininess = state->classic.shininess;
+		newMaterialState.classic.alphaCutoff = state->metallic_roughness.alpha_cutoff;
 	}
     materialStateBuffer.setState(newMaterialState);
     return AGPU_OK;

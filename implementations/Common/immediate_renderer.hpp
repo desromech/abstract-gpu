@@ -328,7 +328,8 @@ struct ClassicMaterialState
 
     MaterialStateType type;
     float shininess;
-    uint32_t padding[2];
+    float alphaCutoff;
+    uint32_t padding;
 
     Vector4F emission;
     Vector4F ambient;
@@ -349,6 +350,9 @@ struct MetallicRoughnessMaterialState
     float metallicFactor;
     float occlusionFactor;
 
+    float alphaCutoff;
+    uint32_t padding[3];
+
     Vector4F emission;
     Vector4F baseColor;
 };
@@ -362,7 +366,8 @@ struct FlatColorMaterialState
     bool operator!=(const FlatColorMaterialState &other) const;
 
     MaterialStateType type;
-    uint32_t padding[3];
+    float alphaCutoff;
+    uint32_t padding[2];
 
     Vector4F color;
 };
