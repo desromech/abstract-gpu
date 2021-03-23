@@ -1947,6 +1947,12 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilBackFace(agpu_immediate_re
 	return asRef(agpu::immediate_renderer, self)->setStencilBackFace(stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction);
 }
 
+AGPU_EXPORT agpu_error agpuImmediateSetSamplingMode(agpu_immediate_renderer* self, agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::immediate_renderer, self)->setSamplingMode(filter, maxAnisotropy, addressU, addressV, addressW);
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererSetViewport(agpu_immediate_renderer* self, agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 {
 	if(!self) return AGPU_NULL_POINTER;

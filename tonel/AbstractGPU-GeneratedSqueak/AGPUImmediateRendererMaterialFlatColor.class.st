@@ -14,6 +14,7 @@ AGPUImmediateRendererMaterialFlatColor class >> fields [
 	"
     ^ #(
 		(color 'AGPUVector4f')
+		(alpha_cutoff 'float')
 	)
 ]
 

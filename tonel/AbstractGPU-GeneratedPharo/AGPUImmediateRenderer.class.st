@@ -110,6 +110,13 @@ AGPUImmediateRenderer >> setStencilBackFace: stencilFailOperation depthFailOpera
 ]
 
 { #category : #'wrappers' }
+AGPUImmediateRenderer >> setSamplingMode: filter maxAnisotropy: maxAnisotropy addressU: addressU addressV: addressV addressW: addressW [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setSamplingMode_immediate_renderer: (self validHandle) filter: filter maxAnisotropy: maxAnisotropy addressU: addressU addressV: addressV addressW: addressW.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUImmediateRenderer >> setViewport: x y: y w: w h: h [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setViewport_immediate_renderer: (self validHandle) x: x y: y w: w h: h.

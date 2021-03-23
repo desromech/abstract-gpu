@@ -2000,6 +2000,11 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererSetStencilBackFace(this, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction));
 	}
 
+	inline void setSamplingMode(agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW)
+	{
+		agpuThrowIfFailed(agpuImmediateSetSamplingMode(this, filter, maxAnisotropy, addressU, addressV, addressW));
+	}
+
 	inline void setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h)
 	{
 		agpuThrowIfFailed(agpuImmediateRendererSetViewport(this, x, y, w, h));

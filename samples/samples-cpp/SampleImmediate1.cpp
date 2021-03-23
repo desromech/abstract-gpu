@@ -12,10 +12,10 @@ struct TransformationState
 };
 
 
-class Sample5: public SampleBase
+class SampleImmediate1: public SampleBase
 {
 public:
-    Sample5()
+    SampleImmediate1()
     {
         draggingLeft = false;
         draggingRight = false;
@@ -165,4 +165,4 @@ public:
     glm::vec3 cameraPosition;
 };
 
-SAMPLE_MAIN(Sample5)
+SAMPLE_MAIN(SampleImmediate1)

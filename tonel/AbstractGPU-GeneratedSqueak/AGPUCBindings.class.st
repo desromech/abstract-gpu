@@ -1916,6 +1916,12 @@ AGPUCBindings >> setStencilBackFace_immediate_renderer: immediate_renderer stenc
 ]
 
 { #category : #'immediate_renderer' }
+AGPUCBindings >> setSamplingMode_immediate_renderer: immediate_renderer filter: filter maxAnisotropy: maxAnisotropy addressU: addressU addressV: addressV addressW: addressW [
+	<cdecl: long 'agpuImmediateSetSamplingMode' (void* long float long long long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'immediate_renderer' }
 AGPUCBindings >> setViewport_immediate_renderer: immediate_renderer x: x y: y w: w h: h [
 	<cdecl: long 'agpuImmediateRendererSetViewport' (void* long long long long)>
 	^ self externalCallFailed

@@ -508,6 +508,69 @@ agpu_vertex_attrib_description ImmediateVertexAttributes[] = {
     {0, AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_TEXCOORD, AGPU_TEXTURE_FORMAT_R32G32_FLOAT, offsetof(ImmediateRendererVertex, texcoord), 0},
 };
 
+bool ImmediateRendererSamplerStateDescription::operator==(const ImmediateRendererSamplerStateDescription &other) const
+{
+	return filter == other.filter
+		&& maxAnisotropy == other.maxAnisotropy
+		&& addressU == other.addressU
+		&& addressV == other.addressV
+		&& addressW == other.addressW;
+}
+
+bool ImmediateRendererSamplerStateDescription::operator!=(const ImmediateRendererSamplerStateDescription &other) const
+{
+	return !(*this == other);
+}
+
+size_t ImmediateRendererSamplerStateDescription::hash() const
+{
+	return
+		std::hash<uint32_t> ()(uint32_t(filter)) ^
+		std::hash<float> ()(maxAnisotropy) ^
+		std::hash<uint32_t> ()(uint32_t(addressU)) ^
+		std::hash<uint32_t> ()(uint32_t(addressV)) ^
+		std::hash<uint32_t> ()(uint32_t(addressW));
+}
+
+agpu::shader_resource_binding_ref &ImmediateSharedRenderingStates::getSamplerStateBindingFor(const ImmediateRendererSamplerStateDescription &description)
+{
+	auto canonicalizedDescription = description;
+	if(canonicalizedDescription.filter != AGPU_FILTER_ANISOTROPIC)
+	{
+		canonicalizedDescription.maxAnisotropy = 1;
+	}
+	else if(canonicalizedDescription.maxAnisotropy < 2)
+	{
+		canonicalizedDescription.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR;
+		canonicalizedDescription.maxAnisotropy = 1;
+	}
+
+	std::unique_lock<std::mutex> l(samplerStatesMutex);
+	auto it = samplerStates.find(canonicalizedDescription);
+	if(it != samplerStates.end())
+		return it->second.binding;
+
+	ImmediateRendererSamplerState samplerState = {};
+
+	agpu_sampler_description samplerDescription = {};
+	samplerDescription.filter = canonicalizedDescription.filter;
+	samplerDescription.maxanisotropy = canonicalizedDescription.maxAnisotropy;
+	samplerDescription.address_u = canonicalizedDescription.addressU;
+	samplerDescription.address_v = canonicalizedDescription.addressV;
+	samplerDescription.address_w = canonicalizedDescription.addressW;
+	samplerDescription.max_lod = 1000.0f;
+	samplerState.sampler = agpu::sampler_ref(device->createSampler(&samplerDescription));
+	if(!samplerState.sampler)
+		return defaultSampler;
+
+	samplerState.binding = agpu::shader_resource_binding_ref(shaderSignature->createShaderResourceBinding(0));
+	if(!samplerState.binding)
+		return defaultSampler;
+	samplerState.binding->bindSampler(0, samplerState.sampler);
+	samplerStates.insert(std::make_pair(canonicalizedDescription, samplerState));
+	return samplerStates[canonicalizedDescription].binding;
+}
+
 bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 {
     std::unique_lock<std::mutex> l(immediateRendererObjectsMutex);
@@ -520,8 +583,9 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         auto builder = agpu::shader_signature_builder_ref(device->createShaderSignatureBuilder());
         if(!builder) return false;
 
+		// Sampling state (Set 0)
         builder->beginBindingBank(1);
-        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 2);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 32);
 
 		// Lighting state (Set 1)
 		builder->beginBindingBank(1000);
@@ -564,17 +628,13 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         immediateSharedRenderingStates.reset(new ImmediateSharedRenderingStates());
         if(!immediateSharedRenderingStates) return false;
 
-        agpu_sampler_description samplerDescription = {};
-        samplerDescription.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR;
-        samplerDescription.max_lod = 1000.0f;
-        auto sampler = agpu::sampler_ref(device->createSampler(&samplerDescription));
-        if(!sampler) return false;
-
-        auto samplerBinding = agpu::shader_resource_binding_ref(immediateShaderSignature->createShaderResourceBinding(0));
-        samplerBinding->bindSampler(0, sampler);
-
-        immediateSharedRenderingStates->linearSampler.sampler = sampler;
-        immediateSharedRenderingStates->linearSampler.binding = samplerBinding;
+		ImmediateRendererSamplerStateDescription defaultSampleState = {
+			AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR, 1,
+			AGPU_TEXTURE_ADDRESS_MODE_WRAP, AGPU_TEXTURE_ADDRESS_MODE_WRAP, AGPU_TEXTURE_ADDRESS_MODE_WRAP
+		};
+		immediateSharedRenderingStates->device = device;
+		immediateSharedRenderingStates->shaderSignature = immediateShaderSignature;
+		immediateSharedRenderingStates->defaultSampler = immediateSharedRenderingStates->getSamplerStateBindingFor(defaultSampleState);
     }
 
 	// Create the default white texture.
@@ -715,6 +775,7 @@ agpu_error ImmediateRenderer::beginRendering(const agpu::state_tracker_ref &stat
 
     // Reset the rendering state.
     currentRenderingState = ImmediateRenderingState();
+	currentRenderingState.samplingStateBinding = immediateSharedRenderingStates->defaultSampler;
 
     // Reset the texture bindings.
     usedTextureBindingMap.clear();
@@ -1064,6 +1125,18 @@ agpu_error ImmediateRenderer::setTexturingEnabled(agpu_bool enabled)
 {
     currentRenderingState.texturingEnabled = enabled;
     return AGPU_OK;
+}
+
+agpu_error ImmediateRenderer::setSamplingMode(agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW)
+{
+	ImmediateRendererSamplerStateDescription desc = {};
+	desc.filter = filter;
+	desc.maxAnisotropy = maxAnisotropy;
+	desc.addressU = addressU;
+	desc.addressV = addressV;
+	desc.addressW = addressW;
+	currentRenderingState.samplingStateBinding = immediateSharedRenderingStates->getSamplerStateBindingFor(desc);
+	return AGPU_OK;
 }
 
 agpu_error ImmediateRenderer::setTangentSpaceEnabled(agpu_bool enabled)
@@ -1654,6 +1727,11 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
 	if(!haveFlushedRenderingState || state.activePrimitiveTopology != lastFlushedRenderingState.activePrimitiveTopology)
     	currentStateTracker->setPrimitiveType(isSyntheticTopology(state.activePrimitiveTopology) ? AGPU_TRIANGLES : state.activePrimitiveTopology);
 
+	if(state.samplingStateBinding && (!haveFlushedRenderingState || state.samplingStateBinding != lastFlushedRenderingState.samplingStateBinding))
+	{
+		currentStateTracker->useShaderResources(state.samplingStateBinding);
+	}
+
 	if(state.lightingStateBinding && (!haveFlushedRenderingState || state.lightingStateBinding != lastFlushedRenderingState.lightingStateBinding))
 	{
 		currentStateTracker->useShaderResources(state.lightingStateBinding);
@@ -1672,11 +1750,6 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
 	if(state.transformationStateBinding && (!haveFlushedRenderingState || state.transformationStateBinding != lastFlushedRenderingState.transformationStateBinding))
 	{
 		currentStateTracker->useShaderResources(state.transformationStateBinding);
-	}
-
-	if(state.texturingEnabled && (!haveFlushedRenderingState || state.texturingEnabled != lastFlushedRenderingState.texturingEnabled))
-	{
-		currentStateTracker->useShaderResources(immediateSharedRenderingStates->linearSampler.binding);
 	}
 
     if(state.texturingEnabled && (!haveFlushedRenderingState || state.textureBindingSet != lastFlushedRenderingState.textureBindingSet))

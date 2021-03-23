@@ -984,6 +984,7 @@ public:
 	virtual agpu_error setStencilState(agpu_bool enabled, agpu_int writeMask, agpu_int readMask) = 0;
 	virtual agpu_error setStencilFrontFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) = 0;
 	virtual agpu_error setStencilBackFace(agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction) = 0;
+	virtual agpu_error setSamplingMode(agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW) = 0;
 	virtual agpu_error setViewport(agpu_int x, agpu_int y, agpu_int w, agpu_int h) = 0;
 	virtual agpu_error setScissor(agpu_int x, agpu_int y, agpu_int w, agpu_int h) = 0;
 	virtual agpu_error setStencilReference(agpu_uint reference) = 0;

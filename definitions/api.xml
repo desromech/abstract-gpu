@@ -384,6 +384,7 @@
             <field name="diffuse" type="vector4f" />
             <field name="specular" type="vector4f" />
             <field name="shininess" type="float" />
+            <field name="alpha_cutoff" type="float" />
         </struct>
 
         <struct name="immediate_renderer_material_metallic_roughness">
@@ -392,10 +393,12 @@
             <field name="metallic_factor" type="float" />
             <field name="roughness_factor" type="float" />
             <field name="occlusion_factor" type="float" />
+            <field name="alpha_cutoff" type="float" />
         </struct>
 
         <struct name="immediate_renderer_material_flat_color">
             <field name="color" type="vector4f" />
+            <field name="alpha_cutoff" type="float" />
         </struct>
 
         <union name="immediate_renderer_material">
@@ -2541,6 +2544,14 @@
                 <arg name="depthFailOperation" type="stencil_operation" />
                 <arg name="stencilDepthPassOperation" type="stencil_operation" />
                 <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setSamplingMode" cname="ImmediateSetSamplingMode" returnType="error">
+                <arg name="filter" type="filter" />
+                <arg name="maxAnisotropy" type="float" />
+                <arg name="addressU" type="texture_address_mode" />
+                <arg name="addressV" type="texture_address_mode" />
+                <arg name="addressW" type="texture_address_mode" />
             </method>
 
             <!-- Rendering commands -->

@@ -1039,6 +1039,7 @@ struct ImmediateRendererMaterialClassic definition: {
 	public field diffuse type: Vector4f.
 	public field specular type: Vector4f.
 	public field shininess type: Float32.
+	public field alpha_cutoff type: Float32.
 }.
 
 struct ImmediateRendererMaterialMetallicRoughness definition: {
@@ -1047,10 +1048,12 @@ struct ImmediateRendererMaterialMetallicRoughness definition: {
 	public field metallic_factor type: Float32.
 	public field roughness_factor type: Float32.
 	public field occlusion_factor type: Float32.
+	public field alpha_cutoff type: Float32.
 }.
 
 struct ImmediateRendererMaterialFlatColor definition: {
 	public field color type: Vector4f.
+	public field alpha_cutoff type: Float32.
 }.
 
 union ImmediateRendererMaterial definition: {
@@ -1381,6 +1384,7 @@ function agpuImmediateRendererSetPolygonMode externC (immediate_renderer: Immedi
 function agpuImmediateRendererSetStencilState externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32, writeMask: Int32, readMask: Int32) => Error.
 function agpuImmediateRendererSetStencilFrontFace externC (immediate_renderer: ImmediateRenderer pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
 function agpuImmediateRendererSetStencilBackFace externC (immediate_renderer: ImmediateRenderer pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuImmediateSetSamplingMode externC (immediate_renderer: ImmediateRenderer pointer, filter: Filter, maxAnisotropy: Float32, addressU: TextureAddressMode, addressV: TextureAddressMode, addressW: TextureAddressMode) => Error.
 function agpuImmediateRendererSetViewport externC (immediate_renderer: ImmediateRenderer pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
 function agpuImmediateRendererSetScissor externC (immediate_renderer: ImmediateRenderer pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
 function agpuImmediateRendererSetStencilReference externC (immediate_renderer: ImmediateRenderer pointer, reference: UInt32) => Error.
@@ -2502,6 +2506,9 @@ ImmediateRenderer extend: {
 
 	inline method setStencilBackFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetStencilBackFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setSamplingMode: (filter: Filter) maxAnisotropy: (maxAnisotropy: Float32) addressU: (addressU: TextureAddressMode) addressV: (addressV: TextureAddressMode) addressW: (addressW: TextureAddressMode) ::=> Void
+		:= throwIfError: (agpuImmediateSetSamplingMode(self address, filter, maxAnisotropy, addressU, addressV, addressW)).
 
 	inline method setViewport: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererSetViewport(self address, x, y, w, h)).
