@@ -25,15 +25,37 @@ static const glm::vec4 CubeAlbedos[] = {
 
 constexpr uint32_t CubeAlbedoCount = sizeof(CubeAlbedos) / sizeof(CubeAlbedos[0]);
 
+struct FilterMode
+{
+    agpu_filter filter;
+    const char *name;
+    float maxAnisotropy;
+};
+static FilterMode TextureFilterModes[] = {
+    {AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST, "AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST", 1},
+    {AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR, "AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_LINEAR", 1},
+    {AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST, "AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_NEAREST", 1},
+    {AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR, "AGPU_FILTER_MIN_NEAREST_MAG_LINEAR_MIPMAP_LINEAR", 1},
+    {AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST, "AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_NEAREST", 1},
+    {AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR, "AGPU_FILTER_MIN_LINEAR_MAG_NEAREST_MIPMAP_LINEAR",  1},
+    {AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST, "AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST", 1},
+    {AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR, "AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR", 1},
+    {AGPU_FILTER_ANISOTROPIC, "AGPU_FILTER_ANISOTROPIC", 2},
+    {AGPU_FILTER_ANISOTROPIC, "AGPU_FILTER_ANISOTROPIC", 4},
+    {AGPU_FILTER_ANISOTROPIC, "AGPU_FILTER_ANISOTROPIC", 8},
+    {AGPU_FILTER_ANISOTROPIC, "AGPU_FILTER_ANISOTROPIC", 16},
+};
+constexpr uint32_t TextureFilterModeCount = sizeof(TextureFilterModes) / sizeof(TextureFilterModes[0]);
 
-class Sample5: public SampleBase
+class SampleImmediate2: public SampleBase
 {
 public:
-    Sample5()
+    SampleImmediate2()
     {
         draggingLeft = false;
         draggingRight = false;
         lightingModel = AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_PER_VERTEX;
+        currentFilterMode = 0;
         cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
     }
 
@@ -77,6 +99,10 @@ public:
         case SDLK_TAB:
             lightingModel = agpu_immediate_renderer_lighting_model((lightingModel + 1) % AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT);
             printf("Lighting model selected: %d\n", lightingModel);
+            break;
+        case 't':
+            currentFilterMode = (currentFilterMode + 1) % TextureFilterModeCount;
+            printf("Texture filter model selected: 0x%02x:%g %s\n", TextureFilterModes[currentFilterMode].filter, TextureFilterModes[currentFilterMode].maxAnisotropy, TextureFilterModes[currentFilterMode].name);
             break;
         default:
             break;
@@ -151,6 +177,10 @@ public:
         // Enable face culling and depth testing.
         immediateRenderer->setCullMode(AGPU_CULL_MODE_BACK);
         immediateRenderer->setDepthState(true, true, AGPU_LESS_EQUAL);
+
+        // Set the sampling mode.
+        auto &filterMode = TextureFilterModes[currentFilterMode];
+        immediateRenderer->setSamplingMode(filterMode.filter, filterMode.maxAnisotropy, AGPU_TEXTURE_ADDRESS_MODE_WRAP, AGPU_TEXTURE_ADDRESS_MODE_WRAP, AGPU_TEXTURE_ADDRESS_MODE_WRAP);
 
         // Setup the projection matrix.
         immediateRenderer->projectionMatrixMode();
@@ -425,6 +455,7 @@ public:
     agpu_texture_ref normalTexture;
     agpu_renderpass_ref mainRenderPass;
     agpu_immediate_renderer_lighting_model lightingModel;
+    uint32_t currentFilterMode;
 
     SampleMeshPtr cubeMesh;
 
@@ -434,4 +465,4 @@ public:
     glm::vec3 cameraPosition;
 };
 
-SAMPLE_MAIN(Sample5)
+SAMPLE_MAIN(SampleImmediate2)

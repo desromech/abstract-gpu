@@ -18,6 +18,7 @@ AGPUImmediateRendererMaterialClassic class >> fields [
 		(diffuse 'AGPUVector4f')
 		(specular 'AGPUVector4f')
 		(shininess 'float')
+		(alpha_cutoff 'float')
 	)
 ]
 

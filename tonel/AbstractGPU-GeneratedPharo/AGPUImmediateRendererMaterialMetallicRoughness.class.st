@@ -19,6 +19,7 @@ AGPUImmediateRendererMaterialMetallicRoughness class >> fieldsDesc [
 		 agpu_float metallic_factor;
 		 agpu_float roughness_factor;
 		 agpu_float occlusion_factor;
+		 agpu_float alpha_cutoff;
 	)
 ]
 

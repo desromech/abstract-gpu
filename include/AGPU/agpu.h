@@ -1023,6 +1023,7 @@ typedef struct agpu_immediate_renderer_material_classic {
 	agpu_vector4f diffuse;
 	agpu_vector4f specular;
 	agpu_float shininess;
+	agpu_float alpha_cutoff;
 } agpu_immediate_renderer_material_classic;
 
 /* Structure agpu_immediate_renderer_material_metallic_roughness. */
@@ -1032,11 +1033,13 @@ typedef struct agpu_immediate_renderer_material_metallic_roughness {
 	agpu_float metallic_factor;
 	agpu_float roughness_factor;
 	agpu_float occlusion_factor;
+	agpu_float alpha_cutoff;
 } agpu_immediate_renderer_material_metallic_roughness;
 
 /* Structure agpu_immediate_renderer_material_flat_color. */
 typedef struct agpu_immediate_renderer_material_flat_color {
 	agpu_vector4f color;
+	agpu_float alpha_cutoff;
 } agpu_immediate_renderer_material_flat_color;
 
 /* Union agpu_immediate_renderer_material. */
@@ -1751,6 +1754,7 @@ typedef agpu_error (*agpuImmediateRendererSetPolygonMode_FUN) (agpu_immediate_re
 typedef agpu_error (*agpuImmediateRendererSetStencilState_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_int writeMask, agpu_int readMask);
 typedef agpu_error (*agpuImmediateRendererSetStencilFrontFace_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
 typedef agpu_error (*agpuImmediateRendererSetStencilBackFace_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
+typedef agpu_error (*agpuImmediateSetSamplingMode_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW);
 typedef agpu_error (*agpuImmediateRendererSetViewport_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
 typedef agpu_error (*agpuImmediateRendererSetScissor_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
 typedef agpu_error (*agpuImmediateRendererSetStencilReference_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_uint reference);
@@ -1822,6 +1826,7 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetPolygonMode(agpu_immediate_render
 AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilState(agpu_immediate_renderer* immediate_renderer, agpu_bool enabled, agpu_int writeMask, agpu_int readMask);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilFrontFace(agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilBackFace(agpu_immediate_renderer* immediate_renderer, agpu_stencil_operation stencilFailOperation, agpu_stencil_operation depthFailOperation, agpu_stencil_operation stencilDepthPassOperation, agpu_compare_function stencilFunction);
+AGPU_EXPORT agpu_error agpuImmediateSetSamplingMode(agpu_immediate_renderer* immediate_renderer, agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetViewport(agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetScissor(agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h);
 AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilReference(agpu_immediate_renderer* immediate_renderer, agpu_uint reference);
@@ -2200,6 +2205,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuImmediateRendererSetStencilState_FUN agpuImmediateRendererSetStencilState;
 	agpuImmediateRendererSetStencilFrontFace_FUN agpuImmediateRendererSetStencilFrontFace;
 	agpuImmediateRendererSetStencilBackFace_FUN agpuImmediateRendererSetStencilBackFace;
+	agpuImmediateSetSamplingMode_FUN agpuImmediateSetSamplingMode;
 	agpuImmediateRendererSetViewport_FUN agpuImmediateRendererSetViewport;
 	agpuImmediateRendererSetScissor_FUN agpuImmediateRendererSetScissor;
 	agpuImmediateRendererSetStencilReference_FUN agpuImmediateRendererSetStencilReference;

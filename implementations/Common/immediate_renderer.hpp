@@ -48,6 +48,19 @@ struct ImmediateTextureBindingSet
     bool operator!=(const ImmediateTextureBindingSet& other) const;
 };
 
+struct ImmediateRendererSamplerStateDescription
+{
+    agpu_filter filter;
+    float maxAnisotropy;
+    agpu_texture_address_mode addressU;
+    agpu_texture_address_mode addressV;
+    agpu_texture_address_mode addressW;
+
+    bool operator==(const ImmediateRendererSamplerStateDescription &other) const;
+    bool operator!=(const ImmediateRendererSamplerStateDescription &other) const;
+    size_t hash() const;
+};
+
 }
 
 namespace std
@@ -69,6 +82,16 @@ struct hash<AgpuCommon::ImmediateTextureBindingSet>
         return ref.hash();
     }
 };
+
+template<>
+struct hash<AgpuCommon::ImmediateRendererSamplerStateDescription>
+{
+    size_t operator()(const AgpuCommon::ImmediateRendererSamplerStateDescription &ref) const
+    {
+        return ref.hash();
+    }
+};
+
 }
 
 namespace AgpuCommon
@@ -95,11 +118,20 @@ public:
 class ImmediateSharedRenderingStates
 {
 public:
-    ImmediateRendererSamplerState linearSampler;
+    agpu::shader_signature_ref shaderSignature;
+    agpu::device_ref device;
+
+    agpu::shader_resource_binding_ref defaultSampler;
     agpu::texture_ref defaultAlbedoTexture;
     agpu::texture_ref defaultEmissionTexture;
     agpu::texture_ref defaultNormalTexture;
     agpu::texture_ref defaultRMATexture;
+
+    agpu::shader_resource_binding_ref &getSamplerStateBindingFor(const ImmediateRendererSamplerStateDescription &description);
+
+private:
+    std::mutex samplerStatesMutex;
+    std::unordered_map<ImmediateRendererSamplerStateDescription, ImmediateRendererSamplerState> samplerStates;
 };
 
 /**
@@ -133,6 +165,7 @@ struct ImmediateRenderingState
     bool tangentSpaceEnabled;
     bool skinningEnabled;
 
+    agpu::shader_resource_binding_ref samplingStateBinding;
     agpu::shader_resource_binding_ref lightingStateBinding;
     agpu::shader_resource_binding_ref extraRenderingStateBinding;
     agpu::shader_resource_binding_ref materialStateBinding;
@@ -295,7 +328,8 @@ struct ClassicMaterialState
 
     MaterialStateType type;
     float shininess;
-    uint32_t padding[2];
+    float alphaCutoff;
+    uint32_t padding;
 
     Vector4F emission;
     Vector4F ambient;
@@ -316,6 +350,9 @@ struct MetallicRoughnessMaterialState
     float metallicFactor;
     float occlusionFactor;
 
+    float alphaCutoff;
+    uint32_t padding[3];
+
     Vector4F emission;
     Vector4F baseColor;
 };
@@ -329,7 +366,8 @@ struct FlatColorMaterialState
     bool operator!=(const FlatColorMaterialState &other) const;
 
     MaterialStateType type;
-    uint32_t padding[3];
+    float alphaCutoff;
+    uint32_t padding[2];
 
     Vector4F color;
 };
@@ -653,6 +691,7 @@ public:
     virtual agpu_error setSkinningEnabled(agpu_bool enabled) override;
 	virtual agpu_error setSkinBones(agpu_uint count, agpu_float* matrices, agpu_bool transpose) override;
     virtual agpu_error setTexturingEnabled(agpu_bool enabled) override;
+    virtual agpu_error setSamplingMode(agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW) override;
 	virtual agpu_error setTangentSpaceEnabled(agpu_bool enabled) override;
     virtual agpu_error bindTexture(const agpu::texture_ref &texture) override;
 	virtual agpu_error bindTextureIn(const agpu::texture_ref & texture, agpu_immediate_renderer_texture_binding binding) override;

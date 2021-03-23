@@ -2545,6 +2545,14 @@ AGPU_EXPORT agpu_error agpuImmediateRendererSetStencilBackFace ( agpu_immediate_
 	return (*dispatchTable)->agpuImmediateRendererSetStencilBackFace ( immediate_renderer, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction );
 }
 
+AGPU_EXPORT agpu_error agpuImmediateSetSamplingMode ( agpu_immediate_renderer* immediate_renderer, agpu_filter filter, agpu_float maxAnisotropy, agpu_texture_address_mode addressU, agpu_texture_address_mode addressV, agpu_texture_address_mode addressW )
+{
+	if (immediate_renderer == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
+	return (*dispatchTable)->agpuImmediateSetSamplingMode ( immediate_renderer, filter, maxAnisotropy, addressU, addressV, addressW );
+}
+
 AGPU_EXPORT agpu_error agpuImmediateRendererSetViewport ( agpu_immediate_renderer* immediate_renderer, agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
 	if (immediate_renderer == nullptr)
