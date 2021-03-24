@@ -1121,7 +1121,7 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
 	{
 		newMaterialState.flat = FlatColorMaterialState::defaultMaterial();
 		newMaterialState.flat.color = Vector4F(state->flat_color.color);
-		newMaterialState.flat.alphaCutoff = state->metallic_roughness.alpha_cutoff;
+		newMaterialState.flat.alphaCutoff = state->flat_color.alpha_cutoff;
 	}
 	else
 	{
@@ -1131,7 +1131,7 @@ agpu_error ImmediateRenderer::setMaterial(agpu_immediate_renderer_material* stat
 	    newMaterialState.classic.diffuse = Vector4F(state->classic.diffuse);
 	    newMaterialState.classic.specular = Vector4F(state->classic.specular);
 	    newMaterialState.classic.shininess = state->classic.shininess;
-		newMaterialState.classic.alphaCutoff = state->metallic_roughness.alpha_cutoff;
+		newMaterialState.classic.alphaCutoff = state->classic.alpha_cutoff;
 	}
     materialStateBuffer.setState(newMaterialState);
     return AGPU_OK;
