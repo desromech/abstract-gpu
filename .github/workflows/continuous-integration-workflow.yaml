@@ -48,5 +48,5 @@ jobs:
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
               with:
-                  name: build-${{ env.PLATFORM_NAME }}-${{ env.PLATFORMBUILD_MODE_NAME }}
+                  name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
                   path: artifacts/dist/*
