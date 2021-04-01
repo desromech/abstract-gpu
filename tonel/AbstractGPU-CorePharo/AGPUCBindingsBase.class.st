@@ -6,7 +6,7 @@ Class {
 
 { #category : #'library downloading' }
 AGPUCBindingsBase >> fetchLibrary [
-	PhaNAPIBintray fetchLibrary: 'Agpu' fromUser: 'ronsaldo' repository: 'abstract-gpu' package: 'lib'.
+	PhaNAPIGitHubRelease fetchLibrary: 'Agpu' fromIcebergRepoOfClass: self class
 
 ]
 

@@ -29,6 +29,6 @@ BaselineOfAbstractGPU >> baseline: spec [
 
 { #category : #baselines }
 BaselineOfAbstractGPU >> postLoadActions [
-	(Smalltalk globals at: #AGPUCBindings) fetchLibrary.
+	(Smalltalk globals at: #AGPUCBindings) fetchLibraryInPostLoadAction.
 	(Smalltalk globals at: #AGPUGeneratedDoIt) initializeBindings.
 ]
