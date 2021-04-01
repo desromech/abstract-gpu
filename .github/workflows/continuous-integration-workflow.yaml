@@ -1,0 +1,118 @@
+name: Continuous integration
+on: [push, pull_request]
+
+jobs:
+    build-unixes:
+        name: Build Unixes
+        runs-on: ${{ matrix.variant.os }}
+        strategy:
+            matrix:
+                variant:
+                    - os: ubuntu-latest
+                      platformName: linux64
+                      buildMode: Debug
+                    - os: ubuntu-latest
+                      platformName: linux64
+                      buildMode: RelWithDebInfo
+                    - os: ubuntu-latest
+                      platformName: linux64
+                      buildMode: Release
+
+                    - os: macos-latest
+                      platformName: osx
+                      buildMode: Debug
+                    - os: macos-latest
+                      platformName: osx
+                      buildMode: RelWithDebInfo
+                    - os: macos-latest
+                      platformName: osx
+                      buildMode: Release
+        env:
+            PLATFORM_NAME: ${{ matrix.variant.platformName }}
+            BUILD_MODE: ${{ matrix.variant.buildMode }}
+            PROJECT_NAME: abstract-gpu
+        steps:
+            - name: Install dependencies linux
+              if: matrix.variant.os == 'ubuntu-latest'
+              run: sudo apt-get -qqy install libx11-xcb-dev libvulkan-dev
+
+            - uses: actions/checkout@v1
+
+            - name: CI Build
+              run: ./scripts/ci-build.sh
+
+            - name: Package artifacts
+              run: ./scripts/ci-package-artifacts.sh
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
+                  path: artifacts/dist/*
+
+            - name: Release
+              uses: softprops/action-gh-release@v1
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: artifacts/dist/*
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    build-windows:
+        name: Build Windows
+        runs-on: ${{ matrix.variant.os }}
+        strategy:
+            matrix:
+                variant:
+                    - os: windows-latest
+                      platformName: windows-x86
+                      vsPlatform: Win32
+                      buildMode: Debug
+                    - os: windows-latest
+                      platformName: windows-x86
+                      vsPlatform: Win32
+                      buildMode: RelWithDebInfo
+                    - os: windows-latest
+                      platformName: windows-x86
+                      vsPlatform: Win32
+                      buildMode: Release
+
+                    - os: windows-latest
+                      platformName: windows-x64
+                      vsPlatform: x64
+                      buildMode: Debug
+                    - os: windows-latest
+                      platformName: windows-x64
+                      vsPlatform: x64
+                      buildMode: RelWithDebInfo
+                    - os: windows-latest
+                      platformName: windows-x64
+                      vsPlatform: x64
+                      buildMode: Release
+        env:
+            VS_PLATFORM: ${{ matrix.vsPlatform }}
+            PLATFORM_NAME: ${{ matrix.variant.platformName }}
+            BUILD_MODE: ${{ matrix.variant.buildMode }}
+            PROJECT_NAME: abstract-gpu
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: CI Build
+              run: ./scripts/ci-build.ps1
+
+            - name: Package artifacts
+              run: ./scripts/ci-package-artifacts.ps1
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
+                  path: artifacts/dist/*
+
+            - name: Release
+              uses: softprops/action-gh-release@v1
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: artifacts/dist/*
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,5 +1,5 @@
 # AbstractGPU cmake build script.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 project(AGPU)
 
 if(APPLE)
@@ -83,6 +83,9 @@ if(APPLE)
 	if(METAL_LIBRARY AND QUARTZCORE_LIBRARY AND APPKIT_LIBRARY)
 		set(METAL_FOUND TRUE)
 	endif()
+
+	## Do not build the unneeded openvr support.
+	set(BUILD_WITH_OPENVR OFF)
 endif()
 
 find_path(X11_INCLUDE_DIRS
