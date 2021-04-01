@@ -1,7 +1,3 @@
-[![Build Status](https://travis-ci.org/ronsaldo/abstract-gpu.svg?branch=master)](https://travis-ci.org/ronsaldo/abstract-gpu)
-[![Build status](https://ci.appveyor.com/api/projects/status/6b0mvg3kxp9bmr9a?svg=true)](https://ci.appveyor.com/project/ronsaldo/abstract-gpu)
-[ ![Download](https://api.bintray.com/packages/ronsaldo/abstract-gpu/lib/images/download.svg) ](https://bintray.com/ronsaldo/abstract-gpu/lib/_latestVersion)
-
 # AbstractGPU
 The Abstract GPU is a cross platform low-level 3D graphics API.
 
@@ -64,7 +60,7 @@ loaded in Squeak by running the following script:
     install: 'FFI-Pools';
     install: 'FFI-Kernel'.
 (Smalltalk at: #ExternalType) initialize.
- 
+
 "Replace with the path to the converted MC files, or make a symlink to this folder ;)"
 Installer monticello directory: 'mc';
     install: 'AbstractGPU-CoreSqueak';

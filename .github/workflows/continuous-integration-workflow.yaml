@@ -50,6 +50,14 @@ jobs:
                   name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
                   path: artifacts/dist/*
 
+            - name: Release
+              uses: softprops/action-gh-release@v1
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: artifacts/dist/*
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     build-windows:
         name: Build Windows
         runs-on: ${{ matrix.variant.os }}
@@ -100,3 +108,11 @@ jobs:
               with:
                   name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
                   path: artifacts/dist/*
+
+            - name: Release
+              uses: softprops/action-gh-release@v1
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  files: artifacts/dist/*
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
