@@ -775,7 +775,7 @@ agpu_bool AVkDevice::isFeatureSupported(agpu_feature feature)
 	}
 }
 
-agpu_int AVkDevice::getLimitValue(agpu_limit limit)
+agpu_uint AVkDevice::getLimitValue(agpu_limit limit)
 {
     return getLimitValueOnGPU(limit, deviceProperties, memoryProperties, deviceFeatures);
 }

@@ -154,7 +154,7 @@ public:
 		return agpuIsFeatureSupportedOnGPU(this, gpu_index, feature);
 	}
 
-	inline agpu_int getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit)
+	inline agpu_uint getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit)
 	{
 		return agpuGetLimitValueOnGPU(this, gpu_index, limit);
 	}
@@ -335,7 +335,7 @@ public:
 		return agpuIsFeatureSupportedOnDevice(this, feature);
 	}
 
-	inline agpu_int getLimitValue(agpu_limit limit)
+	inline agpu_uint getLimitValue(agpu_limit limit)
 	{
 		return agpuGetLimitValue(this, limit);
 	}

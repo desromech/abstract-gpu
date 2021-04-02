@@ -40,7 +40,7 @@ AGPUCBindings >> isFeatureSupportedOnGPU_platform: platform gpu_index: gpu_index
 
 { #category : #'platform' }
 AGPUCBindings >> getLimitValueOnGPU_platform: platform gpu_index: gpu_index limit: limit [
-	^ self ffiCall: #(agpu_int agpuGetLimitValueOnGPU (agpu_platform* platform , agpu_size gpu_index , agpu_limit limit) )
+	^ self ffiCall: #(agpu_uint agpuGetLimitValueOnGPU (agpu_platform* platform , agpu_size gpu_index , agpu_limit limit) )
 ]
 
 { #category : #'platform' }
@@ -210,7 +210,7 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 
 { #category : #'device' }
 AGPUCBindings >> getLimitValue_device: device limit: limit [
-	^ self ffiCall: #(agpu_int agpuGetLimitValue (agpu_device* device , agpu_limit limit) )
+	^ self ffiCall: #(agpu_uint agpuGetLimitValue (agpu_device* device , agpu_limit limit) )
 ]
 
 { #category : #'device' }

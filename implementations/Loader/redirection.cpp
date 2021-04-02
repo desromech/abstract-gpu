@@ -49,10 +49,10 @@ AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnGPU ( agpu_platform* platform, agp
 	return (*dispatchTable)->agpuIsFeatureSupportedOnGPU ( platform, gpu_index, feature );
 }
 
-AGPU_EXPORT agpu_int agpuGetLimitValueOnGPU ( agpu_platform* platform, agpu_size gpu_index, agpu_limit limit )
+AGPU_EXPORT agpu_uint agpuGetLimitValueOnGPU ( agpu_platform* platform, agpu_size gpu_index, agpu_limit limit )
 {
 	if (platform == nullptr)
-		return (agpu_int)0;
+		return (agpu_uint)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
 	return (*dispatchTable)->agpuGetLimitValueOnGPU ( platform, gpu_index, limit );
 }
@@ -321,10 +321,10 @@ AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu
 	return (*dispatchTable)->agpuIsFeatureSupportedOnDevice ( device, feature );
 }
 
-AGPU_EXPORT agpu_int agpuGetLimitValue ( agpu_device* device, agpu_limit limit )
+AGPU_EXPORT agpu_uint agpuGetLimitValue ( agpu_device* device, agpu_limit limit )
 {
 	if (device == nullptr)
-		return (agpu_int)0;
+		return (agpu_uint)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
 	return (*dispatchTable)->agpuGetLimitValue ( device, limit );
 }

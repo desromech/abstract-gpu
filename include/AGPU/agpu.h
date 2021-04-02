@@ -194,6 +194,22 @@ typedef enum {
 	AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE = 5,
 	AGPU_FEATURE_VRDISPLAY = 6,
 	AGPU_FEATURE_VRINPUT_DEVICES = 7,
+	AGPU_FEATURE_DUAL_SOURCE_BLENDING = 8,
+	AGPU_FEATURE_GEOMETRY_SHADER = 9,
+	AGPU_FEATURE_TESSELLATION_SHADER = 10,
+	AGPU_FEATURE_COMPUTE_SHADER = 11,
+	AGPU_FEATURE_MULTI_DRAW_INDIRECT = 12,
+	AGPU_FEATURE_DRAW_INDIRECT = 13,
+	AGPU_FEATURE_TEXTURE_COMPRESSION_BC = 14,
+	AGPU_FEATURE_TEXTURE_COMPRESSION_ETC2 = 15,
+	AGPU_FEATURE_TEXTURE_COMPRESSION_ASTC_LDR = 16,
+	AGPU_FEATURE_SHADER_CLIP_DISTANCE = 17,
+	AGPU_FEATURE_SHADER_CULL_DISTANCE = 18,
+	AGPU_FEATURE_SHADER_FLOAT_64 = 19,
+	AGPU_FEATURE_SHADER_INT_64 = 20,
+	AGPU_FEATURE_SHADER_INT_16 = 21,
+	AGPU_FEATURE_SAMPLE_SHADING = 22,
+	AGPU_FEATURE_FILL_MODE_NON_SOLID = 23,
 } agpu_feature;
 
 typedef enum {
@@ -202,6 +218,37 @@ typedef enum {
 	AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT = 3,
 	AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT = 4,
 	AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT = 5,
+	AGPU_LIMIT_MAX_IMAGE_DIMENSION_1D = 6,
+	AGPU_LIMIT_MAX_IMAGE_DIMENSION_2D = 7,
+	AGPU_LIMIT_MAX_IMAGE_DIMENSION_3D = 8,
+	AGPU_LIMIT_MAX_IMAGE_DIMENSION_CUBE = 9,
+	AGPU_LIMIT_MAX_IMAGE_ARRAY_LAYERS = 10,
+	AGPU_LIMIT_MAX_FRAMEBUFFER_WIDTH = 11,
+	AGPU_LIMIT_MAX_FRAMEBUFFER_HEIGHT = 12,
+	AGPU_LIMIT_MAX_FRAMEBUFFER_LAYERS = 13,
+	AGPU_LIMIT_MAX_CLIP_DISTANCES = 14,
+	AGPU_LIMIT_MAX_CULL_DISTANCES = 15,
+	AGPU_LIMIT_MAX_COMBINED_CLIP_AND_CULL_DISTANCES = 16,
+	AGPU_LIMIT_MAX_TEXEL_BUFFER_ELEMENTS = 17,
+	AGPU_LIMIT_MAX_UNIFORM_BUFFER_RANGE = 18,
+	AGPU_LIMIT_MAX_STORAGE_BUFFER_RANGE = 19,
+	AGPU_LIMIT_MAX_PUSH_CONSTANTS_SIZE = 20,
+	AGPU_LIMIT_MAX_BOUND_SHADER_RESOURCE_BINDINGS = 21,
+	AGPU_LIMIT_MAX_COMPUTE_SHARED_MEMORY_SIZE = 22,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = 23,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_XCOUNT = 24,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_XSIZE = 25,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_YCOUNT = 26,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_YSIZE = 27,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_ZCOUNT = 28,
+	AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_ZSIZE = 29,
+	AGPU_LIMIT_MAX_SAMPLER_LOD_BIAS = 30,
+	AGPU_LIMIT_MAX_SAMPLER_ANISOTROPY = 31,
+	AGPU_LIMIT_SAMPLED_IMAGE_COLOR_SUPPORTED_SAMPLE_COUNT_MASK = 32,
+	AGPU_LIMIT_SAMPLED_IMAGE_INTEGER_SUPPORTED_SAMPLE_COUNT_MASK = 33,
+	AGPU_LIMIT_SAMPLED_IMAGE_DEPTH_SUPPORTED_SAMPLE_COUNT_MASK = 34,
+	AGPU_LIMIT_SAMPLED_IMAGE_STENCIL_SUPPORTED_SAMPLE_COUNT_MASK = 35,
+	AGPU_LIMIT_STORAGE_IMAGE_SUPPORTED_SAMPLE_COUNT_MASK = 36,
 } agpu_limit;
 
 typedef enum {
@@ -1069,7 +1116,7 @@ typedef agpu_size (*agpuGetPlatformGpuCount_FUN) (agpu_platform* platform);
 typedef agpu_cstring (*agpuGetPlatformGpuName_FUN) (agpu_platform* platform, agpu_size gpu_index);
 typedef agpu_device_type (*agpuGetPlatformGpuDeviceType_FUN) (agpu_platform* platform, agpu_size gpu_index);
 typedef agpu_bool (*agpuIsFeatureSupportedOnGPU_FUN) (agpu_platform* platform, agpu_size gpu_index, agpu_feature feature);
-typedef agpu_int (*agpuGetLimitValueOnGPU_FUN) (agpu_platform* platform, agpu_size gpu_index, agpu_limit limit);
+typedef agpu_uint (*agpuGetLimitValueOnGPU_FUN) (agpu_platform* platform, agpu_size gpu_index, agpu_limit limit);
 typedef agpu_int (*agpuGetPlatformVersion_FUN) (agpu_platform* platform);
 typedef agpu_int (*agpuGetPlatformImplementationVersion_FUN) (agpu_platform* platform);
 typedef agpu_bool (*agpuPlatformHasRealMultithreading_FUN) (agpu_platform* platform);
@@ -1083,7 +1130,7 @@ AGPU_EXPORT agpu_size agpuGetPlatformGpuCount(agpu_platform* platform);
 AGPU_EXPORT agpu_cstring agpuGetPlatformGpuName(agpu_platform* platform, agpu_size gpu_index);
 AGPU_EXPORT agpu_device_type agpuGetPlatformGpuDeviceType(agpu_platform* platform, agpu_size gpu_index);
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnGPU(agpu_platform* platform, agpu_size gpu_index, agpu_feature feature);
-AGPU_EXPORT agpu_int agpuGetLimitValueOnGPU(agpu_platform* platform, agpu_size gpu_index, agpu_limit limit);
+AGPU_EXPORT agpu_uint agpuGetLimitValueOnGPU(agpu_platform* platform, agpu_size gpu_index, agpu_limit limit);
 AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* platform);
 AGPU_EXPORT agpu_int agpuGetPlatformImplementationVersion(agpu_platform* platform);
 AGPU_EXPORT agpu_bool agpuPlatformHasRealMultithreading(agpu_platform* platform);
@@ -1119,7 +1166,7 @@ typedef agpu_bool (*agpuHasBottomLeftTextureCoordinates_FUN) (agpu_device* devic
 typedef agpu_cstring (*agpuGetDeviceName_FUN) (agpu_device* device);
 typedef agpu_device_type (*agpuGetDeviceType_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) (agpu_device* device, agpu_feature feature);
-typedef agpu_int (*agpuGetLimitValue_FUN) (agpu_device* device, agpu_limit limit);
+typedef agpu_uint (*agpuGetLimitValue_FUN) (agpu_device* device, agpu_limit limit);
 typedef agpu_vr_system* (*agpuGetVRSystem_FUN) (agpu_device* device);
 typedef agpu_offline_shader_compiler* (*agpuCreateOfflineShaderCompilerForDevice_FUN) (agpu_device* device);
 typedef agpu_state_tracker_cache* (*agpuCreateStateTrackerCache_FUN) (agpu_device* device, agpu_command_queue* command_queue_family);
@@ -1152,7 +1199,7 @@ AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device* device);
 AGPU_EXPORT agpu_cstring agpuGetDeviceName(agpu_device* device);
 AGPU_EXPORT agpu_device_type agpuGetDeviceType(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature);
-AGPU_EXPORT agpu_int agpuGetLimitValue(agpu_device* device, agpu_limit limit);
+AGPU_EXPORT agpu_uint agpuGetLimitValue(agpu_device* device, agpu_limit limit);
 AGPU_EXPORT agpu_vr_system* agpuGetVRSystem(agpu_device* device);
 AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* device);
 AGPU_EXPORT agpu_state_tracker_cache* agpuCreateStateTrackerCache(agpu_device* device, agpu_command_queue* command_queue_family);

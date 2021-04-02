@@ -45,7 +45,7 @@ AGPUCBindings >> isFeatureSupportedOnGPU_platform: platform gpu_index: gpu_index
 
 { #category : #'platform' }
 AGPUCBindings >> getLimitValueOnGPU_platform: platform gpu_index: gpu_index limit: limit [
-	<cdecl: long 'agpuGetLimitValueOnGPU' (void* ulong long)>
+	<cdecl: ulong 'agpuGetLimitValueOnGPU' (void* ulong long)>
 	^ self externalCallFailed
 ]
 
@@ -249,7 +249,7 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 
 { #category : #'device' }
 AGPUCBindings >> getLimitValue_device: device limit: limit [
-	<cdecl: long 'agpuGetLimitValue' (void* long)>
+	<cdecl: ulong 'agpuGetLimitValue' (void* long)>
 	^ self externalCallFailed
 ]
 

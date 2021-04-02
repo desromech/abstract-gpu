@@ -8,7 +8,7 @@ endif()
 
 option(AGPU_BUILD_SAMPLES "Build AGPU Samples" OFF)
 option(BUILD_VULKAN "Build the vulkan backend" ON)
-option(BUILD_OPENGL "Build the opengl backend" ON)
+option(BUILD_OPENGL "Build the opengl backend" OFF)
 option(BUILD_D3D12 "Build the d3d12 backend" ON)
 option(BUILD_METAL "Build the metal backend" ON)
 option(BUILD_WITH_OPENVR "Build with OpenVR support" ON)

@@ -43,19 +43,66 @@ int main()
             printf("-- %02d: GPU: %s\n", int(gpuIndex), platform->getGpuName(gpuIndex));
             printf("--- deviceType: %s\n", deviceTypeToString(platform->getGpuDeviceType(gpuIndex)));
 #define printFeature(featureName) printf("--- " #featureName ": %s\n", platform->isFeatureSupportedOnGPU(gpuIndex, featureName) ? "yes" : "no")
-#define printLimit(limitName) printf("--- " #limitName ": %d\n", int(platform->getLimitValueOnGPU(gpuIndex, limitName)))
+#define printLimit(limitName) printf("--- " #limitName ": %u\n", int(platform->getLimitValueOnGPU(gpuIndex, limitName)))
 
             printFeature(AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING);
             printFeature(AGPU_FEATURE_COHERENT_MEMORY_MAPPING);
             printFeature(AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
             printFeature(AGPU_FEATURE_COMMAND_LIST_REUSE);
             printFeature(AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE);
+            printFeature(AGPU_FEATURE_DUAL_SOURCE_BLENDING);
+            printFeature(AGPU_FEATURE_GEOMETRY_SHADER);
+        	printFeature(AGPU_FEATURE_TESSELLATION_SHADER);
+        	printFeature(AGPU_FEATURE_COMPUTE_SHADER);
+        	printFeature(AGPU_FEATURE_MULTI_DRAW_INDIRECT);
+        	printFeature(AGPU_FEATURE_DRAW_INDIRECT);
+        	printFeature(AGPU_FEATURE_TEXTURE_COMPRESSION_BC);
+        	printFeature(AGPU_FEATURE_TEXTURE_COMPRESSION_ETC2);
+        	printFeature(AGPU_FEATURE_TEXTURE_COMPRESSION_ASTC_LDR);
+        	printFeature(AGPU_FEATURE_SHADER_CLIP_DISTANCE);
+        	printFeature(AGPU_FEATURE_SHADER_CULL_DISTANCE);
+        	printFeature(AGPU_FEATURE_SHADER_FLOAT_64);
+        	printFeature(AGPU_FEATURE_SHADER_INT_64);
+        	printFeature(AGPU_FEATURE_SHADER_INT_16);
+        	printFeature(AGPU_FEATURE_SAMPLE_SHADING);
+        	printFeature(AGPU_FEATURE_FILL_MODE_NON_SOLID);
 
             printLimit(AGPU_LIMIT_NON_COHERENT_ATOM_SIZE);
             printLimit(AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT);
             printLimit(AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT);
             printLimit(AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
             printLimit(AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT);
+        	printLimit(AGPU_LIMIT_MAX_IMAGE_DIMENSION_1D);
+        	printLimit(AGPU_LIMIT_MAX_IMAGE_DIMENSION_2D);
+        	printLimit(AGPU_LIMIT_MAX_IMAGE_DIMENSION_3D);
+        	printLimit(AGPU_LIMIT_MAX_IMAGE_DIMENSION_CUBE);
+        	printLimit(AGPU_LIMIT_MAX_IMAGE_ARRAY_LAYERS);
+        	printLimit(AGPU_LIMIT_MAX_FRAMEBUFFER_WIDTH);
+        	printLimit(AGPU_LIMIT_MAX_FRAMEBUFFER_HEIGHT);
+        	printLimit(AGPU_LIMIT_MAX_FRAMEBUFFER_LAYERS);
+        	printLimit(AGPU_LIMIT_MAX_CLIP_DISTANCES);
+        	printLimit(AGPU_LIMIT_MAX_CULL_DISTANCES);
+        	printLimit(AGPU_LIMIT_MAX_COMBINED_CLIP_AND_CULL_DISTANCES);
+        	printLimit(AGPU_LIMIT_MAX_TEXEL_BUFFER_ELEMENTS);
+        	printLimit(AGPU_LIMIT_MAX_UNIFORM_BUFFER_RANGE);
+        	printLimit(AGPU_LIMIT_MAX_STORAGE_BUFFER_RANGE);
+        	printLimit(AGPU_LIMIT_MAX_PUSH_CONSTANTS_SIZE);
+        	printLimit(AGPU_LIMIT_MAX_BOUND_SHADER_RESOURCE_BINDINGS);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_SHARED_MEMORY_SIZE);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_INVOCATIONS);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_XCOUNT);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_XSIZE);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_YCOUNT);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_YSIZE);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_ZCOUNT);
+        	printLimit(AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_ZSIZE);
+        	printLimit(AGPU_LIMIT_MAX_SAMPLER_LOD_BIAS);
+        	printLimit(AGPU_LIMIT_MAX_SAMPLER_ANISOTROPY);
+        	printLimit(AGPU_LIMIT_SAMPLED_IMAGE_COLOR_SUPPORTED_SAMPLE_COUNT_MASK);
+        	printLimit(AGPU_LIMIT_SAMPLED_IMAGE_INTEGER_SUPPORTED_SAMPLE_COUNT_MASK);
+        	printLimit(AGPU_LIMIT_SAMPLED_IMAGE_DEPTH_SUPPORTED_SAMPLE_COUNT_MASK);
+        	printLimit(AGPU_LIMIT_SAMPLED_IMAGE_STENCIL_SUPPORTED_SAMPLE_COUNT_MASK);
+        	printLimit(AGPU_LIMIT_STORAGE_IMAGE_SUPPORTED_SAMPLE_COUNT_MASK);
         }
     }
 

@@ -22,7 +22,7 @@ public:
 	virtual agpu_cstring getGpuName(agpu_size gpu_index) override;
 	virtual agpu_device_type getGpuDeviceType(agpu_size gpu_index) override;
 	virtual agpu_bool isFeatureSupportedOnGPU(agpu_size gpu_index, agpu_feature feature)override;
-	virtual agpu_int getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit) override;
+	virtual agpu_uint getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit) override;
 	virtual agpu_int getVersion() override;
 	virtual agpu_int getImplementationVersion() override;
 	virtual agpu_bool hasRealMultithreading() override;
@@ -39,7 +39,7 @@ public:
 };
 
 agpu_bool isFeatureSupportedOnGPU(agpu_feature feature, VkPhysicalDeviceProperties &deviceProperties, VkPhysicalDeviceMemoryProperties &deviceMemoryProperties, VkPhysicalDeviceFeatures &deviceFeatures);
-agpu_int getLimitValueOnGPU(agpu_limit limit, VkPhysicalDeviceProperties &deviceProperties, VkPhysicalDeviceMemoryProperties &deviceMemoryProperties, VkPhysicalDeviceFeatures &deviceFeatures);
+agpu_uint getLimitValueOnGPU(agpu_limit limit, VkPhysicalDeviceProperties &deviceProperties, VkPhysicalDeviceMemoryProperties &deviceMemoryProperties, VkPhysicalDeviceFeatures &deviceFeatures);
 
 
 } // End of namespace AgpuVulkan

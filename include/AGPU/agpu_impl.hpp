@@ -516,7 +516,7 @@ public:
 	virtual agpu_cstring getGpuName(agpu_size gpu_index) = 0;
 	virtual agpu_device_type getGpuDeviceType(agpu_size gpu_index) = 0;
 	virtual agpu_bool isFeatureSupportedOnGPU(agpu_size gpu_index, agpu_feature feature) = 0;
-	virtual agpu_int getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit) = 0;
+	virtual agpu_uint getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit) = 0;
 	virtual agpu_int getVersion() = 0;
 	virtual agpu_int getImplementationVersion() = 0;
 	virtual agpu_bool hasRealMultithreading() = 0;
@@ -556,7 +556,7 @@ public:
 	virtual agpu_cstring getName() = 0;
 	virtual agpu_device_type getType() = 0;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) = 0;
-	virtual agpu_int getLimitValue(agpu_limit limit) = 0;
+	virtual agpu_uint getLimitValue(agpu_limit limit) = 0;
 	virtual vr_system_ptr getVRSystem() = 0;
 	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
 	virtual state_tracker_cache_ptr createStateTrackerCache(const command_queue_ref & command_queue_family) = 0;
