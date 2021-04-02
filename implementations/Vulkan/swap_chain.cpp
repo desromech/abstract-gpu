@@ -485,8 +485,6 @@ bool AVkSwapChain::initialize(agpu_swap_chain_create_info *createInfo)
             auto framebuffer = AVkFramebuffer::create(device, swapChainWidth, swapChainHeight, 1, &colorBufferView, depthStencilBufferView);
             auto avkFramebuffer = framebuffer.as<AVkFramebuffer> ();
             avkFramebuffer->swapChainFramebuffer = true;
-            avkFramebuffer->waitSemaphore = imageAvailableSemaphores[i];
-            avkFramebuffer->signalSemaphore = renderingFinishedSemaphores[i];
             framebuffers[i][layerIndex] = framebuffer;
 
             // Release the references to the buffers.
@@ -515,6 +513,14 @@ agpu_error AVkSwapChain::getNextBackBufferIndex()
     else if(error)
     {
         CONVERT_VULKAN_ERROR(error);
+    }
+
+    // Set the semaphore in the corresponding framebuffer.
+    for(size_t layerIndex = 0; layerIndex < swapChainLayers; ++layerIndex)
+    {
+        auto avkFramebuffer = framebuffers[currentBackBufferIndex][layerIndex].as<AVkFramebuffer> ();
+        avkFramebuffer->waitSemaphore = imageAvailableSemaphores[currentSemaphoreIndex];
+        avkFramebuffer->signalSemaphore = renderingFinishedSemaphores[currentSemaphoreIndex];
     }
 
     return result;
