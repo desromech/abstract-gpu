@@ -33,6 +33,21 @@ AGPU_EXPORT agpu_cstring agpuGetPlatformGpuName(agpu_platform* self, agpu_size g
 	return asRef(agpu::platform, self)->getGpuName(gpu_index);
 }
 
+AGPU_EXPORT agpu_device_type agpuGetPlatformGpuDeviceType(agpu_platform* self, agpu_size gpu_index)
+{
+	return asRef(agpu::platform, self)->getGpuDeviceType(gpu_index);
+}
+
+AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnGPU(agpu_platform* self, agpu_size gpu_index, agpu_feature feature)
+{
+	return asRef(agpu::platform, self)->isFeatureSupportedOnGPU(gpu_index, feature);
+}
+
+AGPU_EXPORT agpu_int agpuGetLimitValueOnGPU(agpu_platform* self, agpu_size gpu_index, agpu_limit limit)
+{
+	return asRef(agpu::platform, self)->getLimitValueOnGPU(gpu_index, limit);
+}
+
 AGPU_EXPORT agpu_int agpuGetPlatformVersion(agpu_platform* self)
 {
 	return asRef(agpu::platform, self)->getVersion();
@@ -187,6 +202,16 @@ AGPU_EXPORT agpu_bool agpuHasTopLeftNdcOrigin(agpu_device* self)
 AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates(agpu_device* self)
 {
 	return asRef(agpu::device, self)->hasBottomLeftTextureCoordinates();
+}
+
+AGPU_EXPORT agpu_cstring agpuGetDeviceName(agpu_device* self)
+{
+	return asRef(agpu::device, self)->getName();
+}
+
+AGPU_EXPORT agpu_device_type agpuGetDeviceType(agpu_device* self)
+{
+	return asRef(agpu::device, self)->getType();
 }
 
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* self, agpu_feature feature)

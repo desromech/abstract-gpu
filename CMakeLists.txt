@@ -14,6 +14,7 @@ option(BUILD_METAL "Build the metal backend" ON)
 option(BUILD_WITH_OPENVR "Build with OpenVR support" ON)
 
 option(BUILD_MULTIPLE_BACKENDS "Build multiple backends" ON)
+option(BUILD_TOOLS "Build the tools" ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
 	set(UWP YES)
@@ -23,6 +24,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
 	set(BUILD_METAL OFF)
 	set(BUILD_WITH_OPENVR OFF)
 	set(BUILD_MULTIPLE_BACKENDS OFF)
+	set(BUILD_TOOLS OFF)
 endif()
 
 # Check the build type
@@ -201,6 +203,9 @@ add_subdirectory(thirdparty)
 
 # Build the implementations
 add_subdirectory(implementations)
+
+# Build the tools
+add_subdirectory(tools)
 
 # Build the samples
 if(SDL2_FOUND AND AGPU_BUILD_SAMPLES)

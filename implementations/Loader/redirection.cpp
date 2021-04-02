@@ -33,6 +33,30 @@ AGPU_EXPORT agpu_cstring agpuGetPlatformGpuName ( agpu_platform* platform, agpu_
 	return (*dispatchTable)->agpuGetPlatformGpuName ( platform, gpu_index );
 }
 
+AGPU_EXPORT agpu_device_type agpuGetPlatformGpuDeviceType ( agpu_platform* platform, agpu_size gpu_index )
+{
+	if (platform == nullptr)
+		return (agpu_device_type)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetPlatformGpuDeviceType ( platform, gpu_index );
+}
+
+AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnGPU ( agpu_platform* platform, agpu_size gpu_index, agpu_feature feature )
+{
+	if (platform == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuIsFeatureSupportedOnGPU ( platform, gpu_index, feature );
+}
+
+AGPU_EXPORT agpu_int agpuGetLimitValueOnGPU ( agpu_platform* platform, agpu_size gpu_index, agpu_limit limit )
+{
+	if (platform == nullptr)
+		return (agpu_int)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (platform);
+	return (*dispatchTable)->agpuGetLimitValueOnGPU ( platform, gpu_index, limit );
+}
+
 AGPU_EXPORT agpu_int agpuGetPlatformVersion ( agpu_platform* platform )
 {
 	if (platform == nullptr)
@@ -271,6 +295,22 @@ AGPU_EXPORT agpu_bool agpuHasBottomLeftTextureCoordinates ( agpu_device* device 
 		return (agpu_bool)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
 	return (*dispatchTable)->agpuHasBottomLeftTextureCoordinates ( device );
+}
+
+AGPU_EXPORT agpu_cstring agpuGetDeviceName ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_cstring)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuGetDeviceName ( device );
+}
+
+AGPU_EXPORT agpu_device_type agpuGetDeviceType ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_device_type)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuGetDeviceType ( device );
 }
 
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice ( agpu_device* device, agpu_feature feature )

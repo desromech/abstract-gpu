@@ -29,6 +29,21 @@ AGPUCBindings >> getGpuName_platform: platform gpu_index: gpu_index [
 ]
 
 { #category : #'platform' }
+AGPUCBindings >> getGpuDeviceType_platform: platform gpu_index: gpu_index [
+	^ self ffiCall: #(agpu_device_type agpuGetPlatformGpuDeviceType (agpu_platform* platform , agpu_size gpu_index) )
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> isFeatureSupportedOnGPU_platform: platform gpu_index: gpu_index feature: feature [
+	^ self ffiCall: #(agpu_bool agpuIsFeatureSupportedOnGPU (agpu_platform* platform , agpu_size gpu_index , agpu_feature feature) )
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> getLimitValueOnGPU_platform: platform gpu_index: gpu_index limit: limit [
+	^ self ffiCall: #(agpu_int agpuGetLimitValueOnGPU (agpu_platform* platform , agpu_size gpu_index , agpu_limit limit) )
+]
+
+{ #category : #'platform' }
 AGPUCBindings >> getVersion_platform: platform [
 	^ self ffiCall: #(agpu_int agpuGetPlatformVersion (agpu_platform* platform) )
 ]
@@ -176,6 +191,16 @@ AGPUCBindings >> hasTopLeftNdcOrigin_device: device [
 { #category : #'device' }
 AGPUCBindings >> hasBottomLeftTextureCoordinates_device: device [
 	^ self ffiCall: #(agpu_bool agpuHasBottomLeftTextureCoordinates (agpu_device* device) )
+]
+
+{ #category : #'device' }
+AGPUCBindings >> getName_device: device [
+	^ self ffiCall: #(agpu_cstring agpuGetDeviceName (agpu_device* device) )
+]
+
+{ #category : #'device' }
+AGPUCBindings >> getType_device: device [
+	^ self ffiCall: #(agpu_device_type agpuGetDeviceType (agpu_device* device) )
 ]
 
 { #category : #'device' }

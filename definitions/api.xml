@@ -525,6 +525,14 @@
             <constant name="PolygonModePoint" value="2" />
         </enum>
 
+        <enum name="device_type" optionalPrefix="DeviceType">
+            <constant name="DeviceTypeOther" value="0" />
+            <constant name="DeviceTypeIntegratedGPU" value="1" />
+            <constant name="DeviceTypeDiscreteGPU" value="2" />
+            <constant name="DeviceTypeVirtualGPU" value="3" />
+            <constant name="DeviceTypeCPU" value="4" />
+        </enum>
+
         <enum name="feature" optionalPrefix="Feature">
             <constant name="FeaturePersistentMemoryMapping" value="1" />
             <constant name="FeatureCoherentMemoryMapping" value="2" />
@@ -1066,6 +1074,20 @@
                 <arg name="gpu_index" type="size" />
             </method>
 
+            <method name="getGpuDeviceType" cname="GetPlatformGpuDeviceType" returnType="device_type">
+                <arg name="gpu_index" type="size" />
+            </method>
+
+            <method name="isFeatureSupportedOnGPU" cname="IsFeatureSupportedOnGPU" returnType="bool">
+                <arg name="gpu_index" type="size" />
+                <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getLimitValueOnGPU" cname="GetLimitValueOnGPU" returnType="int">
+                <arg name="gpu_index" type="size" />
+                <arg name="limit" type="limit" />
+            </method>
+
             <method name="getVersion" cname="GetPlatformVersion" returnType="int">
             </method>
 
@@ -1177,6 +1199,12 @@
             </method>
 
             <method name="hasBottomLeftTextureCoordinates" cname="HasBottomLeftTextureCoordinates" returnType="bool">
+            </method>
+
+            <method name="getName" cname="GetDeviceName" returnType="cstring">
+            </method>
+
+            <method name="getType" cname="GetDeviceType" returnType="device_type">
             </method>
 
             <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
