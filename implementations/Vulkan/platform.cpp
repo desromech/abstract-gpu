@@ -77,6 +77,26 @@ agpu_uint getLimitValueOnGPU(agpu_limit limit, VkPhysicalDeviceProperties &devic
 	case AGPU_LIMIT_SAMPLED_IMAGE_DEPTH_SUPPORTED_SAMPLE_COUNT_MASK: return deviceProperties.limits.sampledImageDepthSampleCounts;
 	case AGPU_LIMIT_SAMPLED_IMAGE_STENCIL_SUPPORTED_SAMPLE_COUNT_MASK: return deviceProperties.limits.sampledImageStencilSampleCounts;
 	case AGPU_LIMIT_STORAGE_IMAGE_SUPPORTED_SAMPLE_COUNT_MASK: return deviceProperties.limits.storageImageSampleCounts;
+	case AGPU_LIMIT_DEDICATED_VIDEO_MEMORY_IN_MB: {
+		VkDeviceSize memory = 0;
+		for(uint32_t i = 0; i < deviceMemoryProperties.memoryHeapCount; ++i)
+		{
+			auto &heap = deviceMemoryProperties.memoryHeaps[i];
+			if(heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+				memory += heap.size;
+		}
+
+		return memory >> 20;
+	}
+	case AGPU_LIMIT_AVAILABLE_VIDEO_MEMORY_IN_MB: {
+		VkDeviceSize memory = 0;
+		for(uint32_t i = 0; i < deviceMemoryProperties.memoryHeapCount; ++i)
+		{
+			memory += deviceMemoryProperties.memoryHeaps[i].size;
+		}
+
+		return memory >> 20;
+	}
     default: return 0;
     }
 }

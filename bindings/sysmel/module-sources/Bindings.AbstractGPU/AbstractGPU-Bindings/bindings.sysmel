@@ -304,6 +304,8 @@ enum Limit valueType: Int32; values: #{
 	SampledImageDepthSupportedSampleCountMask: 34.
 	SampledImageStencilSupportedSampleCountMask: 35.
 	StorageImageSupportedSampleCountMask: 36.
+	DedicatedVideoMemoryInMB: 37.
+	AvailableVideoMemoryInMB: 38.
 }.
 
 enum RenderpassAttachmentAction valueType: Int32; values: #{

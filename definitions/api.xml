@@ -596,6 +596,8 @@
             <constant name="LimitSampledImageDepthSupportedSampleCountMask" value="34" />
             <constant name="LimitSampledImageStencilSupportedSampleCountMask" value="35" />
             <constant name="LimitStorageImageSupportedSampleCountMask" value="36" />
+            <constant name="LimitDedicatedVideoMemoryInMB" value="37" />
+            <constant name="LimitAvailableVideoMemoryInMB" value="38" />
         </enum>
 
         <enum name="renderpass_attachment_action" optionalPrefix="Attachment">
