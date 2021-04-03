@@ -156,16 +156,13 @@ if(BUILD_OPENGL)
 endif()
 
 # Find Direct3D 12
-if(UWP)
+if(UWP OR WIN32)
 	## Assume we will always have d3d12, so just set the required variables.
 	set(D3D12_INCLUDE_DIR)
 	set(DXGI_INCLUDE_DIR)
 	set(D3DCOMPILER_INCLUDE_DIR)
 	set(D3D12_FOUND YES)
 	set(D3D12_LIBRARIES d3d12.lib dxgi.lib d3dcompiler.lib)
-else()
-	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-	find_package(D3D12)
 endif()
 
 # For VisualStudio in Window

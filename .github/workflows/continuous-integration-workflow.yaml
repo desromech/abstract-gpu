@@ -99,8 +99,6 @@ jobs:
 
             - name: CI Build
               run: ./scripts/ci-build.ps1
-              env:
-                  VULKAN_SDK: ${{ env.GITHUB_WORKSPACE }}/thirdparty/vulkan-sdk-windows
 
             - name: Package artifacts
               run: ./scripts/ci-package-artifacts.ps1
