@@ -1,17 +1,7 @@
 #ifndef AGPU_D3D12_IMPLICIT_RESOURCE_COMMAND_LIST_HPP
 #define AGPU_D3D12_IMPLICIT_RESOURCE_COMMAND_LIST_HPP
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
-#include <windows.h>
-#include <d3d12.h>
-#include <wrl.h>
+#include "include_d3d12.hpp"
 #include <mutex>
 #include <algorithm>
 #include "D3D12MemAlloc.h"
@@ -22,7 +12,6 @@ namespace AgpuD3D12
 {
 using AgpuCommon::alignedTo;
 using AgpuCommon::nextPowerOfTwo;
-using Microsoft::WRL::ComPtr;
 class ADXDevice;
 
 class ADXImplicitResourceSetupCommandList

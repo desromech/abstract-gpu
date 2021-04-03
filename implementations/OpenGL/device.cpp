@@ -503,7 +503,7 @@ agpu_bool GLDevice::isFeatureSupported (agpu_feature feature)
     }
 }
 
-agpu_int GLDevice::getLimitValue(agpu_limit limit)
+agpu_uint GLDevice::getLimitValue(agpu_limit limit)
 {
     // TODO: Implement this properly.
     switch(limit)

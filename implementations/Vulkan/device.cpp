@@ -417,8 +417,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     }
 
     // The application info.
-    VkApplicationInfo applicationInfo;
-    memset(&applicationInfo, 0, sizeof(applicationInfo));
+    VkApplicationInfo applicationInfo = {};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     applicationInfo.pApplicationName = openInfo->application_name;
     applicationInfo.applicationVersion = openInfo->application_version;
@@ -430,8 +429,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     if (!applicationInfo.pEngineName)
         applicationInfo.pEngineName = "Abstract GPU";
 
-    VkInstanceCreateInfo createInfo;
-    memset(&createInfo, 0, sizeof(createInfo));
+    VkInstanceCreateInfo createInfo = {};
     createInfo.pApplicationInfo = &applicationInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 

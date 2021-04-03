@@ -61,13 +61,6 @@ ADXDevice::~ADXDevice()
 {
 }
 
-bool ADXDevice::checkDirect3D12Implementation(Direct3D12Platform *platform)
-{
-    // TODO: Implement this properly.
-    platform->gpuCount = 1;
-    return true;
-}
-
 agpu::device_ref ADXDevice::open(agpu_device_open_info* openInfo)
 {
     auto device = agpu::makeObject<ADXDevice> ();
@@ -241,6 +234,16 @@ agpu_bool ADXDevice::hasBottomLeftTextureCoordinates()
     return false;
 }
 
+agpu_cstring ADXDevice::getName()
+{
+    return "Unknown";
+}
+
+agpu_device_type ADXDevice::getType()
+{
+    return AGPU_DEVICE_TYPE_OTHER;
+}
+
 agpu_bool ADXDevice::isFeatureSupported(agpu_feature feature)
 {
     switch (feature)
@@ -256,7 +259,7 @@ agpu_bool ADXDevice::isFeatureSupported(agpu_feature feature)
 	}
 }
 
-agpu_int ADXDevice::getLimitValue(agpu_limit limit)
+agpu_uint ADXDevice::getLimitValue(agpu_limit limit)
 {
     // TODO: Implement this properly.
     switch(limit)

@@ -40,8 +40,7 @@ int main()
         auto gpuCount = platform->getGpuCount();
         for(agpu_size gpuIndex = 0; gpuIndex < gpuCount; ++gpuIndex)
         {
-            printf("-- %02d: GPU: %s\n", int(gpuIndex), platform->getGpuName(gpuIndex));
-            printf("--- deviceType: %s\n", deviceTypeToString(platform->getGpuDeviceType(gpuIndex)));
+            printf("-- %02d: %s: %s\n", int(gpuIndex), deviceTypeToString(platform->getGpuDeviceType(gpuIndex)), platform->getGpuName(gpuIndex));
 #define printFeature(featureName) printf("--- " #featureName ": %s\n", platform->isFeatureSupportedOnGPU(gpuIndex, featureName) ? "yes" : "no")
 #define printLimit(limitName) printf("--- " #limitName ": %u\n", int(platform->getLimitValueOnGPU(gpuIndex, limitName)))
 

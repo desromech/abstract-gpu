@@ -16,7 +16,7 @@ public:
 	virtual agpu_cstring getGpuName(agpu_size gpu_index) override;
 	virtual agpu_device_type getGpuDeviceType(agpu_size gpu_index) override;
 	virtual agpu_bool isFeatureSupportedOnGPU(agpu_size gpu_index, agpu_feature feature)override;
-	virtual agpu_int getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit) override;
+	virtual agpu_uint getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit) override;
 	virtual agpu_int getVersion() override;
 	virtual agpu_int getImplementationVersion() override;
 	virtual agpu_bool hasRealMultithreading() override;
@@ -65,7 +65,7 @@ agpu_bool GLPlatform::isFeatureSupportedOnGPU(agpu_size gpu_index, agpu_feature 
     return false;
 }
 
-agpu_int GLPlatform::getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit)
+agpu_uint GLPlatform::getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit)
 {
     return 0;
 }
