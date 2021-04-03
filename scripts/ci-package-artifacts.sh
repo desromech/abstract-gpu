@@ -35,9 +35,6 @@ rm -rf artifact
 mkdir -vp artifacts/dist-package/$PROJECT_NAME
 cp -v LICENSE ThirdPartyNotices.txt artifacts/dist-package/$PROJECT_NAME
 cp -Rv build/dist artifacts/dist-package/$PROJECT_NAME/lib
-cp -Rv include artifacts/dist-package/$PROJECT_NAME/include
-cp -Rv bindings artifacts/dist-package/$PROJECT_NAME/bindings
-cp -Rv tonel artifacts/dist-package/$PROJECT_NAME/tonel
 
 # Create the tar
 cd artifacts/dist-package

@@ -28,9 +28,6 @@ mkdir $DEST > $null
 cp LICENSE $DEST
 cp ThirdPartyNotices.txt $DEST
 cp -R $BUILD_DIR $DEST/lib
-cp -R include $DEST/include
-cp -R bindings $DEST/bindings
-cp -R tonel $DEST/tonel
 mkdir "artifacts/dist" > $null
 
 # Create the zip
