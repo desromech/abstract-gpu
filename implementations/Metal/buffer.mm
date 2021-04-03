@@ -135,10 +135,7 @@ agpu_error AMtlBuffer::flushWholeBuffer (  )
 
 agpu_error AMtlBuffer::invalidateWholeBuffer (  )
 {
-    NSRange range;
-    range.location = 0;
-    range.length = description.size;
-    [handle didModifyRange: range];
+    // FIXME: Implement this properly.
     return AGPU_OK;
 }
 

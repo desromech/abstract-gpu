@@ -21,6 +21,8 @@ public:
     agpu::device_weakref weakDevice;
     id<MTLCommandBuffer> fenceCommand;
     std::mutex mutex;
+    std::condition_variable signaledCondition;
+    bool isSignaled;
 };
 
 } // End of namespace AgpuMetal

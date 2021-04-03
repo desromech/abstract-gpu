@@ -15,6 +15,7 @@
 #include "vertex_binding.hpp"
 #include "texture.hpp"
 #include "sampler.hpp"
+#include "platform.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
 
@@ -38,11 +39,13 @@ AMtlDevice::~AMtlDevice()
         [device release];
 }
 
-agpu::device_ref AMtlDevice::open(agpu_device_open_info *openInfo)
+agpu::device_ref AMtlDevice::open(id<MTLDevice> selectedDevice, agpu_device_open_info *openInfo)
 {
-    id<MTLDevice> mtlDevice = MTLCreateSystemDefaultDevice();
+    (void)openInfo;
+    id<MTLDevice> mtlDevice = selectedDevice;
     if(!mtlDevice)
         return agpu::device_ref();
+    [mtlDevice retain];
 
     id<MTLCommandQueue> mainCommandQueue = [mtlDevice newCommandQueue];
     if(!mainCommandQueue)
@@ -63,36 +66,24 @@ agpu::device_ref AMtlDevice::open(agpu_device_open_info *openInfo)
     return result;
 }
 
-agpu_bool AMtlDevice::isFeatureSupported(agpu_feature feature)
+agpu_cstring AMtlDevice::getName()
 {
-    switch(feature)
-    {
-    case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING:
-    case AGPU_FEATURE_COHERENT_MEMORY_MAPPING:
-    case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING:
-        return true;
-
-    case AGPU_FEATURE_COMMAND_LIST_REUSE:
-    case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE:
-        return false;
-
-    default:
-        return false;
-    }
+    return [device.name UTF8String];
 }
 
-agpu_int AMtlDevice::getLimitValue(agpu_limit limit)
+agpu_device_type AMtlDevice::getType()
 {
-    // TODO: Implement this properly.
-    switch(limit)
-    {
-    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return 256;
-    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return 256;
-    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return 256;
-    case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return 256;
-    case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return 256;
-    default: return 0;
-    }
+    return getDeviceType(device);
+}
+
+agpu_bool AMtlDevice::isFeatureSupported(agpu_feature feature)
+{
+    return isFeatureSupportedInDevice(device, feature);
+}
+
+agpu_uint AMtlDevice::getLimitValue(agpu_limit limit)
+{
+    return getLimitValueInDevice(device, limit);
 }
 
 agpu::command_queue_ptr AMtlDevice::getDefaultCommandQueue()
