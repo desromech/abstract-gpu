@@ -121,7 +121,7 @@ Direct3D12Platform::~Direct3D12Platform()
 
 agpu::device_ptr Direct3D12Platform::openDevice(agpu_device_open_info* openInfo)
 {
-    return ADXDevice::open(openInfo).disown();
+    return ADXDevice::open(this, openInfo).disown();
 }
 
 agpu_cstring Direct3D12Platform::getName()

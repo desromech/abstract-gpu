@@ -13,6 +13,7 @@ namespace AgpuD3D12
 
 const int ShaderTypeCount = 6;
 class Direct3D12Platform;
+struct Direct3D12AdapterDesc;
 
 /**
 * Agpu D3D12 device
@@ -23,8 +24,8 @@ public:
     ADXDevice();
     ~ADXDevice();
 
-    static agpu::device_ref open(agpu_device_open_info* openInfo);
-    bool initialize(agpu_device_open_info* openInfo);
+    static agpu::device_ref open(Direct3D12Platform *platform, agpu_device_open_info* openInfo);
+    bool initialize(Direct3D12Platform* platform, agpu_device_open_info* openInfo);
 
     agpu::command_queue_ref defaultCommandQueue;
 
@@ -62,6 +63,8 @@ public:
 
 public:
     // Device objects
+    ComPtr<IDXGIAdapter1> dxgiAdapter;
+    std::unique_ptr<Direct3D12AdapterDesc> adapterDesc;
     ComPtr<ID3D12Device> d3dDevice;
 
     // Memory allocator

@@ -94,12 +94,13 @@ jobs:
             PLATFORM_NAME: ${{ matrix.variant.platformName }}
             BUILD_MODE: ${{ matrix.variant.buildMode }}
             PROJECT_NAME: abstract-gpu
-            VULKAN_SDK: ${{ env.GITHUB_WORKSPACE }}/thirdparty/vulkan-sdk-windows
         steps:
             - uses: actions/checkout@v1
 
             - name: CI Build
               run: ./scripts/ci-build.ps1
+              env:
+                  VULKAN_SDK: ${{ env.GITHUB_WORKSPACE }}/thirdparty/vulkan-sdk-windows
 
             - name: Package artifacts
               run: ./scripts/ci-package-artifacts.ps1
