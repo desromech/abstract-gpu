@@ -193,6 +193,7 @@ void GLDevice::readVersionInformation()
         extensions = (const char*)glGetString(GL_EXTENSIONS);
     }
 
+	name = reinterpret_cast<const char*> (glGetString(GL_RENDERER));
     printMessage("OpenGL version %s\n", glGetString(GL_VERSION));
     printMessage("OpenGL vendor %s\n", glGetString(GL_VENDOR));
     printMessage("GLSL version %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
@@ -479,6 +480,16 @@ void GLDevice::createDefaultCommandQueue()
     defaultCommandQueue = GLCommandQueue::create(refFromThis<agpu::device> ());
 }
 
+agpu_cstring GLDevice::getName()
+{
+	return name.c_str();
+}
+
+agpu_device_type GLDevice::getType()
+{
+	return AGPU_DEVICE_TYPE_OTHER;
+}
+
 agpu_bool GLDevice::isFeatureSupported (agpu_feature feature)
 {
     switch(feature)
@@ -492,7 +503,7 @@ agpu_bool GLDevice::isFeatureSupported (agpu_feature feature)
     }
 }
 
-agpu_int GLDevice::getLimitValue(agpu_limit limit)
+agpu_uint GLDevice::getLimitValue(agpu_limit limit)
 {
     // TODO: Implement this properly.
     switch(limit)

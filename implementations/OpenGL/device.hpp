@@ -157,8 +157,10 @@ public:
 	virtual agpu_int getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count) override;
 	virtual agpu_bool hasTopLeftNdcOrigin() override;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
+	virtual agpu_cstring getName() override;
+	virtual agpu_device_type getType() override;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
-	virtual agpu_int getLimitValue(agpu_limit limit) override;
+	virtual agpu_uint getLimitValue(agpu_limit limit) override;
 
 	virtual agpu::vr_system_ptr getVRSystem() override;
     virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
@@ -187,6 +189,9 @@ public:
     // OpenGL API
     OpenGLContext *mainContext;
     JobQueue mainContextJobQueue;
+
+    // Device information
+    std::string name;
 
     // GetStringi
     PFNGLGETSTRINGIPROC glGetStringi;

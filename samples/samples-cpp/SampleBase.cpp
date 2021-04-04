@@ -267,6 +267,26 @@ const agpu_vertex_layout_ref &AbstractSampleBase::getSampleVertexLayout()
 
 int SampleBase::main(int argc, const char **argv)
 {
+    bool vsyncDisabled = false;
+    agpu_uint platformIndex = 0;
+    agpu_uint gpuIndex = 0;
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == "-no-vsync")
+        {
+            vsyncDisabled = true;
+        }
+        else if (arg == "-platform")
+        {
+            platformIndex = agpu_uint(atoi(argv[++i]));
+        }
+        else if (arg == "-gpu")
+        {
+            gpuIndex = agpu_uint(atoi(argv[++i]));
+        }
+    }
+
     char nameBuffer[256];
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -276,17 +296,26 @@ int SampleBase::main(int argc, const char **argv)
     int flags = SDL_WINDOW_RESIZABLE;
 
     // Get the platform.
-    agpu_platform *platform;
-    agpuGetPlatforms(1, &platform, nullptr);
-    if (!platform)
+    agpu_uint numPlatforms;
+    agpuGetPlatforms(0, nullptr, &numPlatforms);
+    if (numPlatforms == 0)
     {
-        printError("Failed to get AGPU platform\n");
-        return -1;
+        printError("No agpu platforms are available.\n");
+        return 1;
+    }
+    else if (platformIndex >= numPlatforms)
+    {
+        printError("Selected platform index is not available.\n");
+        return 1;
     }
 
+    std::vector<agpu_platform*> platforms;
+    platforms.resize(numPlatforms);
+    agpuGetPlatforms(numPlatforms, &platforms[0], nullptr);
+    auto platform = platforms[platformIndex];
+
     printMessage("Choosen platform: %s\n", agpuGetPlatformName(platform));
-    snprintf(nameBuffer, sizeof(nameBuffer), "AGPU Sample - %s Platform", agpuGetPlatformName(platform));
-    window = SDL_CreateWindow(nameBuffer, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
+    window = SDL_CreateWindow("Agpu Sample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
     if(!window)
     {
         printError("Failed to open window\n");
@@ -300,6 +329,7 @@ int SampleBase::main(int argc, const char **argv)
 
     // Open the device
     agpu_device_open_info openInfo = {};
+    openInfo.gpu_index = gpuIndex;
     memset(&currentSwapChainCreateInfo, 0, sizeof(currentSwapChainCreateInfo));
     switch(windowInfo.subsystem)
     {
@@ -332,6 +362,11 @@ int SampleBase::main(int argc, const char **argv)
     currentSwapChainCreateInfo.flags = AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI;
     if (UseOverlayWindow)
         currentSwapChainCreateInfo.flags = agpu_swap_chain_flags(currentSwapChainCreateInfo.flags | AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW);
+    if (vsyncDisabled)
+    {
+        currentSwapChainCreateInfo.presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX;
+        currentSwapChainCreateInfo.fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE;
+    }
 
 #ifdef _DEBUG
     // Use the debug layer when debugging. This is useful for low level backends.
@@ -344,6 +379,10 @@ int SampleBase::main(int argc, const char **argv)
         printError("Failed to open the device\n");
         return false;
     }
+
+    snprintf(nameBuffer, sizeof(nameBuffer), "AGPU Sample - [%s] %s", agpuGetPlatformName(platform), device->getName());
+    SDL_SetWindowTitle(window, nameBuffer);
+
 
 	hasPersistentCoherentMapping = device->isFeatureSupported(AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
 
@@ -378,8 +417,6 @@ int SampleBase::main(int argc, const char **argv)
     {
         processEvents();
         render();
-
-        SDL_Delay(3);
     }
 
     shutdownSample();

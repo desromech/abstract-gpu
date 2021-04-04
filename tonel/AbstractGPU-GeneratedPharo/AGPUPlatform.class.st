@@ -33,6 +33,27 @@ AGPUPlatform >> getGpuName: gpu_index [
 ]
 
 { #category : #'wrappers' }
+AGPUPlatform >> getGpuDeviceType: gpu_index [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getGpuDeviceType_platform: (self validHandle) gpu_index: gpu_index.
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUPlatform >> isFeatureSupportedOnGPU: gpu_index feature: feature [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance isFeatureSupportedOnGPU_platform: (self validHandle) gpu_index: gpu_index feature: feature.
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUPlatform >> getLimitValueOnGPU: gpu_index limit: limit [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getLimitValueOnGPU_platform: (self validHandle) gpu_index: gpu_index limit: limit.
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUPlatform >> getVersion [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getVersion_platform: (self validHandle).

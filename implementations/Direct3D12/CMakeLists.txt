@@ -20,6 +20,7 @@ set(AGPU_Direct3D12_SOURCES
     framebuffer.cpp
     framebuffer.hpp
     icd.cpp
+    include_d3d12.hpp
     implicit_resource_command_list.cpp
     implicit_resource_command_list.hpp
     pipeline_builder.cpp

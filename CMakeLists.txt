@@ -8,12 +8,13 @@ endif()
 
 option(AGPU_BUILD_SAMPLES "Build AGPU Samples" OFF)
 option(BUILD_VULKAN "Build the vulkan backend" ON)
-option(BUILD_OPENGL "Build the opengl backend" ON)
+option(BUILD_OPENGL "Build the opengl backend" OFF)
 option(BUILD_D3D12 "Build the d3d12 backend" ON)
 option(BUILD_METAL "Build the metal backend" ON)
 option(BUILD_WITH_OPENVR "Build with OpenVR support" ON)
 
 option(BUILD_MULTIPLE_BACKENDS "Build multiple backends" ON)
+option(BUILD_TOOLS "Build the tools" ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
 	set(UWP YES)
@@ -23,6 +24,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
 	set(BUILD_METAL OFF)
 	set(BUILD_WITH_OPENVR OFF)
 	set(BUILD_MULTIPLE_BACKENDS OFF)
+	set(BUILD_TOOLS OFF)
 endif()
 
 # Check the build type
@@ -154,16 +156,13 @@ if(BUILD_OPENGL)
 endif()
 
 # Find Direct3D 12
-if(UWP)
+if(UWP OR WIN32)
 	## Assume we will always have d3d12, so just set the required variables.
 	set(D3D12_INCLUDE_DIR)
 	set(DXGI_INCLUDE_DIR)
 	set(D3DCOMPILER_INCLUDE_DIR)
 	set(D3D12_FOUND YES)
 	set(D3D12_LIBRARIES d3d12.lib dxgi.lib d3dcompiler.lib)
-else()
-	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-	find_package(D3D12)
 endif()
 
 # For VisualStudio in Window
@@ -201,6 +200,9 @@ add_subdirectory(thirdparty)
 
 # Build the implementations
 add_subdirectory(implementations)
+
+# Build the tools
+add_subdirectory(tools)
 
 # Build the samples
 if(SDL2_FOUND AND AGPU_BUILD_SAMPLES)

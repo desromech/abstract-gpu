@@ -525,6 +525,14 @@
             <constant name="PolygonModePoint" value="2" />
         </enum>
 
+        <enum name="device_type" optionalPrefix="DeviceType">
+            <constant name="DeviceTypeOther" value="0" />
+            <constant name="DeviceTypeIntegratedGPU" value="1" />
+            <constant name="DeviceTypeDiscreteGPU" value="2" />
+            <constant name="DeviceTypeVirtualGPU" value="3" />
+            <constant name="DeviceTypeCPU" value="4" />
+        </enum>
+
         <enum name="feature" optionalPrefix="Feature">
             <constant name="FeaturePersistentMemoryMapping" value="1" />
             <constant name="FeatureCoherentMemoryMapping" value="2" />
@@ -533,6 +541,22 @@
             <constant name="FeatureNonEmulatedCommandListReuse" value="5" />
             <constant name="FeatureVRDisplay" value="6" />
             <constant name="FeatureVRInputDevices" value="7" />
+            <constant name="FeatureDualSourceBlending" value="8" />
+            <constant name="FeatureGeometryShader" value="9" />
+            <constant name="FeatureTessellationShader" value="10" />
+            <constant name="FeatureComputeShader" value="11" />
+            <constant name="FeatureMultiDrawIndirect" value="12" />
+            <constant name="FeatureDrawIndirect" value="13" />
+            <constant name="FeatureTextureCompressionBC" value="14" />
+            <constant name="FeatureTextureCompressionETC2" value="15" />
+            <constant name="FeatureTextureCompressionASTC_LDR" value="16" />
+            <constant name="FeatureShaderClipDistance" value="17" />
+            <constant name="FeatureShaderCullDistance" value="18" />
+            <constant name="FeatureShaderFloat64" value="19" />
+            <constant name="FeatureShaderInt64" value="20" />
+            <constant name="FeatureShaderInt16" value="21" />
+            <constant name="FeatureSampleShading" value="22" />
+            <constant name="FeatureFillModeNonSolid" value="23" />
         </enum>
 
         <enum name="limit" optionalPrefix="Limit">
@@ -541,6 +565,39 @@
             <constant name="LimitMinTexelBufferOffsetAlignment" value="3" />
             <constant name="LimitMinUniformBufferOffsetAlignment" value="4" />
             <constant name="LimitMinStorageBufferOffsetAlignment" value="5" />
+            <constant name="LimitMaxImageDimension1D" value="6" />
+            <constant name="LimitMaxImageDimension2D" value="7" />
+            <constant name="LimitMaxImageDimension3D" value="8" />
+            <constant name="LimitMaxImageDimensionCube" value="9" />
+            <constant name="LimitMaxImageArrayLayers" value="10" />
+            <constant name="LimitMaxFramebufferWidth" value="11" />
+            <constant name="LimitMaxFramebufferHeight" value="12" />
+            <constant name="LimitMaxFramebufferLayers" value="13" />
+            <constant name="LimitMaxClipDistances" value="14" />
+            <constant name="LimitMaxCullDistances" value="15" />
+            <constant name="LimitMaxCombinedClipAndCullDistances" value="16" />
+            <constant name="LimitMaxTexelBufferElements" value="17" />
+            <constant name="LimitMaxUniformBufferRange" value="18" />
+            <constant name="LimitMaxStorageBufferRange" value="19" />
+            <constant name="LimitMaxPushConstantsSize" value="20" />
+            <constant name="LimitMaxBoundShaderResourceBindings" value="21" />
+            <constant name="LimitMaxComputeSharedMemorySize" value="22" />
+            <constant name="LimitMaxComputeWorkGroupInvocations" value="23" />
+            <constant name="LimitMaxComputeWorkGroupXCount" value="24" />
+            <constant name="LimitMaxComputeWorkGroupXSize" value="25" />
+            <constant name="LimitMaxComputeWorkGroupYCount" value="26" />
+            <constant name="LimitMaxComputeWorkGroupYSize" value="27" />
+            <constant name="LimitMaxComputeWorkGroupZCount" value="28" />
+            <constant name="LimitMaxComputeWorkGroupZSize" value="29" />
+            <constant name="LimitMaxSamplerLodBias" value="30" />
+            <constant name="LimitMaxSamplerAnisotropy" value="31" />
+            <constant name="LimitSampledImageColorSupportedSampleCountMask" value="32" />
+            <constant name="LimitSampledImageIntegerSupportedSampleCountMask" value="33" />
+            <constant name="LimitSampledImageDepthSupportedSampleCountMask" value="34" />
+            <constant name="LimitSampledImageStencilSupportedSampleCountMask" value="35" />
+            <constant name="LimitStorageImageSupportedSampleCountMask" value="36" />
+            <constant name="LimitDedicatedVideoMemoryInMB" value="37" />
+            <constant name="LimitAvailableVideoMemoryInMB" value="38" />
         </enum>
 
         <enum name="renderpass_attachment_action" optionalPrefix="Attachment">
@@ -1066,6 +1123,20 @@
                 <arg name="gpu_index" type="size" />
             </method>
 
+            <method name="getGpuDeviceType" cname="GetPlatformGpuDeviceType" returnType="device_type">
+                <arg name="gpu_index" type="size" />
+            </method>
+
+            <method name="isFeatureSupportedOnGPU" cname="IsFeatureSupportedOnGPU" returnType="bool">
+                <arg name="gpu_index" type="size" />
+                <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getLimitValueOnGPU" cname="GetLimitValueOnGPU" returnType="uint">
+                <arg name="gpu_index" type="size" />
+                <arg name="limit" type="limit" />
+            </method>
+
             <method name="getVersion" cname="GetPlatformVersion" returnType="int">
             </method>
 
@@ -1179,11 +1250,17 @@
             <method name="hasBottomLeftTextureCoordinates" cname="HasBottomLeftTextureCoordinates" returnType="bool">
             </method>
 
+            <method name="getName" cname="GetDeviceName" returnType="cstring">
+            </method>
+
+            <method name="getType" cname="GetDeviceType" returnType="device_type">
+            </method>
+
             <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
                 <arg name="feature" type="feature" />
             </method>
 
-            <method name="getLimitValue" cname="GetLimitValue" returnType="int">
+            <method name="getLimitValue" cname="GetLimitValue" returnType="uint">
                 <arg name="limit" type="limit" />
             </method>
 

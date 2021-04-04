@@ -233,6 +233,14 @@ enum PolygonMode valueType: Int32; values: #{
 	Point: 2.
 }.
 
+enum DeviceType valueType: Int32; values: #{
+	Other: 0.
+	IntegratedGPU: 1.
+	DiscreteGPU: 2.
+	VirtualGPU: 3.
+	CPU: 4.
+}.
+
 enum Feature valueType: Int32; values: #{
 	PersistentMemoryMapping: 1.
 	CoherentMemoryMapping: 2.
@@ -241,6 +249,22 @@ enum Feature valueType: Int32; values: #{
 	NonEmulatedCommandListReuse: 5.
 	VRDisplay: 6.
 	VRInputDevices: 7.
+	DualSourceBlending: 8.
+	GeometryShader: 9.
+	TessellationShader: 10.
+	ComputeShader: 11.
+	MultiDrawIndirect: 12.
+	DrawIndirect: 13.
+	TextureCompressionBC: 14.
+	TextureCompressionETC2: 15.
+	TextureCompressionASTC_LDR: 16.
+	ShaderClipDistance: 17.
+	ShaderCullDistance: 18.
+	ShaderFloat64: 19.
+	ShaderInt64: 20.
+	ShaderInt16: 21.
+	SampleShading: 22.
+	FillModeNonSolid: 23.
 }.
 
 enum Limit valueType: Int32; values: #{
@@ -249,6 +273,39 @@ enum Limit valueType: Int32; values: #{
 	MinTexelBufferOffsetAlignment: 3.
 	MinUniformBufferOffsetAlignment: 4.
 	MinStorageBufferOffsetAlignment: 5.
+	MaxImageDimension1D: 6.
+	MaxImageDimension2D: 7.
+	MaxImageDimension3D: 8.
+	MaxImageDimensionCube: 9.
+	MaxImageArrayLayers: 10.
+	MaxFramebufferWidth: 11.
+	MaxFramebufferHeight: 12.
+	MaxFramebufferLayers: 13.
+	MaxClipDistances: 14.
+	MaxCullDistances: 15.
+	MaxCombinedClipAndCullDistances: 16.
+	MaxTexelBufferElements: 17.
+	MaxUniformBufferRange: 18.
+	MaxStorageBufferRange: 19.
+	MaxPushConstantsSize: 20.
+	MaxBoundShaderResourceBindings: 21.
+	MaxComputeSharedMemorySize: 22.
+	MaxComputeWorkGroupInvocations: 23.
+	MaxComputeWorkGroupXCount: 24.
+	MaxComputeWorkGroupXSize: 25.
+	MaxComputeWorkGroupYCount: 26.
+	MaxComputeWorkGroupYSize: 27.
+	MaxComputeWorkGroupZCount: 28.
+	MaxComputeWorkGroupZSize: 29.
+	MaxSamplerLodBias: 30.
+	MaxSamplerAnisotropy: 31.
+	SampledImageColorSupportedSampleCountMask: 32.
+	SampledImageIntegerSupportedSampleCountMask: 33.
+	SampledImageDepthSupportedSampleCountMask: 34.
+	SampledImageStencilSupportedSampleCountMask: 35.
+	StorageImageSupportedSampleCountMask: 36.
+	DedicatedVideoMemoryInMB: 37.
+	AvailableVideoMemoryInMB: 38.
 }.
 
 enum RenderpassAttachmentAction valueType: Int32; values: #{
@@ -1070,6 +1127,9 @@ function agpuOpenDevice externC (platform: Platform pointer, openInfo: DeviceOpe
 function agpuGetPlatformName externC (platform: Platform pointer) => Char8 const pointer.
 function agpuGetPlatformGpuCount externC (platform: Platform pointer) => UInt32.
 function agpuGetPlatformGpuName externC (platform: Platform pointer, gpu_index: UInt32) => Char8 const pointer.
+function agpuGetPlatformGpuDeviceType externC (platform: Platform pointer, gpu_index: UInt32) => DeviceType.
+function agpuIsFeatureSupportedOnGPU externC (platform: Platform pointer, gpu_index: UInt32, feature: Feature) => Int32.
+function agpuGetLimitValueOnGPU externC (platform: Platform pointer, gpu_index: UInt32, limit: Limit) => UInt32.
 function agpuGetPlatformVersion externC (platform: Platform pointer) => Int32.
 function agpuGetPlatformImplementationVersion externC (platform: Platform pointer) => Int32.
 function agpuPlatformHasRealMultithreading externC (platform: Platform pointer) => Int32.
@@ -1100,8 +1160,10 @@ function agpuCreateFence externC (device: Device pointer) => Fence pointer.
 function agpuGetMultiSampleQualityLevels externC (device: Device pointer, format: TextureFormat, sample_count: UInt32) => Int32.
 function agpuHasTopLeftNdcOrigin externC (device: Device pointer) => Int32.
 function agpuHasBottomLeftTextureCoordinates externC (device: Device pointer) => Int32.
+function agpuGetDeviceName externC (device: Device pointer) => Char8 const pointer.
+function agpuGetDeviceType externC (device: Device pointer) => DeviceType.
 function agpuIsFeatureSupportedOnDevice externC (device: Device pointer, feature: Feature) => Int32.
-function agpuGetLimitValue externC (device: Device pointer, limit: Limit) => Int32.
+function agpuGetLimitValue externC (device: Device pointer, limit: Limit) => UInt32.
 function agpuGetVRSystem externC (device: Device pointer) => VrSystem pointer.
 function agpuCreateOfflineShaderCompilerForDevice externC (device: Device pointer) => OfflineShaderCompiler pointer.
 function agpuCreateStateTrackerCache externC (device: Device pointer, command_queue_family: CommandQueue pointer) => StateTrackerCache pointer.
@@ -1487,6 +1549,15 @@ Platform extend: {
 	inline method getGpuName: (gpu_index: UInt32) ::=> Char8 const pointer
 		:= agpuGetPlatformGpuName(self address, gpu_index).
 
+	inline method getGpuDeviceType: (gpu_index: UInt32) ::=> DeviceType
+		:= agpuGetPlatformGpuDeviceType(self address, gpu_index).
+
+	inline method isFeatureSupportedOnGPU: (gpu_index: UInt32) feature: (feature: Feature) ::=> Int32
+		:= agpuIsFeatureSupportedOnGPU(self address, gpu_index, feature).
+
+	inline method getLimitValueOnGPU: (gpu_index: UInt32) limit: (limit: Limit) ::=> UInt32
+		:= agpuGetLimitValueOnGPU(self address, gpu_index, limit).
+
 	inline method getVersion ::=> Int32
 		:= agpuGetPlatformVersion(self address).
 
@@ -1580,10 +1651,16 @@ Device extend: {
 	inline method hasBottomLeftTextureCoordinates ::=> Int32
 		:= agpuHasBottomLeftTextureCoordinates(self address).
 
+	inline method getName ::=> Char8 const pointer
+		:= agpuGetDeviceName(self address).
+
+	inline method getType ::=> DeviceType
+		:= agpuGetDeviceType(self address).
+
 	inline method isFeatureSupported: (feature: Feature) ::=> Int32
 		:= agpuIsFeatureSupportedOnDevice(self address, feature).
 
-	inline method getLimitValue: (limit: Limit) ::=> Int32
+	inline method getLimitValue: (limit: Limit) ::=> UInt32
 		:= agpuGetLimitValue(self address, limit).
 
 	inline method getVRSystem ::=> VrSystemRef

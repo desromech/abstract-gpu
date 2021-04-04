@@ -7,6 +7,7 @@ AMtlFence::AMtlFence(const agpu::device_ref &device)
     : weakDevice(device)
 {
     fenceCommand = nil;
+    isSignaled = false;
 }
 
 AMtlFence::~AMtlFence()
@@ -28,9 +29,14 @@ agpu_error AMtlFence::waitOnClient()
     std::unique_lock<std::mutex> l(mutex);
     if(fenceCommand)
     {
-        [fenceCommand waitUntilCompleted];
-        [fenceCommand release];
-        fenceCommand = nil;
+        while(!isSignaled)
+            signaledCondition.wait(l);
+        if(fenceCommand)
+        {
+            [fenceCommand waitUntilCompleted];
+            [fenceCommand release];
+            fenceCommand = nil;            
+        }
     }
 
     return AGPU_OK;
@@ -42,7 +48,13 @@ agpu_error AMtlFence::signalOnQueue(id<MTLCommandQueue> queue)
     if(fenceCommand)
         [fenceCommand release];
 
+    isSignaled = false;
     fenceCommand = [queue commandBuffer];
+    [fenceCommand addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+        std::unique_lock<std::mutex> l(mutex);
+        isSignaled = true;
+        signaledCondition.notify_all();
+    }];
     [fenceCommand commit];
     return AGPU_OK;
 }

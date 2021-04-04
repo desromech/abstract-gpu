@@ -61,24 +61,57 @@ ADXDevice::~ADXDevice()
 {
 }
 
-bool ADXDevice::checkDirect3D12Implementation(Direct3D12Platform *platform)
-{
-    // TODO: Implement this properly.
-    platform->gpuCount = 1;
-    return true;
-}
-
-agpu::device_ref ADXDevice::open(agpu_device_open_info* openInfo)
+agpu::device_ref ADXDevice::open(Direct3D12Platform* platform, agpu_device_open_info* openInfo)
 {
     auto device = agpu::makeObject<ADXDevice> ();
-    if (!device.as<ADXDevice> ()->initialize(openInfo))
+    if (!device.as<ADXDevice> ()->initialize(platform, openInfo))
         return agpu::device_ref();
 
     return device;
 }
 
-bool ADXDevice::initialize(agpu_device_open_info* openInfo)
+bool ADXDevice::initialize(Direct3D12Platform* platform, agpu_device_open_info* openInfo)
 {
+    // Get the dxgi factory to retrieve the adapter.
+    ComPtr<IDXGIFactory1> dxgiFactory;
+    if (FAILED(CreateDXGIFactory2(openInfo->debug_layer ? DXGI_CREATE_FACTORY_DEBUG : 0, IID_PPV_ARGS(&dxgiFactory))))
+        return false;
+
+    // Find the selected adapter.
+    if (openInfo->gpu_index < 0)
+        openInfo->gpu_index = 0;
+    
+    if (size_t(openInfo->gpu_index) >= platform->adapterDescs.size())
+        return false;
+
+    auto platformAdapterDesc = platform->adapterDescs[openInfo->gpu_index];
+
+    // Enumerate the adapters.
+    {
+        ComPtr<IDXGIAdapter1> enumAdapter;
+        UINT i = 0;
+        while (dxgiFactory->EnumAdapters1(i, &enumAdapter) != DXGI_ERROR_NOT_FOUND)
+        {
+            DXGI_ADAPTER_DESC1 desc;
+            if (SUCCEEDED(enumAdapter->GetDesc1(&desc)))
+            {
+                if (platformAdapterDesc.desc.AdapterLuid.LowPart == desc.AdapterLuid.LowPart &&
+                    platformAdapterDesc.desc.AdapterLuid.HighPart == desc.AdapterLuid.HighPart)
+                {
+                    dxgiAdapter = enumAdapter;
+                    adapterDesc.reset(new Direct3D12AdapterDesc());
+                    break;
+                }
+            }
+            ++i;
+        }
+    }
+
+
+    // Make sure we actually found the adapter.
+    if (!dxgiAdapter)
+        return false;
+
     // Read some of the parameters.
     isDebugEnabled = openInfo->debug_layer;
 
@@ -92,8 +125,12 @@ bool ADXDevice::initialize(agpu_device_open_info* openInfo)
         }
     }
 
-    // Create the device
-    if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&d3dDevice))))
+    // Create the device.
+    if (FAILED(D3D12CreateDevice(dxgiAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&d3dDevice))))
+        return false;
+
+    // Query the device specs.
+    if (!adapterDesc->fetchFromAdapterAndDevice(dxgiAdapter, d3dDevice))
         return false;
 
     // Create the default command queue
@@ -241,33 +278,29 @@ agpu_bool ADXDevice::hasBottomLeftTextureCoordinates()
     return false;
 }
 
+agpu_cstring ADXDevice::getName()
+{
+    return adapterDesc->name.c_str();
+}
+
+agpu_device_type ADXDevice::getType()
+{
+    return adapterDesc->deviceType;
+}
+
 agpu_bool ADXDevice::isFeatureSupported(agpu_feature feature)
 {
     switch (feature)
 	{
-	case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING: return true;
-	case AGPU_FEATURE_COHERENT_MEMORY_MAPPING: return true;
-	case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING: return true;
-	case AGPU_FEATURE_COMMAND_LIST_REUSE: return true;
-	case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: return true;
     //case AGPU_FEATURE_VRDISPLAY: return isVRDisplaySupported;
     //case AGPU_FEATURE_VRINPUT_DEVICES: return isVRInputDevicesSupported;
-	default: return false;
+	default: return adapterDesc->isFeatureSupported(feature);
 	}
 }
 
-agpu_int ADXDevice::getLimitValue(agpu_limit limit)
+agpu_uint ADXDevice::getLimitValue(agpu_limit limit)
 {
-    // TODO: Implement this properly.
-    switch(limit)
-    {
-    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return 256;
-    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return 256;
-    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return 256;
-    case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return 256;
-    case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return 256;
-    default: return 0;
-    }
+    return adapterDesc->getLimitValue(limit);
 }
 
 agpu::vr_system_ptr ADXDevice::getVRSystem()

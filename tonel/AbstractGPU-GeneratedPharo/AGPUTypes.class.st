@@ -10,6 +10,7 @@ Class {
 		'agpu_pipeline_stage_flags',
 		'agpu_primitive_topology',
 		'agpu_polygon_mode',
+		'agpu_device_type',
 		'agpu_feature',
 		'agpu_limit',
 		'agpu_renderpass_attachment_action',
@@ -153,6 +154,7 @@ AGPUTypes class >> initialize [
 	agpu_pipeline_stage_flags := #int.
 	agpu_primitive_topology := #int.
 	agpu_polygon_mode := #int.
+	agpu_device_type := #int.
 	agpu_feature := #int.
 	agpu_limit := #int.
 	agpu_renderpass_attachment_action := #int.

@@ -144,6 +144,21 @@ public:
 		return agpuGetPlatformGpuName(this, gpu_index);
 	}
 
+	inline agpu_device_type getGpuDeviceType(agpu_size gpu_index)
+	{
+		return agpuGetPlatformGpuDeviceType(this, gpu_index);
+	}
+
+	inline agpu_bool isFeatureSupportedOnGPU(agpu_size gpu_index, agpu_feature feature)
+	{
+		return agpuIsFeatureSupportedOnGPU(this, gpu_index, feature);
+	}
+
+	inline agpu_uint getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limit)
+	{
+		return agpuGetLimitValueOnGPU(this, gpu_index, limit);
+	}
+
 	inline agpu_int getVersion()
 	{
 		return agpuGetPlatformVersion(this);
@@ -305,12 +320,22 @@ public:
 		return agpuHasBottomLeftTextureCoordinates(this);
 	}
 
+	inline agpu_cstring getName()
+	{
+		return agpuGetDeviceName(this);
+	}
+
+	inline agpu_device_type getType()
+	{
+		return agpuGetDeviceType(this);
+	}
+
 	inline agpu_bool isFeatureSupported(agpu_feature feature)
 	{
 		return agpuIsFeatureSupportedOnDevice(this, feature);
 	}
 
-	inline agpu_int getLimitValue(agpu_limit limit)
+	inline agpu_uint getLimitValue(agpu_limit limit)
 	{
 		return agpuGetLimitValue(this, limit);
 	}

@@ -261,14 +261,38 @@ bool AVkDevice::checkVulkanImplementation(VulkanPlatform *platform)
         return false;
 
     // Get the physical devices
-    platform->gpuCount = 0;
-    error = vkEnumeratePhysicalDevices(vulkanInstance, &platform->gpuCount, nullptr);
-    if (error || platform->gpuCount == 0)
+    uint32_t gpuCount = 0;
+    error = vkEnumeratePhysicalDevices(vulkanInstance, &gpuCount, nullptr);
+    if (error || gpuCount == 0)
     {
         vkDestroyInstance(vulkanInstance, nullptr);
         return false;
     }
-    //printf("gpuCount: %d\n", theVulkanPlatform.gpuCount);
+
+    std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
+    error = vkEnumeratePhysicalDevices(vulkanInstance, &gpuCount, &physicalDevices[0]);
+    if (error)
+    {
+        vkDestroyInstance(vulkanInstance, nullptr);
+        return false;
+    }
+
+    platform->deviceProperties.reserve(physicalDevices.size());
+    platform->deviceFeatures.reserve(physicalDevices.size());
+    platform->deviceMemoryProperties.reserve(physicalDevices.size());
+    for(auto physicalDevice : physicalDevices)
+    {
+        VkPhysicalDeviceProperties properties;
+        VkPhysicalDeviceFeatures features;
+        VkPhysicalDeviceMemoryProperties memoryProperties;
+        vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+        vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+        platform->deviceProperties.push_back(properties);
+        platform->deviceFeatures.push_back(features);
+        platform->deviceMemoryProperties.push_back(memoryProperties);
+    }
+    platform->gpuCount = gpuCount;
 
     vkDestroyInstance(vulkanInstance, nullptr);
 
@@ -393,8 +417,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     }
 
     // The application info.
-    VkApplicationInfo applicationInfo;
-    memset(&applicationInfo, 0, sizeof(applicationInfo));
+    VkApplicationInfo applicationInfo = {};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     applicationInfo.pApplicationName = openInfo->application_name;
     applicationInfo.applicationVersion = openInfo->application_version;
@@ -406,8 +429,7 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     if (!applicationInfo.pEngineName)
         applicationInfo.pEngineName = "Abstract GPU";
 
-    VkInstanceCreateInfo createInfo;
-    memset(&createInfo, 0, sizeof(createInfo));
+    VkInstanceCreateInfo createInfo = {};
     createInfo.pApplicationInfo = &applicationInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
@@ -731,33 +753,29 @@ bool AVkDevice::initialize(agpu_device_open_info* openInfo)
     return true;
 }
 
+agpu_cstring AVkDevice::getName()
+{
+    return deviceProperties.deviceName;
+}
+
+agpu_device_type AVkDevice::getType()
+{
+    return agpu_device_type(deviceProperties.deviceType);
+}
+
 agpu_bool AVkDevice::isFeatureSupported(agpu_feature feature)
 {
 	switch (feature)
 	{
-	case AGPU_FEATURE_PERSISTENT_MEMORY_MAPPING: return true;
-	case AGPU_FEATURE_COHERENT_MEMORY_MAPPING: return true;
-	case AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING: return true;
-	case AGPU_FEATURE_COMMAND_LIST_REUSE: return true;
-	case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: return false;
     case AGPU_FEATURE_VRDISPLAY: return isVRDisplaySupported;
     case AGPU_FEATURE_VRINPUT_DEVICES: return isVRInputDevicesSupported;
-	default: return false;
+	default: return isFeatureSupportedOnGPU(feature, deviceProperties, memoryProperties, deviceFeatures);
 	}
 }
 
-
-agpu_int AVkDevice::getLimitValue(agpu_limit limit)
+agpu_uint AVkDevice::getLimitValue(agpu_limit limit)
 {
-    switch(limit)
-    {
-    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return deviceProperties.limits.nonCoherentAtomSize;
-    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return deviceProperties.limits.minMemoryMapAlignment;
-    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minTexelBufferOffsetAlignment;
-    case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minUniformBufferOffsetAlignment;
-    case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minStorageBufferOffsetAlignment;
-    default: return 0;
-    }
+    return getLimitValueOnGPU(limit, deviceProperties, memoryProperties, deviceFeatures);
 }
 
 agpu_int AVkDevice::getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count)

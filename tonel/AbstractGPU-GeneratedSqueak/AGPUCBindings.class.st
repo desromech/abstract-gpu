@@ -32,6 +32,24 @@ AGPUCBindings >> getGpuName_platform: platform gpu_index: gpu_index [
 ]
 
 { #category : #'platform' }
+AGPUCBindings >> getGpuDeviceType_platform: platform gpu_index: gpu_index [
+	<cdecl: long 'agpuGetPlatformGpuDeviceType' (void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> isFeatureSupportedOnGPU_platform: platform gpu_index: gpu_index feature: feature [
+	<cdecl: long 'agpuIsFeatureSupportedOnGPU' (void* ulong long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'platform' }
+AGPUCBindings >> getLimitValueOnGPU_platform: platform gpu_index: gpu_index limit: limit [
+	<cdecl: ulong 'agpuGetLimitValueOnGPU' (void* ulong long)>
+	^ self externalCallFailed
+]
+
+{ #category : #'platform' }
 AGPUCBindings >> getVersion_platform: platform [
 	<cdecl: long 'agpuGetPlatformVersion' (void*)>
 	^ self externalCallFailed
@@ -212,6 +230,18 @@ AGPUCBindings >> hasBottomLeftTextureCoordinates_device: device [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> getName_device: device [
+	<cdecl: char* 'agpuGetDeviceName' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'device' }
+AGPUCBindings >> getType_device: device [
+	<cdecl: long 'agpuGetDeviceType' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'device' }
 AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 	<cdecl: long 'agpuIsFeatureSupportedOnDevice' (void* long)>
 	^ self externalCallFailed
@@ -219,7 +249,7 @@ AGPUCBindings >> isFeatureSupported_device: device feature: feature [
 
 { #category : #'device' }
 AGPUCBindings >> getLimitValue_device: device limit: limit [
-	<cdecl: long 'agpuGetLimitValue' (void* long)>
+	<cdecl: ulong 'agpuGetLimitValue' (void* long)>
 	^ self externalCallFailed
 ]
 

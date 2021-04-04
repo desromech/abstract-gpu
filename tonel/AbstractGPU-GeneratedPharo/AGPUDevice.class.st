@@ -173,6 +173,20 @@ AGPUDevice >> hasBottomLeftTextureCoordinates [
 ]
 
 { #category : #'wrappers' }
+AGPUDevice >> getName [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getName_device: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUDevice >> getType [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getType_device: (self validHandle).
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUDevice >> isFeatureSupported: feature [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance isFeatureSupported_device: (self validHandle) feature: feature.

@@ -76,8 +76,10 @@ public:
 	virtual agpu_int getMultiSampleQualityLevels(agpu_texture_format format, agpu_uint sample_count) override;
 	virtual agpu_bool hasTopLeftNdcOrigin() override;
 	virtual agpu_bool hasBottomLeftTextureCoordinates() override;
+	virtual agpu_cstring getName() override;
+	virtual agpu_device_type getType() override;
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) override;
-	virtual agpu_int getLimitValue(agpu_limit limit) override;
+	virtual agpu_uint getLimitValue(agpu_limit limit) override;
 	virtual agpu::vr_system_ptr getVRSystem() override;
     virtual agpu::offline_shader_compiler_ptr createOfflineShaderCompiler() override;
     virtual agpu::state_tracker_cache_ptr createStateTrackerCache(const agpu::command_queue_ref & command_queue_family) override;
@@ -133,24 +135,6 @@ public:
     AVkDeviceSharedContextPtr sharedContext;
 
 public:
-    /*bool findMemoryType(uint32_t typeBits, VkFlags requirementsMask, uint32_t *typeIndex)
-    {
-        // Function taken from the vulkan SDK.
-        // Search memtypes to find first index with those properties
-        for (uint32_t i = 0; i < 32; i++) {
-            if ((typeBits & 1) == 1) {
-                // Type is available, does it match user properties?
-                if ((memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask) {
-                    *typeIndex = i;
-                    return true;
-                }
-            }
-            typeBits >>= 1;
-        }
-
-        // No memory types matched, return failure
-        return false;
-    }*/
 
     template<typename FT>
     void withSetupCommandListDo(const FT &f)
