@@ -79,15 +79,15 @@ jobs:
 
                     - os: windows-latest
                       platformName: windows-x64
-                      vsPlatform: x64
+                      vsPlatform: 'x64'
                       buildMode: Debug
                     - os: windows-latest
                       platformName: windows-x64
-                      vsPlatform: x64
+                      vsPlatform: 'x64'
                       buildMode: RelWithDebInfo
                     - os: windows-latest
                       platformName: windows-x64
-                      vsPlatform: x64
+                      vsPlatform: 'x64'
                       buildMode: Release
         env:
             VS_PLATFORM: ${{ matrix.vsPlatform }}
