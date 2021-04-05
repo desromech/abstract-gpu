@@ -110,6 +110,7 @@ AVkTexture::AVkTexture(const agpu::device_ref &device)
 {
     image = VK_NULL_HANDLE;
     owned = false;
+    isDepthStencil = false;
 }
 
 AVkTexture::~AVkTexture()
@@ -255,6 +256,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     texture->image = image;
     texture->memory = textureMemory;
     texture->owned = true;
+    texture->isDepthStencil = isDepthStencil;
     texture->imageAspect = imageAspect;
     return result;
 }
@@ -276,7 +278,7 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = image;
     createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count);
-    createInfo.format = mapTextureFormat(viewDescription->format, false);
+    createInfo.format = isDepthStencil ? mapTextureFormat(description.format, true) : mapTextureFormat(viewDescription->format, false);
 
     auto &components = createInfo.components;
     components.r = mapComponentSwizzle(viewDescription->components.r);
@@ -295,7 +297,7 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
         subresource.layerCount *= 6;
 
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    if(hasDepthComponent(viewDescription->format))
+    if(isDepthStencil)
         subresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
     VkImageView viewHandle;

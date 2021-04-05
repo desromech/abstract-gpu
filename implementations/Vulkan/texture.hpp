@@ -32,6 +32,7 @@ public:
     VkImageAspectFlags imageAspect;
     VmaAllocation memory;
     bool owned;
+    bool isDepthStencil;
     agpu::texture_view_ref fullTextureView;
 
     VkExtent3D getLevelExtent(int level);
