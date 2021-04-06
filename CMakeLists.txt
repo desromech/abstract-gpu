@@ -202,7 +202,9 @@ add_subdirectory(thirdparty)
 add_subdirectory(implementations)
 
 # Build the tools
-add_subdirectory(tools)
+if(NOT UWP)
+	add_subdirectory(tools)
+endif()
 
 # Build the samples
 if(SDL2_FOUND AND AGPU_BUILD_SAMPLES)

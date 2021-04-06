@@ -142,42 +142,5 @@ agpu_error ADXShaderResourceBinding::bindSampler(agpu_int location, const agpu::
 
     return AGPU_OK;
 }
-/*
-agpu_error _agpu_shader_resource_binding::createSampler(agpu_int location, agpu_sampler_description* description)
-{
-    CHECK_POINTER(description);
 
-    std::unique_lock<std::mutex>(bindMutex);
-    if (type != AGPU_SHADER_BINDING_TYPE_SAMPLER)
-        return AGPU_INVALID_OPERATION;
-
-    if (location < 0)
-        return AGPU_OK;
-    if (location >= samplerCount)
-        return AGPU_OUT_OF_BOUNDS;
-
-    // Create the sampler description
-    D3D12_SAMPLER_DESC sampler;
-    memset(&sampler, 0, sizeof(sampler));
-    sampler.Filter = (D3D12_FILTER)description->filter;
-    sampler.AddressU = (D3D12_TEXTURE_ADDRESS_MODE)description->address_u;
-    sampler.AddressV = (D3D12_TEXTURE_ADDRESS_MODE)description->address_v;
-    sampler.AddressW = (D3D12_TEXTURE_ADDRESS_MODE)description->address_w;
-    sampler.MipLODBias = description->mip_lod_bias;
-    sampler.MaxAnisotropy= description->maxanisotropy;
-    sampler.BorderColor[0]= description->border_color.r;
-    sampler.BorderColor[1] = description->border_color.g;
-    sampler.BorderColor[2] = description->border_color.b;
-    sampler.BorderColor[3] = description->border_color.a;
-    sampler.MinLOD = description->min_lod;
-    sampler.MaxLOD = description->max_lod;
-
-    // Set the descriptor.
-    auto cpuHandle = signature->samplerHeap->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += descriptorOffset + location*signature->samplerDescriptorSize;
-    deviceForDX->d3dDevice->CreateSampler(&sampler, cpuHandle);
-
-    return AGPU_OK;
-}
-*/
 } // End of namespace AgpuD3D12

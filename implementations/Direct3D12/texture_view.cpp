@@ -79,21 +79,37 @@ agpu_error ADXTextureView::getSampledTextureViewDescription(D3D12_SHADER_RESOURC
 		}
 		break;
 	case AGPU_TEXTURE_2D:
-		if (isArray)
+		if (description.sample_count > 1)
 		{
-			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-			out->Texture2DArray.MostDetailedMip = description.subresource_range.base_miplevel;
-			out->Texture2DArray.MipLevels = description.subresource_range.level_count;
-			out->Texture2DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
-			out->Texture2DArray.ArraySize = description.subresource_range.layer_count;
-			out->Texture2DArray.ResourceMinLODClamp = lodClamp;
+			if (isArray)
+			{
+				out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY;
+				out->Texture2DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+				out->Texture2DArray.ArraySize = description.subresource_range.layer_count;
+			}
+			else
+			{
+				out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+			}
 		}
 		else
 		{
-			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-			out->Texture2D.MostDetailedMip = description.subresource_range.base_miplevel;
-			out->Texture2D.MipLevels = description.subresource_range.level_count;
-			out->Texture2D.ResourceMinLODClamp = lodClamp;
+			if (isArray)
+			{
+				out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+				out->Texture2DArray.MostDetailedMip = description.subresource_range.base_miplevel;
+				out->Texture2DArray.MipLevels = description.subresource_range.level_count;
+				out->Texture2DArray.FirstArraySlice = description.subresource_range.base_arraylayer;
+				out->Texture2DArray.ArraySize = description.subresource_range.layer_count;
+				out->Texture2DArray.ResourceMinLODClamp = lodClamp;
+			}
+			else
+			{
+				out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+				out->Texture2D.MostDetailedMip = description.subresource_range.base_miplevel;
+				out->Texture2D.MipLevels = description.subresource_range.level_count;
+				out->Texture2D.ResourceMinLODClamp = lodClamp;
+			}
 		}
 		break;
 	case AGPU_TEXTURE_CUBE:
