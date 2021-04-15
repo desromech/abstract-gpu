@@ -104,9 +104,9 @@ agpu_uint getLimitValueInDevice(id<MTLDevice> device, agpu_limit limit)
 
 agpu_device_type getDeviceType(id<MTLDevice> device)
 {
-    if([device respondsToSelector: @selector(hasUnifiedMemory)])
+    if (@available(macos 10.15, *))
     {
-        return [device hasUnifiedMemory] ? AGPU_DEVICE_TYPE_INTEGRATED_GPU : AGPU_DEVICE_TYPE_DISCRETE_GPU;
+        return device.hasUnifiedMemory ? AGPU_DEVICE_TYPE_INTEGRATED_GPU : AGPU_DEVICE_TYPE_DISCRETE_GPU;        
     }
 
     if([device.name rangeOfString: @"amd" options: NSCaseInsensitiveSearch].location != NSNotFound ||
