@@ -51,11 +51,16 @@ set(AGPU_Metal_SOURCES
 
 add_definitions(-DAGPU_BUILD)
 
-add_library(AgpuMetal SHARED
+if(BUILD_MULTIPLE_BACKENDS)
+    set(AgpuMetal AgpuMetal)
+else()
+    set(AgpuMetal Agpu)
+endif()
+add_library(${AgpuMetal} SHARED
     ${AGPU_Metal_SOURCES}
     $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl> $<TARGET_OBJECTS:spirv-cross-msl>
     ${AgpuCommonHighLevelInterfaces_LIBS})
-add_dependencies(AgpuMetal
+add_dependencies(${AgpuMetal}
     spirv-cross-core spirv-cross-glsl spirv-cross-msl
     ${AgpuCommonHighLevelInterfaces_DEPS})
-target_link_libraries(AgpuMetal ${METAL_LIBRARY} ${QUARTZCORE_LIBRARY} ${APPKIT_LIBRARY})
+target_link_libraries(${AgpuMetal} ${METAL_LIBRARY} ${QUARTZCORE_LIBRARY} ${APPKIT_LIBRARY})
