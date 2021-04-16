@@ -8,6 +8,7 @@
 #include "buffer.hpp"
 #include "shader_signature.hpp"
 #include "shader_resource_binding.hpp"
+#include "texture.hpp"
 #include "texture_view.hpp"
 
 namespace AgpuMetal
@@ -448,59 +449,100 @@ agpu_error AMtlCommandList::resolveFramebuffer(const agpu::framebuffer_ref &dest
 
     auto sourceTexture = amtlSourceFramebuffer->getColorTexture(0);
     auto destTexture = amtlDestFramebuffer->getColorTexture(0);
+
+    agpu_uint sourceLevel = 0;
+    agpu_uint sourceLayer = 0;
+    if(!amtlSourceFramebuffer->ownedBySwapChain)
+    {
+        auto &view = amtlSourceFramebuffer->colorBufferViews[0];
+        auto &viewDescription = view.as<AMtlTextureView> ()->description;
+        sourceLevel = viewDescription.subresource_range.base_miplevel;
+        sourceLayer = viewDescription.subresource_range.base_arraylayer;
+    }
+
+    agpu_uint destLevel = 0;
+    agpu_uint destLayer = 0;
+    if(!amtlDestFramebuffer->ownedBySwapChain)
+    {
+        auto &view = amtlDestFramebuffer->colorBufferViews[0];
+        auto &viewDescription = view.as<AMtlTextureView> ()->description;
+        destLevel = viewDescription.subresource_range.base_miplevel;
+        destLayer = viewDescription.subresource_range.base_arraylayer;
+    }
+
+    return doResolveTexture(sourceTexture, sourceLevel, sourceLayer,
+            destTexture, destLevel, destLayer,
+            1, 1, AGPU_TEXTURE_ASPECT_COLOR);
+}
+
+agpu_error AMtlCommandList::resolveTexture(const agpu::texture_ref &sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref &destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
+{
+    CHECK_POINTER(sourceTexture);
+    CHECK_POINTER(destTexture);
+    
+    auto amtlSourceTexture = sourceTexture.as<AMtlTexture> ();
+    auto amtlDestTexture = destTexture.as<AMtlTexture> ();
+
+    return doResolveTexture(amtlSourceTexture->handle, sourceLevel, sourceLayer,
+        amtlDestTexture->handle, destLevel, destLayer,
+        levelCount, layerCount, aspect);
+}
+
+agpu_error AMtlCommandList::doResolveTexture(id<MTLTexture> sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, id<MTLTexture> destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
+{
+    if(levelCount == 0 || layerCount == 0)
+        return AGPU_OK;
+        
     if(sourceTexture.sampleCount == destTexture.sampleCount)
     {
         MTLOrigin copyOrigin = {};
         MTLSize copySize = {sourceTexture.width, sourceTexture.height, sourceTexture.depth};
         blitEncoder = [buffer blitCommandEncoder];
-        [blitEncoder copyFromTexture: sourceTexture
-                sourceSlice: 0 sourceLevel: 0
-                sourceOrigin: copyOrigin sourceSize: copySize
-              toTexture: destTexture
-              destinationSlice: 0 destinationLevel: 0
-              destinationOrigin: copyOrigin];
+
+        for(agpu_uint layerIndex = 0; layerIndex < layerCount; ++layerIndex)
+        {
+            for(agpu_uint levelIndex = 0; levelIndex < levelCount; ++levelIndex)
+            {
+                [blitEncoder copyFromTexture: sourceTexture
+                        sourceSlice: sourceLayer + layerIndex sourceLevel: sourceLevel + levelIndex
+                        sourceOrigin: copyOrigin sourceSize: copySize
+                      toTexture: destTexture
+                      destinationSlice: destLayer + layerIndex destinationLevel: destLevel + levelIndex
+                      destinationOrigin: copyOrigin];
+            }            
+        }
         [blitEncoder endEncoding];
         [blitEncoder release];
         blitEncoder = nil;
         return AGPU_OK;
     }
 
-    auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-    auto passAttachment = descriptor.colorAttachments[0];
-
-    // Set the source attachment
-    passAttachment.texture = sourceTexture;
-    passAttachment.loadAction = MTLLoadActionLoad;
-    passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
-
-    if(!amtlSourceFramebuffer->ownedBySwapChain)
+    for(agpu_uint layerIndex = 0; layerIndex < layerCount; ++layerIndex)
     {
-        auto &view = amtlSourceFramebuffer->colorBufferViews[0];
-        auto &viewDescription = view.as<AMtlTextureView> ()->description;
-        passAttachment.level = viewDescription.subresource_range.base_miplevel;
-        passAttachment.slice = viewDescription.subresource_range.base_arraylayer;
-    }
+        for(agpu_uint levelIndex = 0; levelIndex < levelCount; ++levelIndex)
+        {
+            auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+            auto passAttachment = descriptor.colorAttachments[0];
 
-    // Set the resolve attachment
-    passAttachment.resolveTexture = destTexture;
-    if(!amtlDestFramebuffer->ownedBySwapChain)
-    {
-        auto &view = amtlDestFramebuffer->colorBufferViews[0];
-        auto &viewDescription = view.as<AMtlTextureView> () ->description;
-        passAttachment.resolveLevel = viewDescription.subresource_range.base_miplevel;
-        passAttachment.resolveSlice = viewDescription.subresource_range.base_arraylayer;
-    }
+            // Set the source attachment
+            passAttachment.texture = sourceTexture;
+            passAttachment.loadAction = MTLLoadActionLoad;
+            passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
+            passAttachment.level = sourceLevel + levelIndex;
+            passAttachment.slice = sourceLayer + layerIndex;
 
-    renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
-    [descriptor release];
-    [renderEncoder endEncoding];
-    renderEncoder = nil;
+            // Set the resolve attachment
+            passAttachment.resolveTexture = destTexture;
+            passAttachment.resolveLevel = destLevel + levelIndex;
+            passAttachment.resolveSlice = destLayer + layerIndex;
+
+            renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
+            [descriptor release];
+            [renderEncoder endEncoding];
+            renderEncoder = nil;
+        }
+    }
     return AGPU_OK;
-}
-
-agpu_error AMtlCommandList::resolveTexture(const agpu::texture_ref &sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref &destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
-{
-    return AGPU_UNIMPLEMENTED;
 }
 
 agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, agpu_pointer values )
@@ -516,7 +558,6 @@ agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, ag
 agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
 {
     // Disabled, not found on CI server.
-#if 0
     MTLBarrierScope scope = MTLBarrierScopeBuffers | MTLBarrierScopeTextures;
     if((source_stage & AGPU_PIPELINE_STAGE_COMPUTE_SHADER) != 0 && computeEncoder)
         [computeEncoder memoryBarrierWithScope: MTLBarrierScopeBuffers | MTLBarrierScopeTextures];
@@ -549,7 +590,6 @@ agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage
         [renderEncoder memoryBarrierWithScope: scope
             afterStages: sourceStages beforeStages: destStages];
     }
-#endif
     return AGPU_OK;
 }
 
@@ -565,22 +605,42 @@ agpu_error AMtlCommandList::textureMemoryBarrier(const agpu::texture_ref & textu
 
 agpu_error AMtlCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
 {
-    return AGPU_UNIMPLEMENTED;
+    (void)buffer;
+    return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
 {
-    return AGPU_UNIMPLEMENTED;
+    (void)texture;
+    (void)subresource_range;
+    return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::popBufferTransitionBarrier()
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::popTextureTransitionBarrier()
 {
-    return AGPU_UNIMPLEMENTED;
+    return AGPU_OK;
+}
+
+void AMtlCommandList::beginBlitting()
+{
+    if(computeEncoder)
+    {
+        [computeEncoder endEncoding];
+        computeEncoder = nil;
+    }
+    blitEncoder = [buffer blitCommandEncoder];
+}
+
+void AMtlCommandList::endBlitting()
+{
+    [blitEncoder endEncoding];
+    [blitEncoder release];
+    blitEncoder = nil;
 }
 
 agpu_error AMtlCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
@@ -588,31 +648,60 @@ agpu_error AMtlCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, a
     CHECK_POINTER(source_buffer);
     CHECK_POINTER(dest_buffer);
 
-    // FIXME: Refactor this encoder dance.
-    if(computeEncoder)
-    {
-        [computeEncoder endEncoding];
-        computeEncoder = nil;
-    }
-    blitEncoder = [buffer blitCommandEncoder];
+    beginBlitting();
     [blitEncoder copyFromBuffer: source_buffer.as<AMtlBuffer> ()->handle
         sourceOffset: source_offset
         toBuffer: dest_buffer.as<AMtlBuffer> ()->handle
         destinationOffset: dest_offset
         size: copy_size];
-    [blitEncoder endEncoding];
-    [blitEncoder release];
-    blitEncoder = nil;
+    endBlitting();
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(texture);
+    CHECK_POINTER(copy_region);
+
+    beginBlitting();
+    MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
+    MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
+    [blitEncoder copyFromBuffer: buffer.as<AMtlBuffer> ()->handle
+              sourceOffset: copy_region->buffer_offset
+         sourceBytesPerRow: copy_region->buffer_row_length
+       sourceBytesPerImage: copy_region->buffer_image_height*copy_region->buffer_row_length
+                sourceSize: regionSize
+                 toTexture: texture.as<AMtlTexture> ()->handle
+          destinationSlice: copy_region->texture_subresource_range.base_arraylayer
+          destinationLevel: copy_region->texture_subresource_range.base_miplevel
+         destinationOrigin: regionOrigin];
+    endBlitting();
+    return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(texture);
+
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(texture);
+    CHECK_POINTER(copy_region);
+
+    beginBlitting();
+    MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
+    MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
+    [blitEncoder copyFromTexture: texture.as<AMtlTexture> ()->handle
+            sourceSlice: copy_region->texture_subresource_range.base_arraylayer
+            sourceLevel: copy_region->texture_subresource_range.base_miplevel
+           sourceOrigin: regionOrigin
+             sourceSize: regionSize
+               toBuffer: buffer.as<AMtlBuffer> ()->handle
+      destinationOffset: copy_region->buffer_offset
+ destinationBytesPerRow: copy_region->buffer_row_length
+destinationBytesPerImage: copy_region->buffer_image_height*copy_region->buffer_row_length];
+    endBlitting();
+    return AGPU_OK;
 }
 } // End of namespace AgpuMetal

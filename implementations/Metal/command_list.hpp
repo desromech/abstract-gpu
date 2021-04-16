@@ -55,6 +55,9 @@ public:
     virtual agpu_error copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) override;
     virtual agpu_error copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region) override;
     virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
+    
+    void beginBlitting();
+    void endBlitting();
 
     void updateRenderState();
     void activateVertexBinding ();
@@ -64,6 +67,7 @@ public:
     void updateComputeState();
     void activateComputeShaderResourceBindings();
     void uploadComputePushConstants();
+    agpu_error doResolveTexture(id<MTLTexture> sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, id<MTLTexture> destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect);
 
     agpu::device_ref device;
     agpu_command_list_type type;
