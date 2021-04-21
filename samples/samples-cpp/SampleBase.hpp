@@ -12,6 +12,15 @@ void printMessage(const char *format, ...);
 void printError(const char *format, ...);
 
 std::string readWholeFile(const std::string &fileName);
+inline bool isPowerOfTwo(size_t x)
+{
+    return (x & (x - 1)) == 0;
+}
+
+inline size_t alignedTo(size_t x, size_t alignment)
+{
+    return (x + alignment - 1) & (-alignment);
+}
 
 class AbstractSampleBase
 {
@@ -32,7 +41,7 @@ public:
 
     agpu_pipeline_state_ref buildPipeline(const agpu_pipeline_builder_ref &builder);
     agpu_pipeline_state_ref buildComputePipeline(const agpu_compute_pipeline_builder_ref &builder);
-    agpu_texture_ref loadTexture(const char *fileName);
+    agpu_texture_ref loadTexture(const char *fileName, bool nonColorData=false);
 
     const agpu_vertex_layout_ref &getSampleVertexLayout();
 
@@ -41,9 +50,18 @@ public:
     agpu_shader_language preferredShaderLanguage;
 
 	bool hasPersistentCoherentMapping;
+    bool useComputeShadersForMipmapGeneration;
 
 private:
     agpu_vertex_layout_ref sampleVertexLayout;
+
+    agpu_shader_signature_ref mipmapComputationShaderSignature;
+    agpu_sampler_ref mipmapComputationSampler;
+    agpu_shader_resource_binding_ref mipmapComputationSamplerBinding;
+    agpu_pipeline_state_ref mipmapComputationColorPipelineState;
+    agpu_pipeline_state_ref mipmapComputationNonColorPipelineState;
+    agpu_renderpass_ref mipmapComputationColorRenderpass;
+    agpu_renderpass_ref mipmapComputationNonColorRenderpass;
 };
 
 class SampleBase : public AbstractSampleBase

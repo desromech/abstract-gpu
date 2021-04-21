@@ -112,7 +112,7 @@ public:
 
             agpu_sampler_description samplerDesc;
             memset(&samplerDesc, 0, sizeof(samplerDesc));
-            samplerDesc.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+            samplerDesc.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR;
             samplerDesc.address_u = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
             samplerDesc.address_v = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
             samplerDesc.address_w = AGPU_TEXTURE_ADDRESS_MODE_WRAP;

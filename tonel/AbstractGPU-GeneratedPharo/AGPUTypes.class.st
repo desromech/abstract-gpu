@@ -100,7 +100,8 @@ Class {
 		'agpu_texture_clear_value',
 		'agpu_texture_description',
 		'agpu_components_swizzle',
-		'agpu_subresource_range',
+		'agpu_texture_subresource_range',
+		'agpu_texture_subresource_level',
 		'agpu_texture_view_description',
 		'agpu_draw_elements_command',
 		'agpu_vertex_attrib_description',
@@ -118,8 +119,10 @@ Class {
 		'agpu_size2d',
 		'agpu_size3d',
 		'agpu_frustum_tangents',
+		'agpu_offset3d',
 		'agpu_region3d',
 		'agpu_buffer_image_copy_region',
+		'agpu_image_copy_region',
 		'agpu_vr_tracked_device_pose',
 		'agpu_vr_generic_event',
 		'agpu_vr_controller_event',
@@ -244,7 +247,8 @@ AGPUTypes class >> initialize [
 	agpu_texture_clear_value := AGPUTextureClearValue.
 	agpu_texture_description := AGPUTextureDescription.
 	agpu_components_swizzle := AGPUComponentsSwizzle.
-	agpu_subresource_range := AGPUSubresourceRange.
+	agpu_texture_subresource_range := AGPUTextureSubresourceRange.
+	agpu_texture_subresource_level := AGPUTextureSubresourceLevel.
 	agpu_texture_view_description := AGPUTextureViewDescription.
 	agpu_draw_elements_command := AGPUDrawElementsCommand.
 	agpu_vertex_attrib_description := AGPUVertexAttribDescription.
@@ -262,8 +266,10 @@ AGPUTypes class >> initialize [
 	agpu_size2d := AGPUSize2d.
 	agpu_size3d := AGPUSize3d.
 	agpu_frustum_tangents := AGPUFrustumTangents.
+	agpu_offset3d := AGPUOffset3d.
 	agpu_region3d := AGPURegion3d.
 	agpu_buffer_image_copy_region := AGPUBufferImageCopyRegion.
+	agpu_image_copy_region := AGPUImageCopyRegion.
 	agpu_vr_tracked_device_pose := AGPUVrTrackedDevicePose.
 	agpu_vr_generic_event := AGPUVrGenericEvent.
 	agpu_vr_controller_event := AGPUVrControllerEvent.

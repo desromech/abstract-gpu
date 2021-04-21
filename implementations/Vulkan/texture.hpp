@@ -33,6 +33,7 @@ public:
     VmaAllocation memory;
     bool owned;
     bool isDepthStencil;
+    agpu_size texelSize;
     agpu::texture_view_ref fullTextureView;
 
     VkExtent3D getLevelExtent(int level);

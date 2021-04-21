@@ -1,6 +1,7 @@
 #include "command_list.hpp"
 #include "command_allocator.hpp"
 #include "framebuffer.hpp"
+#include "fence.hpp"
 #include "renderpass.hpp"
 #include "texture.hpp"
 #include "texture_view.hpp"
@@ -84,6 +85,8 @@ agpu_error AVkCommandList::close()
 {
     while(!bufferTransitionStack.empty())
         popBufferTransitionBarrier();
+    while(!textureTransitionStack.empty())
+        popTextureTransitionBarrier();
 
     auto error = vkEndCommandBuffer(commandBuffer);
     CONVERT_VULKAN_ERROR(error);
@@ -170,22 +173,6 @@ void AVkCommandList::resetState()
     isSecondaryContent = false;
 
     vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, 0);
-}
-
-agpu_buffer_usage_mask AVkCommandList::getCurrentBufferUsageMode(const agpu::buffer_ref &buffer)
-{
-    for(auto it = bufferTransitionStack.rbegin(); it != bufferTransitionStack.rend(); ++it)
-    {
-        if(it->first == buffer)
-            return it->second;
-    }
-
-    return buffer.as<AVkBuffer> ()->description.main_usage_mode;
-}
-
-agpu_texture_usage_mode_mask AVkCommandList::getCurrentTextureUsageMode(const agpu::texture_ref &texture)
-{
-    return texture.as<AVkTexture> ()->description.main_usage_mode;
 }
 
 agpu_error AVkCommandList::setShaderSignature(const agpu::shader_signature_ref &signature)
@@ -641,24 +628,62 @@ agpu_error AVkCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer, 
     return AGPU_OK;
 }
 
-agpu_error AVkCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+agpu_error AVkCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 {
-    return AGPU_UNIMPLEMENTED;
-}
+    CHECK_POINTER(texture);
+    CHECK_POINTER(subresource_range);
 
-agpu_error AVkCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
-{
-    CHECK_POINTER(buffer);
+    VkImageSubresourceRange range = {};
 
-    auto currentBufferUsage = getCurrentBufferUsageMode(buffer);
-    transitionBufferUsageMode(buffer.as<AVkBuffer> ()->handle, currentBufferUsage, new_usage);
-    bufferTransitionStack.push_back(std::make_pair(buffer, new_usage));
+    range.aspectMask = VkImageAspectFlagBits(subresource_range->aspect);
+    range.baseArrayLayer = subresource_range->base_arraylayer;
+    range.baseMipLevel = subresource_range->base_miplevel;
+    range.layerCount = subresource_range->layer_count;
+    range.levelCount = subresource_range->level_count;
+
+    VkImageMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.srcAccessMask = VkAccessFlags(source_accesses);
+    barrier.dstAccessMask = VkAccessFlags(dest_accesses);
+    barrier.oldLayout = mapTextureUsageModeToLayout(old_usage);
+    barrier.newLayout = mapTextureUsageModeToLayout(new_usage);
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture.as<AVkTexture> ()->image;
+    barrier.subresourceRange = range;
+    vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags(source_stage), VkPipelineStageFlags(dest_stage),
+            0, 0, nullptr, 0, nullptr, 1, &barrier);
+
     return AGPU_OK;
 }
 
-agpu_error AVkCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+agpu_error AVkCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+
+    transitionBufferUsageMode(buffer.as<AVkBuffer> ()->handle, old_usage, new_usage);
+    bufferTransitionStack.push_back(BufferTransitionDesc{buffer, old_usage, new_usage});
+    return AGPU_OK;
+}
+
+agpu_error AVkCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
+{
+    CHECK_POINTER(texture);
+    CHECK_POINTER(subresource_range);
+
+    auto avkTexture = texture.as<AVkTexture> ();
+
+    VkImageSubresourceRange range = {};
+
+    range.baseArrayLayer = subresource_range->base_arraylayer;
+    range.baseMipLevel = subresource_range->base_miplevel;
+    range.layerCount = subresource_range->layer_count;
+    range.levelCount = subresource_range->level_count;
+    range.aspectMask = VkImageAspectFlagBits(subresource_range->aspect);
+
+    transitionImageUsageMode(avkTexture->image, avkTexture->description.usage_modes, old_usage, new_usage, range);
+    textureTransitionStack.push_back(TextureTransitionDesc{texture, old_usage, new_usage, range});
+    return AGPU_OK;
 }
 
 agpu_error AVkCommandList::popBufferTransitionBarrier()
@@ -666,17 +691,24 @@ agpu_error AVkCommandList::popBufferTransitionBarrier()
     if(bufferTransitionStack.empty())
         return AGPU_OUT_OF_BOUNDS;
 
-    auto buffer = bufferTransitionStack.back().first;
-    auto oldMode = bufferTransitionStack.back().second;
+    auto &transition = bufferTransitionStack.back();
+
+    transitionBufferUsageMode(transition.buffer.as<AVkBuffer> ()->handle, transition.newUsage, transition.oldUsage);
     bufferTransitionStack.pop_back();
-    auto newMode = getCurrentBufferUsageMode(buffer);
-    transitionBufferUsageMode(buffer.as<AVkBuffer> ()->handle, oldMode, newMode);
     return AGPU_OK;
 }
 
 agpu_error AVkCommandList::popTextureTransitionBarrier()
 {
-    return AGPU_UNIMPLEMENTED;
+    if(textureTransitionStack.empty())
+        return AGPU_OUT_OF_BOUNDS;
+
+    auto &transition = textureTransitionStack.back();
+
+    auto avkTexture = transition.texture.as<AVkTexture> ();
+    transitionImageUsageMode(avkTexture->image, avkTexture->description.usage_modes, transition.newUsage, transition.oldUsage, transition.subresourceRange);
+    textureTransitionStack.pop_back();
+    return AGPU_OK;
 }
 
 agpu_error AVkCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size)
@@ -695,12 +727,86 @@ agpu_error AVkCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, ag
 
 agpu_error AVkCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(texture);
+    CHECK_POINTER(copy_region);
+
+    VkBufferImageCopy bufferImageCopy = {};
+    bufferImageCopy.bufferOffset = copy_region->buffer_offset;
+    bufferImageCopy.bufferRowLength = copy_region->buffer_pitch / texture.as<AVkTexture> ()->texelSize;
+    bufferImageCopy.bufferImageHeight = copy_region->buffer_slice_pitch / copy_region->buffer_pitch;
+    bufferImageCopy.imageSubresource.aspectMask = VkImageAspectFlags(copy_region->texture_subresource_level.aspect);
+    bufferImageCopy.imageSubresource.mipLevel = copy_region->texture_subresource_level.miplevel;
+    bufferImageCopy.imageSubresource.baseArrayLayer = copy_region->texture_subresource_level.base_arraylayer;
+    bufferImageCopy.imageSubresource.layerCount = copy_region->texture_subresource_level.layer_count;
+    bufferImageCopy.imageOffset.x = copy_region->texture_region.x;
+    bufferImageCopy.imageOffset.y = copy_region->texture_region.y;
+    bufferImageCopy.imageOffset.z = copy_region->texture_region.z;
+    bufferImageCopy.imageExtent.width = copy_region->texture_region.width;
+    bufferImageCopy.imageExtent.height = copy_region->texture_region.height;
+    bufferImageCopy.imageExtent.depth = copy_region->texture_region.depth;
+
+    vkCmdCopyBufferToImage(commandBuffer, buffer.as<AVkBuffer> ()->handle, texture.as<AVkTexture> ()->image, mapTextureUsageModeToLayout(copy_region->texture_usage_mode), 1, &bufferImageCopy);
+    return AGPU_OK;
 }
 
 agpu_error AVkCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(texture);
+    CHECK_POINTER(copy_region);
+
+    VkBufferImageCopy bufferImageCopy = {};
+    bufferImageCopy.bufferOffset = copy_region->buffer_offset;
+    bufferImageCopy.bufferRowLength = copy_region->buffer_pitch / texture.as<AVkTexture> ()->texelSize;
+    bufferImageCopy.bufferImageHeight = copy_region->buffer_slice_pitch / copy_region->buffer_pitch;
+    bufferImageCopy.imageSubresource.aspectMask = VkImageAspectFlags(copy_region->texture_subresource_level.aspect);
+    bufferImageCopy.imageSubresource.mipLevel = copy_region->texture_subresource_level.miplevel;
+    bufferImageCopy.imageSubresource.baseArrayLayer = copy_region->texture_subresource_level.base_arraylayer;
+    bufferImageCopy.imageSubresource.layerCount = copy_region->texture_subresource_level.layer_count;
+    bufferImageCopy.imageOffset.x = copy_region->texture_region.x;
+    bufferImageCopy.imageOffset.y = copy_region->texture_region.y;
+    bufferImageCopy.imageOffset.z = copy_region->texture_region.z;
+    bufferImageCopy.imageExtent.width = copy_region->texture_region.width;
+    bufferImageCopy.imageExtent.height = copy_region->texture_region.height;
+    bufferImageCopy.imageExtent.depth = copy_region->texture_region.depth;
+
+    vkCmdCopyImageToBuffer(commandBuffer, texture.as<AVkTexture> ()->image, mapTextureUsageModeToLayout(copy_region->texture_usage_mode), buffer.as<AVkBuffer> ()->handle, 1, &bufferImageCopy);
+    return AGPU_OK;
+}
+
+agpu_error AVkCommandList::copyTexture(const agpu::texture_ref & source_texture, const agpu::texture_ref & dest_texture, agpu_image_copy_region* copy_region)
+{
+    CHECK_POINTER(source_texture);
+    CHECK_POINTER(dest_texture);
+    CHECK_POINTER(copy_region);
+
+    VkImageCopy imageCopy = {};
+    imageCopy.srcSubresource.aspectMask = VkImageAspectFlags(copy_region->source_subresource_level.aspect);
+    imageCopy.srcSubresource.mipLevel = copy_region->source_subresource_level.miplevel;
+    imageCopy.srcSubresource.baseArrayLayer = copy_region->source_subresource_level.base_arraylayer;
+    imageCopy.srcSubresource.layerCount = copy_region->source_subresource_level.layer_count;
+    imageCopy.srcOffset.x = copy_region->source_offset.x;
+    imageCopy.srcOffset.y = copy_region->source_offset.y;
+    imageCopy.srcOffset.z = copy_region->source_offset.z;
+
+    imageCopy.dstSubresource.aspectMask = VkImageAspectFlags(copy_region->destination_subresource_level.aspect);
+    imageCopy.dstSubresource.mipLevel = copy_region->destination_subresource_level.miplevel;
+    imageCopy.dstSubresource.baseArrayLayer = copy_region->destination_subresource_level.base_arraylayer;
+    imageCopy.dstSubresource.layerCount = copy_region->destination_subresource_level.layer_count;
+    imageCopy.dstOffset.x = copy_region->destination_offset.x;
+    imageCopy.dstOffset.y = copy_region->destination_offset.y;
+    imageCopy.dstOffset.z = copy_region->destination_offset.z;
+
+    imageCopy.extent.width = copy_region->extent.width;
+    imageCopy.extent.height = copy_region->extent.height;
+    imageCopy.extent.depth = copy_region->extent.depth;
+
+    vkCmdCopyImage(commandBuffer,
+            source_texture.as<AVkTexture> ()->image, mapTextureUsageModeToLayout(copy_region->source_usage_mode),
+            dest_texture.as<AVkTexture> ()->image, mapTextureUsageModeToLayout(copy_region->destination_usage_mode),
+            1, &imageCopy);
+    return AGPU_OK;
 }
 
 void AVkCommandList::addWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags dstStageMask)

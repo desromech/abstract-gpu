@@ -22,15 +22,15 @@ inline enum VkImageType mapImageType(agpu_texture_type type)
     }
 }
 
-inline enum VkImageViewType mapImageViewType(agpu_texture_type type, agpu_uint layerCount)
+inline enum VkImageViewType mapImageViewType(agpu_texture_type type, bool isArray)
 {
     switch (type)
     {
     case AGPU_TEXTURE_UNKNOWN:
     case AGPU_TEXTURE_BUFFER:
-    case AGPU_TEXTURE_1D: return layerCount ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
-    case AGPU_TEXTURE_2D: return layerCount ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
-    case AGPU_TEXTURE_CUBE: return layerCount ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+    case AGPU_TEXTURE_1D: return isArray ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+    case AGPU_TEXTURE_2D: return isArray ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+    case AGPU_TEXTURE_CUBE: return isArray ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
     case AGPU_TEXTURE_3D: return VK_IMAGE_VIEW_TYPE_3D;
     default: return VK_IMAGE_VIEW_TYPE_1D;
     }
@@ -258,6 +258,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     texture->owned = true;
     texture->isDepthStencil = isDepthStencil;
     texture->imageAspect = imageAspect;
+    texture->texelSize = pixelSizeOfTextureFormat(description->format);
     return result;
 }
 
@@ -277,7 +278,7 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
 	VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = image;
-    createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count);
+    createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count > 1);
     createInfo.format = isDepthStencil ? mapTextureFormat(description.format, true) : mapTextureFormat(viewDescription->format, false);
 
     auto &components = createInfo.components;
@@ -291,21 +292,17 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     subresource.levelCount = viewDescription->subresource_range.level_count;
     subresource.baseArrayLayer = viewDescription->subresource_range.base_arraylayer;
     subresource.layerCount = viewDescription->subresource_range.layer_count;
-    if(subresource.layerCount == 0)
-        subresource.layerCount = 1;
     if(viewDescription->type == AGPU_TEXTURE_CUBE)
         subresource.layerCount *= 6;
 
-    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    if(isDepthStencil)
-        subresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    subresource.aspectMask = viewDescription->subresource_range.aspect;
 
     VkImageView viewHandle;
     auto error = vkCreateImageView(deviceForVk->device, &createInfo, nullptr, &viewHandle);
     if (error)
         return VK_NULL_HANDLE;
 
-    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, mapTextureUsageModeToLayout(viewDescription->subresource_range.usage_mode), *viewDescription).disown();
+    return AVkTextureView::create(device, refFromThis<agpu::texture> (), viewHandle, mapTextureUsageModeToLayout(viewDescription->usage_mode), *viewDescription).disown();
 }
 
 agpu::texture_view_ptr AVkTexture::getOrCreateFullView()
@@ -338,13 +335,12 @@ agpu_error AVkTexture::getFullViewDescription(agpu_texture_view_description *vie
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_mode = description.main_usage_mode;
+    viewDescription->usage_mode = description.main_usage_mode;
+    viewDescription->subresource_range.aspect = isDepthStencil ? AGPU_TEXTURE_ASPECT_DEPTH : AGPU_TEXTURE_ASPECT_COLOR;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
     viewDescription->subresource_range.layer_count = description.layers;
-    if(viewDescription->subresource_range.layer_count == 1)
-        viewDescription->subresource_range.layer_count = 0;
     return AGPU_OK;
 }
 

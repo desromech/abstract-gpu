@@ -230,6 +230,7 @@ inline VkImageLayout mapTextureUsageModeToLayout(agpu_texture_usage_mode_mask mo
 	case AGPU_TEXTURE_USAGE_COPY_DESTINATION: return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	case AGPU_TEXTURE_USAGE_PRESENT: return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     case AGPU_TEXTURE_USAGE_STORAGE:
+    case AGPU_TEXTURE_USAGE_GENERAL:
     default: return VK_IMAGE_LAYOUT_GENERAL;
     }
 }
@@ -296,6 +297,7 @@ inline VkAccessFlags mapTextureUsageModeToAccessFlags(agpu_texture_usage_mode_ma
     switch(int(mode))
     {
     case AGPU_TEXTURE_USAGE_NONE: return 0;
+    case AGPU_TEXTURE_USAGE_GENERAL: return 0;
 
     case AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT:
         return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -332,6 +334,7 @@ inline VkPipelineStageFlags mapTextureUsageModeToPipelineSourceStages(agpu_textu
     {
     case AGPU_TEXTURE_USAGE_PRESENT:
     case AGPU_TEXTURE_USAGE_NONE:
+    case AGPU_TEXTURE_USAGE_GENERAL:
         return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     case AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT:
         return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -362,6 +365,7 @@ inline VkPipelineStageFlags mapTextureUsageModeToPipelineDestinationStages(agpu_
     {
     case AGPU_TEXTURE_USAGE_PRESENT:
     case AGPU_TEXTURE_USAGE_NONE:
+    case AGPU_TEXTURE_USAGE_GENERAL:
         return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     case AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT:
         return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

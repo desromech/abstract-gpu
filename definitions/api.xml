@@ -145,10 +145,17 @@
             <field name="a" type="component_swizzle" />
         </struct>
 
-        <struct name="subresource_range" >
-            <field name="usage_mode" type="texture_usage_mode_mask"/>
+        <struct name="texture_subresource_range" >
+            <field name="aspect" type="texture_aspect"/>
             <field name="base_miplevel" type="uint"/>
             <field name="level_count" type="uint"/>
+            <field name="base_arraylayer" type="uint"/>
+            <field name="layer_count" type="uint"/>
+        </struct>
+
+        <struct name="texture_subresource_level" >
+            <field name="aspect" type="texture_aspect"/>
+            <field name="miplevel" type="uint"/>
             <field name="base_arraylayer" type="uint"/>
             <field name="layer_count" type="uint"/>
         </struct>
@@ -157,8 +164,9 @@
             <field name="type" type="texture_type" />
             <field name="format" type="texture_format" />
             <field name="sample_count" type="uint" />
+            <field name="usage_mode" type="texture_usage_mode_mask" />
             <field name="components" type="components_swizzle" />
-            <field name="subresource_range" type="subresource_range" />
+            <field name="subresource_range" type="texture_subresource_range" />
         </struct>
 
 		<struct name="draw_elements_command">
@@ -278,6 +286,12 @@
             <field name="bottom" type="float" />
         </struct>
 
+        <struct name="offset3d">
+            <field name="x" type="uint" />
+            <field name="y" type="uint" />
+            <field name="z" type="uint" />
+        </struct>
+
         <struct name="region3d">
             <field name="x" type="uint" />
             <field name="y" type="uint" />
@@ -289,10 +303,21 @@
 
         <struct name="buffer_image_copy_region">
             <field name="buffer_offset" type="size" />
-            <field name="buffer_row_length" type="size" />
-            <field name="buffer_image_height" type="size" />
-            <field name="texture_subresource_range" type="subresource_range" />
+            <field name="buffer_pitch" type="size" />
+            <field name="buffer_slice_pitch" type="size" />
+            <field name="texture_usage_mode" type="texture_usage_mode_mask" />
+            <field name="texture_subresource_level" type="texture_subresource_level" />
             <field name="texture_region" type="region3d" />
+        </struct>
+
+        <struct name="image_copy_region">
+            <field name="source_usage_mode" type="texture_usage_mode_mask" />
+            <field name="source_subresource_level" type="texture_subresource_level" />
+            <field name="source_offset" type="offset3d" />
+            <field name="destination_usage_mode" type="texture_usage_mode_mask" />
+            <field name="destination_subresource_level" type="texture_subresource_level" />
+            <field name="destination_offset" type="offset3d" />
+            <field name="extent" type="size3d" />
         </struct>
 
         <struct name="vr_tracked_device_pose">
@@ -598,6 +623,8 @@
             <constant name="LimitStorageImageSupportedSampleCountMask" value="36" />
             <constant name="LimitDedicatedVideoMemoryInMB" value="37" />
             <constant name="LimitAvailableVideoMemoryInMB" value="38" />
+            <constant name="LimitMinTextureDataOffsetAlignment" value="39" />
+            <constant name="LimitMinTextureDataPitchAlignment" value="40" />
         </enum>
 
         <enum name="renderpass_attachment_action" optionalPrefix="Attachment">
@@ -649,6 +676,7 @@
             <constant name="TextureUsageReadedBack" value="32" />
             <constant name="TextureUsageUploaded" value="64" />
             <constant name="TextureUsagePresent" value="128" />
+            <constant name="TextureUsageGeneral" value="256" />
         </enum>
 
 		<enum name="shader_type" optionalSuffix="Shader">
@@ -1564,6 +1592,12 @@
                 <arg name="command_list" type="command_list*" />
             </method>
 
+            <method name="addCommandListsAndSignalFence" cname="AddCommandListsAndSignalFence" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="command_list" type="command_list**" pointerList="true"/>
+                <arg name="fence" type="fence*" />
+            </method>
+
             <method name="finishExecution" cname="FinishQueueExecution" returnType="error">
             </method>
 
@@ -1761,18 +1795,22 @@
                 <arg name="dest_stage" type="pipeline_stage_flags" />
                 <arg name="source_accesses" type="access_flags" />
                 <arg name="dest_accesses" type="access_flags" />
-                <arg name="subresource_range" type="subresource_range*" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
             </method>
 
             <method name="pushBufferTransitionBarrier" cname="PushBufferTransitionBarrier" returnType="error">
                 <arg name="buffer" type="buffer*" />
+                <arg name="old_usage" type="buffer_usage_mask" />
                 <arg name="new_usage" type="buffer_usage_mask" />
             </method>
 
             <method name="pushTextureTransitionBarrier" cname="PushTextureTransitionBarrier" returnType="error">
                 <arg name="texture" type="texture*" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
                 <arg name="new_usage" type="texture_usage_mode_mask" />
-                <arg name="subresource_range" type="subresource_range*" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
             </method>
 
             <method name="popBufferTransitionBarrier" cname="PopBufferTransitionBarrier" returnType="error">
@@ -1799,6 +1837,12 @@
                 <arg name="texture" type="texture*" />
                 <arg name="buffer" type="buffer*" />
                 <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTexture" cname="CopyTexture" returnType="error">
+                <arg name="source_texture" type="texture*" />
+                <arg name="dest_texture" type="texture*" />
+                <arg name="copy_region" type="image_copy_region*" />
             </method>
         </interface>
 
@@ -2500,18 +2544,22 @@
                 <arg name="dest_stage" type="pipeline_stage_flags" />
                 <arg name="source_accesses" type="access_flags" />
                 <arg name="dest_accesses" type="access_flags" />
-                <arg name="subresource_range" type="subresource_range*" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
             </method>
 
             <method name="pushBufferTransitionBarrier" cname="StateTrackerPushBufferTransitionBarrier" returnType="error">
                 <arg name="buffer" type="buffer*" />
+                <arg name="old_usage" type="buffer_usage_mask" />
                 <arg name="new_usage" type="buffer_usage_mask" />
             </method>
 
             <method name="pushTextureTransitionBarrier" cname="StateTrackerPushTextureTransitionBarrier" returnType="error">
                 <arg name="texture" type="texture*" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
                 <arg name="new_usage" type="texture_usage_mode_mask" />
-                <arg name="subresource_range" type="subresource_range*" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
             </method>
 
             <method name="popBufferTransitionBarrier" cname="StateTrackerPopBufferTransitionBarrier" returnType="error">
@@ -2538,6 +2586,12 @@
                 <arg name="texture" type="texture*" />
                 <arg name="buffer" type="buffer*" />
                 <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTexture" cname="StateTrackerCopyTexture" returnType="error">
+                <arg name="source_texture" type="texture*" />
+                <arg name="dest_texture" type="texture*" />
+                <arg name="copy_region" type="image_copy_region*" />
             </method>
         </interface>
 

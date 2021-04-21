@@ -65,7 +65,7 @@ public:
 
         // Copy the data from the upload buffer
         {
-			commandList->pushBufferTransitionBarrier(storageBuffer, AGPU_COPY_DESTINATION_BUFFER);
+			commandList->pushBufferTransitionBarrier(storageBuffer, AGPU_STORAGE_BUFFER, AGPU_COPY_DESTINATION_BUFFER);
 			commandList->copyBuffer(uploadBuffer, 0, storageBuffer, 0, bufferByteSize);
 			commandList->popBufferTransitionBarrier();
 	    }
@@ -77,7 +77,7 @@ public:
 
         // Copy the data into the readback buffer.
         {
-			commandList->pushBufferTransitionBarrier(storageBuffer, AGPU_COPY_SOURCE_BUFFER);
+			commandList->pushBufferTransitionBarrier(storageBuffer, AGPU_STORAGE_BUFFER, AGPU_COPY_SOURCE_BUFFER);
 			commandList->copyBuffer(storageBuffer, 0, readbackBuffer, 0, bufferByteSize);
 			commandList->popBufferTransitionBarrier();
         }

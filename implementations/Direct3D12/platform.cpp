@@ -84,6 +84,8 @@ agpu_uint Direct3D12AdapterDesc::getLimitValue(agpu_limit limit)
     case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT;
     case AGPU_LIMIT_DEDICATED_VIDEO_MEMORY_IN_MB: return agpu_uint(desc.DedicatedVideoMemory >> 20);
     case AGPU_LIMIT_AVAILABLE_VIDEO_MEMORY_IN_MB: return agpu_uint((desc.DedicatedVideoMemory + desc.SharedSystemMemory) >> 20);
+	case AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT: return D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
+	case AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT: return D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
     default: return 0;
     }
 }

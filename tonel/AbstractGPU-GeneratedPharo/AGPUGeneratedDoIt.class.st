@@ -22,7 +22,8 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUTextureClearValue rebuildFieldAccessors.
 	AGPUTextureDescription rebuildFieldAccessors.
 	AGPUComponentsSwizzle rebuildFieldAccessors.
-	AGPUSubresourceRange rebuildFieldAccessors.
+	AGPUTextureSubresourceRange rebuildFieldAccessors.
+	AGPUTextureSubresourceLevel rebuildFieldAccessors.
 	AGPUTextureViewDescription rebuildFieldAccessors.
 	AGPUDrawElementsCommand rebuildFieldAccessors.
 	AGPUVertexAttribDescription rebuildFieldAccessors.
@@ -40,8 +41,10 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUSize2d rebuildFieldAccessors.
 	AGPUSize3d rebuildFieldAccessors.
 	AGPUFrustumTangents rebuildFieldAccessors.
+	AGPUOffset3d rebuildFieldAccessors.
 	AGPURegion3d rebuildFieldAccessors.
 	AGPUBufferImageCopyRegion rebuildFieldAccessors.
+	AGPUImageCopyRegion rebuildFieldAccessors.
 	AGPUVrTrackedDevicePose rebuildFieldAccessors.
 	AGPUVrGenericEvent rebuildFieldAccessors.
 	AGPUVrControllerEvent rebuildFieldAccessors.

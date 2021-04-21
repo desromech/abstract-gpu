@@ -71,7 +71,7 @@ public:
             if(!diffuseTexture)
                 return false;
 
-            normalTexture = loadTexture("data/textures/checkboard-normal.bmp");
+            normalTexture = loadTexture("data/textures/checkboard-normal.bmp", true);
             if (!normalTexture)
                 return false;
         }

@@ -306,6 +306,8 @@ enum Limit valueType: Int32; values: #{
 	StorageImageSupportedSampleCountMask: 36.
 	DedicatedVideoMemoryInMB: 37.
 	AvailableVideoMemoryInMB: 38.
+	MinTextureDataOffsetAlignment: 39.
+	MinTextureDataPitchAlignment: 40.
 }.
 
 enum RenderpassAttachmentAction valueType: Int32; values: #{
@@ -357,6 +359,7 @@ enum TextureUsageModeMask valueType: Int32; values: #{
 	ReadedBack: 32.
 	Uploaded: 64.
 	Present: 128.
+	General: 256.
 }.
 
 enum ShaderType valueType: Int32; values: #{
@@ -860,10 +863,17 @@ struct ComponentsSwizzle definition: {
 	public field a type: ComponentSwizzle.
 }.
 
-struct SubresourceRange definition: {
-	public field usage_mode type: TextureUsageModeMask.
+struct TextureSubresourceRange definition: {
+	public field aspect type: TextureAspect.
 	public field base_miplevel type: UInt32.
 	public field level_count type: UInt32.
+	public field base_arraylayer type: UInt32.
+	public field layer_count type: UInt32.
+}.
+
+struct TextureSubresourceLevel definition: {
+	public field aspect type: TextureAspect.
+	public field miplevel type: UInt32.
 	public field base_arraylayer type: UInt32.
 	public field layer_count type: UInt32.
 }.
@@ -872,8 +882,9 @@ struct TextureViewDescription definition: {
 	public field type type: TextureType.
 	public field format type: TextureFormat.
 	public field sample_count type: UInt32.
+	public field usage_mode type: TextureUsageModeMask.
 	public field components type: ComponentsSwizzle.
-	public field subresource_range type: SubresourceRange.
+	public field subresource_range type: TextureSubresourceRange.
 }.
 
 struct DrawElementsCommand definition: {
@@ -993,6 +1004,12 @@ struct FrustumTangents definition: {
 	public field bottom type: Float32.
 }.
 
+struct Offset3d definition: {
+	public field x type: UInt32.
+	public field y type: UInt32.
+	public field z type: UInt32.
+}.
+
 struct Region3d definition: {
 	public field x type: UInt32.
 	public field y type: UInt32.
@@ -1004,10 +1021,21 @@ struct Region3d definition: {
 
 struct BufferImageCopyRegion definition: {
 	public field buffer_offset type: UInt32.
-	public field buffer_row_length type: UInt32.
-	public field buffer_image_height type: UInt32.
-	public field texture_subresource_range type: SubresourceRange.
+	public field buffer_pitch type: UInt32.
+	public field buffer_slice_pitch type: UInt32.
+	public field texture_usage_mode type: TextureUsageModeMask.
+	public field texture_subresource_level type: TextureSubresourceLevel.
 	public field texture_region type: Region3d.
+}.
+
+struct ImageCopyRegion definition: {
+	public field source_usage_mode type: TextureUsageModeMask.
+	public field source_subresource_level type: TextureSubresourceLevel.
+	public field source_offset type: Offset3d.
+	public field destination_usage_mode type: TextureUsageModeMask.
+	public field destination_subresource_level type: TextureSubresourceLevel.
+	public field destination_offset type: Offset3d.
+	public field extent type: Size3d.
 }.
 
 struct VrTrackedDevicePose definition: {
@@ -1234,6 +1262,7 @@ function agpuReleasePipelineState externC (pipeline_state: PipelineState pointer
 function agpuAddCommandQueueReference externC (command_queue: CommandQueue pointer) => Error.
 function agpuReleaseCommandQueue externC (command_queue: CommandQueue pointer) => Error.
 function agpuAddCommandList externC (command_queue: CommandQueue pointer, command_list: CommandList pointer) => Error.
+function agpuAddCommandListsAndSignalFence externC (command_queue: CommandQueue pointer, count: UInt32, command_list: CommandList pointer pointer, fence: Fence pointer) => Error.
 function agpuFinishQueueExecution externC (command_queue: CommandQueue pointer) => Error.
 function agpuSignalFence externC (command_queue: CommandQueue pointer, fence: Fence pointer) => Error.
 function agpuWaitFence externC (command_queue: CommandQueue pointer, fence: Fence pointer) => Error.
@@ -1271,14 +1300,15 @@ function agpuResolveTexture externC (command_list: CommandList pointer, sourceTe
 function agpuPushConstants externC (command_list: CommandList pointer, offset: UInt32, size: UInt32, values: Void pointer) => Error.
 function agpuMemoryBarrier externC (command_list: CommandList pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags) => Error.
 function agpuBufferMemoryBarrier externC (command_list: CommandList pointer, buffer: Buffer pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, offset: UInt32, size: UInt32) => Error.
-function agpuTextureMemoryBarrier externC (command_list: CommandList pointer, texture: Texture pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, subresource_range: SubresourceRange pointer) => Error.
-function agpuPushBufferTransitionBarrier externC (command_list: CommandList pointer, buffer: Buffer pointer, new_usage: BufferUsageMask) => Error.
-function agpuPushTextureTransitionBarrier externC (command_list: CommandList pointer, texture: Texture pointer, new_usage: TextureUsageModeMask, subresource_range: SubresourceRange pointer) => Error.
+function agpuTextureMemoryBarrier externC (command_list: CommandList pointer, texture: Texture pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
+function agpuPushBufferTransitionBarrier externC (command_list: CommandList pointer, buffer: Buffer pointer, old_usage: BufferUsageMask, new_usage: BufferUsageMask) => Error.
+function agpuPushTextureTransitionBarrier externC (command_list: CommandList pointer, texture: Texture pointer, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
 function agpuPopBufferTransitionBarrier externC (command_list: CommandList pointer) => Error.
 function agpuPopTextureTransitionBarrier externC (command_list: CommandList pointer) => Error.
 function agpuCopyBuffer externC (command_list: CommandList pointer, source_buffer: Buffer pointer, source_offset: UInt32, dest_buffer: Buffer pointer, dest_offset: UInt32, copy_size: UInt32) => Error.
 function agpuCopyBufferToTexture externC (command_list: CommandList pointer, buffer: Buffer pointer, texture: Texture pointer, copy_region: BufferImageCopyRegion pointer) => Error.
 function agpuCopyTextureToBuffer externC (command_list: CommandList pointer, texture: Texture pointer, buffer: Buffer pointer, copy_region: BufferImageCopyRegion pointer) => Error.
+function agpuCopyTexture externC (command_list: CommandList pointer, source_texture: Texture pointer, dest_texture: Texture pointer, copy_region: ImageCopyRegion pointer) => Error.
 function agpuAddTextureReference externC (texture: Texture pointer) => Error.
 function agpuReleaseTexture externC (texture: Texture pointer) => Error.
 function agpuGetTextureDescription externC (texture: Texture pointer, description: TextureDescription pointer) => Error.
@@ -1423,14 +1453,15 @@ function agpuStateTrackerResolveTexture externC (state_tracker: StateTracker poi
 function agpuStateTrackerPushConstants externC (state_tracker: StateTracker pointer, offset: UInt32, size: UInt32, values: Void pointer) => Error.
 function agpuStateTrackerMemoryBarrier externC (state_tracker: StateTracker pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags) => Error.
 function agpuStateTrackerBufferMemoryBarrier externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, offset: UInt32, size: UInt32) => Error.
-function agpuStateTrackerTextureMemoryBarrier externC (state_tracker: StateTracker pointer, texture: Texture pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, subresource_range: SubresourceRange pointer) => Error.
-function agpuStateTrackerPushBufferTransitionBarrier externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, new_usage: BufferUsageMask) => Error.
-function agpuStateTrackerPushTextureTransitionBarrier externC (state_tracker: StateTracker pointer, texture: Texture pointer, new_usage: TextureUsageModeMask, subresource_range: SubresourceRange pointer) => Error.
+function agpuStateTrackerTextureMemoryBarrier externC (state_tracker: StateTracker pointer, texture: Texture pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
+function agpuStateTrackerPushBufferTransitionBarrier externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, old_usage: BufferUsageMask, new_usage: BufferUsageMask) => Error.
+function agpuStateTrackerPushTextureTransitionBarrier externC (state_tracker: StateTracker pointer, texture: Texture pointer, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
 function agpuStateTrackerPopBufferTransitionBarrier externC (state_tracker: StateTracker pointer) => Error.
 function agpuStateTrackerPopTextureTransitionBarrier externC (state_tracker: StateTracker pointer) => Error.
 function agpuStateTrackerCopyBuffer externC (state_tracker: StateTracker pointer, source_buffer: Buffer pointer, source_offset: UInt32, dest_buffer: Buffer pointer, dest_offset: UInt32, copy_size: UInt32) => Error.
 function agpuStateTrackerCopyBufferToTexture externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, texture: Texture pointer, copy_region: BufferImageCopyRegion pointer) => Error.
 function agpuStateTrackerCopyTextureToBuffer externC (state_tracker: StateTracker pointer, texture: Texture pointer, buffer: Buffer pointer, copy_region: BufferImageCopyRegion pointer) => Error.
+function agpuStateTrackerCopyTexture externC (state_tracker: StateTracker pointer, source_texture: Texture pointer, dest_texture: Texture pointer, copy_region: ImageCopyRegion pointer) => Error.
 function agpuAddImmediateRendererReference externC (immediate_renderer: ImmediateRenderer pointer) => Error.
 function agpuReleaseImmediateRendererReference externC (immediate_renderer: ImmediateRenderer pointer) => Error.
 function agpuBeginImmediateRendering externC (immediate_renderer: ImmediateRenderer pointer, state_tracker: StateTracker pointer) => Error.
@@ -1891,6 +1922,9 @@ CommandQueue extend: {
 	inline method addCommandList: (command_list: CommandListRef const ref) ::=> Void
 		:= throwIfError: (agpuAddCommandList(self address, command_list getPointer)).
 
+	inline method addCommandListsAndSignalFence: (count: UInt32) commandList: (command_list: CommandListRef pointer) fence: (fence: FenceRef const ref) ::=> Void
+		:= throwIfError: (agpuAddCommandListsAndSignalFence(self address, count, command_list reinterpretCastTo: CommandList pointer pointer, fence getPointer)).
+
 	inline method finishExecution ::=> Void
 		:= throwIfError: (agpuFinishQueueExecution(self address)).
 
@@ -2008,14 +2042,14 @@ CommandList extend: {
 	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
 		:= throwIfError: (agpuBufferMemoryBarrier(self address, buffer getPointer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size)).
 
-	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
-		:= throwIfError: (agpuTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, subresource_range)).
+	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, old_usage, new_usage, subresource_range)).
 
-	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) newUsage: (new_usage: BufferUsageMask) ::=> Void
-		:= throwIfError: (agpuPushBufferTransitionBarrier(self address, buffer getPointer, new_usage)).
+	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) oldUsage: (old_usage: BufferUsageMask) newUsage: (new_usage: BufferUsageMask) ::=> Void
+		:= throwIfError: (agpuPushBufferTransitionBarrier(self address, buffer getPointer, old_usage, new_usage)).
 
-	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
-		:= throwIfError: (agpuPushTextureTransitionBarrier(self address, texture getPointer, new_usage, subresource_range)).
+	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuPushTextureTransitionBarrier(self address, texture getPointer, old_usage, new_usage, subresource_range)).
 
 	inline method popBufferTransitionBarrier ::=> Void
 		:= throwIfError: (agpuPopBufferTransitionBarrier(self address)).
@@ -2031,6 +2065,9 @@ CommandList extend: {
 
 	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
 		:= throwIfError: (agpuCopyTextureToBuffer(self address, texture getPointer, buffer getPointer, copy_region)).
+
+	inline method copyTexture: (source_texture: TextureRef const ref) destTexture: (dest_texture: TextureRef const ref) copyRegion: (copy_region: ImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuCopyTexture(self address, source_texture getPointer, dest_texture getPointer, copy_region)).
 
 }.
 
@@ -2512,14 +2549,14 @@ StateTracker extend: {
 	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerBufferMemoryBarrier(self address, buffer getPointer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size)).
 
-	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
-		:= throwIfError: (agpuStateTrackerTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, subresource_range)).
+	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, old_usage, new_usage, subresource_range)).
 
-	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) newUsage: (new_usage: BufferUsageMask) ::=> Void
-		:= throwIfError: (agpuStateTrackerPushBufferTransitionBarrier(self address, buffer getPointer, new_usage)).
+	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) oldUsage: (old_usage: BufferUsageMask) newUsage: (new_usage: BufferUsageMask) ::=> Void
+		:= throwIfError: (agpuStateTrackerPushBufferTransitionBarrier(self address, buffer getPointer, old_usage, new_usage)).
 
-	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: SubresourceRange pointer) ::=> Void
-		:= throwIfError: (agpuStateTrackerPushTextureTransitionBarrier(self address, texture getPointer, new_usage, subresource_range)).
+	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerPushTextureTransitionBarrier(self address, texture getPointer, old_usage, new_usage, subresource_range)).
 
 	inline method popBufferTransitionBarrier ::=> Void
 		:= throwIfError: (agpuStateTrackerPopBufferTransitionBarrier(self address)).
@@ -2535,6 +2572,9 @@ StateTracker extend: {
 
 	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerCopyTextureToBuffer(self address, texture getPointer, buffer getPointer, copy_region)).
+
+	inline method copyTexture: (source_texture: TextureRef const ref) destTexture: (dest_texture: TextureRef const ref) copyRegion: (copy_region: ImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerCopyTexture(self address, source_texture getPointer, dest_texture getPointer, copy_region)).
 
 }.
 

@@ -674,6 +674,12 @@ AGPUCBindings >> addCommandList_command_queue: command_queue command_list: comma
 ]
 
 { #category : #'command_queue' }
+AGPUCBindings >> addCommandListsAndSignalFence_command_queue: command_queue count: count command_list: command_list fence: fence [
+	<cdecl: long 'agpuAddCommandListsAndSignalFence' (void* ulong void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'command_queue' }
 AGPUCBindings >> finishExecution_command_queue: command_queue [
 	<cdecl: long 'agpuFinishQueueExecution' (void*)>
 	^ self externalCallFailed
@@ -896,20 +902,20 @@ AGPUCBindings >> bufferMemoryBarrier_command_list: command_list buffer: buffer s
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> textureMemoryBarrier_command_list: command_list texture: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range [
-	<cdecl: long 'agpuTextureMemoryBarrier' (void* void* long long long long AGPUSubresourceRange*)>
+AGPUCBindings >> textureMemoryBarrier_command_list: command_list texture: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses old_usage: old_usage new_usage: new_usage subresource_range: subresource_range [
+	<cdecl: long 'agpuTextureMemoryBarrier' (void* void* long long long long long long AGPUTextureSubresourceRange*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> pushBufferTransitionBarrier_command_list: command_list buffer: buffer new_usage: new_usage [
-	<cdecl: long 'agpuPushBufferTransitionBarrier' (void* void* long)>
+AGPUCBindings >> pushBufferTransitionBarrier_command_list: command_list buffer: buffer old_usage: old_usage new_usage: new_usage [
+	<cdecl: long 'agpuPushBufferTransitionBarrier' (void* void* long long)>
 	^ self externalCallFailed
 ]
 
 { #category : #'command_list' }
-AGPUCBindings >> pushTextureTransitionBarrier_command_list: command_list texture: texture new_usage: new_usage subresource_range: subresource_range [
-	<cdecl: long 'agpuPushTextureTransitionBarrier' (void* void* long AGPUSubresourceRange*)>
+AGPUCBindings >> pushTextureTransitionBarrier_command_list: command_list texture: texture old_usage: old_usage new_usage: new_usage subresource_range: subresource_range [
+	<cdecl: long 'agpuPushTextureTransitionBarrier' (void* void* long long AGPUTextureSubresourceRange*)>
 	^ self externalCallFailed
 ]
 
@@ -940,6 +946,12 @@ AGPUCBindings >> copyBufferToTexture_command_list: command_list buffer: buffer t
 { #category : #'command_list' }
 AGPUCBindings >> copyTextureToBuffer_command_list: command_list texture: texture buffer: buffer copy_region: copy_region [
 	<cdecl: long 'agpuCopyTextureToBuffer' (void* void* void* AGPUBufferImageCopyRegion*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> copyTexture_command_list: command_list source_texture: source_texture dest_texture: dest_texture copy_region: copy_region [
+	<cdecl: long 'agpuCopyTexture' (void* void* void* AGPUImageCopyRegion*)>
 	^ self externalCallFailed
 ]
 
@@ -1808,20 +1820,20 @@ AGPUCBindings >> bufferMemoryBarrier_state_tracker: state_tracker buffer: buffer
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> textureMemoryBarrier_state_tracker: state_tracker texture: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range [
-	<cdecl: long 'agpuStateTrackerTextureMemoryBarrier' (void* void* long long long long AGPUSubresourceRange*)>
+AGPUCBindings >> textureMemoryBarrier_state_tracker: state_tracker texture: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses old_usage: old_usage new_usage: new_usage subresource_range: subresource_range [
+	<cdecl: long 'agpuStateTrackerTextureMemoryBarrier' (void* void* long long long long long long AGPUTextureSubresourceRange*)>
 	^ self externalCallFailed
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> pushBufferTransitionBarrier_state_tracker: state_tracker buffer: buffer new_usage: new_usage [
-	<cdecl: long 'agpuStateTrackerPushBufferTransitionBarrier' (void* void* long)>
+AGPUCBindings >> pushBufferTransitionBarrier_state_tracker: state_tracker buffer: buffer old_usage: old_usage new_usage: new_usage [
+	<cdecl: long 'agpuStateTrackerPushBufferTransitionBarrier' (void* void* long long)>
 	^ self externalCallFailed
 ]
 
 { #category : #'state_tracker' }
-AGPUCBindings >> pushTextureTransitionBarrier_state_tracker: state_tracker texture: texture new_usage: new_usage subresource_range: subresource_range [
-	<cdecl: long 'agpuStateTrackerPushTextureTransitionBarrier' (void* void* long AGPUSubresourceRange*)>
+AGPUCBindings >> pushTextureTransitionBarrier_state_tracker: state_tracker texture: texture old_usage: old_usage new_usage: new_usage subresource_range: subresource_range [
+	<cdecl: long 'agpuStateTrackerPushTextureTransitionBarrier' (void* void* long long AGPUTextureSubresourceRange*)>
 	^ self externalCallFailed
 ]
 
@@ -1852,6 +1864,12 @@ AGPUCBindings >> copyBufferToTexture_state_tracker: state_tracker buffer: buffer
 { #category : #'state_tracker' }
 AGPUCBindings >> copyTextureToBuffer_state_tracker: state_tracker texture: texture buffer: buffer copy_region: copy_region [
 	<cdecl: long 'agpuStateTrackerCopyTextureToBuffer' (void* void* void* AGPUBufferImageCopyRegion*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> copyTexture_state_tracker: state_tracker source_texture: source_texture dest_texture: dest_texture copy_region: copy_region [
+	<cdecl: long 'agpuStateTrackerCopyTexture' (void* void* void* AGPUImageCopyRegion*)>
 	^ self externalCallFailed
 ]
 

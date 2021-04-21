@@ -66,7 +66,7 @@ public:
 
         // Copy the data from the upload buffer
         {
-            agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_DESTINATION_BUFFER);
+            agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_STORAGE_BUFFER, AGPU_COPY_DESTINATION_BUFFER);
             agpuCopyBuffer(commandList, uploadBuffer, 0, storageBuffer, 0, bufferByteSize);
             agpuPopBufferTransitionBarrier(commandList);
 	    }
@@ -78,7 +78,7 @@ public:
 
         // Copy the data into the readback buffer.
         {
-            agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_COPY_SOURCE_BUFFER);
+            agpuPushBufferTransitionBarrier(commandList, storageBuffer, AGPU_STORAGE_BUFFER, AGPU_COPY_SOURCE_BUFFER);
             agpuCopyBuffer(commandList, storageBuffer, 0, readbackBuffer, 0, bufferByteSize);
             agpuPopBufferTransitionBarrier(commandList);
         }
