@@ -19,7 +19,7 @@ inline bool isPowerOfTwo(size_t x)
 
 inline size_t alignedTo(size_t x, size_t alignment)
 {
-    return (x + alignment - 1) & (-alignment);
+    return (x + alignment - 1) & size_t(-intptr_t(alignment));
 }
 
 class AbstractSampleBase

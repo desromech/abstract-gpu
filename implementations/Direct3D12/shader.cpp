@@ -180,7 +180,7 @@ agpu_error ADXShader::getConvertedSpirVBytecodeForEntryPoint(const agpu::shader_
 }
 
 static agpu_error mapShaderResources(spirv_cross::CompilerHLSL& compiler,
-	std::vector<spirv_cross::Resource>& resources, const agpu::shader_signature_ref& signature, std::string& errorMessage, agpu_shader_binding_type bindingType)
+	spirv_cross::SmallVector<spirv_cross::Resource>& resources, const agpu::shader_signature_ref& signature, std::string& errorMessage, agpu_shader_binding_type bindingType)
 {
 	auto adxSignature = signature.as<ADXShaderSignature>();
 	for (auto& resource : resources)

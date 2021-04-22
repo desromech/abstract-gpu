@@ -559,8 +559,8 @@ agpu_error ADXCommandList::textureMemoryBarrier(const agpu::texture_ref& texture
 {
 	CHECK_POINTER(texture);
 	auto adxTexture= texture.as<ADXTexture>();
-	if ((old_usage & (AGPU_TEXTURE_USAGE_STORAGE | AGPU_TEXTURE_USAGE_GENERAL)) != 0 ||
-        (new_usage & (AGPU_TEXTURE_USAGE_STORAGE | AGPU_TEXTURE_USAGE_GENERAL)) != 0)
+	if ((old_usage & (AGPU_TEXTURE_USAGE_STORAGE | AGPU_TEXTURE_USAGE_GENERAL)) == 0 &&
+        (new_usage & (AGPU_TEXTURE_USAGE_STORAGE | AGPU_TEXTURE_USAGE_GENERAL)) == 0)
 		return AGPU_OK;
 
 	// Create a barrier for UAV.
@@ -688,7 +688,41 @@ agpu_error ADXCommandList::copyTextureToBuffer(const agpu::texture_ref & texture
 
 agpu_error ADXCommandList::copyTexture(const agpu::texture_ref& source_texture, const agpu::texture_ref& dest_texture, agpu_image_copy_region* copy_region)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(source_texture);
+    CHECK_POINTER(dest_texture);
+    CHECK_POINTER(copy_region);
+
+    if (copy_region->destination_subresource_level.layer_count != copy_region->source_subresource_level.layer_count)
+        return AGPU_INVALID_PARAMETER;
+
+    auto adxSourceTexture = source_texture.as<ADXTexture>();
+    auto adxDestTexture = dest_texture.as<ADXTexture>();
+
+    D3D12_TEXTURE_COPY_LOCATION sourceLocation = {};
+    sourceLocation.pResource = adxSourceTexture->resource.Get();
+    sourceLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+    D3D12_TEXTURE_COPY_LOCATION destLocation = {};
+    destLocation.pResource = adxDestTexture->resource.Get();
+    destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+    D3D12_BOX sourceBox = {};
+    sourceBox.left = copy_region->source_offset.x; sourceBox.right = copy_region->source_offset.x + copy_region->extent.width;
+    sourceBox.top = copy_region->source_offset.y; sourceBox.bottom = copy_region->source_offset.y + copy_region->extent.height;
+    sourceBox.front = copy_region->source_offset.z; sourceBox.back = copy_region->source_offset.z + copy_region->extent.depth;
+
+    for (agpu_uint layer = 0; layer < copy_region->destination_subresource_level.layer_count; ++layer)
+    {
+        sourceLocation.SubresourceIndex = adxSourceTexture->subresourceIndexFor(copy_region->source_subresource_level.miplevel, copy_region->source_subresource_level.base_arraylayer + layer);
+        destLocation.SubresourceIndex = adxDestTexture->subresourceIndexFor(copy_region->destination_subresource_level.miplevel, copy_region->destination_subresource_level.base_arraylayer + layer);
+
+        commandList->CopyTextureRegion(&destLocation,
+            copy_region->destination_offset.x, copy_region->destination_offset.y, copy_region->destination_offset.z,
+            &sourceLocation,
+            &sourceBox);
+    }
+
+    return AGPU_OK;
 }
 
 } // End of namespace AgpuD3D12

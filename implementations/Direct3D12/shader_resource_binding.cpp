@@ -117,7 +117,26 @@ agpu_error ADXShaderResourceBinding::bindSampledTextureView(agpu_int location, c
 
 agpu_error ADXShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref & view)
 {
-    return AGPU_UNIMPLEMENTED;
+	CHECK_POINTER(view);
+	if (location < 0)
+		return AGPU_OK;
+
+	auto& bank = signature.as<ADXShaderSignature>()->banks[bankIndex];
+	if (size_t(location) >= bank.elements.size())
+		return AGPU_OUT_OF_BOUNDS;
+
+	auto& element = bank.elements[location];
+	auto descriptorCpuHandle = cpuDescriptorTableHandle;
+	descriptorCpuHandle.ptr += element.firstDescriptorOffset;
+
+	auto adxTextureView = view.as<ADXTextureView>();
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC viewDesc = {};
+	auto error = adxTextureView->getUnorderedAccessTextureViewDescription(&viewDesc);
+	if (error) return error;
+
+	deviceForDX->d3dDevice->CreateUnorderedAccessView(adxTextureView->texture.lock().as<ADXTexture>()->resource.Get(), nullptr, &viewDesc, descriptorCpuHandle);
+	return AGPU_OK;
 }
 
 agpu_error ADXShaderResourceBinding::bindSampler(agpu_int location, const agpu::sampler_ref & sampler)

@@ -210,10 +210,10 @@ agpu_buffer_ref AbstractSampleBase::createMappableReadbackBuffer(size_t capacity
 agpu_buffer_ref AbstractSampleBase::createStorageBuffer(size_t capacity, size_t stride, void *initialData)
 {
     agpu_buffer_description desc;
-	desc.size = agpu_uint(capacity);
+	desc.size = agpu_size(capacity);
 	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
 	desc.usage_modes = desc.main_usage_mode = AGPU_STORAGE_BUFFER;
-	desc.stride = stride;
+	desc.stride = agpu_size(stride);
 
 	return device->createBuffer(&desc, initialData);
 }
@@ -251,7 +251,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
     desc.height = convertedSurface->h;
     desc.depth = 1;
     desc.layers = 1;
-    desc.miplevels = miplevelCount;
+    desc.miplevels = agpu_size(miplevelCount);
     desc.sample_count = 1;
     desc.sample_quality = 0;
     desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
@@ -299,7 +299,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
         auto bufferSize = alignedTo(uploadPitch * convertedSurface->h, device->getLimitValue(AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT));
 
         agpu_buffer_description desc = {};
-        desc.size = bufferSize;
+        desc.size = agpu_size(bufferSize);
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
         desc.usage_modes = desc.main_usage_mode = AGPU_COPY_SOURCE_BUFFER;
         desc.mapping_flags = AGPU_MAP_WRITE_BIT;
@@ -334,13 +334,13 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
             uploadRange.layer_count = 1;
 
             agpu_buffer_image_copy_region bufferImageCopyRegion = {};
-            bufferImageCopyRegion.buffer_pitch = uploadPitch;
-            bufferImageCopyRegion.buffer_slice_pitch = uploadPitch*height;
+            bufferImageCopyRegion.buffer_pitch = agpu_size(uploadPitch);
+            bufferImageCopyRegion.buffer_slice_pitch = agpu_size(uploadPitch*height);
             bufferImageCopyRegion.texture_usage_mode = AGPU_TEXTURE_USAGE_COPY_DESTINATION;
             bufferImageCopyRegion.texture_subresource_level.aspect = AGPU_TEXTURE_ASPECT_COLOR;
             bufferImageCopyRegion.texture_subresource_level.layer_count = 1;
-            bufferImageCopyRegion.texture_region.width = width;
-            bufferImageCopyRegion.texture_region.height = height;
+            bufferImageCopyRegion.texture_region.width = agpu_size(width);
+            bufferImageCopyRegion.texture_region.height = agpu_size(height);
             bufferImageCopyRegion.texture_region.depth = 1;
 
             commandList->pushTextureTransitionBarrier(uploadTexture, uploadTextureMainUsage, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &uploadRange);
@@ -409,7 +409,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
             {
                 agpu_texture_subresource_range computeRange = {};
                 computeRange.aspect = AGPU_TEXTURE_ASPECT_COLOR;
-                computeRange.level_count = miplevelCount;
+                computeRange.level_count = agpu_size(miplevelCount);
                 computeRange.layer_count = 1;
 
                 commandList->pushTextureTransitionBarrier(texture, uploadTextureMainUsage, AGPU_TEXTURE_USAGE_STORAGE, &computeRange);
@@ -434,7 +434,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
                 binding->bindStorageImageView(0, lastView);
                 binding->bindStorageImageView(1, nextView);
                 commandList->useComputeShaderResources(binding);
-                commandList->dispatchCompute((currentWidth + 15) / 16, (currentHeight + 15) / 16, 1);
+                commandList->dispatchCompute(agpu_uint((currentWidth + 15) / 16), agpu_uint((currentHeight + 15) / 16), 1);
 
                 // Make visible the miplevel.
                 commandList->textureMemoryBarrier(uploadTexture, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, agpu_pipeline_stage_flags(AGPU_PIPELINE_STAGE_COMPUTE_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER),
@@ -455,7 +455,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
                 {
                     agpu_texture_subresource_range copyRange = {};
                     copyRange.aspect = AGPU_TEXTURE_ASPECT_COLOR;
-                    copyRange.level_count = miplevelCount;
+                    copyRange.level_count = agpu_size(miplevelCount);
                     copyRange.layer_count = 1;
 
                     commandList->pushTextureTransitionBarrier(uploadTexture, AGPU_TEXTURE_USAGE_STORAGE, AGPU_TEXTURE_USAGE_COPY_SOURCE, &copyRange);
@@ -466,7 +466,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
                 {
                     agpu_texture_subresource_level subresourceLevel = {};
                     subresourceLevel.aspect = AGPU_TEXTURE_ASPECT_COLOR;
-                    subresourceLevel.miplevel = i;
+                    subresourceLevel.miplevel = agpu_size(i);
                     subresourceLevel.layer_count = 1;
 
                     agpu_image_copy_region copyRegion = {};
@@ -474,8 +474,8 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
                     copyRegion.source_subresource_level = subresourceLevel;
                     copyRegion.destination_usage_mode = AGPU_TEXTURE_USAGE_COPY_DESTINATION;
                     copyRegion.destination_subresource_level = subresourceLevel;
-                    copyRegion.extent.width = std::max(width >> i, size_t(1));
-                    copyRegion.extent.height = std::max(height >> i, size_t(1));
+                    copyRegion.extent.width = agpu_uint(std::max(width >> i, size_t(1)));
+                    copyRegion.extent.height = agpu_uint(std::max(height >> i, size_t(1)));
                     copyRegion.extent.depth = 1;
 
                     commandList->copyTexture(uploadTexture, texture, &copyRegion);
@@ -608,7 +608,7 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
                 if(!destView)
                     return nullptr;
 
-                auto framebuffer = device->createFrameBuffer(nextWidth, nextHeight, 1, &destView, nullptr);
+                auto framebuffer = device->createFrameBuffer(agpu_uint(nextWidth), agpu_uint(nextHeight), 1, &destView, nullptr);
                 framebuffers.push_back(framebuffer);
                 if(!framebuffer)
                     return nullptr;
@@ -621,8 +621,8 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonC
                 binding->bindSampledTextureView(0, sourceView);
 
                 commandList->beginRenderPass(renderpass, framebuffer, false);
-                commandList->setViewport(0, 0, nextWidth, nextHeight);
-                commandList->setScissor(0, 0, nextWidth, nextHeight);
+                commandList->setViewport(0, 0, agpu_uint(nextWidth), agpu_uint(nextHeight));
+                commandList->setScissor(0, 0, agpu_uint(nextWidth), agpu_uint(nextHeight));
                 commandList->usePipelineState(pipeline);
                 commandList->useShaderResources(mipmapComputationSamplerBinding);
                 commandList->useShaderResources(binding);

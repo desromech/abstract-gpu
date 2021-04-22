@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 Arm Limited
+ * Copyright 2016-2021 Arm Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/*
+ * At your option, you may choose to accept this material under either:
+ *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
+ *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
+ * SPDX-License-Identifier: Apache-2.0 OR MIT.
  */
 
 #ifndef SPIRV_CROSS_CFG_HPP
@@ -63,7 +70,7 @@ public:
 
 	uint32_t find_common_dominator(uint32_t a, uint32_t b) const;
 
-	const std::vector<uint32_t> &get_preceding_edges(uint32_t block) const
+	const SmallVector<uint32_t> &get_preceding_edges(uint32_t block) const
 	{
 		auto itr = preceding_edges.find(block);
 		if (itr != std::end(preceding_edges))
@@ -72,7 +79,7 @@ public:
 			return empty_vector;
 	}
 
-	const std::vector<uint32_t> &get_succeeding_edges(uint32_t block) const
+	const SmallVector<uint32_t> &get_succeeding_edges(uint32_t block) const
 	{
 		auto itr = succeeding_edges.find(block);
 		if (itr != std::end(succeeding_edges))
@@ -88,10 +95,16 @@ public:
 			return;
 		seen_blocks.insert(block);
 
-		op(block);
-		for (auto b : get_succeeding_edges(block))
-			walk_from(seen_blocks, b, op);
+		if (op(block))
+		{
+			for (auto b : get_succeeding_edges(block))
+				walk_from(seen_blocks, b, op);
+		}
 	}
+
+	uint32_t find_loop_dominator(uint32_t block) const;
+
+	bool node_terminates_control_flow_in_sub_graph(BlockID from, BlockID to) const;
 
 private:
 	struct VisitOrder
@@ -111,12 +124,12 @@ private:
 
 	Compiler &compiler;
 	const SPIRFunction &func;
-	std::unordered_map<uint32_t, std::vector<uint32_t>> preceding_edges;
-	std::unordered_map<uint32_t, std::vector<uint32_t>> succeeding_edges;
+	std::unordered_map<uint32_t, SmallVector<uint32_t>> preceding_edges;
+	std::unordered_map<uint32_t, SmallVector<uint32_t>> succeeding_edges;
 	std::unordered_map<uint32_t, uint32_t> immediate_dominators;
 	std::unordered_map<uint32_t, VisitOrder> visit_order;
-	std::vector<uint32_t> post_order;
-	std::vector<uint32_t> empty_vector;
+	SmallVector<uint32_t> post_order;
+	SmallVector<uint32_t> empty_vector;
 
 	void add_branch(uint32_t from, uint32_t to);
 	void build_post_order_visit_order();
@@ -125,6 +138,7 @@ private:
 	uint32_t visit_count = 0;
 
 	bool is_back_edge(uint32_t to) const;
+	bool has_visited_forward_edge(uint32_t to) const;
 };
 
 class DominatorBuilder
@@ -144,6 +158,6 @@ private:
 	const CFG &cfg;
 	uint32_t dominator = 0;
 };
-} // namespace spirv_cross
+} // namespace SPIRV_CROSS_NAMESPACE
 
 #endif
