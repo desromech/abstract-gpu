@@ -59,6 +59,21 @@ agpu_error ADXCommandQueue::addCommandList(const agpu::command_list_ref &command
     return AGPU_OK;
 }
 
+agpu_error ADXCommandQueue::addCommandListsAndSignalFence(agpu_uint count, agpu::command_list_ref* command_lists, const agpu::fence_ref& fence)
+{
+    std::vector<ID3D12CommandList*> lists(count);
+    for (agpu_uint i = 0; i < count; ++i)
+    {
+        CHECK_POINTER(command_lists[i]);
+        lists[i] = command_lists[i].as<ADXCommandList>()->commandList.Get();
+    }
+
+    queue->ExecuteCommandLists(count, lists.data());
+    if (fence)
+        signalFence(fence);
+    return AGPU_OK;
+}
+
 agpu_error ADXCommandQueue::finishExecution()
 {
     std::unique_lock<std::mutex> l(finishLock);

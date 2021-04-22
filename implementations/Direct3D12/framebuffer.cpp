@@ -22,8 +22,8 @@ agpu::framebuffer_ref ADXFramebuffer::create(const agpu::device_ref &device, agp
     if (depthStencilView)
     {
         auto adxDepthStencilView = depthStencilView.as<ADXTextureView> ();
-        hasDepth = (adxDepthStencilView->description.subresource_range.usage_mode & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT) != 0;
-        hasStencil = (adxDepthStencilView->description.subresource_range.usage_mode & AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT) != 0;
+        hasDepth = (adxDepthStencilView->description.subresource_range.aspect & AGPU_TEXTURE_ASPECT_DEPTH) != 0;
+        hasStencil = (adxDepthStencilView->description.subresource_range.aspect & AGPU_TEXTURE_ASPECT_STENCIL) != 0;
     }
 
     // Describe and create a render target view (RTV) descriptor heap.

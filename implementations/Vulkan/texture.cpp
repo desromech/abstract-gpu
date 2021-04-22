@@ -110,7 +110,6 @@ AVkTexture::AVkTexture(const agpu::device_ref &device)
 {
     image = VK_NULL_HANDLE;
     owned = false;
-    isDepthStencil = false;
 }
 
 AVkTexture::~AVkTexture()
@@ -256,9 +255,21 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     texture->image = image;
     texture->memory = textureMemory;
     texture->owned = true;
-    texture->isDepthStencil = isDepthStencil;
     texture->imageAspect = imageAspect;
-    texture->texelSize = pixelSizeOfTextureFormat(description->format);
+
+    if (isCompressedTextureFormat(description->format))
+    {
+        texture->texelSize = uint8_t(blockSizeOfCompressedTextureFormat(description->format));
+        texture->texelWidth = uint8_t(blockWidthOfCompressedTextureFormat(description->format));
+        texture->texelHeight = uint8_t(blockHeightOfCompressedTextureFormat(description->format));
+    }
+    else
+    {
+        texture->texelSize = pixelSizeOfTextureFormat(description->format);
+        texture->texelWidth = 1;
+        texture->texelHeight = 1;
+    }
+    
     return result;
 }
 
@@ -279,7 +290,7 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = image;
     createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count > 1);
-    createInfo.format = isDepthStencil ? mapTextureFormat(description.format, true) : mapTextureFormat(viewDescription->format, false);
+    createInfo.format = mapTextureFormat(description.format, imageAspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
 
     auto &components = createInfo.components;
     components.r = mapComponentSwizzle(viewDescription->components.r);
@@ -336,7 +347,7 @@ agpu_error AVkTexture::getFullViewDescription(agpu_texture_view_description *vie
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
     viewDescription->usage_mode = description.main_usage_mode;
-    viewDescription->subresource_range.aspect = isDepthStencil ? AGPU_TEXTURE_ASPECT_DEPTH : AGPU_TEXTURE_ASPECT_COLOR;
+    viewDescription->subresource_range.aspect = agpu_texture_aspect(imageAspect);
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;

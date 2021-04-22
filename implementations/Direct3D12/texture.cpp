@@ -132,10 +132,18 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     auto& descriptionClearValue = description->clear_value;
 	clearValueData.Format = (DXGI_FORMAT)defaultTypedFormatForTypeless(description->format, isDepthStencil);
     auto clearValuePointer = &clearValueData;
+    
+    adxTexture->textureAspect = AGPU_TEXTURE_ASPECT_COLOR;
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
     {
         clearValueData.DepthStencil.Depth = descriptionClearValue.depth_stencil.depth;
         clearValueData.DepthStencil.Stencil = descriptionClearValue.depth_stencil.stencil;
+
+        adxTexture->textureAspect = agpu_texture_aspect(0);
+        if (usageModes & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT)
+            adxTexture->textureAspect = AGPU_TEXTURE_ASPECT_DEPTH;
+        if (usageModes & AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)
+            adxTexture->textureAspect = agpu_texture_aspect(adxTexture->textureAspect | AGPU_TEXTURE_ASPECT_STENCIL);
     }
     else if((usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT) == 0)
     {
@@ -154,6 +162,19 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
         return agpu::texture_ref();
 
     adxTexture->resourceDescription = desc;
+
+    if (isCompressedTextureFormat(description->format))
+    {
+        adxTexture->texelSize = uint8_t(blockSizeOfCompressedTextureFormat(description->format));
+        adxTexture->texelWidth = uint8_t(blockWidthOfCompressedTextureFormat(description->format));
+        adxTexture->texelHeight = uint8_t(blockHeightOfCompressedTextureFormat(description->format));
+    }
+    else
+    {
+        adxTexture->texelSize = pixelSizeOfTextureFormat(description->format);
+        adxTexture->texelWidth = 1;
+        adxTexture->texelHeight = 1;
+    }
     return texture;
 }
 
@@ -340,13 +361,11 @@ agpu_error ADXTexture::getFullViewDescription(agpu_texture_view_description *vie
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_mode = description.usage_modes;
+    viewDescription->subresource_range.aspect = textureAspect;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
     viewDescription->subresource_range.layer_count = description.layers;
-    if(viewDescription->subresource_range.layer_count == 1)
-        viewDescription->subresource_range.layer_count = 0;
     return AGPU_OK;
 }
 

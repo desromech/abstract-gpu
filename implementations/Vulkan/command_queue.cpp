@@ -43,12 +43,12 @@ agpu_error AVkCommandQueue::addCommandList(const agpu::command_list_ref &command
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = avkCommandList->waitSemaphores.size();
+    submitInfo.waitSemaphoreCount = uint32_t(avkCommandList->waitSemaphores.size());
     submitInfo.pWaitSemaphores = avkCommandList->waitSemaphores.data();
     submitInfo.pWaitDstStageMask = avkCommandList->waitSemaphoresDstStageMask.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &avkCommandList->commandBuffer;
-    submitInfo.signalSemaphoreCount = avkCommandList->signalSemaphores.size();
+    submitInfo.signalSemaphoreCount = uint32_t(avkCommandList->signalSemaphores.size());
     submitInfo.pSignalSemaphores = avkCommandList->signalSemaphores.data();
 
     auto error = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
@@ -70,12 +70,12 @@ agpu_error AVkCommandQueue::addCommandListsAndSignalFence(agpu_uint count, agpu:
 
         auto &submitInfo = submissionInfo[i];
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount = avkCommandList->waitSemaphores.size();
+        submitInfo.waitSemaphoreCount = uint32_t(avkCommandList->waitSemaphores.size());
         submitInfo.pWaitSemaphores = avkCommandList->waitSemaphores.data();
         submitInfo.pWaitDstStageMask = avkCommandList->waitSemaphoresDstStageMask.data();
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &avkCommandList->commandBuffer;
-        submitInfo.signalSemaphoreCount = avkCommandList->signalSemaphores.size();
+        submitInfo.signalSemaphoreCount = uint32_t(avkCommandList->signalSemaphores.size());
         submitInfo.pSignalSemaphores = avkCommandList->signalSemaphores.data();
     }
 
@@ -83,7 +83,7 @@ agpu_error AVkCommandQueue::addCommandListsAndSignalFence(agpu_uint count, agpu:
     if(fence)
         fenceHandle = fence.as<AVkFence> ()->fence;
 
-    auto error = vkQueueSubmit(queue, submissionInfo.size(), submissionInfo.data(), fenceHandle);
+    auto error = vkQueueSubmit(queue, uint32_t(submissionInfo.size()), submissionInfo.data(), fenceHandle);
     CONVERT_VULKAN_ERROR(error);
     return AGPU_OK;
 }

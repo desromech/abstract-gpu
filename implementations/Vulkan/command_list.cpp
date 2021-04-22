@@ -662,7 +662,11 @@ agpu_error AVkCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & 
     CHECK_POINTER(buffer);
 
     transitionBufferUsageMode(buffer.as<AVkBuffer> ()->handle, old_usage, new_usage);
-    bufferTransitionStack.push_back(BufferTransitionDesc{buffer, old_usage, new_usage});
+    BufferTransitionDesc transition;
+    transition.buffer = buffer;
+    transition.oldUsage = old_usage;
+    transition.newUsage = new_usage;
+    bufferTransitionStack.push_back(transition);
     return AGPU_OK;
 }
 
@@ -682,7 +686,13 @@ agpu_error AVkCommandList::pushTextureTransitionBarrier(const agpu::texture_ref 
     range.aspectMask = VkImageAspectFlagBits(subresource_range->aspect);
 
     transitionImageUsageMode(avkTexture->image, avkTexture->description.usage_modes, old_usage, new_usage, range);
-    textureTransitionStack.push_back(TextureTransitionDesc{texture, old_usage, new_usage, range});
+
+    TextureTransitionDesc transition;
+    transition.texture = texture;
+    transition.oldUsage = old_usage;
+    transition.newUsage = new_usage;
+    transition.subresourceRange = range;
+    textureTransitionStack.push_back(transition);
     return AGPU_OK;
 }
 
@@ -731,10 +741,12 @@ agpu_error AVkCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, 
     CHECK_POINTER(texture);
     CHECK_POINTER(copy_region);
 
+    auto avkTexture = texture.as<AVkTexture>();
+
     VkBufferImageCopy bufferImageCopy = {};
     bufferImageCopy.bufferOffset = copy_region->buffer_offset;
-    bufferImageCopy.bufferRowLength = copy_region->buffer_pitch / texture.as<AVkTexture> ()->texelSize;
-    bufferImageCopy.bufferImageHeight = copy_region->buffer_slice_pitch / copy_region->buffer_pitch;
+    bufferImageCopy.bufferRowLength = copy_region->buffer_pitch / avkTexture->texelSize * avkTexture->texelWidth;
+    bufferImageCopy.bufferImageHeight = copy_region->buffer_slice_pitch / copy_region->buffer_pitch * avkTexture->texelHeight;
     bufferImageCopy.imageSubresource.aspectMask = VkImageAspectFlags(copy_region->texture_subresource_level.aspect);
     bufferImageCopy.imageSubresource.mipLevel = copy_region->texture_subresource_level.miplevel;
     bufferImageCopy.imageSubresource.baseArrayLayer = copy_region->texture_subresource_level.base_arraylayer;
@@ -756,10 +768,12 @@ agpu_error AVkCommandList::copyTextureToBuffer(const agpu::texture_ref & texture
     CHECK_POINTER(texture);
     CHECK_POINTER(copy_region);
 
+    auto avkTexture = texture.as<AVkTexture>();
+
     VkBufferImageCopy bufferImageCopy = {};
     bufferImageCopy.bufferOffset = copy_region->buffer_offset;
-    bufferImageCopy.bufferRowLength = copy_region->buffer_pitch / texture.as<AVkTexture> ()->texelSize;
-    bufferImageCopy.bufferImageHeight = copy_region->buffer_slice_pitch / copy_region->buffer_pitch;
+    bufferImageCopy.bufferRowLength = copy_region->buffer_pitch / avkTexture->texelSize * avkTexture->texelWidth;
+    bufferImageCopy.bufferImageHeight = copy_region->buffer_slice_pitch / copy_region->buffer_pitch * avkTexture->texelHeight;
     bufferImageCopy.imageSubresource.aspectMask = VkImageAspectFlags(copy_region->texture_subresource_level.aspect);
     bufferImageCopy.imageSubresource.mipLevel = copy_region->texture_subresource_level.miplevel;
     bufferImageCopy.imageSubresource.baseArrayLayer = copy_region->texture_subresource_level.base_arraylayer;

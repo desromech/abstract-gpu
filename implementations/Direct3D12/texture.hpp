@@ -42,12 +42,16 @@ public:
     ComPtr<ID3D12Resource> resource;
     ComPtr<D3D12MA::Allocation> allocation;
 
+    uint8_t texelSize;
+    uint8_t texelWidth;
+    uint8_t texelHeight;
 private:
     agpu_uint mapCount;
     agpu_int mappedLevel;
     agpu_uint mappedArrayIndex;
     agpu_pointer mappedPointer;
     agpu_mapping_access mappingFlags;
+    agpu_texture_aspect textureAspect;
 	agpu::texture_view_ref fullTextureView;
 };
 

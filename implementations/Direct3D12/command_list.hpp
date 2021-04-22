@@ -60,14 +60,15 @@ public:
 
 	virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) override;
     virtual agpu_error bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size) override;
-    virtual agpu_error textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range) override;
-    virtual agpu_error pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage) override;
-    virtual agpu_error pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range) override;
+    virtual agpu_error textureMemoryBarrier(const agpu::texture_ref& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range) override;
+    virtual agpu_error pushBufferTransitionBarrier(const agpu::buffer_ref& buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage) override;
+    virtual agpu_error pushTextureTransitionBarrier(const agpu::texture_ref& texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range) override;
     virtual agpu_error popBufferTransitionBarrier() override;
     virtual agpu_error popTextureTransitionBarrier() override;
     virtual agpu_error copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) override;
     virtual agpu_error copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region) override;
     virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
+    virtual agpu_error copyTexture(const agpu::texture_ref& source_texture, const agpu::texture_ref& dest_texture, agpu_image_copy_region* copy_region) override;
 
 public:
     agpu::device_ref device;
@@ -80,16 +81,31 @@ public:
     agpu::framebuffer_ref currentFramebuffer;
 
 private:
-	agpu_buffer_usage_mask getCurrentBufferUsageMode(const agpu::buffer_ref& buffer);
-	agpu_texture_usage_mode_mask getCurrentTextureUsageMode(const agpu::texture_ref& texture);
-
+    void transitionTextureRangeUsageMode(const agpu::texture_ref &texture, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode, const agpu_texture_subresource_range &range);
     void transitionTextureUsageMode(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode);
 	void transitionBufferUsageMode(ID3D12Resource* resource, agpu_memory_heap_type heapType, agpu_buffer_usage_mask sourceMode, agpu_buffer_usage_mask destinationMode);
 
     agpu_error setCommonState();
 
     ADXShaderSignature *currentShaderSignature;
-    std::vector<std::pair<agpu::buffer_ref, agpu_buffer_usage_mask>> bufferTransitionStack;
+
+    struct BufferTransitionDesc
+    {
+        agpu::buffer_ref buffer;
+        agpu_buffer_usage_mask oldUsageMode;
+        agpu_buffer_usage_mask newUsageMode;
+    };
+
+    struct TextureTransitionDesc
+    {
+        agpu::texture_ref texture;
+        agpu_texture_usage_mode_mask oldUsageMode;
+        agpu_texture_usage_mode_mask newUsageMode;
+        agpu_texture_subresource_range range;
+    };
+
+    std::vector<BufferTransitionDesc> bufferTransitionStack;
+    std::vector<TextureTransitionDesc> textureTransitionStack;
 };
 
 } // End of namespace AgpuD3D12
