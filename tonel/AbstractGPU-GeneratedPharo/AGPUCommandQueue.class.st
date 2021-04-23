@@ -26,6 +26,13 @@ AGPUCommandQueue >> addCommandList: command_list [
 ]
 
 { #category : #'wrappers' }
+AGPUCommandQueue >> addCommandListsAndSignalFence: count command_lists: command_lists fence: fence [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance addCommandListsAndSignalFence_command_queue: (self validHandle) count: count command_lists: command_lists fence: (self validHandleOf: fence).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUCommandQueue >> finishExecution [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance finishExecution_command_queue: (self validHandle).

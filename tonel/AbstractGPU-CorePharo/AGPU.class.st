@@ -9,7 +9,8 @@ Class {
 	#classVars : [
 		'AllowVR',
 		'DebugLayerEnabled',
-		'UniqueInstance'
+		'UniqueInstance',
+		'VSyncEnabled'
 	],
 	#category : #'AbstractGPU-CorePharo'
 }
@@ -24,6 +25,9 @@ AGPU class >> agpuSettingsOn: aBuilder [
 			(aBuilder setting: #debugLayerEnabled)
 				label: 'Debug Layer enabled';
 				description: 'This enables the graphics API debug layer (Vulkan Only).'.
+			(aBuilder setting: #vsyncEnabled)
+				label: 'Enable VSync by default';
+				description: 'This enables the use by default of vsync.'.
 			(aBuilder setting: #allowVR)
 				label: 'Allow VR';
 				description: 'This enables the support for VR (OpenVR headsets such as the HTC Vive).'.
@@ -89,10 +93,25 @@ AGPU class >> session [
 	^ Smalltalk session
 ]
 
+{ #category : #preferences }
+AGPU class >> shouldUseVSync [
+	^ self allowVR not and: [ self vsyncEnabled ]
+]
+
 { #category : #'platform querying' }
 AGPU class >> uniqueInstance [
 	UniqueInstance ifNil: [ UniqueInstance := self new. ].
 	^ UniqueInstance
+]
+
+{ #category : #preferences }
+AGPU class >> vsyncEnabled [
+	^ VSyncEnabled ifNil: [ VSyncEnabled := true ]
+]
+
+{ #category : #preferences }
+AGPU class >> vsyncEnabled: aBoolean [
+	VSyncEnabled := aBoolean
 ]
 
 { #category : #'main device' }

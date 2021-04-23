@@ -27,9 +27,11 @@ public:
 
     agpu::device_ref device;
     agpu::texture_view_ref fullTextureView;
+    agpu_texture_aspect aspect;
     agpu_texture_description description;
 
     id<MTLTexture> handle;
+    id<MTLTexture> linearViewHandle;
 
     MTLRegion getLevelRegion(int level)
     {

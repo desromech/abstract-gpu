@@ -41,11 +41,13 @@ agpu_uint getLimitValueOnGPU(agpu_limit limit, VkPhysicalDeviceProperties &devic
 {
     switch(limit)
     {
-    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return deviceProperties.limits.nonCoherentAtomSize;
-    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return deviceProperties.limits.minMemoryMapAlignment;
-    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minTexelBufferOffsetAlignment;
+    case AGPU_LIMIT_NON_COHERENT_ATOM_SIZE: return agpu_uint(deviceProperties.limits.nonCoherentAtomSize);
+    case AGPU_LIMIT_MIN_MEMORY_MAP_ALIGNMENT: return agpu_uint(deviceProperties.limits.minMemoryMapAlignment);
+    case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return agpu_uint(deviceProperties.limits.minTexelBufferOffsetAlignment);
     case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minUniformBufferOffsetAlignment;
     case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return deviceProperties.limits.minStorageBufferOffsetAlignment;
+	case AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT: return deviceProperties.limits.optimalBufferCopyOffsetAlignment;
+	case AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT: return deviceProperties.limits.optimalBufferCopyRowPitchAlignment;
 	case AGPU_LIMIT_MAX_IMAGE_DIMENSION_1D: return deviceProperties.limits.maxImageDimension1D;
 	case AGPU_LIMIT_MAX_IMAGE_DIMENSION_2D: return deviceProperties.limits.maxImageDimension2D;
 	case AGPU_LIMIT_MAX_IMAGE_DIMENSION_3D: return deviceProperties.limits.maxImageDimension3D;

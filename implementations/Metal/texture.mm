@@ -11,12 +11,15 @@ AMtlTexture::AMtlTexture(const agpu::device_ref &device)
     : device(device)
 {
     handle = nil;
+    linearViewHandle = nil;
 }
 
 AMtlTexture::~AMtlTexture()
 {
     if(handle)
         [handle release];
+    if(linearViewHandle)
+        [linearViewHandle release];
 }
 
 agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_texture_description* description)
@@ -41,8 +44,7 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         
         break;
     case AGPU_TEXTURE_CUBE:
-        descriptor.textureType = MTLTextureTypeCube;
-        descriptor.arrayLength = 1;
+        descriptor.textureType = isArray ? MTLTextureTypeCubeArray : MTLTextureTypeCube;
         break;
     case AGPU_TEXTURE_3D:
         descriptor.textureType = MTLTextureType3D;
@@ -61,17 +63,33 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
     descriptor.storageMode = mapTextureStorageMode(description->heap_type); // For upload texture.
 
     auto usageModes = description->usage_modes;
+    agpu_texture_aspect aspect = AGPU_TEXTURE_ASPECT_COLOR;
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT))
     {
         descriptor.usage = MTLTextureUsageRenderTarget;
+        aspect = agpu_texture_aspect(0);
+        if(usageModes & AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT)
+            aspect = AGPU_TEXTURE_ASPECT_DEPTH;
+        if(usageModes & AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)
+            aspect = agpu_texture_aspect(aspect | AGPU_TEXTURE_ASPECT_STENCIL);
     }
     else if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
     {
         descriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
     }
+    else if(usageModes & AGPU_TEXTURE_USAGE_STORAGE)
+    {
+        descriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+    }
     else
     {
         descriptor.usage = MTLTextureUsageShaderRead;
+    }
+
+    if((usageModes & (AGPU_TEXTURE_USAGE_COPY_SOURCE | AGPU_TEXTURE_USAGE_COPY_DESTINATION)) != 0
+        && isSRGBTextureFormat(description->format))
+    {
+        descriptor.usage |= MTLTextureUsagePixelFormatView;
     }
 
     if (usageModes & AGPU_TEXTURE_USAGE_SAMPLED)
@@ -82,10 +100,31 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
     if(!handle)
         return agpu::texture_ref();
 
+    // We need a common format for texture copy commands.
+    id<MTLTexture> linearViewHandle = nil;
+    if(usageModes & (AGPU_TEXTURE_USAGE_COPY_SOURCE | AGPU_TEXTURE_USAGE_COPY_DESTINATION))
+    {
+        if(isSRGBTextureFormat(description->format))
+        {
+            auto linearPixelFormat = mapTextureFormat(srgbTextureFormatToLinear(description->format));
+            linearViewHandle = [handle newTextureViewWithPixelFormat: linearPixelFormat];
+            if(!linearViewHandle)
+                return agpu::texture_ref();
+        }
+        else
+        {
+            linearViewHandle = handle;
+            [linearViewHandle retain];
+        }
+
+    }
+
     auto result = agpu::makeObject<AMtlTexture> (device);
     auto amtlTexture = result.as<AMtlTexture> ();
     amtlTexture->description = *description;
     amtlTexture->handle = handle;
+    amtlTexture->linearViewHandle = linearViewHandle;
+    amtlTexture->aspect = aspect;
     return result;
 }
 
@@ -220,18 +259,18 @@ agpu_error AMtlTexture::getFullViewDescription ( agpu_texture_view_description* 
     memset(viewDescription, 0, sizeof(*viewDescription));
     viewDescription->type = description.type;
     viewDescription->format = description.format;
+    viewDescription->sample_count = description.sample_count;
+    viewDescription->usage_mode = description.main_usage_mode;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
     viewDescription->components.a = AGPU_COMPONENT_SWIZZLE_A;
-    viewDescription->subresource_range.usage_mode = description.usage_modes;
+    viewDescription->subresource_range.aspect = aspect;
     viewDescription->subresource_range.base_miplevel = 0;
     viewDescription->subresource_range.level_count = description.miplevels;
     viewDescription->subresource_range.base_arraylayer = 0;
     viewDescription->subresource_range.layer_count = description.layers;
-    if(viewDescription->subresource_range.layer_count == 1)
-        viewDescription->subresource_range.layer_count = 0;
-
+    
     return AGPU_OK;
 }
 

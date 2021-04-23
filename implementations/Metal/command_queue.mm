@@ -48,6 +48,20 @@ agpu_error AMtlCommandQueue::addCommandList(const agpu::command_list_ref &comman
     return AGPU_OK;
 }
 
+agpu_error AMtlCommandQueue::addCommandListsAndSignalFence(agpu_uint count, agpu::command_list_ref* command_lists, const agpu::fence_ref & fence)
+{
+    for(agpu_uint i = 0; i < count; ++i)
+    {
+        auto error = addCommandList(command_lists[i]);
+        if(error)
+            return error;
+    }
+
+    if(fence)
+        return signalFence(fence);
+    return AGPU_OK;
+}
+
 agpu_error AMtlCommandQueue::finishExecution (  )
 {
     std::unique_lock<std::mutex> l(finishFenceMutex);

@@ -137,6 +137,23 @@ agpu_error AVkShaderSignatureBuilder::beginBindingBank ( agpu_uint maxBindings )
     return AGPU_OK;
 }
 
+
+agpu_error AVkShaderSignatureBuilder::addBindingBankArray(agpu_shader_binding_type type, agpu_uint size)
+{
+    if(!currentElementSet)
+        return AGPU_INVALID_OPERATION;
+
+    auto descriptorType = mapDescriptorType(type);
+    VkDescriptorSetLayoutBinding binding = {};
+    binding.binding = (uint32_t)currentElementSet->bindings.size();
+    binding.descriptorType = descriptorType;
+    binding.descriptorCount = size;
+    binding.stageFlags = VK_SHADER_STAGE_ALL;
+    currentElementSet->bindings.push_back(binding);
+    currentElementSet->types.push_back(type);
+    return AGPU_OK;
+}
+
 agpu_error AVkShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
 {
     if(!currentElementSet)
@@ -144,16 +161,7 @@ agpu_error AVkShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding_
 
     auto descriptorType = mapDescriptorType(type);
     for(agpu_uint i = 0; i < bindingPointCount; ++i)
-    {
-        VkDescriptorSetLayoutBinding binding;
-        memset(&binding, 0, sizeof(binding));
-        binding.binding = (uint32_t)currentElementSet->bindings.size();
-        binding.descriptorType = descriptorType;
-        binding.descriptorCount = 1;
-        binding.stageFlags = VK_SHADER_STAGE_ALL;
-        currentElementSet->bindings.push_back(binding);
-        currentElementSet->types.push_back(type);
-    }
+        addBindingBankArray(type, 1);
 
     return AGPU_OK;
 }

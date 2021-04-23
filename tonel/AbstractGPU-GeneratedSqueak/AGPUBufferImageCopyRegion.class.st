@@ -14,9 +14,10 @@ AGPUBufferImageCopyRegion class >> fields [
 	"
     ^ #(
 		(buffer_offset 'ulong')
-		(buffer_row_length 'ulong')
-		(buffer_image_height 'ulong')
-		(texture_subresource_range 'AGPUSubresourceRange')
+		(buffer_pitch 'ulong')
+		(buffer_slice_pitch 'ulong')
+		(texture_usage_mode 'long')
+		(texture_subresource_level 'AGPUTextureSubresourceLevel')
 		(texture_region 'AGPURegion3d')
 	)
 ]

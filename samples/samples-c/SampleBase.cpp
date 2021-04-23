@@ -206,7 +206,7 @@ agpu_buffer *AbstractSampleBase::createStorageBuffer(size_t capacity, size_t str
 	desc.size = agpu_uint(capacity);
 	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
 	desc.usage_modes = desc.main_usage_mode = AGPU_STORAGE_BUFFER;
-	desc.stride = stride;
+	desc.stride = agpu_size(stride);
 
 	return agpuCreateBuffer(device, &desc, initialData);
 }

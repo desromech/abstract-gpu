@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 Arm Limited
+ * Copyright 2015-2021 Arm Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/*
+ * At your option, you may choose to accept this material under either:
+ *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
+ *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
+ * SPDX-License-Identifier: Apache-2.0 OR MIT.
  */
 
 #include "spirv_cpp.hpp"
@@ -306,6 +313,8 @@ void CompilerCPP::emit_resources()
 
 string CompilerCPP::compile()
 {
+	ir.fixup_reserved_names();
+
 	// Do not deal with ES-isms like precision, older extensions and such.
 	options.es = false;
 	options.version = 450;
@@ -317,10 +326,12 @@ string CompilerCPP::compile()
 	backend.basic_uint_type = "uint32_t";
 	backend.swizzle_is_function = true;
 	backend.shared_is_implied = true;
-	backend.flexible_member_array_supported = false;
+	backend.unsized_array_supported = false;
 	backend.explicit_struct_type = true;
 	backend.use_initializer_list = true;
 
+	fixup_type_alias();
+	reorder_type_alias();
 	build_function_control_flow_graphs_and_analyze();
 	update_active_builtins();
 
@@ -334,7 +345,7 @@ string CompilerCPP::compile()
 		reset();
 
 		// Move constructor for this type is broken on GCC 4.9 ...
-		buffer = unique_ptr<ostringstream>(new ostringstream());
+		buffer.reset();
 
 		emit_header();
 		emit_resources();
@@ -342,7 +353,7 @@ string CompilerCPP::compile()
 		emit_function(get<SPIRFunction>(ir.default_entry_point), Bitset());
 
 		pass_count++;
-	} while (force_recompile);
+	} while (is_forcing_recompilation());
 
 	// Match opening scope of emit_header().
 	end_scope_decl();
@@ -355,7 +366,7 @@ string CompilerCPP::compile()
 	// Entry point in CPP is always main() for the time being.
 	get_entry_point().name = "main";
 
-	return buffer->str();
+	return buffer.str();
 }
 
 void CompilerCPP::emit_c_linkage()

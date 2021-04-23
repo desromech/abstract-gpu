@@ -358,7 +358,7 @@ bool AVkDevice::getInstanceExtensionsRequiredForVR(std::vector<std::string> &req
     size_t extensionStringBufferSize = compositor->GetVulkanInstanceExtensionsRequired(nullptr, 0);
     std::unique_ptr<char[]> extensionString(new char[extensionStringBufferSize]);
 
-    auto success = compositor->GetVulkanInstanceExtensionsRequired(extensionString.get(), extensionStringBufferSize);
+    auto success = compositor->GetVulkanInstanceExtensionsRequired(extensionString.get(), uint32_t(extensionStringBufferSize));
     if(!success)
         return false;
 
@@ -374,7 +374,7 @@ bool AVkDevice::getDeviceExtensionsRequiredForVR(VkPhysicalDevice physicalDevice
     size_t extensionStringBufferSize = compositor->GetVulkanDeviceExtensionsRequired(physicalDevice, nullptr, 0);
     std::unique_ptr<char[]> extensionString(new char[extensionStringBufferSize]);
 
-    auto success = compositor->GetVulkanDeviceExtensionsRequired(physicalDevice, extensionString.get(), extensionStringBufferSize);
+    auto success = compositor->GetVulkanDeviceExtensionsRequired(physicalDevice, extensionString.get(), uint32_t(extensionStringBufferSize));
     if(!success)
         return false;
 

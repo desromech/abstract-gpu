@@ -152,6 +152,7 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
             depthStencilDesc.usage_modes = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
         if (hasStencil)
             depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+        depthStencilDesc.main_usage_mode = depthStencilDesc.usage_modes;
 
         depthStencilBuffer = AMtlTexture::create(device, &depthStencilDesc);
         if (!depthStencilBuffer)

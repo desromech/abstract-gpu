@@ -133,34 +133,17 @@ agpu_error ADXShaderSignatureBuilder::beginBindingBank(agpu_uint maxBindings)
 	ShaderSignatureBindingBank bank;
 	bank.maxBindings = maxBindings;
 	banks.push_back(bank);
-
-    /*if (elementCount == 16)
-        return AGPU_INVALID_OPERATION;
-    if (rangeCount == 16)
-        return AGPU_INVALID_OPERATION;
-
-    elementsDescription[elementCount] = ShaderSignatureElementDescription(true, type, bindingPointCount, maxBindings);
-    auto &param = rootParameters[elementCount++];
-    auto &range = ranges[rangeCount++];
-    range.BaseShaderRegister = baseRegisterCount[type];
-    range.NumDescriptors = bindingPointCount;
-    range.RangeType = mapBindingType(type);
-    range.RegisterSpace = 0;
-    range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-    baseRegisterCount[type] += bindingPointCount;
-    maxBindingsCount[type] += bindingPointCount*maxBindings;
-
-    param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-    param.DescriptorTable.NumDescriptorRanges = 1;
-    param.DescriptorTable.pDescriptorRanges = &range;
-    param.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;*/
-
     return AGPU_OK;
 }
 
 agpu_error ADXShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding_type type, agpu_uint maxBindings)
 {
 	return addBindingBankArrayElement(type, maxBindings, 1);
+}
+
+agpu_error ADXShaderSignatureBuilder::addBindingBankArray(agpu_shader_binding_type type, agpu_uint size)
+{
+	return addBindingBankArrayElement(type, 1, size);
 }
 
 agpu_error ADXShaderSignatureBuilder::addBindingBankArrayElement(agpu_shader_binding_type type, agpu_uint maxBindings, agpu_uint arraySize)

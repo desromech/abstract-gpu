@@ -33,6 +33,7 @@ public:
     virtual agpu_error addBindingConstant() override;
     virtual agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings) override;
     virtual agpu_error beginBindingBank(agpu_uint maxBindings) override;
+	virtual agpu_error addBindingBankArray(agpu_shader_binding_type type, agpu_uint size) override;
     virtual agpu_error addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount) override;
 
     agpu_error finishBindingBank();

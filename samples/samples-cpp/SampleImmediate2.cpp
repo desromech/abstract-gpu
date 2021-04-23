@@ -71,7 +71,7 @@ public:
             if(!diffuseTexture)
                 return false;
 
-            normalTexture = loadTexture("data/textures/checkboard-normal.bmp");
+            normalTexture = loadTexture("data/textures/checkboard-normal.bmp", true);
             if (!normalTexture)
                 return false;
         }
@@ -315,7 +315,7 @@ public:
             }
 
             immediateRenderer->pushMatrix();
-            immediateRenderer->translate(currentX, 0.0f, 0.0f);
+            immediateRenderer->translate(float(currentX), 0.0f, 0.0f);
             immediateRenderer->setMaterial(&material);
             cubeMesh->drawWithImmediateRenderer(immediateRenderer, explicitBuffers);
 

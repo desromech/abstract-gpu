@@ -56,7 +56,9 @@ agpu_uint getLimitValueInDevice(id<MTLDevice> device, agpu_limit limit)
     case AGPU_LIMIT_MIN_TEXEL_BUFFER_OFFSET_ALIGNMENT: return 256;
     case AGPU_LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT: return 256;
     case AGPU_LIMIT_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT: return 256;
-    
+	case AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT: return 256;
+	case AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT: return 256;
+
     case AGPU_LIMIT_MAX_IMAGE_DIMENSION_1D: return 16384;
     case AGPU_LIMIT_MAX_IMAGE_DIMENSION_2D:
     case AGPU_LIMIT_MAX_FRAMEBUFFER_WIDTH:
@@ -67,7 +69,7 @@ agpu_uint getLimitValueInDevice(id<MTLDevice> device, agpu_limit limit)
 	case AGPU_LIMIT_MAX_IMAGE_ARRAY_LAYERS:
     case AGPU_LIMIT_MAX_FRAMEBUFFER_LAYERS:
         return 2048;
-    
+
     case AGPU_LIMIT_MAX_SAMPLER_ANISOTROPY: return 16;
 
     case AGPU_LIMIT_SAMPLED_IMAGE_COLOR_SUPPORTED_SAMPLE_COUNT_MASK:
@@ -96,7 +98,7 @@ agpu_uint getLimitValueInDevice(id<MTLDevice> device, agpu_limit limit)
     case AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_XSIZE: return device.maxThreadsPerThreadgroup.width;
     case AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_YSIZE: return device.maxThreadsPerThreadgroup.height;
     case AGPU_LIMIT_MAX_COMPUTE_WORK_GROUP_ZSIZE: return device.maxThreadsPerThreadgroup.depth;
-    
+
     case AGPU_LIMIT_AVAILABLE_VIDEO_MEMORY_IN_MB: return agpu_uint(device.recommendedMaxWorkingSetSize >> 20);
     default: return 0;
     }
@@ -106,7 +108,7 @@ agpu_device_type getDeviceType(id<MTLDevice> device)
 {
     if (@available(macos 10.15, *))
     {
-        return device.hasUnifiedMemory ? AGPU_DEVICE_TYPE_INTEGRATED_GPU : AGPU_DEVICE_TYPE_DISCRETE_GPU;        
+        return device.hasUnifiedMemory ? AGPU_DEVICE_TYPE_INTEGRATED_GPU : AGPU_DEVICE_TYPE_DISCRETE_GPU;
     }
 
     if([device.name rangeOfString: @"amd" options: NSCaseInsensitiveSearch].location != NSNotFound ||
@@ -138,7 +140,7 @@ agpu::device_ptr MetalPlatform::openDevice(agpu_device_open_info* openInfo)
         gpuIndex = 0;
     if(size_t(gpuIndex) >= allDevices.count)
         return nullptr;
-        
+
     return AMtlDevice::open(allDevices[gpuIndex], openInfo).disown();
 }
 
@@ -165,7 +167,7 @@ agpu_device_type MetalPlatform::getGpuDeviceType(agpu_size gpu_index)
     {
         return getDeviceType(allDevices[gpu_index]);
     }
-        
+
     return AGPU_DEVICE_TYPE_OTHER;
 }
 
@@ -188,7 +190,7 @@ agpu_uint MetalPlatform::getLimitValueOnGPU(agpu_size gpu_index, agpu_limit limi
         auto result = getLimitValueInDevice(device, limit);
         return result;
     }
-    
+
     return 0;
 }
 
@@ -231,7 +233,7 @@ AGPU_EXPORT agpu_error agpuGetPlatforms(agpu_size numplatforms, agpu_platform** 
     std::call_once(platformCreatedFlag, []{
         theMetalPlatform = agpu::makeObject<MetalPlatform> ();
     });
-    
+
     // We need at least a single Metal device to work.
     auto mtlPlatform = theMetalPlatform.as<MetalPlatform> ();
     if(!mtlPlatform->allDevices || mtlPlatform->allDevices.count == 0)

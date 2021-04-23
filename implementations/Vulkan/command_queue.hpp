@@ -15,6 +15,7 @@ public:
     static agpu::command_queue_ref create(const agpu::device_ref &device, agpu_uint queueFamilyIndex, agpu_uint queueIndex, VkQueue queue, agpu_command_queue_type type);
 
     virtual agpu_error addCommandList(const agpu::command_list_ref &command_list) override;
+	virtual agpu_error addCommandListsAndSignalFence(agpu_uint count, agpu::command_list_ref* command_list, const agpu::fence_ref & fence) override;
     virtual agpu_error finishExecution() override;
     virtual agpu_error signalFence(const agpu::fence_ref &fence) override;
     virtual agpu_error waitFence(const agpu::fence_ref &fence) override;

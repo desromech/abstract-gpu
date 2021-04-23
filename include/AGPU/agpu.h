@@ -251,6 +251,8 @@ typedef enum {
 	AGPU_LIMIT_STORAGE_IMAGE_SUPPORTED_SAMPLE_COUNT_MASK = 36,
 	AGPU_LIMIT_DEDICATED_VIDEO_MEMORY_IN_MB = 37,
 	AGPU_LIMIT_AVAILABLE_VIDEO_MEMORY_IN_MB = 38,
+	AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT = 39,
+	AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT = 40,
 } agpu_limit;
 
 typedef enum {
@@ -302,6 +304,7 @@ typedef enum {
 	AGPU_TEXTURE_USAGE_READED_BACK = 32,
 	AGPU_TEXTURE_USAGE_UPLOADED = 64,
 	AGPU_TEXTURE_USAGE_PRESENT = 128,
+	AGPU_TEXTURE_USAGE_GENERAL = 256,
 } agpu_texture_usage_mode_mask;
 
 typedef enum {
@@ -814,22 +817,31 @@ typedef struct agpu_components_swizzle {
 	agpu_component_swizzle a;
 } agpu_components_swizzle;
 
-/* Structure agpu_subresource_range. */
-typedef struct agpu_subresource_range {
-	agpu_texture_usage_mode_mask usage_mode;
+/* Structure agpu_texture_subresource_range. */
+typedef struct agpu_texture_subresource_range {
+	agpu_texture_aspect aspect;
 	agpu_uint base_miplevel;
 	agpu_uint level_count;
 	agpu_uint base_arraylayer;
 	agpu_uint layer_count;
-} agpu_subresource_range;
+} agpu_texture_subresource_range;
+
+/* Structure agpu_texture_subresource_level. */
+typedef struct agpu_texture_subresource_level {
+	agpu_texture_aspect aspect;
+	agpu_uint miplevel;
+	agpu_uint base_arraylayer;
+	agpu_uint layer_count;
+} agpu_texture_subresource_level;
 
 /* Structure agpu_texture_view_description. */
 typedef struct agpu_texture_view_description {
 	agpu_texture_type type;
 	agpu_texture_format format;
 	agpu_uint sample_count;
+	agpu_texture_usage_mode_mask usage_mode;
 	agpu_components_swizzle components;
-	agpu_subresource_range subresource_range;
+	agpu_texture_subresource_range subresource_range;
 } agpu_texture_view_description;
 
 /* Structure agpu_draw_elements_command. */
@@ -965,6 +977,13 @@ typedef struct agpu_frustum_tangents {
 	agpu_float bottom;
 } agpu_frustum_tangents;
 
+/* Structure agpu_offset3d. */
+typedef struct agpu_offset3d {
+	agpu_uint x;
+	agpu_uint y;
+	agpu_uint z;
+} agpu_offset3d;
+
 /* Structure agpu_region3d. */
 typedef struct agpu_region3d {
 	agpu_uint x;
@@ -978,11 +997,23 @@ typedef struct agpu_region3d {
 /* Structure agpu_buffer_image_copy_region. */
 typedef struct agpu_buffer_image_copy_region {
 	agpu_size buffer_offset;
-	agpu_size buffer_row_length;
-	agpu_size buffer_image_height;
-	agpu_subresource_range texture_subresource_range;
+	agpu_size buffer_pitch;
+	agpu_size buffer_slice_pitch;
+	agpu_texture_usage_mode_mask texture_usage_mode;
+	agpu_texture_subresource_level texture_subresource_level;
 	agpu_region3d texture_region;
 } agpu_buffer_image_copy_region;
+
+/* Structure agpu_image_copy_region. */
+typedef struct agpu_image_copy_region {
+	agpu_texture_usage_mode_mask source_usage_mode;
+	agpu_texture_subresource_level source_subresource_level;
+	agpu_offset3d source_offset;
+	agpu_texture_usage_mode_mask destination_usage_mode;
+	agpu_texture_subresource_level destination_subresource_level;
+	agpu_offset3d destination_offset;
+	agpu_size3d extent;
+} agpu_image_copy_region;
 
 /* Structure agpu_vr_tracked_device_pose. */
 typedef struct agpu_vr_tracked_device_pose {
@@ -1352,6 +1383,7 @@ AGPU_EXPORT agpu_error agpuReleasePipelineState(agpu_pipeline_state* pipeline_st
 typedef agpu_error (*agpuAddCommandQueueReference_FUN) (agpu_command_queue* command_queue);
 typedef agpu_error (*agpuReleaseCommandQueue_FUN) (agpu_command_queue* command_queue);
 typedef agpu_error (*agpuAddCommandList_FUN) (agpu_command_queue* command_queue, agpu_command_list* command_list);
+typedef agpu_error (*agpuAddCommandListsAndSignalFence_FUN) (agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_lists, agpu_fence* fence);
 typedef agpu_error (*agpuFinishQueueExecution_FUN) (agpu_command_queue* command_queue);
 typedef agpu_error (*agpuSignalFence_FUN) (agpu_command_queue* command_queue, agpu_fence* fence);
 typedef agpu_error (*agpuWaitFence_FUN) (agpu_command_queue* command_queue, agpu_fence* fence);
@@ -1359,6 +1391,7 @@ typedef agpu_error (*agpuWaitFence_FUN) (agpu_command_queue* command_queue, agpu
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference(agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_error agpuReleaseCommandQueue(agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_error agpuAddCommandList(agpu_command_queue* command_queue, agpu_command_list* command_list);
+AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence(agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_lists, agpu_fence* fence);
 AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_error agpuSignalFence(agpu_command_queue* command_queue, agpu_fence* fence);
 AGPU_EXPORT agpu_error agpuWaitFence(agpu_command_queue* command_queue, agpu_fence* fence);
@@ -1385,7 +1418,9 @@ typedef agpu_error (*agpuUseIndexBufferAt_FUN) (agpu_command_list* command_list,
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* draw_buffer);
 typedef agpu_error (*agpuUseComputeDispatchIndirectBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* buffer);
 typedef agpu_error (*agpuUseShaderResources_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuUseShaderResourcesInSlot_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuUseComputeShaderResources_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuUseComputeShaderResourcesInSlot_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuDrawArrays_FUN) (agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 typedef agpu_error (*agpuDrawArraysIndirect_FUN) (agpu_command_list* command_list, agpu_size offset, agpu_size drawcount);
 typedef agpu_error (*agpuDrawElements_FUN) (agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1404,14 +1439,15 @@ typedef agpu_error (*agpuResolveTexture_FUN) (agpu_command_list* command_list, a
 typedef agpu_error (*agpuPushConstants_FUN) (agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values);
 typedef agpu_error (*agpuMemoryBarrier_FUN) (agpu_command_list* command_list, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 typedef agpu_error (*agpuBufferMemoryBarrier_FUN) (agpu_command_list* command_list, agpu_buffer* buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size);
-typedef agpu_error (*agpuTextureMemoryBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
-typedef agpu_error (*agpuPushBufferTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
-typedef agpu_error (*agpuPushTextureTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
+typedef agpu_error (*agpuTextureMemoryBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
+typedef agpu_error (*agpuPushBufferTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_buffer* buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage);
+typedef agpu_error (*agpuPushTextureTransitionBarrier_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
 typedef agpu_error (*agpuPopBufferTransitionBarrier_FUN) (agpu_command_list* command_list);
 typedef agpu_error (*agpuPopTextureTransitionBarrier_FUN) (agpu_command_list* command_list);
 typedef agpu_error (*agpuCopyBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 typedef agpu_error (*agpuCopyBufferToTexture_FUN) (agpu_command_list* command_list, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 typedef agpu_error (*agpuCopyTextureToBuffer_FUN) (agpu_command_list* command_list, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
+typedef agpu_error (*agpuCopyTexture_FUN) (agpu_command_list* command_list, agpu_texture* source_texture, agpu_texture* dest_texture, agpu_image_copy_region* copy_region);
 
 AGPU_EXPORT agpu_error agpuAddCommandListReference(agpu_command_list* command_list);
 AGPU_EXPORT agpu_error agpuReleaseCommandList(agpu_command_list* command_list);
@@ -1425,7 +1461,9 @@ AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agp
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer);
 AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer(agpu_command_list* command_list, agpu_buffer* buffer);
 AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuUseShaderResourcesInSlot(agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuUseComputeShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuUseComputeShaderResourcesInSlot(agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 AGPU_EXPORT agpu_error agpuDrawArraysIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount);
 AGPU_EXPORT agpu_error agpuDrawElements(agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1444,14 +1482,15 @@ AGPU_EXPORT agpu_error agpuResolveTexture(agpu_command_list* command_list, agpu_
 AGPU_EXPORT agpu_error agpuPushConstants(agpu_command_list* command_list, agpu_uint offset, agpu_uint size, agpu_pointer values);
 AGPU_EXPORT agpu_error agpuMemoryBarrier(agpu_command_list* command_list, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 AGPU_EXPORT agpu_error agpuBufferMemoryBarrier(agpu_command_list* command_list, agpu_buffer* buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size);
-AGPU_EXPORT agpu_error agpuTextureMemoryBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
-AGPU_EXPORT agpu_error agpuPushBufferTransitionBarrier(agpu_command_list* command_list, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
-AGPU_EXPORT agpu_error agpuPushTextureTransitionBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
+AGPU_EXPORT agpu_error agpuTextureMemoryBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
+AGPU_EXPORT agpu_error agpuPushBufferTransitionBarrier(agpu_command_list* command_list, agpu_buffer* buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage);
+AGPU_EXPORT agpu_error agpuPushTextureTransitionBarrier(agpu_command_list* command_list, agpu_texture* texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
 AGPU_EXPORT agpu_error agpuPopBufferTransitionBarrier(agpu_command_list* command_list);
 AGPU_EXPORT agpu_error agpuPopTextureTransitionBarrier(agpu_command_list* command_list);
 AGPU_EXPORT agpu_error agpuCopyBuffer(agpu_command_list* command_list, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 AGPU_EXPORT agpu_error agpuCopyBufferToTexture(agpu_command_list* command_list, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 AGPU_EXPORT agpu_error agpuCopyTextureToBuffer(agpu_command_list* command_list, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
+AGPU_EXPORT agpu_error agpuCopyTexture(agpu_command_list* command_list, agpu_texture* source_texture, agpu_texture* dest_texture, agpu_image_copy_region* copy_region);
 
 /* Methods for interface agpu_texture. */
 typedef agpu_error (*agpuAddTextureReference_FUN) (agpu_texture* texture);
@@ -1592,6 +1631,7 @@ typedef agpu_error (*agpuAddShaderSignatureBindingConstant_FUN) (agpu_shader_sig
 typedef agpu_error (*agpuAddShaderSignatureBindingElement_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings);
 typedef agpu_error (*agpuBeginShaderSignatureBindingBank_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings);
 typedef agpu_error (*agpuAddShaderSignatureBindingBankElement_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount);
+typedef agpu_error (*agpuAddShaderSignatureBindingBankArray_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint size);
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference(agpu_shader_signature_builder* shader_signature_builder);
 AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder(agpu_shader_signature_builder* shader_signature_builder);
@@ -1600,6 +1640,7 @@ AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant(agpu_shader_signatu
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings);
 AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank(agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings);
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount);
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankArray(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint size);
 
 /* Methods for interface agpu_shader_signature. */
 typedef agpu_error (*agpuAddShaderSignature_FUN) (agpu_shader_signature* shader_signature);
@@ -1718,7 +1759,9 @@ typedef agpu_error (*agpuStateTrackerUseIndexBufferAt_FUN) (agpu_state_tracker* 
 typedef agpu_error (*agpuStateTrackerUseDrawIndirectBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* draw_buffer);
 typedef agpu_error (*agpuStateTrackerUseComputeDispatchIndirectBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer);
 typedef agpu_error (*agpuStateTrackerUseShaderResources_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuStateTrackerUseShaderResourcesInSlot_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuStateTrackerUseComputeShaderResources_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuStateTrackerUseComputeShaderResourcesInSlot_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuStateTrackerDrawArrays_FUN) (agpu_state_tracker* state_tracker, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 typedef agpu_error (*agpuStateTrackerDrawArraysIndirect_FUN) (agpu_state_tracker* state_tracker, agpu_size offset, agpu_size drawcount);
 typedef agpu_error (*agpuStateTrackerDrawElements_FUN) (agpu_state_tracker* state_tracker, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1734,14 +1777,15 @@ typedef agpu_error (*agpuStateTrackerResolveTexture_FUN) (agpu_state_tracker* st
 typedef agpu_error (*agpuStateTrackerPushConstants_FUN) (agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values);
 typedef agpu_error (*agpuStateTrackerMemoryBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 typedef agpu_error (*agpuStateTrackerBufferMemoryBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size);
-typedef agpu_error (*agpuStateTrackerTextureMemoryBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
-typedef agpu_error (*agpuStateTrackerPushBufferTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
-typedef agpu_error (*agpuStateTrackerPushTextureTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
+typedef agpu_error (*agpuStateTrackerTextureMemoryBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
+typedef agpu_error (*agpuStateTrackerPushBufferTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage);
+typedef agpu_error (*agpuStateTrackerPushTextureTransitionBarrier_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
 typedef agpu_error (*agpuStateTrackerPopBufferTransitionBarrier_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerPopTextureTransitionBarrier_FUN) (agpu_state_tracker* state_tracker);
 typedef agpu_error (*agpuStateTrackerCopyBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 typedef agpu_error (*agpuStateTrackerCopyBufferToTexture_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 typedef agpu_error (*agpuStateTrackerCopyTextureToBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
+typedef agpu_error (*agpuStateTrackerCopyTexture_FUN) (agpu_state_tracker* state_tracker, agpu_texture* source_texture, agpu_texture* dest_texture, agpu_image_copy_region* copy_region);
 
 AGPU_EXPORT agpu_error agpuAddStateTrackerReference(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuReleaseStateTrackerReference(agpu_state_tracker* state_tracker);
@@ -1780,7 +1824,9 @@ AGPU_EXPORT agpu_error agpuStateTrackerUseIndexBufferAt(agpu_state_tracker* stat
 AGPU_EXPORT agpu_error agpuStateTrackerUseDrawIndirectBuffer(agpu_state_tracker* state_tracker, agpu_buffer* draw_buffer);
 AGPU_EXPORT agpu_error agpuStateTrackerUseComputeDispatchIndirectBuffer(agpu_state_tracker* state_tracker, agpu_buffer* buffer);
 AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResources(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResourcesInSlot(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResources(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResourcesInSlot(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuStateTrackerDrawArrays(agpu_state_tracker* state_tracker, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 AGPU_EXPORT agpu_error agpuStateTrackerDrawArraysIndirect(agpu_state_tracker* state_tracker, agpu_size offset, agpu_size drawcount);
 AGPU_EXPORT agpu_error agpuStateTrackerDrawElements(agpu_state_tracker* state_tracker, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1796,14 +1842,15 @@ AGPU_EXPORT agpu_error agpuStateTrackerResolveTexture(agpu_state_tracker* state_
 AGPU_EXPORT agpu_error agpuStateTrackerPushConstants(agpu_state_tracker* state_tracker, agpu_uint offset, agpu_uint size, agpu_pointer values);
 AGPU_EXPORT agpu_error agpuStateTrackerMemoryBarrier(agpu_state_tracker* state_tracker, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses);
 AGPU_EXPORT agpu_error agpuStateTrackerBufferMemoryBarrier(agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size);
-AGPU_EXPORT agpu_error agpuStateTrackerTextureMemoryBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range);
-AGPU_EXPORT agpu_error agpuStateTrackerPushBufferTransitionBarrier(agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_buffer_usage_mask new_usage);
-AGPU_EXPORT agpu_error agpuStateTrackerPushTextureTransitionBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range);
+AGPU_EXPORT agpu_error agpuStateTrackerTextureMemoryBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
+AGPU_EXPORT agpu_error agpuStateTrackerPushBufferTransitionBarrier(agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage);
+AGPU_EXPORT agpu_error agpuStateTrackerPushTextureTransitionBarrier(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range);
 AGPU_EXPORT agpu_error agpuStateTrackerPopBufferTransitionBarrier(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerPopTextureTransitionBarrier(agpu_state_tracker* state_tracker);
 AGPU_EXPORT agpu_error agpuStateTrackerCopyBuffer(agpu_state_tracker* state_tracker, agpu_buffer* source_buffer, agpu_size source_offset, agpu_buffer* dest_buffer, agpu_size dest_offset, agpu_size copy_size);
 AGPU_EXPORT agpu_error agpuStateTrackerCopyBufferToTexture(agpu_state_tracker* state_tracker, agpu_buffer* buffer, agpu_texture* texture, agpu_buffer_image_copy_region* copy_region);
 AGPU_EXPORT agpu_error agpuStateTrackerCopyTextureToBuffer(agpu_state_tracker* state_tracker, agpu_texture* texture, agpu_buffer* buffer, agpu_buffer_image_copy_region* copy_region);
+AGPU_EXPORT agpu_error agpuStateTrackerCopyTexture(agpu_state_tracker* state_tracker, agpu_texture* source_texture, agpu_texture* dest_texture, agpu_image_copy_region* copy_region);
 
 /* Methods for interface agpu_immediate_renderer. */
 typedef agpu_error (*agpuAddImmediateRendererReference_FUN) (agpu_immediate_renderer* immediate_renderer);
@@ -2065,6 +2112,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddCommandQueueReference_FUN agpuAddCommandQueueReference;
 	agpuReleaseCommandQueue_FUN agpuReleaseCommandQueue;
 	agpuAddCommandList_FUN agpuAddCommandList;
+	agpuAddCommandListsAndSignalFence_FUN agpuAddCommandListsAndSignalFence;
 	agpuFinishQueueExecution_FUN agpuFinishQueueExecution;
 	agpuSignalFence_FUN agpuSignalFence;
 	agpuWaitFence_FUN agpuWaitFence;
@@ -2083,7 +2131,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuUseDrawIndirectBuffer_FUN agpuUseDrawIndirectBuffer;
 	agpuUseComputeDispatchIndirectBuffer_FUN agpuUseComputeDispatchIndirectBuffer;
 	agpuUseShaderResources_FUN agpuUseShaderResources;
+	agpuUseShaderResourcesInSlot_FUN agpuUseShaderResourcesInSlot;
 	agpuUseComputeShaderResources_FUN agpuUseComputeShaderResources;
+	agpuUseComputeShaderResourcesInSlot_FUN agpuUseComputeShaderResourcesInSlot;
 	agpuDrawArrays_FUN agpuDrawArrays;
 	agpuDrawArraysIndirect_FUN agpuDrawArraysIndirect;
 	agpuDrawElements_FUN agpuDrawElements;
@@ -2110,6 +2160,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuCopyBuffer_FUN agpuCopyBuffer;
 	agpuCopyBufferToTexture_FUN agpuCopyBufferToTexture;
 	agpuCopyTextureToBuffer_FUN agpuCopyTextureToBuffer;
+	agpuCopyTexture_FUN agpuCopyTexture;
 	agpuAddTextureReference_FUN agpuAddTextureReference;
 	agpuReleaseTexture_FUN agpuReleaseTexture;
 	agpuGetTextureDescription_FUN agpuGetTextureDescription;
@@ -2169,6 +2220,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddShaderSignatureBindingElement_FUN agpuAddShaderSignatureBindingElement;
 	agpuBeginShaderSignatureBindingBank_FUN agpuBeginShaderSignatureBindingBank;
 	agpuAddShaderSignatureBindingBankElement_FUN agpuAddShaderSignatureBindingBankElement;
+	agpuAddShaderSignatureBindingBankArray_FUN agpuAddShaderSignatureBindingBankArray;
 	agpuAddShaderSignature_FUN agpuAddShaderSignature;
 	agpuReleaseShaderSignature_FUN agpuReleaseShaderSignature;
 	agpuCreateShaderResourceBinding_FUN agpuCreateShaderResourceBinding;
@@ -2238,7 +2290,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerUseDrawIndirectBuffer_FUN agpuStateTrackerUseDrawIndirectBuffer;
 	agpuStateTrackerUseComputeDispatchIndirectBuffer_FUN agpuStateTrackerUseComputeDispatchIndirectBuffer;
 	agpuStateTrackerUseShaderResources_FUN agpuStateTrackerUseShaderResources;
+	agpuStateTrackerUseShaderResourcesInSlot_FUN agpuStateTrackerUseShaderResourcesInSlot;
 	agpuStateTrackerUseComputeShaderResources_FUN agpuStateTrackerUseComputeShaderResources;
+	agpuStateTrackerUseComputeShaderResourcesInSlot_FUN agpuStateTrackerUseComputeShaderResourcesInSlot;
 	agpuStateTrackerDrawArrays_FUN agpuStateTrackerDrawArrays;
 	agpuStateTrackerDrawArraysIndirect_FUN agpuStateTrackerDrawArraysIndirect;
 	agpuStateTrackerDrawElements_FUN agpuStateTrackerDrawElements;
@@ -2262,6 +2316,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerCopyBuffer_FUN agpuStateTrackerCopyBuffer;
 	agpuStateTrackerCopyBufferToTexture_FUN agpuStateTrackerCopyBufferToTexture;
 	agpuStateTrackerCopyTextureToBuffer_FUN agpuStateTrackerCopyTextureToBuffer;
+	agpuStateTrackerCopyTexture_FUN agpuStateTrackerCopyTexture;
 	agpuAddImmediateRendererReference_FUN agpuAddImmediateRendererReference;
 	agpuReleaseImmediateRendererReference_FUN agpuReleaseImmediateRendererReference;
 	agpuBeginImmediateRendering_FUN agpuBeginImmediateRendering;

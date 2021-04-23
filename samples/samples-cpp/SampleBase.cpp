@@ -210,15 +210,15 @@ agpu_buffer_ref AbstractSampleBase::createMappableReadbackBuffer(size_t capacity
 agpu_buffer_ref AbstractSampleBase::createStorageBuffer(size_t capacity, size_t stride, void *initialData)
 {
     agpu_buffer_description desc;
-	desc.size = agpu_uint(capacity);
+	desc.size = agpu_size(capacity);
 	desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
 	desc.usage_modes = desc.main_usage_mode = AGPU_STORAGE_BUFFER;
-	desc.stride = stride;
+	desc.stride = agpu_size(stride);
 
 	return device->createBuffer(&desc, initialData);
 }
 
-agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName)
+agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName, bool nonColorData)
 {
     auto surface = SDL_LoadBMP(fileName);
     if (!surface)
@@ -229,24 +229,421 @@ agpu_texture_ref AbstractSampleBase::loadTexture(const char *fileName)
     if (!convertedSurface)
         return nullptr;
 
+    bool generateMipmaps = isPowerOfTwo(convertedSurface->w) && isPowerOfTwo(convertedSurface->h);
+    size_t miplevelCount = 1;
+    if(generateMipmaps)
+    {
+        size_t currentWidth = convertedSurface->w;
+        size_t currentHeight = convertedSurface->h;
+        while(currentWidth > 1 || currentHeight > 1)
+        {
+            ++miplevelCount;
+            currentWidth = std::max(currentWidth / 2, size_t(1));
+            currentHeight = std::max(currentHeight / 2, size_t(1));
+        }
+    }
+
+    auto format = nonColorData ? AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM : AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
     agpu_texture_description desc = {};
     desc.type = AGPU_TEXTURE_2D;
-    desc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+    desc.format = format;
     desc.width = convertedSurface->w;
     desc.height = convertedSurface->h;
     desc.depth = 1;
     desc.layers = 1;
-    desc.miplevels = 1;
+    desc.miplevels = agpu_size(miplevelCount);
     desc.sample_count = 1;
     desc.sample_quality = 0;
-    desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
+    desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+    desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_COPY_DESTINATION);
     desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+
+    if(miplevelCount > 1)
+    {
+        if(useComputeShadersForMipmapGeneration && nonColorData)
+            desc.usage_modes = agpu_texture_usage_mode_mask(desc.usage_modes | AGPU_TEXTURE_USAGE_STORAGE);
+        else
+            desc.usage_modes = agpu_texture_usage_mode_mask(desc.usage_modes | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT);
+    };
+
     agpu_texture_ref texture = device->createTexture(&desc);
     if (!texture)
+    {
+        SDL_FreeSurface(convertedSurface);
         return nullptr;
+    }
 
-    texture->uploadTextureData(0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, convertedSurface->pixels);
-    SDL_FreeSurface(convertedSurface);
+    if(miplevelCount > 1)
+    {
+        auto uploadTexture = texture;
+        auto uploadTextureMainUsage = AGPU_TEXTURE_USAGE_SAMPLED;
+        if(useComputeShadersForMipmapGeneration && !nonColorData)
+        {
+            auto uploadTextureDesc = desc;
+            uploadTextureDesc.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+            uploadTextureDesc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_STORAGE | AGPU_TEXTURE_USAGE_COPY_SOURCE | AGPU_TEXTURE_USAGE_COPY_DESTINATION);
+            uploadTextureDesc.main_usage_mode = AGPU_TEXTURE_USAGE_STORAGE;
+            uploadTextureMainUsage = AGPU_TEXTURE_USAGE_STORAGE;
+
+            uploadTexture = device->createTexture(&uploadTextureDesc);
+            if(!uploadTexture)
+            {
+                SDL_FreeSurface(convertedSurface);
+                return nullptr;
+            }
+        }
+
+        size_t width = convertedSurface->w;
+        size_t height = convertedSurface->h;
+        auto uploadPitch = alignedTo(convertedSurface->w*4, device->getLimitValue(AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT));
+        auto bufferSize = alignedTo(uploadPitch * convertedSurface->h, device->getLimitValue(AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT));
+
+        agpu_buffer_description desc = {};
+        desc.size = agpu_size(bufferSize);
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+        desc.usage_modes = desc.main_usage_mode = AGPU_COPY_SOURCE_BUFFER;
+        desc.mapping_flags = AGPU_MAP_WRITE_BIT;
+
+        auto uploadBuffer = device->createBuffer(&desc, nullptr);
+        if(!uploadBuffer)
+        {
+            SDL_FreeSurface(convertedSurface);
+            return nullptr;
+        }
+
+        auto uploadDestRow = reinterpret_cast<uint8_t*> (uploadBuffer->mapBuffer(AGPU_WRITE_ONLY));
+        auto sourceRow = reinterpret_cast<const uint8_t*> (convertedSurface->pixels);
+        auto rowCopySize = convertedSurface->w*4;
+        for(size_t y = 0; y < size_t(convertedSurface->h); ++y)
+        {
+            memcpy(uploadDestRow, sourceRow, rowCopySize);
+            uploadDestRow += uploadPitch;
+            sourceRow += convertedSurface->pitch;
+        }
+        uploadBuffer->unmapBuffer();
+        SDL_FreeSurface(convertedSurface);
+
+        auto commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+        auto commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
+
+        {
+            // Upload the first level.
+            agpu_texture_subresource_range uploadRange = {};
+            uploadRange.aspect = AGPU_TEXTURE_ASPECT_COLOR;
+            uploadRange.level_count = 1;
+            uploadRange.layer_count = 1;
+
+            agpu_buffer_image_copy_region bufferImageCopyRegion = {};
+            bufferImageCopyRegion.buffer_pitch = agpu_size(uploadPitch);
+            bufferImageCopyRegion.buffer_slice_pitch = agpu_size(uploadPitch*height);
+            bufferImageCopyRegion.texture_usage_mode = AGPU_TEXTURE_USAGE_COPY_DESTINATION;
+            bufferImageCopyRegion.texture_subresource_level.aspect = AGPU_TEXTURE_ASPECT_COLOR;
+            bufferImageCopyRegion.texture_subresource_level.layer_count = 1;
+            bufferImageCopyRegion.texture_region.width = agpu_size(width);
+            bufferImageCopyRegion.texture_region.height = agpu_size(height);
+            bufferImageCopyRegion.texture_region.depth = 1;
+
+            commandList->pushTextureTransitionBarrier(uploadTexture, uploadTextureMainUsage, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &uploadRange);
+            commandList->copyBufferToTexture(uploadBuffer, uploadTexture, &bufferImageCopyRegion);
+            commandList->popTextureTransitionBarrier();
+        }
+
+        std::vector<agpu_shader_resource_binding_ref> resourceBindings;
+        std::vector<agpu_texture_view_ref> textureViews;
+        std::vector<agpu_framebuffer_ref> framebuffers;
+        if(useComputeShadersForMipmapGeneration)
+        {
+            if(!mipmapComputationShaderSignature)
+            {
+                auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
+                shaderSignatureBuilder->beginBindingBank(32);
+                shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE, 1);
+                shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE, 1);
+                mipmapComputationShaderSignature = shaderSignatureBuilder->build();
+                if (!mipmapComputationShaderSignature)
+                    return nullptr;
+
+                {
+                    auto computeShader = compileShaderFromFile("data/shaders/computeMipmap.glsl", AGPU_COMPUTE_SHADER);
+                    if (!computeShader)
+                        return nullptr;
+
+                    auto pipelineBuilder = device->createComputePipelineBuilder();
+            		pipelineBuilder->setShaderSignature(mipmapComputationShaderSignature);
+            		pipelineBuilder->attachShader(computeShader);
+                    mipmapComputationNonColorPipelineState = pipelineBuilder->build();
+                    if(!mipmapComputationNonColorPipelineState)
+                        return nullptr;
+                }
+
+                {
+                    auto computeShader = compileShaderFromFile("data/shaders/computeMipmapSRGB.glsl", AGPU_COMPUTE_SHADER);
+                    if (!computeShader)
+                        return nullptr;
+
+                    auto pipelineBuilder = device->createComputePipelineBuilder();
+            		pipelineBuilder->setShaderSignature(mipmapComputationShaderSignature);
+            		pipelineBuilder->attachShader(computeShader);
+                    mipmapComputationColorPipelineState = pipelineBuilder->build();
+                    if(!mipmapComputationColorPipelineState)
+                        return nullptr;
+                }
+            }
+
+            agpu_texture_view_description viewDescription = {};
+            uploadTexture->getFullViewDescription(&viewDescription);
+            viewDescription.usage_mode = AGPU_TEXTURE_USAGE_STORAGE;
+            viewDescription.subresource_range.level_count = 1;
+
+            auto lastView = uploadTexture->createView(&viewDescription);
+            if(!lastView)
+                return nullptr;
+
+            textureViews.push_back(lastView);
+            auto currentWidth = width;
+            auto currentHeight = height;
+            commandList->setShaderSignature(mipmapComputationShaderSignature);
+            commandList->usePipelineState(nonColorData ? mipmapComputationNonColorPipelineState : mipmapComputationColorPipelineState);
+
+            // Transition the texture for computation.
+            {
+                agpu_texture_subresource_range computeRange = {};
+                computeRange.aspect = AGPU_TEXTURE_ASPECT_COLOR;
+                computeRange.level_count = agpu_size(miplevelCount);
+                computeRange.layer_count = 1;
+
+                commandList->pushTextureTransitionBarrier(texture, uploadTextureMainUsage, AGPU_TEXTURE_USAGE_STORAGE, &computeRange);
+            }
+
+            while(currentWidth > 1 || currentHeight > 1)
+            {
+                auto nextWidth = std::max(currentWidth / 2, size_t(1));
+                auto nextHeight = std::max(currentHeight / 2, size_t(1));
+
+                ++viewDescription.subresource_range.base_miplevel;
+                auto nextView = uploadTexture->createView(&viewDescription);
+                textureViews.push_back(nextView);
+                if(!nextView)
+                    return nullptr;
+
+                auto binding = mipmapComputationShaderSignature->createShaderResourceBinding(0);
+                resourceBindings.push_back(binding);
+                if(!binding)
+                    return nullptr;
+
+                binding->bindStorageImageView(0, lastView);
+                binding->bindStorageImageView(1, nextView);
+                commandList->useComputeShaderResources(binding);
+                commandList->dispatchCompute(agpu_uint((currentWidth + 15) / 16), agpu_uint((currentHeight + 15) / 16), 1);
+
+                // Make visible the miplevel.
+                commandList->textureMemoryBarrier(uploadTexture, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, agpu_pipeline_stage_flags(AGPU_PIPELINE_STAGE_COMPUTE_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER),
+                        AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ,
+                        AGPU_TEXTURE_USAGE_STORAGE, AGPU_TEXTURE_USAGE_STORAGE,
+                        &viewDescription.subresource_range);
+
+                currentWidth = nextWidth;
+                currentHeight = nextHeight;
+                lastView = nextView;
+            }
+
+            commandList->popTextureTransitionBarrier();
+
+            // If the upload and sampled textures are different, copy the different levels.
+            if(uploadTexture != texture)
+            {
+                {
+                    agpu_texture_subresource_range copyRange = {};
+                    copyRange.aspect = AGPU_TEXTURE_ASPECT_COLOR;
+                    copyRange.level_count = agpu_size(miplevelCount);
+                    copyRange.layer_count = 1;
+
+                    commandList->pushTextureTransitionBarrier(uploadTexture, AGPU_TEXTURE_USAGE_STORAGE, AGPU_TEXTURE_USAGE_COPY_SOURCE, &copyRange);
+                    commandList->pushTextureTransitionBarrier(texture, AGPU_TEXTURE_USAGE_SAMPLED, AGPU_TEXTURE_USAGE_COPY_DESTINATION, &copyRange);
+                }
+
+                for(size_t i = 0; i < miplevelCount; ++i)
+                {
+                    agpu_texture_subresource_level subresourceLevel = {};
+                    subresourceLevel.aspect = AGPU_TEXTURE_ASPECT_COLOR;
+                    subresourceLevel.miplevel = agpu_size(i);
+                    subresourceLevel.layer_count = 1;
+
+                    agpu_image_copy_region copyRegion = {};
+                    copyRegion.source_usage_mode = AGPU_TEXTURE_USAGE_COPY_SOURCE;
+                    copyRegion.source_subresource_level = subresourceLevel;
+                    copyRegion.destination_usage_mode = AGPU_TEXTURE_USAGE_COPY_DESTINATION;
+                    copyRegion.destination_subresource_level = subresourceLevel;
+                    copyRegion.extent.width = agpu_uint(std::max(width >> i, size_t(1)));
+                    copyRegion.extent.height = agpu_uint(std::max(height >> i, size_t(1)));
+                    copyRegion.extent.depth = 1;
+
+                    commandList->copyTexture(uploadTexture, texture, &copyRegion);
+                }
+
+                commandList->popTextureTransitionBarrier();
+                commandList->popTextureTransitionBarrier();
+            }
+        }
+        else
+        {
+            if(!mipmapComputationShaderSignature)
+            {
+                auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
+                shaderSignatureBuilder->beginBindingBank(1);
+                shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 1);
+
+                shaderSignatureBuilder->beginBindingBank(32);
+                shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);
+                mipmapComputationShaderSignature = shaderSignatureBuilder->build();
+                if (!mipmapComputationShaderSignature)
+                    return nullptr;
+
+                auto vertexShader = compileShaderFromFile(device->hasTopLeftNdcOrigin() == device->hasBottomLeftTextureCoordinates() ? "data/shaders/screenQuadFlippedY.glsl" :
+                    "data/shaders/screenQuad.glsl", AGPU_VERTEX_SHADER);
+                if (!vertexShader)
+                    return nullptr;
+
+                auto fragmentShader = compileShaderFromFile("data/shaders/mipmapScreenQuad.glsl", AGPU_FRAGMENT_SHADER);
+                if (!fragmentShader)
+                    return nullptr;
+
+                {
+                    auto pipelineBuilder = device->createPipelineBuilder();
+                    pipelineBuilder->setShaderSignature(mipmapComputationShaderSignature);
+                    pipelineBuilder->setRenderTargetFormat(0, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB);
+                    pipelineBuilder->setDepthStencilFormat(AGPU_TEXTURE_FORMAT_UNKNOWN);
+                    pipelineBuilder->attachShader(vertexShader);
+                    pipelineBuilder->attachShader(fragmentShader);
+                    pipelineBuilder->setPrimitiveType(AGPU_TRIANGLES);
+                    mipmapComputationColorPipelineState = pipelineBuilder->build();
+                    if(!mipmapComputationColorPipelineState)
+                        return nullptr;
+
+                    agpu_renderpass_color_attachment_description colorAttachment = {};
+                    colorAttachment.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
+                    colorAttachment.begin_action = AGPU_ATTACHMENT_DISCARD;
+                    colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+                    colorAttachment.sample_count = 1;
+
+                    agpu_renderpass_description description = {};
+                    description.color_attachment_count = 1;
+                    description.color_attachments = &colorAttachment;
+
+                    mipmapComputationColorRenderpass = device->createRenderPass(&description);
+                    if(!mipmapComputationColorRenderpass)
+                        return nullptr;
+                }
+
+                {
+                    auto pipelineBuilder = device->createPipelineBuilder();
+                    pipelineBuilder->setShaderSignature(mipmapComputationShaderSignature);
+                    pipelineBuilder->setRenderTargetFormat(0, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM);
+                    pipelineBuilder->setDepthStencilFormat(AGPU_TEXTURE_FORMAT_UNKNOWN);
+                    pipelineBuilder->attachShader(vertexShader);
+                    pipelineBuilder->attachShader(fragmentShader);
+                    pipelineBuilder->setPrimitiveType(AGPU_TRIANGLES);
+                    mipmapComputationNonColorPipelineState = pipelineBuilder->build();
+                    if(!mipmapComputationNonColorPipelineState)
+                        return nullptr;
+
+                    agpu_renderpass_color_attachment_description colorAttachment = {};
+                    colorAttachment.format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
+                    colorAttachment.begin_action = AGPU_ATTACHMENT_DISCARD;
+                    colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+                    colorAttachment.sample_count = 1;
+
+                    agpu_renderpass_description description = {};
+                    description.color_attachment_count = 1;
+                    description.color_attachments = &colorAttachment;
+
+                    mipmapComputationNonColorRenderpass = device->createRenderPass(&description);
+                    if(!mipmapComputationNonColorRenderpass)
+                        return nullptr;
+                }
+
+                {
+                    agpu_sampler_description samplerDesc = {};
+                    samplerDesc.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+                    samplerDesc.address_u = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+                    samplerDesc.address_v = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+                    samplerDesc.address_w = AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+                    samplerDesc.max_lod = 0;
+                    mipmapComputationSampler = device->createSampler(&samplerDesc);
+                    if(!mipmapComputationSampler)
+                        return nullptr;
+
+                    mipmapComputationSamplerBinding = mipmapComputationShaderSignature->createShaderResourceBinding(0);
+                    mipmapComputationSamplerBinding->bindSampler(0, mipmapComputationSampler);
+                }
+            }
+
+            auto pipeline = nonColorData ? mipmapComputationNonColorPipelineState : mipmapComputationColorPipelineState;
+            auto renderpass = nonColorData ? mipmapComputationNonColorRenderpass : mipmapComputationColorRenderpass;
+
+            agpu_texture_view_description viewDescription = {};
+            texture->getFullViewDescription(&viewDescription);
+            viewDescription.subresource_range.level_count = 1;
+
+            auto currentWidth = width;
+            auto currentHeight = height;
+            commandList->setShaderSignature(mipmapComputationShaderSignature);
+
+            while(currentWidth > 1 || currentHeight > 1)
+            {
+                auto nextWidth = std::max(currentWidth / 2, size_t(1));
+                auto nextHeight = std::max(currentHeight / 2, size_t(1));
+
+                auto sourceView = texture->createView(&viewDescription);
+                textureViews.push_back(sourceView);
+                if(!sourceView)
+                    return nullptr;
+
+                ++viewDescription.subresource_range.base_miplevel;
+                auto destViewDescription = viewDescription;
+                destViewDescription.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+
+                auto destView = texture->createView(&destViewDescription);
+                textureViews.push_back(destView);
+                if(!destView)
+                    return nullptr;
+
+                auto framebuffer = device->createFrameBuffer(agpu_uint(nextWidth), agpu_uint(nextHeight), 1, &destView, nullptr);
+                framebuffers.push_back(framebuffer);
+                if(!framebuffer)
+                    return nullptr;
+
+                auto binding = mipmapComputationShaderSignature->createShaderResourceBinding(1);
+                resourceBindings.push_back(binding);
+                if(!binding)
+                    return nullptr;
+
+                binding->bindSampledTextureView(0, sourceView);
+
+                commandList->beginRenderPass(renderpass, framebuffer, false);
+                commandList->setViewport(0, 0, agpu_uint(nextWidth), agpu_uint(nextHeight));
+                commandList->setScissor(0, 0, agpu_uint(nextWidth), agpu_uint(nextHeight));
+                commandList->usePipelineState(pipeline);
+                commandList->useShaderResources(mipmapComputationSamplerBinding);
+                commandList->useShaderResources(binding);
+                commandList->drawArrays(3, 1, 0, 0);
+                commandList->endRenderPass();
+
+                currentWidth = nextWidth;
+                currentHeight = nextHeight;
+            }
+        }
+
+        commandList->close();
+        auto commandQueue = device->getDefaultCommandQueue();
+        commandQueue->addCommandList(commandList);
+        commandQueue->finishExecution();
+    }
+    else
+    {
+        texture->uploadTextureData(0, 0, convertedSurface->pitch, convertedSurface->pitch*convertedSurface->h, convertedSurface->pixels);
+        SDL_FreeSurface(convertedSurface);
+    }
 
     return texture;
 }
@@ -268,6 +665,10 @@ const agpu_vertex_layout_ref &AbstractSampleBase::getSampleVertexLayout()
 int SampleBase::main(int argc, const char **argv)
 {
     bool vsyncDisabled = false;
+    bool debugLayerEnabled = false;
+#ifdef _DEBUG
+    debugLayerEnabled= true;
+#endif
     agpu_uint platformIndex = 0;
     agpu_uint gpuIndex = 0;
     for (int i = 1; i < argc; ++i)
@@ -284,6 +685,10 @@ int SampleBase::main(int argc, const char **argv)
         else if (arg == "-gpu")
         {
             gpuIndex = agpu_uint(atoi(argv[++i]));
+        }
+        else if (arg == "-debug")
+        {
+            debugLayerEnabled = true;
         }
     }
 
@@ -330,6 +735,7 @@ int SampleBase::main(int argc, const char **argv)
     // Open the device
     agpu_device_open_info openInfo = {};
     openInfo.gpu_index = gpuIndex;
+    openInfo.debug_layer = debugLayerEnabled;
     memset(&currentSwapChainCreateInfo, 0, sizeof(currentSwapChainCreateInfo));
     switch(windowInfo.subsystem)
     {
@@ -368,11 +774,6 @@ int SampleBase::main(int argc, const char **argv)
         currentSwapChainCreateInfo.fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE;
     }
 
-#ifdef _DEBUG
-    // Use the debug layer when debugging. This is useful for low level backends.
-    openInfo.debug_layer= true;
-#endif
-
     device = platform->openDevice(&openInfo);
     if(!device)
     {
@@ -385,6 +786,7 @@ int SampleBase::main(int argc, const char **argv)
 
 
 	hasPersistentCoherentMapping = device->isFeatureSupported(AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
+    useComputeShadersForMipmapGeneration = false && device->isFeatureSupported(AGPU_FEATURE_COMPUTE_SHADER);
 
     // Get the default command queue
     commandQueue = device->getDefaultCommandQueue();
@@ -545,7 +947,7 @@ void SampleBase::recreateSwapChain()
     newSwapChainCreateInfo.height = h;
     newSwapChainCreateInfo.old_swap_chain = swapChain.get();
     swapChain = device->createSwapChain(commandQueue, &newSwapChainCreateInfo);
-    
+
     screenWidth = swapChain->getWidth();
     screenHeight = swapChain->getHeight();
 }

@@ -27,7 +27,9 @@ public:
     virtual agpu_error useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer) override;
     virtual agpu_error useComputeDispatchIndirectBuffer(const agpu::buffer_ref &dispatch_buffer) override;
     virtual agpu_error useShaderResources(const agpu::shader_resource_binding_ref &binding) override;
+    virtual agpu_error useShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot) override;
     virtual agpu_error useComputeShaderResources(const agpu::shader_resource_binding_ref &binding) override;
+	virtual agpu_error useComputeShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot) override;
     virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) override;
     virtual agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount) override;
     virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) override;
@@ -47,14 +49,15 @@ public:
 
     virtual agpu_error memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses) override;
     virtual agpu_error bufferMemoryBarrier(const agpu::buffer_ref & buffer, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_size offset, agpu_size size) override;
-    virtual agpu_error textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range) override;
-    virtual agpu_error pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage) override;
-    virtual agpu_error pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range) override;
+    virtual agpu_error textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range) override;
+	virtual agpu_error pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage) override;
+	virtual agpu_error pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range) override;
     virtual agpu_error popBufferTransitionBarrier() override;
     virtual agpu_error popTextureTransitionBarrier() override;
-    virtual agpu_error copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) override;
-    virtual agpu_error copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region) override;
-    virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
+	virtual agpu_error copyBuffer(const agpu::buffer_ref & source_buffer, agpu_size source_offset, const agpu::buffer_ref & dest_buffer, agpu_size dest_offset, agpu_size copy_size) override;
+	virtual agpu_error copyBufferToTexture(const agpu::buffer_ref & buffer, const agpu::texture_ref & texture, agpu_buffer_image_copy_region* copy_region) override;
+	virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
+	virtual agpu_error copyTexture(const agpu::texture_ref & source_texture, const agpu::texture_ref & dest_texture, agpu_image_copy_region* copy_region) override;
     
     void beginBlitting();
     void endBlitting();

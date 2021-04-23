@@ -21,7 +21,8 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUTextureClearValue defineFields.
 	AGPUTextureDescription defineFields.
 	AGPUComponentsSwizzle defineFields.
-	AGPUSubresourceRange defineFields.
+	AGPUTextureSubresourceRange defineFields.
+	AGPUTextureSubresourceLevel defineFields.
 	AGPUTextureViewDescription defineFields.
 	AGPUDrawElementsCommand defineFields.
 	AGPUVertexAttribDescription defineFields.
@@ -39,8 +40,10 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUSize2d defineFields.
 	AGPUSize3d defineFields.
 	AGPUFrustumTangents defineFields.
+	AGPUOffset3d defineFields.
 	AGPURegion3d defineFields.
 	AGPUBufferImageCopyRegion defineFields.
+	AGPUImageCopyRegion defineFields.
 	AGPUVrTrackedDevicePose defineFields.
 	AGPUVrGenericEvent defineFields.
 	AGPUVrControllerEvent defineFields.

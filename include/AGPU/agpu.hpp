@@ -77,6 +77,66 @@ public:
         return *this;
     }
 
+    bool operator==(const agpu_ref<T> &other) const
+    {
+        return pointer == other.pointer;
+    }
+
+    bool operator==(const T *otherPointer) const
+    {
+        return pointer == otherPointer;
+    }
+
+    bool operator!=(const agpu_ref<T> &other) const
+    {
+        return pointer != other.pointer;
+    }
+
+    bool operator!=(const T *otherPointer) const
+    {
+        return pointer != otherPointer;
+    }
+
+    bool operator<(const agpu_ref<T> &other) const
+    {
+        return pointer < other.pointer;
+    }
+
+    bool operator<(const T *otherPointer) const
+    {
+        return pointer < otherPointer;
+    }
+
+    bool operator<=(const agpu_ref<T> &other) const
+    {
+        return pointer < other.pointer;
+    }
+
+    bool operator<=(const T *otherPointer) const
+    {
+        return pointer <= otherPointer;
+    }
+
+    bool operator>(const agpu_ref<T> &other) const
+    {
+        return pointer > other.pointer;
+    }
+
+    bool operator>(const T *otherPointer) const
+    {
+        return pointer > otherPointer;
+    }
+
+    bool operator>=(const agpu_ref<T> &other) const
+    {
+        return pointer > other.pointer;
+    }
+
+    bool operator>=(const T *otherPointer) const
+    {
+        return pointer >= otherPointer;
+    }
+    
 	void reset(T *newPointer = nullptr)
 	{
 		if(pointer)
@@ -756,6 +816,11 @@ public:
 		agpuThrowIfFailed(agpuAddCommandList(this, command_list.get()));
 	}
 
+	inline void addCommandListsAndSignalFence(agpu_uint count, agpu_ref<agpu_command_list>* command_lists, const agpu_ref<agpu_fence>& fence)
+	{
+		agpuThrowIfFailed(agpuAddCommandListsAndSignalFence(this, count, reinterpret_cast<agpu_command_list**> (command_lists), fence.get()));
+	}
+
 	inline void finishExecution()
 	{
 		agpuThrowIfFailed(agpuFinishQueueExecution(this));
@@ -868,9 +933,19 @@ public:
 		agpuThrowIfFailed(agpuUseShaderResources(this, binding.get()));
 	}
 
+	inline void useShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuUseShaderResourcesInSlot(this, binding.get(), slot));
+	}
+
 	inline void useComputeShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
 	{
 		agpuThrowIfFailed(agpuUseComputeShaderResources(this, binding.get()));
+	}
+
+	inline void useComputeShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuUseComputeShaderResourcesInSlot(this, binding.get(), slot));
 	}
 
 	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
@@ -963,19 +1038,19 @@ public:
 		agpuThrowIfFailed(agpuBufferMemoryBarrier(this, buffer.get(), source_stage, dest_stage, source_accesses, dest_accesses, offset, size));
 	}
 
-	inline void textureMemoryBarrier(const agpu_ref<agpu_texture>& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+	inline void textureMemoryBarrier(const agpu_ref<agpu_texture>& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 	{
-		agpuThrowIfFailed(agpuTextureMemoryBarrier(this, texture.get(), source_stage, dest_stage, source_accesses, dest_accesses, subresource_range));
+		agpuThrowIfFailed(agpuTextureMemoryBarrier(this, texture.get(), source_stage, dest_stage, source_accesses, dest_accesses, old_usage, new_usage, subresource_range));
 	}
 
-	inline void pushBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_buffer_usage_mask new_usage)
+	inline void pushBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage)
 	{
-		agpuThrowIfFailed(agpuPushBufferTransitionBarrier(this, buffer.get(), new_usage));
+		agpuThrowIfFailed(agpuPushBufferTransitionBarrier(this, buffer.get(), old_usage, new_usage));
 	}
 
-	inline void pushTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+	inline void pushTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 	{
-		agpuThrowIfFailed(agpuPushTextureTransitionBarrier(this, texture.get(), new_usage, subresource_range));
+		agpuThrowIfFailed(agpuPushTextureTransitionBarrier(this, texture.get(), old_usage, new_usage, subresource_range));
 	}
 
 	inline void popBufferTransitionBarrier()
@@ -1001,6 +1076,11 @@ public:
 	inline void copyTextureToBuffer(const agpu_ref<agpu_texture>& texture, const agpu_ref<agpu_buffer>& buffer, agpu_buffer_image_copy_region* copy_region)
 	{
 		agpuThrowIfFailed(agpuCopyTextureToBuffer(this, texture.get(), buffer.get(), copy_region));
+	}
+
+	inline void copyTexture(const agpu_ref<agpu_texture>& source_texture, const agpu_ref<agpu_texture>& dest_texture, agpu_image_copy_region* copy_region)
+	{
+		agpuThrowIfFailed(agpuCopyTexture(this, source_texture.get(), dest_texture.get(), copy_region));
 	}
 
 };
@@ -1406,6 +1486,11 @@ public:
 	inline void addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount)
 	{
 		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement(this, type, bindingPointCount));
+	}
+
+	inline void addBindingBankArray(agpu_shader_binding_type type, agpu_uint size)
+	{
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankArray(this, type, size));
 	}
 
 };
@@ -1819,9 +1904,19 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerUseShaderResources(this, binding.get()));
 	}
 
+	inline void useShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseShaderResourcesInSlot(this, binding.get(), slot));
+	}
+
 	inline void useComputeShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
 	{
 		agpuThrowIfFailed(agpuStateTrackerUseComputeShaderResources(this, binding.get()));
+	}
+
+	inline void useComputeShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseComputeShaderResourcesInSlot(this, binding.get(), slot));
 	}
 
 	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
@@ -1899,19 +1994,19 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerBufferMemoryBarrier(this, buffer.get(), source_stage, dest_stage, source_accesses, dest_accesses, offset, size));
 	}
 
-	inline void textureMemoryBarrier(const agpu_ref<agpu_texture>& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+	inline void textureMemoryBarrier(const agpu_ref<agpu_texture>& texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 	{
-		agpuThrowIfFailed(agpuStateTrackerTextureMemoryBarrier(this, texture.get(), source_stage, dest_stage, source_accesses, dest_accesses, subresource_range));
+		agpuThrowIfFailed(agpuStateTrackerTextureMemoryBarrier(this, texture.get(), source_stage, dest_stage, source_accesses, dest_accesses, old_usage, new_usage, subresource_range));
 	}
 
-	inline void pushBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_buffer_usage_mask new_usage)
+	inline void pushBufferTransitionBarrier(const agpu_ref<agpu_buffer>& buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage)
 	{
-		agpuThrowIfFailed(agpuStateTrackerPushBufferTransitionBarrier(this, buffer.get(), new_usage));
+		agpuThrowIfFailed(agpuStateTrackerPushBufferTransitionBarrier(this, buffer.get(), old_usage, new_usage));
 	}
 
-	inline void pushTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+	inline void pushTextureTransitionBarrier(const agpu_ref<agpu_texture>& texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 	{
-		agpuThrowIfFailed(agpuStateTrackerPushTextureTransitionBarrier(this, texture.get(), new_usage, subresource_range));
+		agpuThrowIfFailed(agpuStateTrackerPushTextureTransitionBarrier(this, texture.get(), old_usage, new_usage, subresource_range));
 	}
 
 	inline void popBufferTransitionBarrier()
@@ -1937,6 +2032,11 @@ public:
 	inline void copyTextureToBuffer(const agpu_ref<agpu_texture>& texture, const agpu_ref<agpu_buffer>& buffer, agpu_buffer_image_copy_region* copy_region)
 	{
 		agpuThrowIfFailed(agpuStateTrackerCopyTextureToBuffer(this, texture.get(), buffer.get(), copy_region));
+	}
+
+	inline void copyTexture(const agpu_ref<agpu_texture>& source_texture, const agpu_ref<agpu_texture>& dest_texture, agpu_image_copy_region* copy_region)
+	{
+		agpuThrowIfFailed(agpuStateTrackerCopyTexture(this, source_texture.get(), dest_texture.get(), copy_region));
 	}
 
 };

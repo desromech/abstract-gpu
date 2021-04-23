@@ -264,9 +264,23 @@ AGPUStateTracker >> useShaderResources: binding [
 ]
 
 { #category : #'wrappers' }
+AGPUStateTracker >> useShaderResourcesInSlot: binding slot: slot [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useShaderResourcesInSlot_state_tracker: (self validHandle) binding: (self validHandleOf: binding) slot: slot.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUStateTracker >> useComputeShaderResources: binding [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance useComputeShaderResources_state_tracker: (self validHandle) binding: (self validHandleOf: binding).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUStateTracker >> useComputeShaderResourcesInSlot: binding slot: slot [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useComputeShaderResourcesInSlot_state_tracker: (self validHandle) binding: (self validHandleOf: binding) slot: slot.
 	self checkErrorCode: resultValue_
 ]
 
@@ -376,23 +390,23 @@ AGPUStateTracker >> bufferMemoryBarrier: buffer source_stage: source_stage dest_
 ]
 
 { #category : #'wrappers' }
-AGPUStateTracker >> textureMemoryBarrier: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range [
+AGPUStateTracker >> textureMemoryBarrier: texture source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses old_usage: old_usage new_usage: new_usage subresource_range: subresource_range [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance textureMemoryBarrier_state_tracker: (self validHandle) texture: (self validHandleOf: texture) source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses subresource_range: subresource_range.
+	resultValue_ := AGPUCBindings uniqueInstance textureMemoryBarrier_state_tracker: (self validHandle) texture: (self validHandleOf: texture) source_stage: source_stage dest_stage: dest_stage source_accesses: source_accesses dest_accesses: dest_accesses old_usage: old_usage new_usage: new_usage subresource_range: subresource_range.
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUStateTracker >> pushBufferTransitionBarrier: buffer new_usage: new_usage [
+AGPUStateTracker >> pushBufferTransitionBarrier: buffer old_usage: old_usage new_usage: new_usage [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance pushBufferTransitionBarrier_state_tracker: (self validHandle) buffer: (self validHandleOf: buffer) new_usage: new_usage.
+	resultValue_ := AGPUCBindings uniqueInstance pushBufferTransitionBarrier_state_tracker: (self validHandle) buffer: (self validHandleOf: buffer) old_usage: old_usage new_usage: new_usage.
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUStateTracker >> pushTextureTransitionBarrier: texture new_usage: new_usage subresource_range: subresource_range [
+AGPUStateTracker >> pushTextureTransitionBarrier: texture old_usage: old_usage new_usage: new_usage subresource_range: subresource_range [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance pushTextureTransitionBarrier_state_tracker: (self validHandle) texture: (self validHandleOf: texture) new_usage: new_usage subresource_range: subresource_range.
+	resultValue_ := AGPUCBindings uniqueInstance pushTextureTransitionBarrier_state_tracker: (self validHandle) texture: (self validHandleOf: texture) old_usage: old_usage new_usage: new_usage subresource_range: subresource_range.
 	self checkErrorCode: resultValue_
 ]
 
@@ -428,6 +442,13 @@ AGPUStateTracker >> copyBufferToTexture: buffer texture: texture copy_region: co
 AGPUStateTracker >> copyTextureToBuffer: texture buffer: buffer copy_region: copy_region [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance copyTextureToBuffer_state_tracker: (self validHandle) texture: (self validHandleOf: texture) buffer: (self validHandleOf: buffer) copy_region: copy_region.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUStateTracker >> copyTexture: source_texture dest_texture: dest_texture copy_region: copy_region [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance copyTexture_state_tracker: (self validHandle) source_texture: (self validHandleOf: source_texture) dest_texture: (self validHandleOf: dest_texture) copy_region: copy_region.
 	self checkErrorCode: resultValue_
 ]
 

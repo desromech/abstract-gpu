@@ -16,8 +16,9 @@ AGPUTextureViewDescription class >> fields [
 		(type 'long')
 		(format 'long')
 		(sample_count 'ulong')
+		(usage_mode 'long')
 		(components 'AGPUComponentsSwizzle')
-		(subresource_range 'AGPUSubresourceRange')
+		(subresource_range 'AGPUTextureSubresourceRange')
 	)
 ]
 

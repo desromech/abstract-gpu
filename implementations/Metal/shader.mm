@@ -241,12 +241,13 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
         msl.rename_entry_point(usedEntryPoint, newEntryPointName, expectedExecutionModel);
         usedEntryPoint = newEntryPointName;
     }
-    
+
     // Set the entry point.
     msl.set_entry_point(usedEntryPoint, expectedExecutionModel);
 
     // Set some options.
 	spirv_cross::CompilerMSL::Options options;
+    options.force_native_arrays = true;
 	msl.set_msl_options(options);
     
     // Use only the active interface variables.
