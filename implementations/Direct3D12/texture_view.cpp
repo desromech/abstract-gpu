@@ -112,14 +112,14 @@ agpu_error ADXTextureView::getSampledTextureViewDescription(D3D12_SHADER_RESOURC
 		}
 		break;
 	case AGPU_TEXTURE_CUBE:
-		isArray = description.subresource_range.layer_count > 1 || description.subresource_range.base_arraylayer > 0;
+		isArray = description.subresource_range.layer_count > 6 || description.subresource_range.base_arraylayer > 0;
 		if (isArray)
 		{
 			out->ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
 			out->TextureCubeArray.MostDetailedMip = description.subresource_range.base_miplevel;
 			out->TextureCubeArray.MipLevels = description.subresource_range.level_count;
 			out->TextureCubeArray.First2DArrayFace = description.subresource_range.base_arraylayer;
-			out->TextureCubeArray.NumCubes = description.subresource_range.layer_count*6;
+			out->TextureCubeArray.NumCubes = description.subresource_range.layer_count / 6;
 			out->TextureCubeArray.ResourceMinLODClamp = lodClamp;
 		}
 		else

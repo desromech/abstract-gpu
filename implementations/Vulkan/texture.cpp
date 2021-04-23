@@ -126,6 +126,9 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     if (!description)
         return agpu::texture_ref();
 
+    if (description->type == AGPU_TEXTURE_CUBE && description->layers % 6 != 0)
+        return agpu::texture_ref();
+
     auto isDepthStencil = (description->usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) != 0;
 
     // Create the image
@@ -145,10 +148,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     auto initialUsageMode = AGPU_TEXTURE_USAGE_NONE;
 
     if(description->type == AGPU_TEXTURE_CUBE)
-    {
-        createInfo.arrayLayers *= 6;
         createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    }
 
     auto usageModes = description->usage_modes;
     auto mainUsageMode = description->main_usage_mode;
@@ -285,11 +285,15 @@ agpu::texture_ref AVkTexture::createFromImage(const agpu::device_ref &device, ag
 agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* viewDescription)
 {
     if(!viewDescription) return nullptr;
+    if(viewDescription->type == AGPU_TEXTURE_CUBE && viewDescription->subresource_range.layer_count % 6 != 0) return nullptr;
 
+    bool isArray = viewDescription->type == AGPU_TEXTURE_CUBE
+        ? viewDescription->subresource_range.layer_count > 6
+        : viewDescription->subresource_range.layer_count > 1;
 	VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = image;
-    createInfo.viewType = mapImageViewType(viewDescription->type, viewDescription->subresource_range.layer_count > 1);
+    createInfo.viewType = mapImageViewType(viewDescription->type, isArray);
     createInfo.format = mapTextureFormat(description.format, imageAspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
 
     auto &components = createInfo.components;
@@ -303,9 +307,6 @@ agpu::texture_view_ptr AVkTexture::createView(agpu_texture_view_description* vie
     subresource.levelCount = viewDescription->subresource_range.level_count;
     subresource.baseArrayLayer = viewDescription->subresource_range.base_arraylayer;
     subresource.layerCount = viewDescription->subresource_range.layer_count;
-    if(viewDescription->type == AGPU_TEXTURE_CUBE)
-        subresource.layerCount *= 6;
-
     subresource.aspectMask = viewDescription->subresource_range.aspect;
 
     VkImageView viewHandle;

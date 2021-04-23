@@ -786,7 +786,7 @@ int SampleBase::main(int argc, const char **argv)
 
 
 	hasPersistentCoherentMapping = device->isFeatureSupported(AGPU_FEATURE_PERSISTENT_COHERENT_MEMORY_MAPPING);
-    useComputeShadersForMipmapGeneration = device->isFeatureSupported(AGPU_FEATURE_COMPUTE_SHADER);
+    useComputeShadersForMipmapGeneration = false && device->isFeatureSupported(AGPU_FEATURE_COMPUTE_SHADER);
 
     // Get the default command queue
     commandQueue = device->getDefaultCommandQueue();

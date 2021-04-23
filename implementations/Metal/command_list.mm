@@ -598,18 +598,18 @@ agpu_error AMtlCommandList::bufferMemoryBarrier(const agpu::buffer_ref & buffer,
     return memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
 }
 
-agpu_error AMtlCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_subresource_range* subresource_range)
+agpu_error AMtlCommandList::textureMemoryBarrier(const agpu::texture_ref & texture, agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 {
     return memoryBarrier(source_stage, dest_stage, source_accesses, dest_accesses);
 }
 
-agpu_error AMtlCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask new_usage)
+agpu_error AMtlCommandList::pushBufferTransitionBarrier(const agpu::buffer_ref & buffer, agpu_buffer_usage_mask old_usage, agpu_buffer_usage_mask new_usage)
 {
     (void)buffer;
     return AGPU_OK;
 }
 
-agpu_error AMtlCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask new_usage, agpu_subresource_range* subresource_range)
+agpu_error AMtlCommandList::pushTextureTransitionBarrier(const agpu::texture_ref & texture, agpu_texture_usage_mode_mask old_usage, agpu_texture_usage_mode_mask new_usage, agpu_texture_subresource_range* subresource_range)
 {
     (void)texture;
     (void)subresource_range;
@@ -667,15 +667,22 @@ agpu_error AMtlCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer,
     beginBlitting();
     MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
     MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
-    [blitEncoder copyFromBuffer: buffer.as<AMtlBuffer> ()->handle
-              sourceOffset: copy_region->buffer_offset
-         sourceBytesPerRow: copy_region->buffer_row_length
-       sourceBytesPerImage: copy_region->buffer_image_height*copy_region->buffer_row_length
-                sourceSize: regionSize
-                 toTexture: texture.as<AMtlTexture> ()->handle
-          destinationSlice: copy_region->texture_subresource_range.base_arraylayer
-          destinationLevel: copy_region->texture_subresource_range.base_miplevel
-         destinationOrigin: regionOrigin];
+    auto bufferOffset = copy_region->buffer_offset;
+    auto offsetIncrement = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
+    for(agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
+    {
+        [blitEncoder copyFromBuffer: buffer.as<AMtlBuffer> ()->handle
+                sourceOffset: bufferOffset
+            sourceBytesPerRow: copy_region->buffer_pitch
+        sourceBytesPerImage: copy_region->buffer_slice_pitch
+                    sourceSize: regionSize
+                    toTexture: texture.as<AMtlTexture> ()->handle
+            destinationSlice: copy_region->texture_subresource_level.base_arraylayer + layer
+            destinationLevel: copy_region->texture_subresource_level.miplevel
+            destinationOrigin: regionOrigin];
+
+        bufferOffset += offsetIncrement;
+    }
     endBlitting();
     return AGPU_OK;
 }
@@ -684,24 +691,58 @@ agpu_error AMtlCommandList::copyTextureToBuffer(const agpu::texture_ref & textur
 {
     CHECK_POINTER(buffer);
     CHECK_POINTER(texture);
-
-    CHECK_POINTER(buffer);
-    CHECK_POINTER(texture);
     CHECK_POINTER(copy_region);
 
     beginBlitting();
     MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
     MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
-    [blitEncoder copyFromTexture: texture.as<AMtlTexture> ()->handle
-            sourceSlice: copy_region->texture_subresource_range.base_arraylayer
-            sourceLevel: copy_region->texture_subresource_range.base_miplevel
-           sourceOrigin: regionOrigin
-             sourceSize: regionSize
-               toBuffer: buffer.as<AMtlBuffer> ()->handle
-      destinationOffset: copy_region->buffer_offset
- destinationBytesPerRow: copy_region->buffer_row_length
-destinationBytesPerImage: copy_region->buffer_image_height*copy_region->buffer_row_length];
+    auto bufferOffset = copy_region->buffer_offset;
+    auto offsetIncrement = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
+    for(agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
+    {
+        [blitEncoder copyFromTexture: texture.as<AMtlTexture> ()->handle
+                sourceSlice: copy_region->texture_subresource_level.base_arraylayer + layer
+                sourceLevel: copy_region->texture_subresource_level.miplevel
+            sourceOrigin: regionOrigin
+                sourceSize: regionSize
+                toBuffer: buffer.as<AMtlBuffer> ()->handle
+        destinationOffset: bufferOffset
+    destinationBytesPerRow: copy_region->buffer_pitch
+    destinationBytesPerImage: copy_region->buffer_slice_pitch];
+
+        bufferOffset += offsetIncrement;
+    }
     endBlitting();
     return AGPU_OK;
 }
+
+agpu_error AMtlCommandList::copyTexture(const agpu::texture_ref & source_texture, const agpu::texture_ref & dest_texture, agpu_image_copy_region* copy_region)
+{
+    CHECK_POINTER(source_texture);
+    CHECK_POINTER(dest_texture);
+    CHECK_POINTER(copy_region);
+    if(copy_region->source_subresource_level.layer_count != copy_region->destination_subresource_level.layer_count)
+        return AGPU_INVALID_PARAMETER;
+
+    beginBlitting();
+    MTLOrigin sourceOrigin = {copy_region->source_offset.x, copy_region->source_offset.y, copy_region->source_offset.z};
+    MTLOrigin destinationOrigin = {copy_region->destination_offset.x, copy_region->destination_offset.y, copy_region->destination_offset.z};
+    MTLSize extent = {copy_region->extent.width, copy_region->extent.height, copy_region->extent.depth};
+
+    for(agpu_uint layer = 0; layer < copy_region->source_subresource_level.layer_count; ++layer)
+    {
+        [blitEncoder copyFromTexture: source_texture.as<AMtlTexture> ()->linearViewHandle
+            sourceSlice: copy_region->source_subresource_level.base_arraylayer + layer
+            sourceLevel: copy_region->source_subresource_level.miplevel
+           sourceOrigin: sourceOrigin
+             sourceSize: extent
+              toTexture: dest_texture.as<AMtlTexture> ()->linearViewHandle
+       destinationSlice: copy_region->destination_subresource_level.base_arraylayer + layer
+       destinationLevel: copy_region->destination_subresource_level.miplevel
+      destinationOrigin: destinationOrigin];
+    }
+    endBlitting();
+    return AGPU_OK;
+}
+
 } // End of namespace AgpuMetal

@@ -89,6 +89,9 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     if (!description)
         return agpu::texture_ref();
 
+    if (description->type == AGPU_TEXTURE_CUBE && description->layers % 6 != 0)
+        return agpu::texture_ref();
+
     // The resource description.
     D3D12_RESOURCE_DESC desc = {};
     desc.Dimension = mapTextureDimension(description->type);
@@ -102,9 +105,6 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     desc.SampleDesc.Quality = description->sample_quality;
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    if (description->type == AGPU_TEXTURE_CUBE)
-        desc.DepthOrArraySize *= 6;
 
     auto usageModes = description->usage_modes;
     auto mainUsageMode = description->main_usage_mode;
@@ -357,6 +357,7 @@ agpu_error ADXTexture::getFullViewDescription(agpu_texture_view_description *vie
     viewDescription->type = description.type;
     viewDescription->format = description.format;
     viewDescription->sample_count = description.sample_count;
+    viewDescription->usage_mode = description.main_usage_mode;
     viewDescription->components.r = AGPU_COMPONENT_SWIZZLE_R;
     viewDescription->components.g = AGPU_COMPONENT_SWIZZLE_G;
     viewDescription->components.b = AGPU_COMPONENT_SWIZZLE_B;
@@ -372,8 +373,9 @@ agpu_error ADXTexture::getFullViewDescription(agpu_texture_view_description *vie
 
 agpu::texture_view_ptr ADXTexture::createView(agpu_texture_view_description* viewDescription)
 {
-	if (!viewDescription)
-		return nullptr;
+	if (!viewDescription) return nullptr;
+	if (viewDescription->type == AGPU_TEXTURE_CUBE
+        && viewDescription->subresource_range.layer_count % 6 != 0) return nullptr;
 
 	return ADXTextureView::create(device, refFromThis<agpu::texture> (), *viewDescription).disown();
 }
