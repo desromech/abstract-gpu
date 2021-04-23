@@ -64,4 +64,9 @@ agpu_error AMtlShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding
     return AGPU_OK;
 }
 
+agpu_error AMtlShaderSignatureBuilder::addBindingBankArray(agpu_shader_binding_type type, agpu_uint size)
+{
+    return AGPU_UNIMPLEMENTED;
+}
+
 } // End of namespace AgpuMetal

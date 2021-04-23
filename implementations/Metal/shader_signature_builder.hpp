@@ -89,7 +89,8 @@ public:
 
     virtual agpu_error beginBindingBank(agpu_uint maxBindings) override;
     virtual agpu_error addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount) override;
-
+    virtual agpu_error addBindingBankArray(agpu_shader_binding_type type, agpu_uint size) override;
+    
     agpu::device_ref device;
     agpu_uint bindingPointsUsed[(int)MetalResourceBindingType::Count];
     std::vector<ShaderSignatureElement> elements;

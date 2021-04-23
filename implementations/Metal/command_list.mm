@@ -165,22 +165,31 @@ agpu_error AMtlCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_
 agpu_error AMtlCommandList::useShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
-    auto bindingPoint = binding.as<AMtlShaderResourceBinding> ()->elementIndex;
-    if(bindingPoint >= MaxActiveResourceBindings)
-        return AGPU_UNSUPPORTED;
+    return useShaderResourcesInSlot(binding, binding.as<AMtlShaderResourceBinding> ()->elementIndex);
+}
 
-    activeShaderResourceBindings[bindingPoint] = binding;
+agpu_error AMtlCommandList::useShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot)
+{
+    CHECK_POINTER(binding);
+    if(slot >= MaxActiveResourceBindings) return AGPU_UNSUPPORTED;
+
+    activeShaderResourceBindings[slot] = binding;
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::useComputeShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
-    auto bindingPoint = binding.as<AMtlShaderResourceBinding> ()->elementIndex;
-    if(bindingPoint >= MaxActiveResourceBindings)
+    return useComputeShaderResourcesInSlot(binding, binding.as<AMtlShaderResourceBinding> ()->elementIndex);
+}
+
+agpu_error AMtlCommandList::useComputeShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot)
+{
+    CHECK_POINTER(binding);
+    if(slot >= MaxActiveResourceBindings)
         return AGPU_UNSUPPORTED;
 
-    activeComputeShaderResourceBindings[bindingPoint] = binding;
+    activeComputeShaderResourceBindings[slot] = binding;
     return AGPU_OK;
 }
 
