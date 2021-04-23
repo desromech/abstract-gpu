@@ -816,9 +816,9 @@ public:
 		agpuThrowIfFailed(agpuAddCommandList(this, command_list.get()));
 	}
 
-	inline void addCommandListsAndSignalFence(agpu_uint count, agpu_ref<agpu_command_list>* command_list, const agpu_ref<agpu_fence>& fence)
+	inline void addCommandListsAndSignalFence(agpu_uint count, agpu_ref<agpu_command_list>* command_lists, const agpu_ref<agpu_fence>& fence)
 	{
-		agpuThrowIfFailed(agpuAddCommandListsAndSignalFence(this, count, reinterpret_cast<agpu_command_list**> (command_list), fence.get()));
+		agpuThrowIfFailed(agpuAddCommandListsAndSignalFence(this, count, reinterpret_cast<agpu_command_list**> (command_lists), fence.get()));
 	}
 
 	inline void finishExecution()
@@ -933,9 +933,19 @@ public:
 		agpuThrowIfFailed(agpuUseShaderResources(this, binding.get()));
 	}
 
+	inline void useShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuUseShaderResourcesInSlot(this, binding.get(), slot));
+	}
+
 	inline void useComputeShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
 	{
 		agpuThrowIfFailed(agpuUseComputeShaderResources(this, binding.get()));
+	}
+
+	inline void useComputeShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuUseComputeShaderResourcesInSlot(this, binding.get(), slot));
 	}
 
 	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
@@ -1478,6 +1488,11 @@ public:
 		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankElement(this, type, bindingPointCount));
 	}
 
+	inline void addBindingBankArray(agpu_shader_binding_type type, agpu_uint size)
+	{
+		agpuThrowIfFailed(agpuAddShaderSignatureBindingBankArray(this, type, size));
+	}
+
 };
 
 typedef agpu_ref<agpu_shader_signature_builder> agpu_shader_signature_builder_ref;
@@ -1889,9 +1904,19 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerUseShaderResources(this, binding.get()));
 	}
 
+	inline void useShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseShaderResourcesInSlot(this, binding.get(), slot));
+	}
+
 	inline void useComputeShaderResources(const agpu_ref<agpu_shader_resource_binding>& binding)
 	{
 		agpuThrowIfFailed(agpuStateTrackerUseComputeShaderResources(this, binding.get()));
+	}
+
+	inline void useComputeShaderResourcesInSlot(const agpu_ref<agpu_shader_resource_binding>& binding, agpu_uint slot)
+	{
+		agpuThrowIfFailed(agpuStateTrackerUseComputeShaderResourcesInSlot(this, binding.get(), slot));
 	}
 
 	inline void drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)

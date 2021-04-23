@@ -89,9 +89,23 @@ AGPUCommandList >> useShaderResources: binding [
 ]
 
 { #category : #'wrappers' }
+AGPUCommandList >> useShaderResourcesInSlot: binding slot: slot [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useShaderResourcesInSlot_command_list: (self validHandle) binding: (self validHandleOf: binding) slot: slot.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUCommandList >> useComputeShaderResources: binding [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance useComputeShaderResources_command_list: (self validHandle) binding: (self validHandleOf: binding).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUCommandList >> useComputeShaderResourcesInSlot: binding slot: slot [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useComputeShaderResourcesInSlot_command_list: (self validHandle) binding: (self validHandleOf: binding) slot: slot.
 	self checkErrorCode: resultValue_
 ]
 

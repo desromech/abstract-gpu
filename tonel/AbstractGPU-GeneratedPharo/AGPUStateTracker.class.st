@@ -264,9 +264,23 @@ AGPUStateTracker >> useShaderResources: binding [
 ]
 
 { #category : #'wrappers' }
+AGPUStateTracker >> useShaderResourcesInSlot: binding slot: slot [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useShaderResourcesInSlot_state_tracker: (self validHandle) binding: (self validHandleOf: binding) slot: slot.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUStateTracker >> useComputeShaderResources: binding [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance useComputeShaderResources_state_tracker: (self validHandle) binding: (self validHandleOf: binding).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUStateTracker >> useComputeShaderResourcesInSlot: binding slot: slot [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance useComputeShaderResourcesInSlot_state_tracker: (self validHandle) binding: (self validHandleOf: binding) slot: slot.
 	self checkErrorCode: resultValue_
 ]
 

@@ -647,10 +647,10 @@ AGPU_EXPORT agpu_error agpuAddCommandList(agpu_command_queue* self, agpu_command
 	return asRef(agpu::command_queue, self)->addCommandList(asRef(agpu::command_list, command_list));
 }
 
-AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence(agpu_command_queue* self, agpu_uint count, agpu_command_list** command_list, agpu_fence* fence)
+AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence(agpu_command_queue* self, agpu_uint count, agpu_command_list** command_lists, agpu_fence* fence)
 {
 	if(!self) return AGPU_NULL_POINTER;
-	return asRef(agpu::command_queue, self)->addCommandListsAndSignalFence(count, reinterpret_cast<agpu::command_list_ref*> (command_list), asRef(agpu::fence, fence));
+	return asRef(agpu::command_queue, self)->addCommandListsAndSignalFence(count, reinterpret_cast<agpu::command_list_ref*> (command_lists), asRef(agpu::fence, fence));
 }
 
 AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* self)
@@ -769,10 +769,22 @@ AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* self, agpu_shad
 	return asRef(agpu::command_list, self)->useShaderResources(asRef(agpu::shader_resource_binding, binding));
 }
 
+AGPU_EXPORT agpu_error agpuUseShaderResourcesInSlot(agpu_command_list* self, agpu_shader_resource_binding* binding, agpu_uint slot)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->useShaderResourcesInSlot(asRef(agpu::shader_resource_binding, binding), slot);
+}
+
 AGPU_EXPORT agpu_error agpuUseComputeShaderResources(agpu_command_list* self, agpu_shader_resource_binding* binding)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::command_list, self)->useComputeShaderResources(asRef(agpu::shader_resource_binding, binding));
+}
+
+AGPU_EXPORT agpu_error agpuUseComputeShaderResourcesInSlot(agpu_command_list* self, agpu_shader_resource_binding* binding, agpu_uint slot)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::command_list, self)->useComputeShaderResourcesInSlot(asRef(agpu::shader_resource_binding, binding), slot);
 }
 
 AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* self, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)
@@ -1319,6 +1331,12 @@ AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement(agpu_shader_sign
 	return asRef(agpu::shader_signature_builder, self)->addBindingBankElement(type, bindingPointCount);
 }
 
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankArray(agpu_shader_signature_builder* self, agpu_shader_binding_type type, agpu_uint size)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::shader_signature_builder, self)->addBindingBankArray(type, size);
+}
+
 //==============================================================================
 // shader_signature C dispatching functions.
 //==============================================================================
@@ -1746,10 +1764,22 @@ AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResources(agpu_state_tracker* se
 	return asRef(agpu::state_tracker, self)->useShaderResources(asRef(agpu::shader_resource_binding, binding));
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResourcesInSlot(agpu_state_tracker* self, agpu_shader_resource_binding* binding, agpu_uint slot)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useShaderResourcesInSlot(asRef(agpu::shader_resource_binding, binding), slot);
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResources(agpu_state_tracker* self, agpu_shader_resource_binding* binding)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->useComputeShaderResources(asRef(agpu::shader_resource_binding, binding));
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResourcesInSlot(agpu_state_tracker* self, agpu_shader_resource_binding* binding, agpu_uint slot)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->useComputeShaderResourcesInSlot(asRef(agpu::shader_resource_binding, binding), slot);
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerDrawArrays(agpu_state_tracker* self, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)

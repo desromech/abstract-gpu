@@ -19,7 +19,7 @@ AVkShaderResourceBinding::~AVkShaderResourceBinding()
     if(descriptorSetPool && descriptorSetAllocation)
     {
         descriptorSetPool->free(descriptorSetAllocation);
-        descriptorSetAllocation = nullptr;        
+        descriptorSetAllocation = nullptr;
     }
 }
 
@@ -67,8 +67,7 @@ agpu_error AVkShaderResourceBinding::bindUniformBufferRange(agpu_int location, c
     bufferInfo.offset = offset;
     bufferInfo.range = (size + 255) & (~255);
 
-    VkWriteDescriptorSet write;
-    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
     write.descriptorType = bindingDescription->bindings[location].descriptorType;
@@ -104,14 +103,13 @@ agpu_error AVkShaderResourceBinding::bindStorageBufferRange(agpu_int location, c
     if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER)
         return AGPU_INVALID_OPERATION;
 
-    // Align the size to 256 Kb
+    // Align the size to 256 bytes.
     VkDescriptorBufferInfo bufferInfo;
     bufferInfo.buffer = storage_buffer.as<AVkBuffer> ()->handle;
     bufferInfo.offset = offset;
     bufferInfo.range = (size + 255) & (~255);
 
-    VkWriteDescriptorSet write;
-    memset(&write, 0, sizeof(VkWriteDescriptorSet));
+    VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.descriptorCount = 1;
     write.descriptorType = bindingDescription->bindings[location].descriptorType;

@@ -1594,7 +1594,7 @@
 
             <method name="addCommandListsAndSignalFence" cname="AddCommandListsAndSignalFence" returnType="error">
                 <arg name="count" type="uint" />
-                <arg name="command_list" type="command_list**" pointerList="true"/>
+                <arg name="command_lists" type="command_list**" pointerList="true"/>
                 <arg name="fence" type="fence*" />
             </method>
 
@@ -1677,8 +1677,18 @@
                 <arg name="binding" type="shader_resource_binding*" />
             </method>
 
+            <method name="useShaderResourcesInSlot" cname="UseShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
+            </method>
+
             <method name="useComputeShaderResources" cname="UseComputeShaderResources" returnType="error">
                 <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useComputeShaderResourcesInSlot" cname="UseComputeShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
             </method>
 
             <method name="drawArrays" cname="DrawArrays" returnType="error">
@@ -2104,9 +2114,15 @@
             <method name="beginBindingBank" cname="BeginShaderSignatureBindingBank" returnType="error">
                 <arg name="maxBindings" type="uint" />
             </method>
+
             <method name="addBindingBankElement" cname="AddShaderSignatureBindingBankElement" returnType="error">
                 <arg name="type" type="shader_binding_type" />
                 <arg name="bindingPointCount" type="uint" />
+            </method>
+
+            <method name="addBindingBankArray" cname="AddShaderSignatureBindingBankArray" returnType="error">
+                <arg name="type" type="shader_binding_type" />
+                <arg name="size" type="uint" />
             </method>
         </interface>
 
@@ -2440,8 +2456,18 @@
                 <arg name="binding" type="shader_resource_binding*" />
             </method>
 
+            <method name="useShaderResourcesInSlot" cname="StateTrackerUseShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
+            </method>
+
             <method name="useComputeShaderResources" cname="StateTrackerUseComputeShaderResources" returnType="error">
                 <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useComputeShaderResourcesInSlot" cname="StateTrackerUseComputeShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
             </method>
 
             <method name="drawArrays" cname="StateTrackerDrawArrays" returnType="error">

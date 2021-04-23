@@ -1383,7 +1383,7 @@ AGPU_EXPORT agpu_error agpuReleasePipelineState(agpu_pipeline_state* pipeline_st
 typedef agpu_error (*agpuAddCommandQueueReference_FUN) (agpu_command_queue* command_queue);
 typedef agpu_error (*agpuReleaseCommandQueue_FUN) (agpu_command_queue* command_queue);
 typedef agpu_error (*agpuAddCommandList_FUN) (agpu_command_queue* command_queue, agpu_command_list* command_list);
-typedef agpu_error (*agpuAddCommandListsAndSignalFence_FUN) (agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_list, agpu_fence* fence);
+typedef agpu_error (*agpuAddCommandListsAndSignalFence_FUN) (agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_lists, agpu_fence* fence);
 typedef agpu_error (*agpuFinishQueueExecution_FUN) (agpu_command_queue* command_queue);
 typedef agpu_error (*agpuSignalFence_FUN) (agpu_command_queue* command_queue, agpu_fence* fence);
 typedef agpu_error (*agpuWaitFence_FUN) (agpu_command_queue* command_queue, agpu_fence* fence);
@@ -1391,7 +1391,7 @@ typedef agpu_error (*agpuWaitFence_FUN) (agpu_command_queue* command_queue, agpu
 AGPU_EXPORT agpu_error agpuAddCommandQueueReference(agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_error agpuReleaseCommandQueue(agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_error agpuAddCommandList(agpu_command_queue* command_queue, agpu_command_list* command_list);
-AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence(agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_list, agpu_fence* fence);
+AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence(agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_lists, agpu_fence* fence);
 AGPU_EXPORT agpu_error agpuFinishQueueExecution(agpu_command_queue* command_queue);
 AGPU_EXPORT agpu_error agpuSignalFence(agpu_command_queue* command_queue, agpu_fence* fence);
 AGPU_EXPORT agpu_error agpuWaitFence(agpu_command_queue* command_queue, agpu_fence* fence);
@@ -1418,7 +1418,9 @@ typedef agpu_error (*agpuUseIndexBufferAt_FUN) (agpu_command_list* command_list,
 typedef agpu_error (*agpuUseDrawIndirectBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* draw_buffer);
 typedef agpu_error (*agpuUseComputeDispatchIndirectBuffer_FUN) (agpu_command_list* command_list, agpu_buffer* buffer);
 typedef agpu_error (*agpuUseShaderResources_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuUseShaderResourcesInSlot_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuUseComputeShaderResources_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuUseComputeShaderResourcesInSlot_FUN) (agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuDrawArrays_FUN) (agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 typedef agpu_error (*agpuDrawArraysIndirect_FUN) (agpu_command_list* command_list, agpu_size offset, agpu_size drawcount);
 typedef agpu_error (*agpuDrawElements_FUN) (agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1459,7 +1461,9 @@ AGPU_EXPORT agpu_error agpuUseIndexBufferAt(agpu_command_list* command_list, agp
 AGPU_EXPORT agpu_error agpuUseDrawIndirectBuffer(agpu_command_list* command_list, agpu_buffer* draw_buffer);
 AGPU_EXPORT agpu_error agpuUseComputeDispatchIndirectBuffer(agpu_command_list* command_list, agpu_buffer* buffer);
 AGPU_EXPORT agpu_error agpuUseShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuUseShaderResourcesInSlot(agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuUseComputeShaderResources(agpu_command_list* command_list, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuUseComputeShaderResourcesInSlot(agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuDrawArrays(agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 AGPU_EXPORT agpu_error agpuDrawArraysIndirect(agpu_command_list* command_list, agpu_size offset, agpu_size drawcount);
 AGPU_EXPORT agpu_error agpuDrawElements(agpu_command_list* command_list, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1627,6 +1631,7 @@ typedef agpu_error (*agpuAddShaderSignatureBindingConstant_FUN) (agpu_shader_sig
 typedef agpu_error (*agpuAddShaderSignatureBindingElement_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings);
 typedef agpu_error (*agpuBeginShaderSignatureBindingBank_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings);
 typedef agpu_error (*agpuAddShaderSignatureBindingBankElement_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount);
+typedef agpu_error (*agpuAddShaderSignatureBindingBankArray_FUN) (agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint size);
 
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBuilderReference(agpu_shader_signature_builder* shader_signature_builder);
 AGPU_EXPORT agpu_error agpuReleaseShaderSignatureBuilder(agpu_shader_signature_builder* shader_signature_builder);
@@ -1635,6 +1640,7 @@ AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingConstant(agpu_shader_signatu
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingElement(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint maxBindings);
 AGPU_EXPORT agpu_error agpuBeginShaderSignatureBindingBank(agpu_shader_signature_builder* shader_signature_builder, agpu_uint maxBindings);
 AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint bindingPointCount);
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankArray(agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint size);
 
 /* Methods for interface agpu_shader_signature. */
 typedef agpu_error (*agpuAddShaderSignature_FUN) (agpu_shader_signature* shader_signature);
@@ -1753,7 +1759,9 @@ typedef agpu_error (*agpuStateTrackerUseIndexBufferAt_FUN) (agpu_state_tracker* 
 typedef agpu_error (*agpuStateTrackerUseDrawIndirectBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* draw_buffer);
 typedef agpu_error (*agpuStateTrackerUseComputeDispatchIndirectBuffer_FUN) (agpu_state_tracker* state_tracker, agpu_buffer* buffer);
 typedef agpu_error (*agpuStateTrackerUseShaderResources_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuStateTrackerUseShaderResourcesInSlot_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuStateTrackerUseComputeShaderResources_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+typedef agpu_error (*agpuStateTrackerUseComputeShaderResourcesInSlot_FUN) (agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 typedef agpu_error (*agpuStateTrackerDrawArrays_FUN) (agpu_state_tracker* state_tracker, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 typedef agpu_error (*agpuStateTrackerDrawArraysIndirect_FUN) (agpu_state_tracker* state_tracker, agpu_size offset, agpu_size drawcount);
 typedef agpu_error (*agpuStateTrackerDrawElements_FUN) (agpu_state_tracker* state_tracker, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -1816,7 +1824,9 @@ AGPU_EXPORT agpu_error agpuStateTrackerUseIndexBufferAt(agpu_state_tracker* stat
 AGPU_EXPORT agpu_error agpuStateTrackerUseDrawIndirectBuffer(agpu_state_tracker* state_tracker, agpu_buffer* draw_buffer);
 AGPU_EXPORT agpu_error agpuStateTrackerUseComputeDispatchIndirectBuffer(agpu_state_tracker* state_tracker, agpu_buffer* buffer);
 AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResources(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResourcesInSlot(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResources(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding);
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResourcesInSlot(agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot);
 AGPU_EXPORT agpu_error agpuStateTrackerDrawArrays(agpu_state_tracker* state_tracker, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance);
 AGPU_EXPORT agpu_error agpuStateTrackerDrawArraysIndirect(agpu_state_tracker* state_tracker, agpu_size offset, agpu_size drawcount);
 AGPU_EXPORT agpu_error agpuStateTrackerDrawElements(agpu_state_tracker* state_tracker, agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance);
@@ -2121,7 +2131,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuUseDrawIndirectBuffer_FUN agpuUseDrawIndirectBuffer;
 	agpuUseComputeDispatchIndirectBuffer_FUN agpuUseComputeDispatchIndirectBuffer;
 	agpuUseShaderResources_FUN agpuUseShaderResources;
+	agpuUseShaderResourcesInSlot_FUN agpuUseShaderResourcesInSlot;
 	agpuUseComputeShaderResources_FUN agpuUseComputeShaderResources;
+	agpuUseComputeShaderResourcesInSlot_FUN agpuUseComputeShaderResourcesInSlot;
 	agpuDrawArrays_FUN agpuDrawArrays;
 	agpuDrawArraysIndirect_FUN agpuDrawArraysIndirect;
 	agpuDrawElements_FUN agpuDrawElements;
@@ -2208,6 +2220,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuAddShaderSignatureBindingElement_FUN agpuAddShaderSignatureBindingElement;
 	agpuBeginShaderSignatureBindingBank_FUN agpuBeginShaderSignatureBindingBank;
 	agpuAddShaderSignatureBindingBankElement_FUN agpuAddShaderSignatureBindingBankElement;
+	agpuAddShaderSignatureBindingBankArray_FUN agpuAddShaderSignatureBindingBankArray;
 	agpuAddShaderSignature_FUN agpuAddShaderSignature;
 	agpuReleaseShaderSignature_FUN agpuReleaseShaderSignature;
 	agpuCreateShaderResourceBinding_FUN agpuCreateShaderResourceBinding;
@@ -2277,7 +2290,9 @@ typedef struct _agpu_icd_dispatch {
 	agpuStateTrackerUseDrawIndirectBuffer_FUN agpuStateTrackerUseDrawIndirectBuffer;
 	agpuStateTrackerUseComputeDispatchIndirectBuffer_FUN agpuStateTrackerUseComputeDispatchIndirectBuffer;
 	agpuStateTrackerUseShaderResources_FUN agpuStateTrackerUseShaderResources;
+	agpuStateTrackerUseShaderResourcesInSlot_FUN agpuStateTrackerUseShaderResourcesInSlot;
 	agpuStateTrackerUseComputeShaderResources_FUN agpuStateTrackerUseComputeShaderResources;
+	agpuStateTrackerUseComputeShaderResourcesInSlot_FUN agpuStateTrackerUseComputeShaderResourcesInSlot;
 	agpuStateTrackerDrawArrays_FUN agpuStateTrackerDrawArrays;
 	agpuStateTrackerDrawArraysIndirect_FUN agpuStateTrackerDrawArraysIndirect;
 	agpuStateTrackerDrawElements_FUN agpuStateTrackerDrawElements;

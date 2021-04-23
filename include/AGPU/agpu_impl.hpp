@@ -663,7 +663,7 @@ struct command_queue : base_interface
 public:
 	typedef command_queue main_interface;
 	virtual agpu_error addCommandList(const command_list_ref & command_list) = 0;
-	virtual agpu_error addCommandListsAndSignalFence(agpu_uint count, command_list_ref* command_list, const fence_ref & fence) = 0;
+	virtual agpu_error addCommandListsAndSignalFence(agpu_uint count, command_list_ref* command_lists, const fence_ref & fence) = 0;
 	virtual agpu_error finishExecution() = 0;
 	virtual agpu_error signalFence(const fence_ref & fence) = 0;
 	virtual agpu_error waitFence(const fence_ref & fence) = 0;
@@ -694,7 +694,9 @@ public:
 	virtual agpu_error useDrawIndirectBuffer(const buffer_ref & draw_buffer) = 0;
 	virtual agpu_error useComputeDispatchIndirectBuffer(const buffer_ref & buffer) = 0;
 	virtual agpu_error useShaderResources(const shader_resource_binding_ref & binding) = 0;
+	virtual agpu_error useShaderResourcesInSlot(const shader_resource_binding_ref & binding, agpu_uint slot) = 0;
 	virtual agpu_error useComputeShaderResources(const shader_resource_binding_ref & binding) = 0;
+	virtual agpu_error useComputeShaderResourcesInSlot(const shader_resource_binding_ref & binding, agpu_uint slot) = 0;
 	virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) = 0;
 	virtual agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount) = 0;
 	virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;
@@ -841,6 +843,7 @@ public:
 	virtual agpu_error addBindingElement(agpu_shader_binding_type type, agpu_uint maxBindings) = 0;
 	virtual agpu_error beginBindingBank(agpu_uint maxBindings) = 0;
 	virtual agpu_error addBindingBankElement(agpu_shader_binding_type type, agpu_uint bindingPointCount) = 0;
+	virtual agpu_error addBindingBankArray(agpu_shader_binding_type type, agpu_uint size) = 0;
 };
 
 
@@ -946,7 +949,9 @@ public:
 	virtual agpu_error useDrawIndirectBuffer(const buffer_ref & draw_buffer) = 0;
 	virtual agpu_error useComputeDispatchIndirectBuffer(const buffer_ref & buffer) = 0;
 	virtual agpu_error useShaderResources(const shader_resource_binding_ref & binding) = 0;
+	virtual agpu_error useShaderResourcesInSlot(const shader_resource_binding_ref & binding, agpu_uint slot) = 0;
 	virtual agpu_error useComputeShaderResources(const shader_resource_binding_ref & binding) = 0;
+	virtual agpu_error useComputeShaderResourcesInSlot(const shader_resource_binding_ref & binding, agpu_uint slot) = 0;
 	virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) = 0;
 	virtual agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount) = 0;
 	virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) = 0;

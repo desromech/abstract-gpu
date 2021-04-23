@@ -674,7 +674,7 @@ AGPUCBindings >> addCommandList_command_queue: command_queue command_list: comma
 ]
 
 { #category : #'command_queue' }
-AGPUCBindings >> addCommandListsAndSignalFence_command_queue: command_queue count: count command_list: command_list fence: fence [
+AGPUCBindings >> addCommandListsAndSignalFence_command_queue: command_queue count: count command_lists: command_lists fence: fence [
 	<cdecl: long 'agpuAddCommandListsAndSignalFence' (void* ulong void* void*)>
 	^ self externalCallFailed
 ]
@@ -788,8 +788,20 @@ AGPUCBindings >> useShaderResources_command_list: command_list binding: binding 
 ]
 
 { #category : #'command_list' }
+AGPUCBindings >> useShaderResourcesInSlot_command_list: command_list binding: binding slot: slot [
+	<cdecl: long 'agpuUseShaderResourcesInSlot' (void* void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'command_list' }
 AGPUCBindings >> useComputeShaderResources_command_list: command_list binding: binding [
 	<cdecl: long 'agpuUseComputeShaderResources' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> useComputeShaderResourcesInSlot_command_list: command_list binding: binding slot: slot [
+	<cdecl: long 'agpuUseComputeShaderResourcesInSlot' (void* void* ulong)>
 	^ self externalCallFailed
 ]
 
@@ -1309,6 +1321,12 @@ AGPUCBindings >> addBindingBankElement_shader_signature_builder: shader_signatur
 	^ self externalCallFailed
 ]
 
+{ #category : #'shader_signature_builder' }
+AGPUCBindings >> addBindingBankArray_shader_signature_builder: shader_signature_builder type: type size: size [
+	<cdecl: long 'agpuAddShaderSignatureBindingBankArray' (void* long ulong)>
+	^ self externalCallFailed
+]
+
 { #category : #'shader_signature' }
 AGPUCBindings >> addReference_shader_signature: shader_signature [
 	<cdecl: long 'agpuAddShaderSignature' (void*)>
@@ -1724,8 +1742,20 @@ AGPUCBindings >> useShaderResources_state_tracker: state_tracker binding: bindin
 ]
 
 { #category : #'state_tracker' }
+AGPUCBindings >> useShaderResourcesInSlot_state_tracker: state_tracker binding: binding slot: slot [
+	<cdecl: long 'agpuStateTrackerUseShaderResourcesInSlot' (void* void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
 AGPUCBindings >> useComputeShaderResources_state_tracker: state_tracker binding: binding [
 	<cdecl: long 'agpuStateTrackerUseComputeShaderResources' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useComputeShaderResourcesInSlot_state_tracker: state_tracker binding: binding slot: slot [
+	<cdecl: long 'agpuStateTrackerUseComputeShaderResourcesInSlot' (void* void* ulong)>
 	^ self externalCallFailed
 ]
 

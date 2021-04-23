@@ -400,10 +400,22 @@ agpu_error AbstractStateTracker::useShaderResources(const agpu::shader_resource_
     return currentCommandList->useShaderResources(binding);
 }
 
+agpu_error AbstractStateTracker::useShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->useShaderResourcesInSlot(binding, slot);
+}
+
 agpu_error AbstractStateTracker::useComputeShaderResources(const agpu::shader_resource_binding_ref & binding)
 {
     if(!currentCommandList) return AGPU_INVALID_OPERATION;
     return currentCommandList->useComputeShaderResources(binding);
+}
+
+agpu_error AbstractStateTracker::useComputeShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot)
+{
+    if(!currentCommandList) return AGPU_INVALID_OPERATION;
+    return currentCommandList->useComputeShaderResourcesInSlot(binding, slot);
 }
 
 agpu_error AbstractStateTracker::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)

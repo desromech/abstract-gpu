@@ -1262,7 +1262,7 @@ function agpuReleasePipelineState externC (pipeline_state: PipelineState pointer
 function agpuAddCommandQueueReference externC (command_queue: CommandQueue pointer) => Error.
 function agpuReleaseCommandQueue externC (command_queue: CommandQueue pointer) => Error.
 function agpuAddCommandList externC (command_queue: CommandQueue pointer, command_list: CommandList pointer) => Error.
-function agpuAddCommandListsAndSignalFence externC (command_queue: CommandQueue pointer, count: UInt32, command_list: CommandList pointer pointer, fence: Fence pointer) => Error.
+function agpuAddCommandListsAndSignalFence externC (command_queue: CommandQueue pointer, count: UInt32, command_lists: CommandList pointer pointer, fence: Fence pointer) => Error.
 function agpuFinishQueueExecution externC (command_queue: CommandQueue pointer) => Error.
 function agpuSignalFence externC (command_queue: CommandQueue pointer, fence: Fence pointer) => Error.
 function agpuWaitFence externC (command_queue: CommandQueue pointer, fence: Fence pointer) => Error.
@@ -1281,7 +1281,9 @@ function agpuUseIndexBufferAt externC (command_list: CommandList pointer, index_
 function agpuUseDrawIndirectBuffer externC (command_list: CommandList pointer, draw_buffer: Buffer pointer) => Error.
 function agpuUseComputeDispatchIndirectBuffer externC (command_list: CommandList pointer, buffer: Buffer pointer) => Error.
 function agpuUseShaderResources externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuUseShaderResourcesInSlot externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
 function agpuUseComputeShaderResources externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuUseComputeShaderResourcesInSlot externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
 function agpuDrawArrays externC (command_list: CommandList pointer, vertex_count: UInt32, instance_count: UInt32, first_vertex: UInt32, base_instance: UInt32) => Error.
 function agpuDrawArraysIndirect externC (command_list: CommandList pointer, offset: UInt32, drawcount: UInt32) => Error.
 function agpuDrawElements externC (command_list: CommandList pointer, index_count: UInt32, instance_count: UInt32, first_index: UInt32, base_vertex: Int32, base_instance: UInt32) => Error.
@@ -1368,6 +1370,7 @@ function agpuAddShaderSignatureBindingConstant externC (shader_signature_builder
 function agpuAddShaderSignatureBindingElement externC (shader_signature_builder: ShaderSignatureBuilder pointer, type: ShaderBindingType, maxBindings: UInt32) => Error.
 function agpuBeginShaderSignatureBindingBank externC (shader_signature_builder: ShaderSignatureBuilder pointer, maxBindings: UInt32) => Error.
 function agpuAddShaderSignatureBindingBankElement externC (shader_signature_builder: ShaderSignatureBuilder pointer, type: ShaderBindingType, bindingPointCount: UInt32) => Error.
+function agpuAddShaderSignatureBindingBankArray externC (shader_signature_builder: ShaderSignatureBuilder pointer, type: ShaderBindingType, size: UInt32) => Error.
 function agpuAddShaderSignature externC (shader_signature: ShaderSignature pointer) => Error.
 function agpuReleaseShaderSignature externC (shader_signature: ShaderSignature pointer) => Error.
 function agpuCreateShaderResourceBinding externC (shader_signature: ShaderSignature pointer, element: UInt32) => ShaderResourceBinding pointer.
@@ -1437,7 +1440,9 @@ function agpuStateTrackerUseIndexBufferAt externC (state_tracker: StateTracker p
 function agpuStateTrackerUseDrawIndirectBuffer externC (state_tracker: StateTracker pointer, draw_buffer: Buffer pointer) => Error.
 function agpuStateTrackerUseComputeDispatchIndirectBuffer externC (state_tracker: StateTracker pointer, buffer: Buffer pointer) => Error.
 function agpuStateTrackerUseShaderResources externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuStateTrackerUseShaderResourcesInSlot externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
 function agpuStateTrackerUseComputeShaderResources externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuStateTrackerUseComputeShaderResourcesInSlot externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
 function agpuStateTrackerDrawArrays externC (state_tracker: StateTracker pointer, vertex_count: UInt32, instance_count: UInt32, first_vertex: UInt32, base_instance: UInt32) => Error.
 function agpuStateTrackerDrawArraysIndirect externC (state_tracker: StateTracker pointer, offset: UInt32, drawcount: UInt32) => Error.
 function agpuStateTrackerDrawElements externC (state_tracker: StateTracker pointer, index_count: UInt32, instance_count: UInt32, first_index: UInt32, base_vertex: Int32, base_instance: UInt32) => Error.
@@ -1922,8 +1927,8 @@ CommandQueue extend: {
 	inline method addCommandList: (command_list: CommandListRef const ref) ::=> Void
 		:= throwIfError: (agpuAddCommandList(self address, command_list getPointer)).
 
-	inline method addCommandListsAndSignalFence: (count: UInt32) commandList: (command_list: CommandListRef pointer) fence: (fence: FenceRef const ref) ::=> Void
-		:= throwIfError: (agpuAddCommandListsAndSignalFence(self address, count, command_list reinterpretCastTo: CommandList pointer pointer, fence getPointer)).
+	inline method addCommandListsAndSignalFence: (count: UInt32) commandLists: (command_lists: CommandListRef pointer) fence: (fence: FenceRef const ref) ::=> Void
+		:= throwIfError: (agpuAddCommandListsAndSignalFence(self address, count, command_lists reinterpretCastTo: CommandList pointer pointer, fence getPointer)).
 
 	inline method finishExecution ::=> Void
 		:= throwIfError: (agpuFinishQueueExecution(self address)).
@@ -1985,8 +1990,14 @@ CommandList extend: {
 	inline method useShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
 		:= throwIfError: (agpuUseShaderResources(self address, binding getPointer)).
 
+	inline method useShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuUseShaderResourcesInSlot(self address, binding getPointer, slot)).
+
 	inline method useComputeShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
 		:= throwIfError: (agpuUseComputeShaderResources(self address, binding getPointer)).
+
+	inline method useComputeShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuUseComputeShaderResourcesInSlot(self address, binding getPointer, slot)).
 
 	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
@@ -2276,6 +2287,9 @@ ShaderSignatureBuilder extend: {
 	inline method addBindingBankElement: (type: ShaderBindingType) bindingPointCount: (bindingPointCount: UInt32) ::=> Void
 		:= throwIfError: (agpuAddShaderSignatureBindingBankElement(self address, type, bindingPointCount)).
 
+	inline method addBindingBankArray: (type: ShaderBindingType) size: (size: UInt32) ::=> Void
+		:= throwIfError: (agpuAddShaderSignatureBindingBankArray(self address, type, size)).
+
 }.
 
 ShaderSignature extend: {
@@ -2501,8 +2515,14 @@ StateTracker extend: {
 	inline method useShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
 		:= throwIfError: (agpuStateTrackerUseShaderResources(self address, binding getPointer)).
 
+	inline method useShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseShaderResourcesInSlot(self address, binding getPointer, slot)).
+
 	inline method useComputeShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
 		:= throwIfError: (agpuStateTrackerUseComputeShaderResources(self address, binding getPointer)).
+
+	inline method useComputeShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseComputeShaderResourcesInSlot(self address, binding getPointer, slot)).
 
 	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
 		:= throwIfError: (agpuStateTrackerDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).

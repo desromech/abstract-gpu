@@ -889,12 +889,12 @@ AGPU_EXPORT agpu_error agpuAddCommandList ( agpu_command_queue* command_queue, a
 	return (*dispatchTable)->agpuAddCommandList ( command_queue, command_list );
 }
 
-AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence ( agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_list, agpu_fence* fence )
+AGPU_EXPORT agpu_error agpuAddCommandListsAndSignalFence ( agpu_command_queue* command_queue, agpu_uint count, agpu_command_list** command_lists, agpu_fence* fence )
 {
 	if (command_queue == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_queue);
-	return (*dispatchTable)->agpuAddCommandListsAndSignalFence ( command_queue, count, command_list, fence );
+	return (*dispatchTable)->agpuAddCommandListsAndSignalFence ( command_queue, count, command_lists, fence );
 }
 
 AGPU_EXPORT agpu_error agpuFinishQueueExecution ( agpu_command_queue* command_queue )
@@ -1041,12 +1041,28 @@ AGPU_EXPORT agpu_error agpuUseShaderResources ( agpu_command_list* command_list,
 	return (*dispatchTable)->agpuUseShaderResources ( command_list, binding );
 }
 
+AGPU_EXPORT agpu_error agpuUseShaderResourcesInSlot ( agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuUseShaderResourcesInSlot ( command_list, binding, slot );
+}
+
 AGPU_EXPORT agpu_error agpuUseComputeShaderResources ( agpu_command_list* command_list, agpu_shader_resource_binding* binding )
 {
 	if (command_list == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
 	return (*dispatchTable)->agpuUseComputeShaderResources ( command_list, binding );
+}
+
+AGPU_EXPORT agpu_error agpuUseComputeShaderResourcesInSlot ( agpu_command_list* command_list, agpu_shader_resource_binding* binding, agpu_uint slot )
+{
+	if (command_list == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (command_list);
+	return (*dispatchTable)->agpuUseComputeShaderResourcesInSlot ( command_list, binding, slot );
 }
 
 AGPU_EXPORT agpu_error agpuDrawArrays ( agpu_command_list* command_list, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )
@@ -1737,6 +1753,14 @@ AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankElement ( agpu_shader_si
 	return (*dispatchTable)->agpuAddShaderSignatureBindingBankElement ( shader_signature_builder, type, bindingPointCount );
 }
 
+AGPU_EXPORT agpu_error agpuAddShaderSignatureBindingBankArray ( agpu_shader_signature_builder* shader_signature_builder, agpu_shader_binding_type type, agpu_uint size )
+{
+	if (shader_signature_builder == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_signature_builder);
+	return (*dispatchTable)->agpuAddShaderSignatureBindingBankArray ( shader_signature_builder, type, size );
+}
+
 AGPU_EXPORT agpu_error agpuAddShaderSignature ( agpu_shader_signature* shader_signature )
 {
 	if (shader_signature == nullptr)
@@ -2289,12 +2313,28 @@ AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResources ( agpu_state_tracker* 
 	return (*dispatchTable)->agpuStateTrackerUseShaderResources ( state_tracker, binding );
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerUseShaderResourcesInSlot ( agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseShaderResourcesInSlot ( state_tracker, binding, slot );
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResources ( agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding )
 {
 	if (state_tracker == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerUseComputeShaderResources ( state_tracker, binding );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerUseComputeShaderResourcesInSlot ( agpu_state_tracker* state_tracker, agpu_shader_resource_binding* binding, agpu_uint slot )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerUseComputeShaderResourcesInSlot ( state_tracker, binding, slot );
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerDrawArrays ( agpu_state_tracker* state_tracker, agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance )

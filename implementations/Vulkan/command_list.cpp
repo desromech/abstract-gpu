@@ -262,17 +262,29 @@ agpu_error AVkCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_r
 agpu_error AVkCommandList::useShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
     CHECK_POINTER(binding);
+    return useShaderResourcesInSlot(binding, binding.as<AVkShaderResourceBinding> ()->elementIndex);
+}
+
+
+agpu_error AVkCommandList::useShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot)
+{
     if (!shaderSignature)
         return AGPU_INVALID_OPERATION;
 
     auto avkBindings = binding.as<AVkShaderResourceBinding> ();
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
             shaderSignature.as<AVkShaderSignature> ()->layout,
-            avkBindings->elementIndex, 1, &avkBindings->descriptorSet, 0, nullptr);
+            slot, 1, &avkBindings->descriptorSet, 0, nullptr);
     return AGPU_OK;
 }
 
 agpu_error AVkCommandList::useComputeShaderResources(const agpu::shader_resource_binding_ref &binding)
+{
+    CHECK_POINTER(binding);
+    return useComputeShaderResourcesInSlot(binding, binding.as<AVkShaderResourceBinding> ()->elementIndex);
+}
+
+agpu_error AVkCommandList::useComputeShaderResourcesInSlot(const agpu::shader_resource_binding_ref & binding, agpu_uint slot)
 {
     CHECK_POINTER(binding);
     if (!shaderSignature)
@@ -281,7 +293,7 @@ agpu_error AVkCommandList::useComputeShaderResources(const agpu::shader_resource
     auto avkBindings = binding.as<AVkShaderResourceBinding> ();
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
             shaderSignature.as<AVkShaderSignature> ()->layout,
-            avkBindings->elementIndex, 1, &avkBindings->descriptorSet, 0, nullptr);
+            slot, 1, &avkBindings->descriptorSet, 0, nullptr);
     return AGPU_OK;
 }
 

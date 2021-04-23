@@ -53,3 +53,10 @@ AGPUShaderSignatureBuilder >> addBindingBankElement: type bindingPointCount: bin
 	self checkErrorCode: resultValue_
 ]
 
+{ #category : #'wrappers' }
+AGPUShaderSignatureBuilder >> addBindingBankArray: type size: size [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance addBindingBankArray_shader_signature_builder: (self validHandle) type: type size: size.
+	self checkErrorCode: resultValue_
+]
+

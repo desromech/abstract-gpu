@@ -564,8 +564,8 @@ AGPUCBindings >> addCommandList_command_queue: command_queue command_list: comma
 ]
 
 { #category : #'command_queue' }
-AGPUCBindings >> addCommandListsAndSignalFence_command_queue: command_queue count: count command_list: command_list fence: fence [
-	^ self ffiCall: #(agpu_error agpuAddCommandListsAndSignalFence (agpu_command_queue* command_queue , agpu_uint count , agpu_command_list* command_list , agpu_fence* fence) )
+AGPUCBindings >> addCommandListsAndSignalFence_command_queue: command_queue count: count command_lists: command_lists fence: fence [
+	^ self ffiCall: #(agpu_error agpuAddCommandListsAndSignalFence (agpu_command_queue* command_queue , agpu_uint count , agpu_command_list* command_lists , agpu_fence* fence) )
 ]
 
 { #category : #'command_queue' }
@@ -659,8 +659,18 @@ AGPUCBindings >> useShaderResources_command_list: command_list binding: binding 
 ]
 
 { #category : #'command_list' }
+AGPUCBindings >> useShaderResourcesInSlot_command_list: command_list binding: binding slot: slot [
+	^ self ffiCall: #(agpu_error agpuUseShaderResourcesInSlot (agpu_command_list* command_list , agpu_shader_resource_binding* binding , agpu_uint slot) )
+]
+
+{ #category : #'command_list' }
 AGPUCBindings >> useComputeShaderResources_command_list: command_list binding: binding [
 	^ self ffiCall: #(agpu_error agpuUseComputeShaderResources (agpu_command_list* command_list , agpu_shader_resource_binding* binding) )
+]
+
+{ #category : #'command_list' }
+AGPUCBindings >> useComputeShaderResourcesInSlot_command_list: command_list binding: binding slot: slot [
+	^ self ffiCall: #(agpu_error agpuUseComputeShaderResourcesInSlot (agpu_command_list* command_list , agpu_shader_resource_binding* binding , agpu_uint slot) )
 ]
 
 { #category : #'command_list' }
@@ -1093,6 +1103,11 @@ AGPUCBindings >> addBindingBankElement_shader_signature_builder: shader_signatur
 	^ self ffiCall: #(agpu_error agpuAddShaderSignatureBindingBankElement (agpu_shader_signature_builder* shader_signature_builder , agpu_shader_binding_type type , agpu_uint bindingPointCount) )
 ]
 
+{ #category : #'shader_signature_builder' }
+AGPUCBindings >> addBindingBankArray_shader_signature_builder: shader_signature_builder type: type size: size [
+	^ self ffiCall: #(agpu_error agpuAddShaderSignatureBindingBankArray (agpu_shader_signature_builder* shader_signature_builder , agpu_shader_binding_type type , agpu_uint size) )
+]
+
 { #category : #'shader_signature' }
 AGPUCBindings >> addReference_shader_signature: shader_signature [
 	^ self ffiCall: #(agpu_error agpuAddShaderSignature (agpu_shader_signature* shader_signature) )
@@ -1439,8 +1454,18 @@ AGPUCBindings >> useShaderResources_state_tracker: state_tracker binding: bindin
 ]
 
 { #category : #'state_tracker' }
+AGPUCBindings >> useShaderResourcesInSlot_state_tracker: state_tracker binding: binding slot: slot [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseShaderResourcesInSlot (agpu_state_tracker* state_tracker , agpu_shader_resource_binding* binding , agpu_uint slot) )
+]
+
+{ #category : #'state_tracker' }
 AGPUCBindings >> useComputeShaderResources_state_tracker: state_tracker binding: binding [
 	^ self ffiCall: #(agpu_error agpuStateTrackerUseComputeShaderResources (agpu_state_tracker* state_tracker , agpu_shader_resource_binding* binding) )
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> useComputeShaderResourcesInSlot_state_tracker: state_tracker binding: binding slot: slot [
+	^ self ffiCall: #(agpu_error agpuStateTrackerUseComputeShaderResourcesInSlot (agpu_state_tracker* state_tracker , agpu_shader_resource_binding* binding , agpu_uint slot) )
 ]
 
 { #category : #'state_tracker' }
