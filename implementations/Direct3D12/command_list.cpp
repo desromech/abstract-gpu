@@ -241,18 +241,30 @@ agpu_error ADXCommandList::useShaderResources(const agpu::shader_resource_bindin
 {
     CHECK_POINTER(binding);
 
-    auto adxBinding = binding.as<ADXShaderResourceBinding> ();
-	commandList->SetGraphicsRootDescriptorTable(adxBinding->bankIndex, adxBinding->gpuDescriptorTableHandle);
+    return useShaderResourcesInSlot(binding, binding.as<ADXShaderResourceBinding>()->bankIndex);
+}
+
+agpu_error ADXCommandList::useShaderResourcesInSlot(const agpu::shader_resource_binding_ref& binding, agpu_uint slot)
+{
+    CHECK_POINTER(binding);
+
+    commandList->SetGraphicsRootDescriptorTable(slot, binding.as<ADXShaderResourceBinding>()->gpuDescriptorTableHandle);
     return AGPU_OK;
+
 }
 
 agpu_error ADXCommandList::useComputeShaderResources(const agpu::shader_resource_binding_ref &binding)
 {
 	CHECK_POINTER(binding);
 
-	auto adxBinding = binding.as<ADXShaderResourceBinding>();
-	commandList->SetComputeRootDescriptorTable(adxBinding->bankIndex, adxBinding->gpuDescriptorTableHandle);
-	return AGPU_OK;
+	return useComputeShaderResourcesInSlot(binding, binding.as<ADXShaderResourceBinding>()->bankIndex);
+}
+
+agpu_error ADXCommandList::useComputeShaderResourcesInSlot(const agpu::shader_resource_binding_ref& binding, agpu_uint slot)
+{
+    CHECK_POINTER(binding);
+    commandList->SetComputeRootDescriptorTable(slot, binding.as<ADXShaderResourceBinding>()->gpuDescriptorTableHandle);
+    return AGPU_OK;
 }
 
 agpu_error ADXCommandList::drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance)

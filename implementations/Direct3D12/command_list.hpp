@@ -40,7 +40,9 @@ public:
     virtual agpu_error useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer) override;
     virtual agpu_error useComputeDispatchIndirectBuffer(const agpu::buffer_ref & buffer) override;
     virtual agpu_error useShaderResources(const agpu::shader_resource_binding_ref &binding) override;
+    virtual agpu_error useShaderResourcesInSlot(const agpu::shader_resource_binding_ref& binding, agpu_uint slot) override;
     virtual agpu_error useComputeShaderResources(const agpu::shader_resource_binding_ref & binding) override;
+    virtual agpu_error useComputeShaderResourcesInSlot(const agpu::shader_resource_binding_ref& binding, agpu_uint slot) override;
     virtual agpu_error drawArrays(agpu_uint vertex_count, agpu_uint instance_count, agpu_uint first_vertex, agpu_uint base_instance) override;
     virtual agpu_error drawArraysIndirect(agpu_size offset, agpu_size drawcount) override;
     virtual agpu_error drawElements(agpu_uint index_count, agpu_uint instance_count, agpu_uint first_index, agpu_int base_vertex, agpu_uint base_instance) override;
