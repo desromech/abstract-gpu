@@ -1,5 +1,5 @@
 Class {
-	#name : #AGPUSample1,
+	#name : #AGPUSampleStateTracker1,
 	#superclass : #AGPUMorph,
 	#instVars : [
 		'mainRenderPass'
@@ -8,14 +8,14 @@ Class {
 }
 
 { #category : #initialization }
-AGPUSample1 >> initializeForNewSession [
+AGPUSampleStateTracker1 >> initializeForNewSession [
 	super initializeForNewSession.
 	
 	mainRenderPass := self createRenderPassWithColor: Color magenta.
 ]
 
 { #category : #initialization }
-AGPUSample1 >> render [
+AGPUSampleStateTracker1 >> render [
 	stateTracker
 		beginRenderPass: mainRenderPass framebuffer: mainFramebuffer bundle_content: 0;
 		setViewport: 0 y: 0 w: screenWidth h: screenHeight;

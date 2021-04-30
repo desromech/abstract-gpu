@@ -1,29 +1,21 @@
 Class {
-	#name : #AGPUSample2,
-	#superclass : #AGPUMorph,
+	#name : #AGPUSampleImmediateRenderer1,
+	#superclass : #AGPUSampleImmediateRendererCommon,
 	#instVars : [
-		'mainRenderPass',
 		'rotation'
 	],
 	#category : #'AbstractGPU-Samples'
 }
 
 { #category : #initialization }
-AGPUSample2 >> initialize [
+AGPUSampleImmediateRenderer1 >> initialize [
 	rotation := 0.0.
 	super initialize.
 	self startStepping
 ]
 
 { #category : #initialization }
-AGPUSample2 >> initializeForNewSession [
-	super initializeForNewSession.
-	
-	mainRenderPass := self createRenderPassWithColor: Color black.
-]
-
-{ #category : #initialization }
-AGPUSample2 >> render [
+AGPUSampleImmediateRenderer1 >> render [
 	| aspectRatio w h |
 	aspectRatio := screenWidth / screenHeight.
 	stateTracker
@@ -62,7 +54,7 @@ AGPUSample2 >> render [
 ]
 
 { #category : #initialization }
-AGPUSample2 >> step [
+AGPUSampleImmediateRenderer1 >> step [
 	| delta |
 	delta := self stepTime * 0.001.
 	rotation := rotation + (180.0 *delta).
@@ -70,6 +62,6 @@ AGPUSample2 >> step [
 ]
 
 { #category : #initialization }
-AGPUSample2 >> stepTime [
+AGPUSampleImmediateRenderer1 >> stepTime [
 	^ 1000 / 25
 ]

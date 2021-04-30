@@ -171,7 +171,9 @@ AGPUMorph >> createRenderPassWithColor: aColor [
 
 { #category : #initialization }
 AGPUMorph >> depthStencilFormat [
-	^ self hasStencil ifTrue: [ AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ] ifFalse: [ AGPU_TEXTURE_FORMAT_D32_FLOAT ]
+	^ self hasStencil
+		ifTrue: [ AGPU_TEXTURE_FORMAT_D32_FLOAT_S8X24_UINT ]
+		ifFalse: [ AGPU_TEXTURE_FORMAT_D32_FLOAT ]
 ]
 
 { #category : #initialization }

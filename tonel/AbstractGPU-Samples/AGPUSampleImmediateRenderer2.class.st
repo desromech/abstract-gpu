@@ -1,42 +1,24 @@
 Class {
-	#name : #AGPUSample3,
-	#superclass : #AGPUMorph,
+	#name : #AGPUSampleImmediateRenderer2,
+	#superclass : #AGPUSampleImmediateRendererCommon,
 	#instVars : [
-		'mainRenderPass',
-		'texture'
+		'texture',
+		'textureUploader'
 	],
 	#category : #'AbstractGPU-Samples'
 }
 
 { #category : #initialization }
-AGPUSample3 >> initializeForNewSession [
-	| textureDescription form |
+AGPUSampleImmediateRenderer2 >> initializeForNewSession [
 	super initializeForNewSession.
 
-	form := self textureForm.
-	self assert: form depth = 32.
-	
-	mainRenderPass := self createRenderPassWithColor: Color black.
-	textureDescription := AGPUTextureDescription new
-		type: AGPU_TEXTURE_2D;
-		width: form width;
-		height: form height;
-		depth: 1;
-		layers: 1;
-		miplevels: 1;
-		sample_count: 1;
-		format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-		heap_type: AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-		usage_modes: (AGPU_TEXTURE_USAGE_UPLOADED bitOr: AGPU_TEXTURE_USAGE_SAMPLED);
-		yourself.
-	texture := device createTexture: textureDescription.
+	textureUploader := AGPUTextureUploader for: device.
+	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm.
 
-	form unhibernate.
-	texture uploadTextureData: 0 arrayIndex: 0 pitch: form width*4 slicePitch: form width* form height*4 data: form bits
 ]
 
 { #category : #initialization }
-AGPUSample3 >> render [
+AGPUSampleImmediateRenderer2 >> render [
 	| aspectRatio w h |
 	aspectRatio := screenWidth / screenHeight.
 	stateTracker
@@ -78,15 +60,4 @@ AGPUSample3 >> render [
 	stateTracker
 		endRenderPass
 
-]
-
-{ #category : #initialization }
-AGPUSample3 >> textureForm [
-	| form |
-	form := Form extent: 32@32 depth: 32.
-	form getCanvas
-		fillRectangle: (0@0 extent: 32@32) color: Color white;
-		fillRectangle: (0@0 extent: 16@16) color: Color black;
-		fillRectangle: (16@16 extent: 16@16) color: Color black.
-	^ form
 ]

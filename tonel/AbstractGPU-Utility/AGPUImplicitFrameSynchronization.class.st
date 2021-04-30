@@ -1,3 +1,6 @@
+"
+I am an AGPU utility that encapsulates implicit per-frame synchronization states.
+"
 Class {
 	#name : #AGPUImplicitFrameSynchronization,
 	#superclass : #Object,
@@ -15,7 +18,7 @@ Class {
 	#pools : [
 		'AGPUConstants'
 	],
-	#category : #'AbstractGPU-Window'
+	#category : #'AbstractGPU-Utility'
 }
 
 { #category : #'instance creation' }
@@ -37,6 +40,16 @@ AGPUImplicitFrameSynchronization >> createImmediateRenderers [
 	^ (1 to: 3) collect: [ :i | stateTrackerCache createImmediateRenderer ]
 ]
 
+{ #category : #accessing }
+AGPUImplicitFrameSynchronization >> currentStateTracker [
+	^ currentStateTracker
+]
+
+{ #category : #rendering }
+AGPUImplicitFrameSynchronization >> finishFrame [
+	self finishFrameDoing: []
+]
+
 { #category : #rendering }
 AGPUImplicitFrameSynchronization >> finishFrameDoing: aBlock [
 	currentStateTracker endRecordingAndFlushCommands.
@@ -48,11 +61,6 @@ AGPUImplicitFrameSynchronization >> finishFrameDoing: aBlock [
 		frameIndex := frameIndex + 1.
 		frameBufferingIndex := (frameIndex \\ 3) + 1.
 	].
-]
-
-{ #category : #rendering }
-AGPUImplicitFrameSynchronization >> finishFrame [
-	self finishFrameDoing: []
 ]
 
 { #category : #accessing }
@@ -96,11 +104,6 @@ AGPUImplicitFrameSynchronization >> renderFrameWith: aBlock [
 { #category : #accessing }
 AGPUImplicitFrameSynchronization >> stateTrackerCache [
 	^ stateTrackerCache
-]
-
-{ #category : #accessing }
-AGPUImplicitFrameSynchronization >> currentStateTracker [
-	^ currentStateTracker
 ]
 
 { #category : #rendering }
