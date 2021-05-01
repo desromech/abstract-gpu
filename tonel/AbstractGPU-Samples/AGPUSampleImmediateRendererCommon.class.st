@@ -9,7 +9,7 @@ Class {
 
 { #category : #initialization }
 AGPUSampleImmediateRendererCommon >> checkboardNormalMapTextureForm [
-	^ self generateProceduralNormalMapWithExtent: 64@64 withHeightFunction: [:x :y | self checkboardWithCellSize: 16 valueAtX: x y: y]
+	^ self generateProceduralNormalMapWithExtent: 64@64 withHeightFunction: [:x :y | (self checkboardWithCellSize: 16 valueAtX: x y: y)*5.0]
 ]
 
 { #category : #initialization }

@@ -10,7 +10,9 @@ Class {
 		'cameraPositionZ',
 		'dragStartPosition',
 		'normalTexture',
-		'currentLightingModel'
+		'currentLightingModel',
+		'cameraRotationY',
+		'cameraRotationX'
 	],
 	#category : #'AbstractGPU-Samples'
 }
@@ -75,7 +77,7 @@ AGPUSampleImmediateRenderer4 >> drawCubeMeshMaterialRowUsingExplicitBuffers: use
 			pushMatrix;
 			setMaterial: material;
 			translate: currentX y: 0.0 z: 0.0.
-		cubeMesh drawWithImmediateRenderer: immediateRenderer.
+		cubeMesh drawUsingExplicitBuffers: useExplicitBuffers withImmediateRenderer: immediateRenderer.
 		immediateRenderer popMatrix.
 		
 		currentX := currentX + gap
@@ -107,7 +109,9 @@ AGPUSampleImmediateRenderer4 >> drawCubeMeshRowUsingExplicitBuffers: useExplicit
 
 { #category : #initialization }
 AGPUSampleImmediateRenderer4 >> drawCubesUsingExplicitBuffers: useExplicitBuffers on: immediateRenderer [
-
+	cubeMesh beginDrawingUsingExplicitBuffers: useExplicitBuffers on: immediateRenderer.
+	immediateRenderer setTangentSpaceEnabled: useExplicitBuffers asBit.
+	
 	"First row: without texture"
 	immediateRenderer
 		setTexturingEnabled: false;
@@ -120,6 +124,7 @@ AGPUSampleImmediateRenderer4 >> drawCubesUsingExplicitBuffers: useExplicitBuffer
 	immediateRenderer
 		setTexturingEnabled: true;
 		bindTextureIn: texture binding: AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ALBEDO;
+		bindTextureIn: normalTexture binding: AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_NORMAL;
 		pushMatrix;
 		translate: 0.0 y: 0.0 z: -2.0;
 		setLightingEnabled: false.
@@ -187,7 +192,9 @@ AGPUSampleImmediateRenderer4 >> drawCubesUsingExplicitBuffers: useExplicitBuffer
 		self drawCubeMeshRowUsingExplicitBuffers: useExplicitBuffers on: immediateRenderer.
 	immediateRenderer popMatrix.
 
-	immediateRenderer setFogMode: AGPU_IMMEDIATE_RENDERER_FOG_MODE_NONE
+	immediateRenderer setFogMode: AGPU_IMMEDIATE_RENDERER_FOG_MODE_NONE.
+	
+	cubeMesh endDrawingUsingExplicitBuffers: useExplicitBuffers on: immediateRenderer.
 ]
 
 { #category : #'event handling' }
@@ -218,6 +225,9 @@ AGPUSampleImmediateRenderer4 >> hasMetallicRoughnessLightingModel [
 { #category : #initialization }
 AGPUSampleImmediateRenderer4 >> initialize [
 	super initialize.
+	cameraRotationX := 0.0.
+	cameraRotationY := 0.0.
+
 	cameraPositionX := 0.0.
 	cameraPositionY := 0.0.
 	cameraPositionZ := 3.0.
@@ -231,7 +241,7 @@ AGPUSampleImmediateRenderer4 >> initializeForNewSession [
 	textureUploader := AGPUTextureUploader for: device.
 	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm.
 	normalTexture := textureUploader createAndUploadTextureForNormalMapForm: self checkboardNormalMapTextureForm.
-	cubeMesh := AGPUSampleMesh new addCubeMinX: -0.5 y: -0.5 z: -0.5 maxX: 0.5 y: 0.5 z: 0.5.
+	cubeMesh := (AGPUSampleMesh for: device) addCubeMinX: -0.5 y: -0.5 z: -0.5 maxX: 0.5 y: 0.5 z: 0.5.
 ]
 
 { #category : #'event handling' }
@@ -254,8 +264,15 @@ AGPUSampleImmediateRenderer4 >> mouseMove: event [
 	
 	delta := (event position - dragStartPosition) * 0.01.
 	dragStartPosition := event position.
-	cameraPositionX := cameraPositionX + delta x.
-	cameraPositionY := cameraPositionY - delta y.
+	event redButtonPressed ifTrue: [
+		cameraRotationY := cameraRotationY + (delta x * 10.0).
+		cameraRotationX := cameraRotationX + (delta y * 10.0).
+	].
+	event yellowButtonPressed ifTrue: [
+		cameraPositionX := cameraPositionX + delta x.
+		cameraPositionY := cameraPositionY - delta y.
+	].
+
 	self changed.
 ]
 
@@ -297,7 +314,9 @@ AGPUSampleImmediateRenderer4 >> render [
 
 		modelViewMatrixMode;
 		loadIdentity;
-		translate: cameraPositionX negated y: cameraPositionY negated z: cameraPositionZ negated.
+		translate: cameraPositionX negated y: cameraPositionY negated z: cameraPositionZ negated;
+		rotate: cameraRotationX x: 1.0 y: 0.0 z: 0.0;
+		rotate: cameraRotationY x: 0.0 y: 1.0 z: 0.0.
 		
 	self setupLightingOn: immediateRenderer.
 	immediateRenderer
@@ -325,7 +344,7 @@ AGPUSampleImmediateRenderer4 >> render [
 
 { #category : #initialization }
 AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
-	| lightDirection lightPosition intensity |
+	| lightDirection lightPosition intensity spotDirection |
 	immediateRenderer setLightingModel: currentLightingModel.
 	self hasFlatColorLightingModel ifTrue: [
 		^ self
@@ -343,6 +362,8 @@ AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
 		z: -6.0;
 		w: 1.0;
 		yourself.	
+	
+	spotDirection := AGPUVector3f new x: 0.0; y: 0.0; z: -1.0; yourself.
 			
 	self hasMetallicRoughnessLightingModel ifTrue: [
 		intensity := AGPUVector3f new x: 0.8; y: 0.8; z: 0.8; yourself.
@@ -354,6 +375,7 @@ AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
 				position: lightDirection;
 				spot_cutoff: 180.0;
 				spot_inner_cutoff: 180.0;
+				spot_direction: spotDirection;
 				radius: 1.0;
 				yourself); yourself).
 
@@ -364,6 +386,7 @@ AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
 				position: lightPosition;
 				spot_cutoff: 180.0;
 				spot_inner_cutoff: 180.0;
+				spot_direction: spotDirection;
 				radius: 100.0;
 				yourself); yourself).
 		^ self
@@ -377,6 +400,7 @@ AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
 				position: lightDirection;
 				constant_attenuation: 1.0;
 				spot_cutoff: 180.0;
+				spot_direction: spotDirection;
 				yourself); yourself).
 				
 	intensity := AGPUVector4f new x: 2.0; y: 2.0; z: 2.0; w: 1.0; yourself.
@@ -388,6 +412,7 @@ AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
 				constant_attenuation: 1.0;
 				quadratic_attenuation: 0.01;
 				spot_cutoff: 180.0;
+				spot_direction: spotDirection;
 				yourself); yourself).
 
 ]

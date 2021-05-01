@@ -8,7 +8,9 @@ Class {
 		'cameraPositionX',
 		'cameraPositionY',
 		'cameraPositionZ',
-		'dragStartPosition'
+		'dragStartPosition',
+		'cameraRotationX',
+		'cameraRotationY'
 	],
 	#category : #'AbstractGPU-Samples'
 }
@@ -26,6 +28,9 @@ AGPUSampleImmediateRenderer3 >> handlesMouseWheel: evt [
 { #category : #initialization }
 AGPUSampleImmediateRenderer3 >> initialize [
 	super initialize.
+	cameraRotationX := 0.0.
+	cameraRotationY := 0.0.
+	
 	cameraPositionX := 0.0.
 	cameraPositionY := 0.0.
 	cameraPositionZ := 5.0.
@@ -37,7 +42,7 @@ AGPUSampleImmediateRenderer3 >> initializeForNewSession [
 
 	textureUploader := AGPUTextureUploader for: device.
 	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm.
-	cubeMesh := AGPUSampleMesh new addCubeMinX: -1.0 y: -1.0 z: -1.0 maxX: 1.0 y: 1.0 z: 1.0.
+	cubeMesh := (AGPUSampleMesh for: device) addCubeMinX: -1.0 y: -1.0 z: -1.0 maxX: 1.0 y: 1.0 z: 1.0.
 ]
 
 { #category : #'event handling' }
@@ -53,8 +58,15 @@ AGPUSampleImmediateRenderer3 >> mouseMove: event [
 	
 	delta := (event position - dragStartPosition) * 0.01.
 	dragStartPosition := event position.
-	cameraPositionX := cameraPositionX + delta x.
-	cameraPositionY := cameraPositionY - delta y.
+	event redButtonPressed ifTrue: [
+		cameraRotationY := cameraRotationY + (delta x * 10.0).
+		cameraRotationX := cameraRotationX + (delta y * 10.0).
+	].
+	event yellowButtonPressed ifTrue: [
+		cameraPositionX := cameraPositionX + delta x.
+		cameraPositionY := cameraPositionY - delta y.
+	].
+
 	self changed.
 ]
 
@@ -97,12 +109,17 @@ AGPUSampleImmediateRenderer3 >> render [
 		modelViewMatrixMode;
 		loadIdentity;
 		translate: cameraPositionX negated y: cameraPositionY negated z: cameraPositionZ negated;
+		rotate: cameraRotationX x: 1.0 y: 0.0 z: 0.0;
+		rotate: cameraRotationY x: 0.0 y: 1.0 z: 0.0;
 		
 		setTexturingEnabled: true;
 		setSamplingMode: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST maxAnisotropy: 0 addressU: AGPU_TEXTURE_ADDRESS_MODE_WRAP addressV: AGPU_TEXTURE_ADDRESS_MODE_WRAP addressW: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
 		bindTexture: texture.
 	
-	cubeMesh drawWithImmediateRenderer: immediateRenderer.
+	cubeMesh
+		beginDrawingUsingExplicitBuffers: false on: immediateRenderer;
+		drawUsingExplicitBuffers: false withImmediateRenderer: immediateRenderer;
+		endDrawingUsingExplicitBuffers: false on: immediateRenderer.
 
 	immediateRenderer
 		endRendering.

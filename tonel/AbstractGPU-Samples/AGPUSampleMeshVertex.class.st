@@ -3,12 +3,25 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'position',
+		'color',
 		'normal',
 		'texcoord',
 		'tangent4'
 	],
 	#category : #'AbstractGPU-Samples'
 }
+
+{ #category : #accessing }
+AGPUSampleMeshVertex >> color [
+
+	^ color
+]
+
+{ #category : #accessing }
+AGPUSampleMeshVertex >> color: anObject [
+
+	color := anObject
+]
 
 { #category : #'as yet unclassified' }
 AGPUSampleMeshVertex >> drawWithImmediateRenderer: immediateRenderer [
