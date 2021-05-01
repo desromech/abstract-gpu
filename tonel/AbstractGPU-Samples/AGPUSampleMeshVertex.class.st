@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'position',
 		'normal',
-		'texcoord'
+		'texcoord',
+		'tangent4'
 	],
 	#category : #'AbstractGPU-Samples'
 }
@@ -39,6 +40,18 @@ AGPUSampleMeshVertex >> position [
 AGPUSampleMeshVertex >> position: anObject [
 
 	position := anObject
+]
+
+{ #category : #accessing }
+AGPUSampleMeshVertex >> tangent4 [
+
+	^ tangent4
+]
+
+{ #category : #accessing }
+AGPUSampleMeshVertex >> tangent4: anObject [
+
+	tangent4 := anObject
 ]
 
 { #category : #accessing }

@@ -44,7 +44,7 @@ AGPUMorph >> blitTexture: texture toScreen: aCanvas [
 		mainFramebufferForm unhibernate.
 
 		texture readTextureData: 0 arrayIndex: 0 pitch: pitch slicePitch: slicePitch buffer: mainFramebufferForm bits.
-		aCanvas translucentImage: mainFramebufferForm at: self bounds origin.
+		aCanvas drawImage: mainFramebufferForm at: self bounds origin.
 	].
 
 ]

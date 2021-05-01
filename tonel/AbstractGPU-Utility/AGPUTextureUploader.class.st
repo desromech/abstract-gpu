@@ -16,7 +16,9 @@ Class {
 		'intermediateUploadTexture',
 		'activeResources',
 		'allocatedShaderResourceBindings',
-		'allocatedShaderResourceBindingCount'
+		'allocatedShaderResourceBindingCount',
+		'hasPendingOperation',
+		'pendingOperationFence'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -48,10 +50,15 @@ AGPUTextureUploader class >> for: device utilityResourceCache: utilityResourceCa
 AGPUTextureUploader >> allocateShaderResourceBinding [
 	| result |
 	allocatedShaderResourceBindingCount >= allocatedShaderResourceBindings size ifTrue: [ 
-		allocatedShaderResourceBindings add: (utilityResourceCache mipmapGenerationShaderSignature createShaderResourceBinding: 0).
+		| newBinding bindingSlotIndex |
+		bindingSlotIndex := utilityResourceCache useComputeShaderForMipmapGeneration
+			ifTrue: [ 0 ]
+			ifFalse: [ 1 ].
+		newBinding := utilityResourceCache mipmapGenerationShaderSignature createShaderResourceBinding: bindingSlotIndex.
+		allocatedShaderResourceBindings add: newBinding.
 	].
-	result := allocatedShaderResourceBindings last.
 	allocatedShaderResourceBindingCount := allocatedShaderResourceBindingCount + 1.
+	result := allocatedShaderResourceBindings at: allocatedShaderResourceBindingCount.
 	^ result
 ]
 
@@ -232,7 +239,8 @@ AGPUTextureUploader >> ensureIntermediateMipmapGenerationTextureForExtent: requi
 	utilityResourceCache useComputeShaderForMipmapGeneration ifTrue: [
 		description main_usage_mode: AGPU_TEXTURE_USAGE_STORAGE
 	] ifFalse: [
-		description main_usage_mode: AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT
+		description usage_modes: (description usage_modes bitOr: AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT).
+		description main_usage_mode: AGPU_TEXTURE_USAGE_SAMPLED
 	].
 
 	description usage_modes: (description usage_modes bitOr: description main_usage_mode).
@@ -244,8 +252,10 @@ AGPUTextureUploader >> ensureIntermediateMipmapGenerationTextureForExtent: requi
 
 { #category : #private }
 AGPUTextureUploader >> ensureLastOperationHasFinished [
-	self flag: 'TODO: Use a proper fence here.'.
-	device finishExecution.
+	hasPendingOperation ifTrue: [ 
+		pendingOperationFence waitOnClient.
+		hasPendingOperation := false.
+	].
 	activeResources := OrderedCollection new.
 	allocatedShaderResourceBindingCount := 0.
 ]
@@ -327,11 +337,86 @@ AGPUTextureUploader >> generateMipmapForExtent: extent usingComputePipelineState
 	]
 ]
 
+{ #category : #private }
+AGPUTextureUploader >> generateMipmapForExtent: extent usingGraphicsPipelineState: mipmapComputationPipelineState [
+	| shaderSignature renderpass viewDescription currentRange currentWidth currentHeight quickConstants currentIntermediateTextureSize samplerBinding |
+	shaderSignature := utilityResourceCache mipmapGenerationShaderSignature.
+	renderpass := utilityResourceCache mipmapGenerationRenderpass.
+	
+	viewDescription := AGPUTextureViewDescription new.
+	intermediateUploadTexture getFullViewDescription: viewDescription.
+	currentRange := AGPUTextureSubresourceRange new
+		aspect: AGPU_TEXTURE_ASPECT_COLOR;
+		layer_count: 1;
+		level_count: 1.
+	viewDescription subresource_range: currentRange.
+
+	commandList setShaderSignature: shaderSignature.
+
+	currentWidth := extent x.
+	currentHeight := extent y.
+	
+	quickConstants := WordArray new: 6.
+	samplerBinding := utilityResourceCache mipmapGenerationSamplerBinding.
+
+	currentIntermediateTextureSize := intermediateUploadTextureSize.
+	[ currentWidth > 1 or: [ currentHeight > 1 ] ] whileTrue: [ 
+		| nextWidth nextHeight nextIntermediateTextureSize sourceView destViewDescription destView framebuffer binding |
+		nextWidth := currentWidth // 2.
+		nextHeight := currentHeight // 2.
+		nextIntermediateTextureSize := currentIntermediateTextureSize // 2 max: 1.
+
+		viewDescription subresource_range: currentRange.
+		sourceView := intermediateUploadTexture createView: viewDescription.
+		activeResources add: sourceView.
+
+		currentRange base_miplevel: currentRange base_miplevel + 1.
+		
+		destViewDescription := AGPUTextureViewDescription new.
+		intermediateUploadTexture getFullViewDescription: destViewDescription.
+		destViewDescription
+			usage_mode: AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+			subresource_range: currentRange.
+		destView := intermediateUploadTexture createView: destViewDescription.
+		activeResources add: destView.
+
+		framebuffer := device createFrameBuffer: nextIntermediateTextureSize height: nextIntermediateTextureSize colorCount: 1 colorViews: (AGPU packListOfReferences: {destView}) depthStencilView: nil.
+		activeResources add: framebuffer.
+		
+		binding := self allocateShaderResourceBinding.
+		binding bindSampledTextureView: 0 view: sourceView.
+		
+		quickConstants
+			at: 1 put: currentWidth; 
+			at: 2 put: currentHeight; 
+			at: 3 put: currentIntermediateTextureSize;
+			at: 4 put: currentIntermediateTextureSize;
+			at: 5 put: nextWidth; 
+			at: 6 put: nextHeight.
+			
+		commandList
+			beginRenderPass: renderpass framebuffer: framebuffer bundle_content: 0;
+			setViewport: 0 y: 0 w: nextWidth h: nextHeight;
+			setScissor: 0 y: 0 w: nextWidth h: nextHeight;
+			usePipelineState: mipmapComputationPipelineState;
+			useShaderResources: samplerBinding;
+			useShaderResources: binding;
+			pushConstants: 0 size: 24 values: quickConstants;
+			drawArrays: 3 instance_count: 1 first_vertex: 0 base_instance: 0;
+			endRenderPass.
+			
+		currentWidth := nextWidth.
+		currentHeight := nextHeight.
+		currentIntermediateTextureSize := nextIntermediateTextureSize.
+	].
+]
+
 { #category : #initialization }
 AGPUTextureUploader >> initializeWithDevice: aDevice utilityResourceCache: anUtilityResourceCache [
 	device := aDevice.
 	utilityResourceCache := anUtilityResourceCache.
 	allocatedShaderResourceBindings := OrderedCollection new.
+	hasPendingOperation := false.
 ]
 
 { #category : #asserting }
@@ -348,7 +433,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture [
 
 { #category : #private }
 AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith: mipmapComputationPipelineState [
-	| convertedForm pitchAlignment pitch slicePitch mappedBuffer destRowIndex sourceRowLength sourceIndex sourceBits shouldGenerateMipmaps uploadTexture uploadTextureOldUsage levelCount |
+	| convertedForm pitchAlignment pitch slicePitch mappedBuffer destRowIndex destRowAdvance sourceRowLength sourceIndex sourceBits shouldGenerateMipmaps uploadTexture uploadTextureOldUsage levelCount |
 	self ensureLastOperationHasFinished.
 	convertedForm := form asFormOfDepth: 32.
 	pitchAlignment := device getLimitValue: AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT.
@@ -359,7 +444,15 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith:
 	mappedBuffer := uploadBuffer mapBuffer: AGPU_WRITE_ONLY.
 	
 	"We need to flip the form."
-	destRowIndex := 1 + (pitch * (convertedForm height - 1)).
+	destRowIndex := 1.
+	destRowAdvance := pitch.
+	
+	"Do we need to flip the texture vertically?"
+	device hasBottomLeftTextureCoordinates ~~ 0 ifTrue: [ 
+		destRowIndex := 1 + (pitch * (convertedForm height - 1)).
+		destRowAdvance := pitch negated.
+	].
+	
 	sourceRowLength := form width.
 	sourceIndex := 1.
 	sourceBits := form bits.
@@ -372,7 +465,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith:
 			destIndex := destIndex + 4
 		].
 	
-		destRowIndex := destRowIndex - pitch
+		destRowIndex := destRowIndex + destRowAdvance
 	].
 
 	uploadBuffer unmapBuffer.
@@ -381,7 +474,9 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith:
 	shouldGenerateMipmaps := self shouldGenerateMipmapsForExtent: form extent.
 	shouldGenerateMipmaps ifTrue: [
 		uploadTexture := self ensureIntermediateMipmapGenerationTextureForExtent: form extent.
-		uploadTextureOldUsage := AGPU_TEXTURE_USAGE_STORAGE
+		uploadTextureOldUsage := utilityResourceCache useComputeShaderForMipmapGeneration
+			ifTrue: [AGPU_TEXTURE_USAGE_STORAGE]
+			ifFalse: [AGPU_TEXTURE_USAGE_SAMPLED]
 	] ifFalse: [
 		uploadTexture := texture.
 		uploadTextureOldUsage := AGPU_TEXTURE_USAGE_SAMPLED
@@ -427,7 +522,12 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith:
 		
 	commandList
 		close.
-	commandQueue addCommandList: commandList
+	pendingOperationFence ifNil: [ pendingOperationFence := device createFence ].
+	commandQueue
+		addCommandList: commandList;
+		signalFence: pendingOperationFence.
+	hasPendingOperation := true
+
 ]
 
 { #category : #API }

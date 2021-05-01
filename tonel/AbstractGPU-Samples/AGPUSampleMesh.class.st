@@ -5,7 +5,10 @@ Class {
 		'vertices',
 		'submeshes',
 		'indices',
-		'baseVertex'
+		'baseVertex',
+		'vertexBuffer',
+		'indexBuffer',
+		'vertexBinding'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -82,11 +85,22 @@ AGPUSampleMesh >> addTriangleI1: i1 i2: i2 i3: i3 [
 ]
 
 { #category : #adding }
+AGPUSampleMesh >> addVertexP: position N: normal T4: tangent4 TC: texcoord [
+	vertices add: (AGPUSampleMeshVertex new
+		position: position;
+		normal: normal;
+		texcoord: texcoord;
+		tangent4: tangent4;
+		yourself)
+]
+
+{ #category : #adding }
 AGPUSampleMesh >> addVertexP: position N: normal TC: texcoord [
 	vertices add: (AGPUSampleMeshVertex new
 		position: position;
 		normal: normal;
 		texcoord: texcoord;
+		tangent4: #(1 0 0 1);
 		yourself)
 ]
 
