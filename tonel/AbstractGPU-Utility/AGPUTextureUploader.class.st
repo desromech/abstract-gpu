@@ -220,7 +220,7 @@ AGPUTextureUploader >> ensureIntermediateMipmapGenerationTextureForExtent: requi
 	self assert: requiredExtent x isPowerOfTwo.
 	self assert: requiredExtent y isPowerOfTwo.
 	requiredSize := (requiredExtent x max: requiredExtent y) max: self class defaultIntermediateUploadTextureSize.
-	(intermediateUploadTextureSize isNotNil and: [ intermediateUploadTextureSize >= requiredSize ]) ifTrue: [ 
+	(intermediateUploadTextureSize ~~ nil and: [ intermediateUploadTextureSize >= requiredSize ]) ifTrue: [ 
 		^ intermediateUploadTexture
 	].
 
@@ -264,7 +264,7 @@ AGPUTextureUploader >> ensureLastOperationHasFinished [
 AGPUTextureUploader >> ensureUploadBufferWithCapacityFor: requiredCapacity [
 	| alignedRequiredCapacity |
 	alignedRequiredCapacity := (requiredCapacity alignedTo: (device getLimitValue: AGPU_LIMIT_MIN_TEXTURE_DATA_OFFSET_ALIGNMENT)) max: self class defaultUploadBufferCapacity.
-	(uploadBufferCapacity isNotNil and: [ uploadBufferCapacity >= alignedRequiredCapacity ]) ifTrue: [
+	(uploadBufferCapacity ~~ nil and: [ uploadBufferCapacity >= alignedRequiredCapacity ]) ifTrue: [
 		^ self
 	].
 
@@ -441,7 +441,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith:
 	slicePitch := pitch * convertedForm height.
 	self ensureUploadBufferWithCapacityFor: slicePitch.
 	
-	mappedBuffer := uploadBuffer mapBuffer: AGPU_WRITE_ONLY.
+	mappedBuffer := (uploadBuffer mapBuffer: AGPU_WRITE_ONLY) getHandle.
 	
 	"We need to flip the form."
 	destRowIndex := 1.

@@ -89,7 +89,7 @@ AGPUSampleImmediateRenderer3 >> mouseWheel: event [
 { #category : #initialization }
 AGPUSampleImmediateRenderer3 >> render [
 	| aspectRatio immediateRenderer |
-	aspectRatio := screenWidth / screenHeight.
+	aspectRatio := (screenWidth / screenHeight) asFloat.
 	stateTracker
 		beginRenderPass: mainRenderPass framebuffer: mainFramebuffer bundle_content: 0;
 		setViewport: 0 y: 0 w: screenWidth h: screenHeight;

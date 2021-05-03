@@ -144,7 +144,7 @@ AGPUSampleMesh >> beginDrawingUsingExplicitBuffers: useExplicitBuffers on: immed
 { #category : #'mesh building' }
 AGPUSampleMesh >> beginPrimitives: primitiveTopology [
 	baseVertex := vertices size.
-	(submeshes isNotEmpty and: [ submeshes last primitiveTopology == primitiveTopology ]) ifTrue: [ ^ self ].
+	(submeshes isEmpty not and: [ submeshes last primitiveTopology == primitiveTopology ]) ifTrue: [ ^ self ].
 	self finishLastSubmesh.
 	submeshes add: (AGPUSampleSubMesh new
 		primitiveTopology: primitiveTopology;

@@ -17,7 +17,7 @@ AGPUSampleImmediateRenderer1 >> initialize [
 { #category : #initialization }
 AGPUSampleImmediateRenderer1 >> render [
 	| aspectRatio w h |
-	aspectRatio := screenWidth / screenHeight.
+	aspectRatio := (screenWidth / screenHeight) asFloat.
 	stateTracker
 		beginRenderPass: mainRenderPass framebuffer: mainFramebuffer bundle_content: 0;
 		setViewport: 0 y: 0 w: screenWidth h: screenHeight;

@@ -252,7 +252,9 @@ AGPUSampleImmediateRenderer4 >> keyDown: anEvent [
 
 { #category : #'event handling' }
 AGPUSampleImmediateRenderer4 >> mouseDown: aMorphicEvent [
-	self takeKeyboardFocus.
+	(self respondsTo: #takeKeyboardFocus) ifTrue: [
+		self takeKeyboardFocus.
+	].
 	dragStartPosition := aMorphicEvent position
 ]
 
@@ -295,7 +297,7 @@ AGPUSampleImmediateRenderer4 >> mouseWheel: event [
 { #category : #initialization }
 AGPUSampleImmediateRenderer4 >> render [
 	| aspectRatio immediateRenderer |
-	aspectRatio := screenWidth / screenHeight.
+	aspectRatio := (screenWidth / screenHeight) asFloat.
 	stateTracker
 		beginRenderPass: mainRenderPass framebuffer: mainFramebuffer bundle_content: 0;
 		setViewport: 0 y: 0 w: screenWidth h: screenHeight;
@@ -419,6 +421,6 @@ AGPUSampleImmediateRenderer4 >> setupLightingOn: immediateRenderer [
 
 { #category : #actions }
 AGPUSampleImmediateRenderer4 >> useNextLightingModel [
-	currentLightingModel := (currentLightingModel + 1) % AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT.
+	currentLightingModel := (currentLightingModel + 1) \\ AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_COUNT.
 	self changed
 ]
