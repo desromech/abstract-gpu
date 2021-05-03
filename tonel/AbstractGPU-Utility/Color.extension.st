@@ -1,6 +1,6 @@
 Extension { #name : #Color }
 
-{ #category : #'*AbstractGPU-Window' }
+{ #category : #'*AbstractGPU-Utility' }
 Color >> asAGPUColor4f [
 	^ AGPUColor4f new
 		r: self red;
