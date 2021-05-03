@@ -7,6 +7,7 @@ packages := #(
     #'AbstractGPU-CoreSqueak'
     #'AbstractGPU-GeneratedPharo'
     #'AbstractGPU-GeneratedSqueak'
+    #'AbstractGPU-Utility'
     #'AbstractGPU-Window'
     #'AbstractGPU-Samples'
     #'BaselineOfAbstractGPU'
