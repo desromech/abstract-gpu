@@ -41,6 +41,13 @@ BaselineOfAbstractGPU >> baselineForPharo: spec [
 BaselineOfAbstractGPU >> baselineForSqueak: spec [
 	spec postLoadDoIt: #postLoadActionsForSqueak.
 	spec
+		project: 'FFI' with: [
+			spec
+				className: 'ConfigurationOfFFI';
+				repository: 'http://www.squeaksource.com/MetacelloRepository';
+				versionString: #development;
+				loads: #('Core')
+		];
 		package: #'AbstractGPU-CoreSqueak' with: [];
 		package: #'AbstractGPU-GeneratedSqueak' with: [
 			spec requires: #(#'AbstractGPU-CoreSqueak' )
