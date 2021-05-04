@@ -12,18 +12,24 @@ BaselineOfAbstractGPU >> baseline: spec [
 		spec postLoadDoIt: #postLoadActions.
 		spec
 			baseline: #'PhaNAPI' with: [
-				spec
-					repository: 'github://ronsaldo/phanapi/tonel' ].
-
-		spec
+				spec repository: 'github://ronsaldo/phanapi/tonel'
+			];
 			package: 'AbstractGPU-CorePharo' with: [
-				spec requires: #(#'PhaNAPI' ). ];
+				spec requires: #(#'PhaNAPI' ).
+			];
 			package: #'AbstractGPU-GeneratedPharo' with: [
-				spec requires: #(#'AbstractGPU-CorePharo' ). ];
+				spec requires: #(#'AbstractGPU-CorePharo' )
+			];
 			package: #'AbstractGPU-Samples' with: [
-				spec requires: #(#'AbstractGPU-Window' #'AbstractGPU-CorePharo' #'AbstractGPU-GeneratedPharo' ). ];
+				spec requires: #(#'AbstractGPU-Window' #'AbstractGPU-CorePharo' #'AbstractGPU-GeneratedPharo' )
+			];
+			package: #'AbstractGPU-Utility' with: [
+				spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' )
+			];
 			package: #'AbstractGPU-Window' with: [
-				spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' ). ]. ].
+				spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' #'AbstractGPU-Utility').
+			]
+	].
 
 ]
 
