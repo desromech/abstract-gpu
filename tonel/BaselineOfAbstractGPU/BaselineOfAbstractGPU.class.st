@@ -7,34 +7,63 @@ Class {
 { #category : #baselines }
 BaselineOfAbstractGPU >> baseline: spec [
     <baseline>
-	spec for: #'common' do: [
-		spec blessing: #'baseline'.
-		spec postLoadDoIt: #postLoadActions.
-		spec
-			baseline: #'PhaNAPI' with: [
-				spec repository: 'github://ronsaldo/phanapi/tonel'
-			];
-			package: 'AbstractGPU-CorePharo' with: [
-				spec requires: #(#'PhaNAPI' ).
-			];
-			package: #'AbstractGPU-GeneratedPharo' with: [
-				spec requires: #(#'AbstractGPU-CorePharo' )
-			];
-			package: #'AbstractGPU-Samples' with: [
-				spec requires: #(#'AbstractGPU-Window' #'AbstractGPU-CorePharo' #'AbstractGPU-GeneratedPharo' )
-			];
-			package: #'AbstractGPU-Utility' with: [
-				spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' )
-			];
-			package: #'AbstractGPU-Window' with: [
-				spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' #'AbstractGPU-Utility').
-			]
-	].
+
+	spec for: #pharo do: [ self baselineForPharo: spec ].
+	spec for: #squeak do: [ self baselineForSqueak: spec ].
+]
+
+{ #category : #baselines }
+BaselineOfAbstractGPU >> baselineForPharo: spec [
+	spec postLoadDoIt: #postLoadActionsForPharo.
+	spec
+		baseline: #'PhaNAPI' with: [
+			spec repository: 'github://ronsaldo/phanapi'
+		];
+		package: #'AbstractGPU-CorePharo' with: [
+			spec requires: #(#'PhaNAPI' ).
+		];
+		package: #'AbstractGPU-GeneratedPharo' with: [
+			spec requires: #(#'AbstractGPU-CorePharo' )
+		];
+		package: #'AbstractGPU-Samples' with: [
+			spec requires: #(#'AbstractGPU-Window' #'AbstractGPU-CorePharo' #'AbstractGPU-GeneratedPharo' )
+		];
+		package: #'AbstractGPU-Utility' with: [
+			spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' )
+		];
+		package: #'AbstractGPU-Window' with: [
+			spec requires: #(#'AbstractGPU-GeneratedPharo' #'AbstractGPU-CorePharo' #'AbstractGPU-Utility').
+		]
 
 ]
 
 { #category : #baselines }
-BaselineOfAbstractGPU >> postLoadActions [
+BaselineOfAbstractGPU >> baselineForSqueak: spec [
+	spec postLoadDoIt: #postLoadActionsForSqueak.
+	spec
+		package: #'AbstractGPU-CoreSqueak' with: [];
+		package: #'AbstractGPU-GeneratedSqueak' with: [
+			spec requires: #(#'AbstractGPU-CoreSqueak' )
+		];
+		package: #'AbstractGPU-Samples' with: [
+			spec requires: #(#'AbstractGPU-Window' #'AbstractGPU-CoreSqueak' #'AbstractGPU-GeneratedSqueak')
+		];
+		package: #'AbstractGPU-Utility' with: [
+			spec requires: #(#'AbstractGPU-CoreSqueak' #'AbstractGPU-GeneratedSqueak')
+		];
+		package: #'AbstractGPU-Window' with: [
+			spec requires: #(#'AbstractGPU-CoreSqueak' #'AbstractGPU-GeneratedSqueak' #'AbstractGPU-Utility').
+		]
+
+]
+
+{ #category : #baselines }
+BaselineOfAbstractGPU >> postLoadActionsForPharo [
 	(Smalltalk globals at: #AGPUCBindings) fetchLibraryInPostLoadAction.
+	(Smalltalk globals at: #AGPUGeneratedDoIt) initializeBindings.
+]
+
+{ #category : #baselines }
+BaselineOfAbstractGPU >> postLoadActionsForSqueak [
 	(Smalltalk globals at: #AGPUGeneratedDoIt) initializeBindings.
 ]
