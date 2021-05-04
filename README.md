@@ -41,6 +41,15 @@ This installation script takes care of automatically downloading a version of
 the platform specific library binary that is automatically being built on the CI
 server.
 
+After loading the baseline, the following examples can be run in a Playground:
+
+```smalltalk
+AGPUSampleImmediateRenderer1 new openInWindow.
+AGPUSampleImmediateRenderer2 new openInWindow.
+AGPUSampleImmediateRenderer3 new openInWindow.
+AGPUSampleImmediateRenderer4 new openInWindow.
+```
+
 ### Squeak
 Since Squeak does not support repositories in the Tonel format, the installation
 requires a manual Tonel to Monticello conversion step that uses Pharo. For
@@ -65,8 +74,18 @@ loaded in Squeak by running the following script:
 Installer monticello directory: 'mc';
     install: 'AbstractGPU-CoreSqueak';
     install: 'AbstractGPU-GeneratedSqueak';
+    install: 'AbstractGPU-Utility';
     install: 'AbstractGPU-Window';
     install: 'AbstractGPU-Samples'.
 
 (Smalltalk at: #AGPUGeneratedDoIt) initializeBindings.
+```
+
+After loading the packages, the following examples can be run in a Workspace, after copying the Agpu libraries in a folder that is searched by the VM:
+
+```smalltalk
+AGPUSampleImmediateRenderer1 new openInWindow.
+AGPUSampleImmediateRenderer2 new openInWindow.
+AGPUSampleImmediateRenderer3 new openInWindow.
+AGPUSampleImmediateRenderer4 new openInWindow.
 ```
