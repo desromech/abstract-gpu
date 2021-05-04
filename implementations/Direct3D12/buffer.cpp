@@ -297,4 +297,5 @@ agpu_error ADXBuffer::invalidateWholeBuffer()
 {
 	return AGPU_UNIMPLEMENTED;
 }
+
 } // End of namespace AgpuD3D12

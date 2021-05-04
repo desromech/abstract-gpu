@@ -121,6 +121,14 @@ agpu_pointer AVkBuffer::mapBuffer(agpu_mapping_access flags)
         }
     }
     ++mapCount;
+
+    // Do we have to invalidate the whole buffer
+    if(!(description.mapping_flags & AGPU_MAP_COHERENT_BIT))
+    {
+        if((description.mapping_flags & AGPU_MAP_READ_BIT))
+            invalidateWholeBuffer();
+    }
+
     return mappedPointer;
 }
 
@@ -139,6 +147,13 @@ agpu_error AVkBuffer::unmapBuffer()
     {
         vmaUnmapMemory(sharedContext->memoryAllocator, allocation);
         mappedPointer = nullptr;
+    }
+
+    // Do we have to flush the whole buffer
+    if(!(description.mapping_flags & AGPU_MAP_COHERENT_BIT))
+    {
+        if((description.mapping_flags & AGPU_MAP_WRITE_BIT))
+            flushWholeBuffer();
     }
 
     return AGPU_OK;
