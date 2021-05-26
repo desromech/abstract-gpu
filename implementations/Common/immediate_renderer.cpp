@@ -134,7 +134,8 @@ size_t ImmediateTextureBindingSet::hash() const
     return std::hash<agpu::texture_ref>()(albedoTexture) ^
         std::hash<agpu::texture_ref>()(emissionTexture) ^
         std::hash<agpu::texture_ref>()(normalTexture) ^
-        std::hash<agpu::texture_ref>()(rmaTexture);
+        std::hash<agpu::texture_ref>()(occlusionTexture) ^
+		std::hash<agpu::texture_ref>()(roughnessMetallicTexture);
 }
 
 bool ImmediateTextureBindingSet::operator==(const ImmediateTextureBindingSet& other) const
@@ -142,7 +143,8 @@ bool ImmediateTextureBindingSet::operator==(const ImmediateTextureBindingSet& ot
     return albedoTexture == other.albedoTexture &&
         emissionTexture == other.emissionTexture &&
         normalTexture == other.normalTexture &&
-        rmaTexture == other.rmaTexture;
+        occlusionTexture == other.occlusionTexture &&
+		roughnessMetallicTexture == other.roughnessMetallicTexture;
 }
 bool ImmediateTextureBindingSet::operator!=(const ImmediateTextureBindingSet& other) const
 {
@@ -625,7 +627,8 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Albedo
 		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Emission
 		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Normal
-		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // RMA
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Occlusion
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Roughness metallic
 
         immediateShaderSignature = agpu::shader_signature_ref(builder->build());
         if(!immediateShaderSignature) return false;
@@ -673,7 +676,8 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 
 		immediateSharedRenderingStates->defaultAlbedoTexture = texture;
 		immediateSharedRenderingStates->defaultEmissionTexture = texture;
-		immediateSharedRenderingStates->defaultRMATexture = texture;
+		immediateSharedRenderingStates->defaultOcclusionTexture = texture;
+		immediateSharedRenderingStates->defaultRoughnessMetallicTexture = texture;
 	}
 
 	// Create the default normal texture.
@@ -1183,7 +1187,14 @@ agpu_error ImmediateRenderer::bindTextureIn(const agpu::texture_ref & texture, a
 	    currentRenderingState.textureBindingSet.normalTexture = texture;
 		return AGPU_OK;
 	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ROUGHNESS_METALLIC_AMBIENT:
-	    currentRenderingState.textureBindingSet.rmaTexture = texture;
+	    currentRenderingState.textureBindingSet.occlusionTexture = texture;
+		currentRenderingState.textureBindingSet.roughnessMetallicTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_AMBIENT_OCCLUSION:
+		currentRenderingState.textureBindingSet.occlusionTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ROUGHNESS_METALLIC:
+		currentRenderingState.textureBindingSet.roughnessMetallicTexture = texture;
 		return AGPU_OK;
 	default: return AGPU_UNSUPPORTED;
 	}
@@ -1226,8 +1237,10 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
 		sanitizedBindingSet.emissionTexture = immediateSharedRenderingStates->defaultEmissionTexture;
 	if(!sanitizedBindingSet.normalTexture)
 		sanitizedBindingSet.normalTexture = immediateSharedRenderingStates->defaultNormalTexture;
-	if(!sanitizedBindingSet.rmaTexture)
-		sanitizedBindingSet.rmaTexture = immediateSharedRenderingStates->defaultRMATexture;
+	if(!sanitizedBindingSet.occlusionTexture)
+		sanitizedBindingSet.occlusionTexture = immediateSharedRenderingStates->defaultOcclusionTexture;
+	if(!sanitizedBindingSet.roughnessMetallicTexture)
+		sanitizedBindingSet.roughnessMetallicTexture = immediateSharedRenderingStates->defaultRoughnessMetallicTexture;
 
     // Do we have an existing binding.
     auto it = usedTextureBindingMap.find(sanitizedBindingSet);
@@ -1251,7 +1264,8 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
     textureBinding->bindSampledTextureView(0, agpu::texture_view_ref(sanitizedBindingSet.albedoTexture->getOrCreateFullView()));
 	textureBinding->bindSampledTextureView(1, agpu::texture_view_ref(sanitizedBindingSet.emissionTexture->getOrCreateFullView()));
 	textureBinding->bindSampledTextureView(2, agpu::texture_view_ref(sanitizedBindingSet.normalTexture->getOrCreateFullView()));
-	textureBinding->bindSampledTextureView(3, agpu::texture_view_ref(sanitizedBindingSet.rmaTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(3, agpu::texture_view_ref(sanitizedBindingSet.occlusionTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(4, agpu::texture_view_ref(sanitizedBindingSet.roughnessMetallicTexture->getOrCreateFullView()));
     usedTextureBindingMap[sanitizedBindingSet] = textureBinding;
 
     return textureBinding;

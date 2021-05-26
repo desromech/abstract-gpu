@@ -471,7 +471,8 @@ layout(set=0, binding=0) uniform sampler Sampler0;
 layout(set=6, binding=0) uniform texture2D AlbedoTexture;
 layout(set=6, binding=1) uniform texture2D EmissionTexture;
 layout(set=6, binding=2) uniform texture2D NormalTexture;
-layout(set=6, binding=3) uniform texture2D RMATexture;
+layout(set=6, binding=3) uniform texture2D OcclusionTexture;
+layout(set=6, binding=4) uniform texture2D RoughnessMetallicTexture;
 
 layout(location = 0) OPT_FLAT in vec4 inColor;
 layout(location = 1) in vec4 inTexcoord;
@@ -515,10 +516,11 @@ void main()
     parameters.metallic = MaterialState.metallicFactor;
 
 #       ifdef TEXTURING_ENABLED
-    vec4 rma = textureProj(sampler2D(RMATexture, Sampler0), inTexcoord);
-    parameters.occlusion *= rma.r;
-    parameters.roughness *= rma.g;
-    parameters.metallic *= rma.b;
+    parameters.occlusion *= textureProj(sampler2D(OcclusionTexture, Sampler0), inTexcoord).r;
+
+    vec4 rm = textureProj(sampler2D(RoughnessMetallicTexture, Sampler0), inTexcoord);
+    parameters.roughness *= rm.g;
+    parameters.metallic *= rm.b;
 #       endif
 #   endif
     parameters.P = inPosition.xyz;

@@ -41,7 +41,8 @@ struct ImmediateTextureBindingSet
     agpu::texture_ref albedoTexture;
     agpu::texture_ref emissionTexture;
     agpu::texture_ref normalTexture;
-    agpu::texture_ref rmaTexture;
+    agpu::texture_ref occlusionTexture;
+    agpu::texture_ref roughnessMetallicTexture;
 
     size_t hash() const;
     bool operator==(const ImmediateTextureBindingSet& other) const;
@@ -125,7 +126,8 @@ public:
     agpu::texture_ref defaultAlbedoTexture;
     agpu::texture_ref defaultEmissionTexture;
     agpu::texture_ref defaultNormalTexture;
-    agpu::texture_ref defaultRMATexture;
+    agpu::texture_ref defaultOcclusionTexture;
+    agpu::texture_ref defaultRoughnessMetallicTexture;
 
     agpu::shader_resource_binding_ref &getSamplerStateBindingFor(const ImmediateRendererSamplerStateDescription &description);
 
