@@ -23,7 +23,7 @@ jobs:
             PROJECT_NAME: abstract-gpu
         steps:
             - name: Install dependencies linux
-              run: sudo apt-get -qqy install libx11-xcb-dev libvulkan-dev
+              run: sudo apt-get update && sudo apt-get -qqy install libx11-xcb-dev libvulkan-dev
 
             - uses: actions/checkout@v1
 
