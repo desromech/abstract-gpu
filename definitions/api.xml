@@ -1124,6 +1124,8 @@
             <constant name="ImmediateRendererTextureBindingEmission" value="1" />
             <constant name="ImmediateRendererTextureBindingNormal" value="2" />
             <constant name="ImmediateRendererTextureBindingRoughnessMetallicAmbient" value="3" />
+            <constant name="ImmediateRendererTextureBindingAmbientOcclusion" value="4" />
+            <constant name="ImmediateRendererTextureBindingRoughnessMetallic" value="5" />
         </enum>
     </constants>
 
