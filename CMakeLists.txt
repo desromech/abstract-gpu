@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(AGPU)
 
 if(APPLE)
-	set(CMAKE_OSX_ARCHITECTURES "x86_64")
+	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
 option(AGPU_BUILD_SAMPLES "Build AGPU Samples" OFF)
