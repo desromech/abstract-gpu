@@ -346,7 +346,7 @@ layout(location = 3) in vec2 inTexcoord;
 //layout(location = 4) in vec2 inTexcoord2;
 
 #ifdef SKINNING_ENABLED
-layout(location = 5) in vec4 inBoneIndices;
+layout(location = 5) in uvec4 inBoneIndices;
 layout(location = 6) in vec4 inBoneWeights;
 #endif
 
@@ -371,23 +371,22 @@ void main()
     vec4 unskinnedPosition = vec4(inPosition, 1.0);
     vec4 unskinnedNormal = vec4(inNormal, 0.0);
 
-    ivec4 boneIndices = ivec4(inBoneIndices);
-    vec3 modelPosition = (SkinningState.boneMatrices[boneIndices.x]*unskinnedPosition).xyz*inBoneWeights.x;
-    modelPosition += (SkinningState.boneMatrices[boneIndices.y]*unskinnedPosition).xyz*inBoneWeights.y;
-    modelPosition += (SkinningState.boneMatrices[boneIndices.z]*unskinnedPosition).xyz*inBoneWeights.z;
-    modelPosition += (SkinningState.boneMatrices[boneIndices.w]*unskinnedPosition).xyz*inBoneWeights.w;
+    vec3 modelPosition = (SkinningState.boneMatrices[inBoneIndices.x]*unskinnedPosition).xyz*inBoneWeights.x;
+    modelPosition += (SkinningState.boneMatrices[inBoneIndices.y]*unskinnedPosition).xyz*inBoneWeights.y;
+    modelPosition += (SkinningState.boneMatrices[inBoneIndices.z]*unskinnedPosition).xyz*inBoneWeights.z;
+    modelPosition += (SkinningState.boneMatrices[inBoneIndices.w]*unskinnedPosition).xyz*inBoneWeights.w;
 
-    vec3 modelNormal = (SkinningState.boneMatrices[boneIndices.x]*unskinnedNormal).xyz*inBoneWeights.x;
-    modelNormal += (SkinningState.boneMatrices[boneIndices.y]*unskinnedNormal).xyz*inBoneWeights.y;
-    modelNormal += (SkinningState.boneMatrices[boneIndices.z]*unskinnedNormal).xyz*inBoneWeights.z;
-    modelNormal += (SkinningState.boneMatrices[boneIndices.w]*unskinnedNormal).xyz*inBoneWeights.w;
+    vec3 modelNormal = (SkinningState.boneMatrices[inBoneIndices.x]*unskinnedNormal).xyz*inBoneWeights.x;
+    modelNormal += (SkinningState.boneMatrices[inBoneIndices.y]*unskinnedNormal).xyz*inBoneWeights.y;
+    modelNormal += (SkinningState.boneMatrices[inBoneIndices.z]*unskinnedNormal).xyz*inBoneWeights.z;
+    modelNormal += (SkinningState.boneMatrices[inBoneIndices.w]*unskinnedNormal).xyz*inBoneWeights.w;
 
 #   ifdef TANGENT_SPACE_ENABLED
     vec4 unskinnedTangent = vec4(inTangent4.xyz, 0.0);
-    vec3 modelTangent = (SkinningState.boneMatrices[boneIndices.x]*unskinnedTangent).xyz*inBoneWeights.x;
-    modelNormal += (SkinningState.boneMatrices[boneIndices.y]*unskinnedTangent).xyz*inBoneWeights.y;
-    modelNormal += (SkinningState.boneMatrices[boneIndices.z]*unskinnedTangent).xyz*inBoneWeights.z;
-    modelNormal += (SkinningState.boneMatrices[boneIndices.w]*unskinnedTangent).xyz*inBoneWeights.w;
+    vec3 modelTangent = (SkinningState.boneMatrices[inBoneIndices.x]*unskinnedTangent).xyz*inBoneWeights.x;
+    modelNormal += (SkinningState.boneMatrices[inBoneIndices.y]*unskinnedTangent).xyz*inBoneWeights.y;
+    modelNormal += (SkinningState.boneMatrices[inBoneIndices.z]*unskinnedTangent).xyz*inBoneWeights.z;
+    modelNormal += (SkinningState.boneMatrices[inBoneIndices.w]*unskinnedTangent).xyz*inBoneWeights.w;
 #   endif
 #else
     vec3 modelPosition = inPosition;
