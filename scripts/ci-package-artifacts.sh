@@ -14,14 +14,15 @@ if test "$VARIANT" = ""; then
     VARIANT="Default"
 fi
 
-# Rename darwin into osx
-if test "$OS_NAME" = "darwin"; then
-    OS_NAME="osx"
-fi
-
 # Rename x86_64 into x64 to distinguis between x86 and x86_64 with grep.
 if test "$ARCH" = "x86_64"; then
     ARCH="x64"
+fi
+
+# Rename darwin into osx. Also call the arch universal since we build fat binaries for x64 and arm64.
+if test "$OS_NAME" = "darwin"; then
+    OS_NAME="osx"
+    ARCH="universal"
 fi
 
 PLATFORM_NAME="${OS_NAME}-${ARCH}"
