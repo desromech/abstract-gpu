@@ -15,7 +15,9 @@ Class {
 		'mipmapGenerationShaderSignature',
 		'screenQuadVertexShader',
 		'mipmapGenerationSampler',
+		'mipmapGenerationRepeatSampler',
 		'mipmapGenerationSamplerBinding',
+		'mipmapGenerationRepeatSamplerBinding',
 		'mipmapGenerationRenderpass',
 		'nonColorMipmapComputationPipelineState',
 		'normalMapMipmapComputationPipelineState'
@@ -135,6 +137,11 @@ AGPUUtilityResourceCache >> mipmapGenerationRenderpass [
 ]
 
 { #category : #'mipmap computation' }
+AGPUUtilityResourceCache >> mipmapGenerationRepeatSamplerBinding [
+	^ mipmapGenerationRepeatSamplerBinding
+]
+
+{ #category : #'mipmap computation' }
 AGPUUtilityResourceCache >> mipmapGenerationSamplerBinding [
 	^ mipmapGenerationSamplerBinding
 ]
@@ -159,13 +166,12 @@ layout (location = 0) out vec4 outMiptexel;
 layout (push_constant) uniform Extents
 { 
 	uvec2 sourceExtent;
-	uvec2 sourceTextureExtent;
 	uvec2 destinationExtent;
 };
 
 vec4 fetchTexel(uvec2 texcoord)
 { 
-	vec2 samplingTexcoord = vec2(min(texcoord, sourceExtent - 1u)) / vec2(sourceTextureExtent);
+	vec2 samplingTexcoord = (vec2(texcoord) + 0.5) / vec2(sourceExtent);
 	return texture(sampler2D(inputTexture, inputSampler), samplingTexcoord);
 }
 
@@ -199,8 +205,10 @@ AGPUUtilityResourceCache >> nonColorMipmapComputationShader [
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (set=0, binding = 0, rgba8) uniform readonly image2D inputImage;
-layout (set=0, binding = 1, rgba8) uniform writeonly image2D outputImage;
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform texture2D inputTexture;
+
+layout (set=1, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
 { 
@@ -213,7 +221,7 @@ shared vec4 fetchedTexels[16][16];
 void main()
 {
     ivec2 sourceCoord = ivec2(min(gl_GlobalInvocationID.xy, sourceExtent - 1));
-    fetchedTexels[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = imageLoad(inputImage, sourceCoord);
+    fetchedTexels[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = texelFetch(sampler2D(inputTexture, inputSampler), sourceCoord, 0).bgra;
     barrier();
 
     uvec2 halfWorkGroupSize = gl_WorkGroupSize.xy/2;
@@ -246,13 +254,12 @@ layout (location = 0) out vec4 outMiptexel;
 layout (push_constant) uniform Extents
 { 
 	uvec2 sourceExtent;
-	uvec2 sourceTextureExtent;
 	uvec2 destinationExtent;
 };
 
 vec3 fetchTexel(uvec2 texcoord)
 { 
-	vec2 samplingTexcoord = vec2(min(texcoord, sourceExtent - 1u)) / vec2(sourceTextureExtent);
+	vec2 samplingTexcoord = (vec2(texcoord) + 0.5) / vec2(sourceExtent);
 	return texture(sampler2D(inputTexture, inputSampler), samplingTexcoord).xyz*2.0 - 1.0;
 }
 
@@ -286,8 +293,10 @@ AGPUUtilityResourceCache >> normalMapMipmapComputationShader [
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (set=0, binding = 0, rgba8) uniform readonly image2D inputImage;
-layout (set=0, binding = 1, rgba8) uniform writeonly image2D outputImage;
+layout (set=0, binding = 0) uniform sampler inputSampler;
+
+layout (set=1, binding = 0) uniform texture2D inputTexture;
+layout (set=1, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
 { 
@@ -300,7 +309,7 @@ shared vec3 fetchedTexels[16][16];
 void main()
 {
     ivec2 sourceCoord = ivec2(min(gl_GlobalInvocationID.xy, sourceExtent - 1));
-    fetchedTexels[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = imageLoad(inputImage, sourceCoord).xyz*2.0 - 1.0;
+    fetchedTexels[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = texelFetch(sampler2D(inputTexture, inputSampler), sourceCoord, 0).bgr*2.0 - 1.0;
     barrier();
 
     uvec2 halfWorkGroupSize = gl_WorkGroupSize.xy/2;
@@ -369,46 +378,50 @@ AGPUUtilityResourceCache >> privateMipmapGenerationShaderSignature [
 	mipmapGenerationShaderSignature ifNotNil: [ ^ mipmapGenerationShaderSignature ].
 
 	builder := device createShaderSignatureBuilder.
+	builder
+		beginBindingBank: 2;
+		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLER bindingPointCount: 1;
+		
+		beginBindingBank: 256;
+		"Input image"
+		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE bindingPointCount: 1.
+
 
 	self privateUseComputeShaderForMipmapGeneration ifTrue: [
 		builder
-			beginBindingBank: 256;
-			"Input image"
-			addBindingBankElement: AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE bindingPointCount: 1;
 			"Output image"
-			addBindingBankElement: AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE bindingPointCount: 1;
-
-			"sourceWidth" addBindingConstant;
-			"sourceHeight" addBindingConstant;
-			"destinationWidth" addBindingConstant;
-			"destinationHeight" addBindingConstant.
-		mipmapGenerationShaderSignature := builder build.
-	] ifFalse: [
-		builder
-			beginBindingBank: 1;
-			addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLER bindingPointCount: 1;
-			beginBindingBank: 256;
-			addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE bindingPointCount: 1;
-			"sourceWidth" addBindingConstant;
-			"sourceHeight" addBindingConstant;
-			"sourceTextureWidth" addBindingConstant;
-			"sourceTextureHeight" addBindingConstant;
-			"destinationWidth" addBindingConstant;
-			"destinationHeight" addBindingConstant.
-
-		mipmapGenerationShaderSignature := builder build.
-		
-		mipmapGenerationSampler := device createSampler: (AGPUSamplerDescription new
-			filter: AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST;
-			address_u: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
-			address_v: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
-			address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
-			max_lod: 0.0;
-			yourself).
-		
-		mipmapGenerationSamplerBinding := mipmapGenerationShaderSignature createShaderResourceBinding: 0.
-		mipmapGenerationSamplerBinding bindSampler: 0 sampler: mipmapGenerationSampler.
+			addBindingBankElement: AGPU_SHADER_BINDING_TYPE_STORAGE_IMAGE bindingPointCount: 1
 	].
+
+	builder
+		"sourceWidth" addBindingConstant;
+		"sourceHeight" addBindingConstant;
+		"destinationWidth" addBindingConstant;
+		"destinationHeight" addBindingConstant.
+
+	mipmapGenerationShaderSignature := builder build.
+
+	mipmapGenerationSampler := device createSampler: (AGPUSamplerDescription new
+		filter: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+		address_u: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		address_v: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		max_lod: 0.0;
+		yourself).
+	
+	mipmapGenerationSamplerBinding := mipmapGenerationShaderSignature createShaderResourceBinding: 0.
+	mipmapGenerationSamplerBinding bindSampler: 0 sampler: mipmapGenerationSampler.
+
+	mipmapGenerationRepeatSampler := device createSampler: (AGPUSamplerDescription new
+		filter: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+		address_u: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_v: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_w: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		max_lod: 0.0;
+		yourself).
+	
+	mipmapGenerationRepeatSamplerBinding := mipmapGenerationShaderSignature createShaderResourceBinding: 0.
+	mipmapGenerationRepeatSamplerBinding bindSampler: 0 sampler: mipmapGenerationRepeatSampler.
 
 	^ mipmapGenerationShaderSignature
 ]
@@ -499,19 +512,10 @@ layout (location = 0) out vec4 outMiptexel;
 layout (push_constant) uniform Extents
 { 
 	uvec2 sourceExtent;
-	uvec2 sourceTextureExtent;
 	uvec2 destinationExtent;
 };
 
 // See https://en.wikipedia.org/wiki/SRGB [May, 2021] for these conversion formulas.
-vec4 decodeSRGB(vec4 color)
-{
-	vec3 isPowerSection = vec3(lessThanEqual(color.rgb, vec3(0.04045)));
-	vec3 linearSection = color.rgb / 12.92;
-	vec3 powerSection = pow((color.rgb + 0.055)/1.055, vec3(2.4));
-	return vec4(mix(linearSection, powerSection, isPowerSection), color.a);
-}
-
 vec4 encodeSRGB(vec4 color)
 {
 	vec3 isPowerSection = vec3(lessThanEqual(color.rgb, vec3(0.0031308)));
@@ -522,8 +526,8 @@ vec4 encodeSRGB(vec4 color)
 
 vec4 fetchTexel(uvec2 texcoord)
 { 
-	vec2 samplingTexcoord = vec2(min(texcoord, sourceExtent - 1u)) / vec2(sourceTextureExtent);
-	return decodeSRGB(texture(sampler2D(inputTexture, inputSampler), samplingTexcoord));
+	vec2 samplingTexcoord = (vec2(texcoord) + 0.5) / vec2(sourceExtent);
+	return texture(sampler2D(inputTexture, inputSampler), samplingTexcoord);
 }
 
 void main()
@@ -547,8 +551,10 @@ AGPUUtilityResourceCache >> srgbMipmapComputationShader [
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (set=0, binding = 0, rgba8) uniform readonly image2D inputImage;
-layout (set=0, binding = 1, rgba8) uniform writeonly image2D outputImage;
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform texture2D inputTexture;
+
+layout (set=1, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
 { 
@@ -557,15 +563,6 @@ layout (push_constant) uniform Extents
 };
 	
 shared vec4 fetchedTexels[16][16];
-
-// See https://en.wikipedia.org/wiki/SRGB [May, 2021] for these conversion formulas.
-vec4 decodeSRGB(vec4 color)
-{
-	vec3 isPowerSection = vec3(lessThanEqual(color.rgb, vec3(0.04045)));
-	vec3 linearSection = color.rgb / 12.92;
-	vec3 powerSection = pow((color.rgb + 0.055)/1.055, vec3(2.4));
-	return vec4(mix(linearSection, powerSection, isPowerSection), color.a);
-}
 
 vec4 encodeSRGB(vec4 color)
 {
@@ -578,7 +575,7 @@ vec4 encodeSRGB(vec4 color)
 void main()
 {
     ivec2 sourceCoord = ivec2(min(gl_GlobalInvocationID.xy, sourceExtent - 1));
-    fetchedTexels[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = decodeSRGB(imageLoad(inputImage, sourceCoord));
+    fetchedTexels[gl_LocalInvocationID.x][gl_LocalInvocationID.y] = texelFetch(sampler2D(inputTexture, inputSampler), sourceCoord, 0).bgra;
     barrier();
 
     uvec2 halfWorkGroupSize = gl_WorkGroupSize.xy/2;

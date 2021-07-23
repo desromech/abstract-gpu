@@ -239,8 +239,8 @@ AGPUSampleImmediateRenderer4 >> initializeForNewSession [
 	super initializeForNewSession.
 
 	textureUploader := AGPUTextureUploader for: device.
-	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm.
-	normalTexture := textureUploader createAndUploadTextureForNormalMapForm: self checkboardNormalMapTextureForm.
+	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm repeated: true quality: 1.
+	normalTexture := textureUploader createAndUploadTextureForNormalMapForm: self checkboardNormalMapTextureForm repeated: true quality: 1.
 	cubeMesh := (AGPUSampleMesh for: device) addCubeMinX: -0.5 y: -0.5 z: -0.5 maxX: 0.5 y: 0.5 z: 0.5.
 ]
 

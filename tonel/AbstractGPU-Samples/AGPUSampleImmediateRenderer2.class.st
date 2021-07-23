@@ -13,7 +13,7 @@ AGPUSampleImmediateRenderer2 >> initializeForNewSession [
 	super initializeForNewSession.
 
 	textureUploader := AGPUTextureUploader for: device.
-	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm.
+	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm repeated: true quality: 1.
 
 ]
 
