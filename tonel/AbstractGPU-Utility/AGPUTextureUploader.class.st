@@ -386,7 +386,7 @@ AGPUTextureUploader >> uploadHDRI: hdri intoTexture: texture thenProcessWith: pr
 	destRowAdvance := pitch.
 	
 	"Do we need to flip the texture vertically?"
-	device hasBottomLeftTextureCoordinates ~~ 0 ifTrue: [ 
+	device hasBottomLeftTextureCoordinates ~= 0 ifTrue: [ 
 		destRowIndex := 1 + (pitch * (hdri height - 1)).
 		destRowAdvance := pitch negated.
 	].

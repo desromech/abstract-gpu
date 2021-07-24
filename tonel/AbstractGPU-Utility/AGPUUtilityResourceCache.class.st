@@ -254,9 +254,51 @@ layout (set=1, binding = 0) uniform textureCube inputTexture;
 layout (location = 0) in vec3 inDirection;
 layout (location = 0) out vec4 outColor;
 
+const float HalfPi = 1.5707963267948966;
+const float Pi = 3.141592653589793;
+const float TwoPi = 6.283185307179586;
+
+const uint SampleThetaCount = 32u;
+const uint SamplePhiCount = 32u;
+const uint SampleCount = SampleThetaCount*SamplePhiCount;
+
+const	float dTheta = HalfPi / float(SampleThetaCount);	
+const	float dPhi = TwoPi / float(SamplePhiCount);	
+
 void main()
 {
-	outColor = texture(samplerCube(inputTexture, inputSampler), inDirection);
+	vec3 N = normalize(inDirection);
+	vec3 upVector = vec3(0.0, 1.0, 0.0);
+	vec3 T = cross(upVector, N);
+	vec3 B = cross(N, T);
+	
+	vec3 irradiance = vec3(0.0);
+	
+	float theta = 0.0;
+	for(uint i = 0; i < SampleThetaCount; i += 1u)
+	{ 
+		float cosTheta = cos(theta);
+		float sinTheta = sin(theta);
+		float phi = 0.0;
+		float dS = sinTheta;
+		for(uint j = 0; j < SamplePhiCount; j += 1u)
+		{ 
+			float cosPhi = cos(phi);
+			float sinPhi = sin(phi);
+			vec3 tangentL = vec3(sinTheta*cosPhi, sinTheta*sinPhi, cosTheta);
+			vec3 L = tangentL.x * T + tangentL.y * B + tangentL.z * N;
+			vec3 sampl = textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb;
+			irradiance += sampl * cosTheta * dS;
+			
+			phi += dPhi;
+		}
+
+		theta += dTheta;
+	}
+
+	irradiance = irradiance * (Pi / float(SampleCount));
+	//irradiance = textureLod(samplerCube(inputTexture, inputSampler), inDirection, 0.0).rgb;
+	outColor = vec4(irradiance, 1.0);
 }
 
 ' withUnixLineEndings
@@ -292,6 +334,30 @@ AGPUUtilityResourceCache >> finishBuildingRequiredPipelineStateWith: builder [
 	].
 
 	^ result
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hammersleySequenceSourceCode [
+	^ '
+#line 4
+
+float radicalInverse(uint bits) 
+{
+	// Method source code from https://learnopengl.com/PBR/IBL/Specular-IBL [ July, 2021 ]
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+
+vec2 hammersleySequence(uint i, uint sampleCount)
+{ 
+	return vec2(float(i) / float(sampleCount), radicalInverse(i));
+}
+
+'
 ]
 
 { #category : #'private - shaders' }
@@ -411,6 +477,39 @@ AGPUUtilityResourceCache >> hdriToEnvironmentMapComputationPipelineState [
 				ifFalse: [ self hdriToEnvironmentMapComputationFragmentShader ])
 		]
 	]
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> importanceSampleGGXShaderSource [
+	^ '
+#line 4
+
+const float HalfPi = 1.5707963267948966;
+const float Pi = 3.141592653589793;
+const float TwoPi = 6.283185307179586;
+
+// From UE 4 talk and course notes "Real Shading in Unreal Engine 4" by Brian Karis,
+// Incident light = SampleColor * NdotL
+// Microfacet specular = D*G*F / (4*NdotL*NdotV)
+// pdf = D * NdotH / (4 * VdotH)
+// Microfacet specular *NdotL / pdf = G*F*VdotH / (NdotV*NdotH)
+vec3 importanceSampleGGX(vec2 Xi, float alpha, vec3 N)
+{
+	float phi = TwoPi*Xi.x;
+
+	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (alpha*alpha - 1.0)*Xi.y));
+	float sinTheta = sqrt(1.0 - cosTheta*cosTheta);
+	vec3 H = vec3(sinTheta*cos(phi), sinTheta*sin(phi), cosTheta);
+	
+	vec3 upVector = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+	vec3 tangentX = normalize( cross( upVector , N ) );
+	vec3 tangentY = cross( N, tangentX );
+
+	// Tangent to world space
+	return tangentX * H.x + tangentY * H.y + N * H.z;	
+}
+
+'
 ]
 
 { #category : #initialization }
@@ -953,7 +1052,8 @@ void main()
 AGPUUtilityResourceCache >> specularLightProbeComputationFragmentShader [
 	^ '
 #version 450
-#line 5
+' , self importanceSampleGGXShaderSource , self hammersleySequenceSourceCode , '
+#line 6
 
 layout (set=0, binding = 0) uniform sampler inputSampler;
 layout (set=1, binding = 0) uniform textureCube inputTexture;
@@ -967,9 +1067,34 @@ layout (push_constant) uniform FaceIndex
 	float roughness;
 };
 
+const uint SampleCount = 1024u;
+
 void main()
 {
-	outColor = texture(samplerCube(inputTexture, inputSampler), inDirection);
+	vec3 N = normalize(inDirection);
+	vec3 V = N;
+	float alpha = roughness*roughness;
+	
+	vec3 specular = vec3(0.0);
+	float totalWeight = 0.0;
+	
+	for(uint i = 0u; i < SampleCount; ++i)
+	{ 
+		vec2 Xi = hammersleySequence(i, SampleCount);
+		vec3 H = importanceSampleGGX(Xi, alpha, N);
+		vec3 L = normalize(2.0*dot(V,H)*H - V);
+		
+		float NdotL = clamp(dot(N, L), 0.0, 1.0);
+		if(NdotL > 0.0)
+		{
+			vec3 sampl = textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb;
+			specular += sampl*NdotL;
+			totalWeight += NdotL;
+		}
+	}
+	
+	specular /= totalWeight;
+	outColor = vec4(specular, 1.0);
 }
 
 ' withUnixLineEndings
