@@ -25,6 +25,11 @@ Class {
 }
 
 { #category : #'as yet unclassified' }
+AGPUTextureUploader class >> brdfLutSize [
+	^ 512
+]
+
+{ #category : #'as yet unclassified' }
 AGPUTextureUploader class >> defaultUploadBufferCapacity [
 	^ AGPUTextureMipmapGenerator defaultIntermediateTextureSize * AGPUTextureMipmapGenerator defaultIntermediateTextureSize * 4
 ]
@@ -60,6 +65,53 @@ AGPUTextureUploader >> beginCommandList [
 		commandList reset: commandListAllocator initial_pipeline_state: nil
 	].
 	^ commandList
+]
+
+{ #category : #API }
+AGPUTextureUploader >> createAndComputeBRDFLut [
+	| texture size textureViewDescription textureViewAttachment framebuffer |
+	size := self class brdfLutSize.
+	texture := device createTexture: (AGPUTextureDescription new
+		type: AGPU_TEXTURE_2D;
+		width: size;
+		height: size;
+		depth: 1;
+		layers: 1;
+		miplevels: 1;
+		sample_count: 1;
+		format: AGPU_TEXTURE_FORMAT_R16G16_UNORM;
+		heap_type: AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+		usage_modes: ((AGPU_TEXTURE_USAGE_COPY_SOURCE bitOr: AGPU_TEXTURE_USAGE_SAMPLED) bitOr: AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT);
+		main_usage_mode: AGPU_TEXTURE_USAGE_SAMPLED;
+		yourself).
+
+	textureViewDescription := AGPUTextureViewDescription new.
+	texture getFullViewDescription: textureViewDescription.
+	textureViewDescription usage_mode: AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT.
+
+	textureViewAttachment := texture createView: textureViewDescription.
+
+	framebuffer := device createFrameBuffer: size height: size colorCount: 1 colorViews: (AGPU packListOfReferences: {textureViewAttachment}) depthStencilView: nil.
+		
+	self ensureLastOperationHasFinished.
+	
+	activeResources
+		add: texture;
+		add: textureViewAttachment;
+		add: framebuffer.
+		
+	self beginCommandList
+		beginRenderPass: utilityResourceCache brdfLutGenerationRenderpass framebuffer: framebuffer bundle_content: 0;
+		setViewport: 0 y: 0 w: size h: size;
+		setScissor: 0 y: 0 w: size h: size;
+		setShaderSignature: utilityResourceCache lightProbePreprocessingShaderSignature;
+		usePipelineState: utilityResourceCache brdfLutComputationPipelineState;
+		drawArrays: 3 instance_count: 1 first_vertex: 0 base_instance: 0;
+		endRenderPass;
+		close.
+		
+	self submitCommandList.
+	^ texture
 ]
 
 { #category : #API }
@@ -260,6 +312,15 @@ AGPUTextureUploader >> mipmapGenerator [
 	^ mipmapGenerator
 ]
 
+{ #category : #private }
+AGPUTextureUploader >> submitCommandList [
+	pendingOperationFence ifNil: [ pendingOperationFence := device createFence ].
+	commandQueue
+		addCommandList: commandList;
+		signalFence: pendingOperationFence.
+	hasPendingOperation := true
+]
+
 { #category : #API }
 AGPUTextureUploader >> uploadForm: form intoTexture: texture [
 	^ self uploadForm: form intoTexture: texture repeated: true quality: 1
@@ -340,11 +401,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExte
 		
 	commandList
 		close.
-	pendingOperationFence ifNil: [ pendingOperationFence := device createFence ].
-	commandQueue
-		addCommandList: commandList;
-		signalFence: pendingOperationFence.
-	hasPendingOperation := true
+	self submitCommandList
 
 ]
 
@@ -433,11 +490,7 @@ AGPUTextureUploader >> uploadHDRI: hdri intoTexture: texture thenProcessWith: pr
 
 	commandList
 		close.
-	pendingOperationFence ifNil: [ pendingOperationFence := device createFence ].
-	commandQueue
-		addCommandList: commandList;
-		signalFence: pendingOperationFence.
-	hasPendingOperation := true
+	self submitCommandList
 
 ]
 

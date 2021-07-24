@@ -31,7 +31,9 @@ Class {
 		'equirectangularMapSamplerBinding',
 		'hdriDecodeComputationPipelineState',
 		'diffuseLightProbeComputationPipelineState',
-		'specularLightProbeComputationPipelineState'
+		'specularLightProbeComputationPipelineState',
+		'brdfLutGenerationRenderpass',
+		'brdfLutComputationPipelineState'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -42,6 +44,82 @@ Class {
 { #category : #'instance creation' }
 AGPUUtilityResourceCache class >> for: device [
 	^ self basicNew initializeWithDevice: device
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> brdfLutComputationFragmentShader [
+	^ '
+#version 450
+' , self importanceSampleGGXShaderSource , self hammersleySequenceSourceCode , '
+#line 6
+
+layout (location = 0) in vec2 inTexcoord;
+layout (location = 0) out vec4 outColor;
+
+const uint SampleCount = 1024u;
+
+float smithSchlickBeckmannFunction(float k, float cosTheta)
+{
+	return cosTheta / (cosTheta*(1.0 - k) + k);
+}
+
+float smithSchlickGGXMasking(float alpha, float NdotL, float NdotV)
+{
+	float k = alpha * 0.5;
+	return smithSchlickBeckmannFunction(k, NdotL)*smithSchlickBeckmannFunction(k, NdotV);
+}
+
+void main()
+{
+	float NdotV = inTexcoord.x;
+	float sinNdotV = sqrt(1.0 - NdotV*NdotV);
+	vec3 N = vec3(0.0, 0.0, 1.0);
+	
+	vec3 V = vec3(sinNdotV, 0.0, NdotV);
+	float roughness = inTexcoord.y;
+	float alpha = roughness*roughness;
+	
+	vec2 lutResult = vec2(0.0);
+	for(uint i = 0u; i < SampleCount; i += 1u)
+	{
+		vec2 Xi = hammersleySequence(i, SampleCount);
+		vec3 H = importanceSampleGGX(Xi, alpha, N);
+		vec3 L = normalize(2.0*dot(V, H)*H - V)	;
+			
+		float NdotH = clamp(H.z, 0.0, 1.0);
+		float NdotL = clamp(L.z, 0.0, 1.0);
+		float VdotH = clamp(dot(V, H), 0.0, 1.0);
+		if(NdotL > 0.0)
+		{
+			float G = smithSchlickGGXMasking(alpha, NdotL, NdotV);
+			float G_vis = G*VdotH/(NdotH*NdotV);
+			
+			float fresnelCos = 1.0 - VdotH;
+			float fresnelCos2 = fresnelCos*fresnelCos;
+			float fresnelCos5 = fresnelCos2*fresnelCos2*fresnelCos;
+			
+			lutResult += G_vis*vec2(1.0f - fresnelCos5, fresnelCos5);	
+		}
+	}	
+	
+	outColor = vec4(lutResult / float(SampleCount), 0.0, 1.0);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> brdfLutComputationPipelineState [
+	^ mutex critical: [
+		brdfLutComputationPipelineState ifNil: [
+			brdfLutComputationPipelineState := self privateBuildBRDFComputationPipelineStateWithFragmentShader: self brdfLutComputationFragmentShader
+		]
+	]
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> brdfLutGenerationRenderpass [
+	^ mutex critical: [ self privateBrdfLutGenerationRenderpass ]
 ]
 
 { #category : #'mipmap computation' }
@@ -76,6 +154,27 @@ AGPUUtilityResourceCache >> compileShader: sourceText type: shaderType [
 				e signal
 			]
 		]
+]
+
+{ #category : #'private - accessing' }
+AGPUUtilityResourceCache >> createDiscardKeepRenderPassWithFormat: format [
+	| colorAttachment |
+	colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
+	^ [
+		| renderpassDescription |
+		colorAttachment
+			format: format;
+			begin_action: AGPU_ATTACHMENT_DISCARD;
+			end_action: AGPU_ATTACHMENT_KEEP;
+			sample_count: 1;
+			sample_quality: 0;
+			yourself.
+		renderpassDescription := AGPURenderpassDescription new.
+		renderpassDescription
+			color_attachment_count: 1;
+			color_attachments: colorAttachment.
+		device createRenderPass: renderpassDescription.
+	] ensure: [ colorAttachment free ].
 ]
 
 { #category : #'private - shaders' }
@@ -764,6 +863,27 @@ void main()
 ' withUnixLineEndings
 ]
 
+{ #category : #'private - accessing' }
+AGPUUtilityResourceCache >> privateBrdfLutGenerationRenderpass [
+	^ brdfLutGenerationRenderpass ifNil: [ brdfLutGenerationRenderpass := self createDiscardKeepRenderPassWithFormat: AGPU_TEXTURE_FORMAT_R16G16_UNORM ]
+]
+
+{ #category : #private }
+AGPUUtilityResourceCache >> privateBuildBRDFComputationPipelineStateWithFragmentShader: fragmentComputationShader [
+	| builder |
+	builder := device createPipelineBuilder.
+	builder
+		setShaderSignature: self privateLightprobePreprocessingShaderSignature;
+		setRenderTargetFormat: 0 format: AGPU_TEXTURE_FORMAT_R16G16_UNORM;
+		setDepthStencilFormat: AGPU_TEXTURE_FORMAT_UNKNOWN;
+		attachShader: self privateScreenQuadVertexShader;
+		attachShader: (self compileShader: fragmentComputationShader type: AGPU_FRAGMENT_SHADER);
+		setPrimitiveType: AGPU_TRIANGLES.
+
+	^ self finishBuildingRequiredPipelineStateWith: builder
+
+]
+
 { #category : #private }
 AGPUUtilityResourceCache >> privateBuildLightProbeComputationPipelineStateWithFragmentShader: fragmentComputationShader [
 	| builder |
@@ -832,25 +952,7 @@ AGPUUtilityResourceCache >> privateCubeScreenQuadVertexShader [
 
 { #category : #'private - accessing' }
 AGPUUtilityResourceCache >> privateHdrCubeFaceGenerationRenderpass [
-	| colorAttachment |
-	hdrCubeFaceGenerationRenderpass ifNotNil: [ ^ hdrCubeFaceGenerationRenderpass ].
-	colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
-	[
-		| renderpassDescription |
-		colorAttachment
-			format: AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT;
-			begin_action: AGPU_ATTACHMENT_DISCARD;
-			end_action: AGPU_ATTACHMENT_KEEP;
-			sample_count: 1;
-			sample_quality: 0;
-			yourself.
-		renderpassDescription := AGPURenderpassDescription new.
-		renderpassDescription
-			color_attachment_count: 1;
-			color_attachments: colorAttachment.
-		hdrCubeFaceGenerationRenderpass := device createRenderPass: renderpassDescription.
-	] ensure: [ colorAttachment free ].
-	^ hdrCubeFaceGenerationRenderpass
+	^ hdrCubeFaceGenerationRenderpass ifNil: [ hdrCubeFaceGenerationRenderpass := self createDiscardKeepRenderPassWithFormat: AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT ]
 ]
 
 { #category : #'private - accessing' }
@@ -902,25 +1004,7 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 
 { #category : #'private - accessing' }
 AGPUUtilityResourceCache >> privateMipmapGenerationRenderpass [
-	| colorAttachment |
-	mipmapGenerationRenderpass ifNotNil: [ ^ mipmapGenerationRenderpass ].
-	colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
-	[
-		| renderpassDescription |
-		colorAttachment
-			format: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM;
-			begin_action: AGPU_ATTACHMENT_DISCARD;
-			end_action: AGPU_ATTACHMENT_KEEP;
-			sample_count: 1;
-			sample_quality: 0;
-			yourself.
-		renderpassDescription := AGPURenderpassDescription new.
-		renderpassDescription
-			color_attachment_count: 1;
-			color_attachments: colorAttachment.
-		mipmapGenerationRenderpass := device createRenderPass: renderpassDescription.
-	] ensure: [ colorAttachment free ].
-	^ mipmapGenerationRenderpass
+	^ mipmapGenerationRenderpass ifNil: [ mipmapGenerationRenderpass := self createDiscardKeepRenderPassWithFormat: AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM ]
 ]
 
 { #category : #'private - accessing' }
