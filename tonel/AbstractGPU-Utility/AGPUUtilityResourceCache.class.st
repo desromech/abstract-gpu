@@ -29,7 +29,9 @@ Class {
 		'hdriToEnvironmentMapComputationPipelineState',
 		'equirectangularMapSampler',
 		'equirectangularMapSamplerBinding',
-		'hdriDecodeComputationPipelineState'
+		'hdriDecodeComputationPipelineState',
+		'diffuseLightProbeComputationPipelineState',
+		'specularLightProbeComputationPipelineState'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -240,6 +242,35 @@ void main()
 ' withUnixLineEndings
 ]
 
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> diffuseLightProbeComputationFragmentShader [
+	^ '
+#version 450
+#line 5
+
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform textureCube inputTexture;
+
+layout (location = 0) in vec3 inDirection;
+layout (location = 0) out vec4 outColor;
+
+void main()
+{
+	outColor = texture(samplerCube(inputTexture, inputSampler), inDirection);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> diffuseLightProbeComputationPipelineState [
+	^ mutex critical: [
+		diffuseLightProbeComputationPipelineState ifNil: [
+			diffuseLightProbeComputationPipelineState := self privateBuildLightProbeCubeFaceComputationPipelineStateWithFragmentShader: self diffuseLightProbeComputationFragmentShader
+		]
+	]
+]
+
 { #category : #'lightprobe preprocessing' }
 AGPUUtilityResourceCache >> equirectangularMapSamplerBinding [
 	^ equirectangularMapSamplerBinding
@@ -261,6 +292,26 @@ AGPUUtilityResourceCache >> finishBuildingRequiredPipelineStateWith: builder [
 	].
 
 	^ result
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hasBottomLeftTextureCoordinates [
+	^ device hasBottomLeftTextureCoordinates ~= 0
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hasInvertedProjectionY [
+	^ device hasTopLeftNdcOrigin ~= 0
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hasTextureInvertedProjectionY [
+	^ device hasTopLeftNdcOrigin = device hasBottomLeftTextureCoordinates
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hasTopDownTextureCoordinates [
+	^ device hasBottomLeftTextureCoordinates = 0
 ]
 
 { #category : #'lightprobe preprocessing' }
@@ -319,7 +370,31 @@ void main()
 {
 	vec3 direction = normalize(inDirection);
 	vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y)) *
-		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ 0.3183098861837907) + 0.5;	
+		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ -0.3183098861837907) + 0.5;	
+	
+	outColor = texture(sampler2D(inputTexture, inputSampler), uv);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hdriToEnvironmentMapComputationFragmentShaderFlippedY [
+	^ '
+#version 450
+#line 5
+
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform texture2D inputTexture;
+
+layout (location = 0) in vec3 inDirection;
+layout (location = 0) out vec4 outColor;
+
+void main()
+{
+	vec3 direction = normalize(inDirection);
+	vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y)) *
+		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ -0.3183098861837907) + 0.5;	
 	
 	outColor = texture(sampler2D(inputTexture, inputSampler), uv);
 }
@@ -331,7 +406,9 @@ void main()
 AGPUUtilityResourceCache >> hdriToEnvironmentMapComputationPipelineState [
 	^ mutex critical: [
 		hdriToEnvironmentMapComputationPipelineState ifNil: [
-			hdriToEnvironmentMapComputationPipelineState := self privateBuildLightProbeCubeFaceComputationPipelineStateWithFragmentShader: self hdriToEnvironmentMapComputationFragmentShader
+			hdriToEnvironmentMapComputationPipelineState := self privateBuildLightProbeCubeFaceComputationPipelineStateWithFragmentShader: (self hasBottomLeftTextureCoordinates
+				ifTrue: [ self hdriToEnvironmentMapComputationFragmentShaderFlippedY ]
+				ifFalse: [ self hdriToEnvironmentMapComputationFragmentShader ])
 		]
 	]
 ]
@@ -646,7 +723,7 @@ AGPUUtilityResourceCache >> privateBuildMipmapComputationPipelineStateWithComput
 AGPUUtilityResourceCache >> privateCubeScreenQuadVertexShader [
 	^ cubeScreenQuadVertexShader ifNil: [
 		| source |
-		source := device hasTopLeftNdcOrigin = device hasBottomLeftTextureCoordinates
+		source := self hasInvertedProjectionY
 			ifTrue: [ self cubeScreenQuadVertexShaderSource ]
 			ifFalse: [ self cubeScreenQuadFlippedYVertexShaderSource ].	
 
@@ -805,7 +882,7 @@ AGPUUtilityResourceCache >> privateMipmapGenerationShaderSignature [
 AGPUUtilityResourceCache >> privateScreenQuadVertexShader [
 	^ screenQuadVertexShader ifNil: [
 		| source |
-		source := device hasTopLeftNdcOrigin = device hasBottomLeftTextureCoordinates
+		source := self hasTextureInvertedProjectionY
 			ifTrue: [ self screenQuadFlippedYVertexShaderSource ]
 			ifFalse: [ self screenQuadVertexShaderSource ].
 
@@ -870,6 +947,41 @@ void main()
 }
 
 ' withUnixLineEndings
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> specularLightProbeComputationFragmentShader [
+	^ '
+#version 450
+#line 5
+
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform textureCube inputTexture;
+
+layout (location = 0) in vec3 inDirection;
+layout (location = 0) out vec4 outColor;
+
+layout (push_constant) uniform FaceIndex
+{ 
+	uint faceIndex;
+	float roughness;
+};
+
+void main()
+{
+	outColor = texture(samplerCube(inputTexture, inputSampler), inDirection);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> specularLightProbeComputationPipelineState [
+	^ mutex critical: [
+		specularLightProbeComputationPipelineState ifNil: [
+			specularLightProbeComputationPipelineState := self privateBuildLightProbeCubeFaceComputationPipelineStateWithFragmentShader: self specularLightProbeComputationFragmentShader
+		]
+	]
 ]
 
 { #category : #'private - shaders' }

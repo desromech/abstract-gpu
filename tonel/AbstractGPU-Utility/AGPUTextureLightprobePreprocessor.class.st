@@ -25,6 +25,18 @@ Class {
 	#category : #'AbstractGPU-Utility'
 }
 
+{ #category : #inspecting }
+AGPUTextureLightprobePreprocessor class >> computeMiplevelSizesFor: size [
+	^ Array streamContents: [ :out |
+		| currentSize|
+		currentSize := size.
+		[ 
+			out nextPut: currentSize.
+			currentSize := currentSize // 2.
+		] doWhileTrue: [ currentSize >= 1 ]
+	].
+]
+
 { #category : #'as yet unclassified' }
 AGPUTextureLightprobePreprocessor class >> defaultDiffuseLightProbeSize [
 	^ 32
@@ -63,6 +75,11 @@ AGPUTextureLightprobePreprocessor >> allocateShaderResourceBinding [
 	^ result
 ]
 
+{ #category : #inspecting }
+AGPUTextureLightprobePreprocessor >> computeMiplevelSizesFor: size [
+	^ self class computeMiplevelSizesFor: size
+]
+
 { #category : #API }
 AGPUTextureLightprobePreprocessor >> emitCommandsForConvertingHDRI: hdriTextureView extent: hdriTextureExtent intoCubeMap: cubeMapTexture size: cubeMapTextureSize on: commandList retainResourcesOn: resourcesList [
 	| sourceBinding |
@@ -94,6 +111,24 @@ AGPUTextureLightprobePreprocessor >> emitCommandsForConvertingHDRI: hdriTextureV
 { #category : #API }
 AGPUTextureLightprobePreprocessor >> emitCommandsForConvertingHDRI: hdriTextureView intoCubeMap: cubeMapTexture size: cubeMapTextureSize on: commandList retainResourcesOn: resourcesList [
 	self emitCommandsForProcessingTexture: hdriTextureView equirectangular: true with: utilityResourceCache hdriToEnvironmentMapComputationPipelineState intoCubeMap: cubeMapTexture size: cubeMapTextureSize on: commandList retainResourcesOn: resourcesList
+]
+
+{ #category : #API }
+AGPUTextureLightprobePreprocessor >> emitCommandsForGeneratingDiffuseLightProbeFrom: environmentMapTextureView intoCubeMap: cubeMapTexture size: cubeMapTextureSize on: commandList retainResourcesOn: resourcesList [
+	self emitCommandsForProcessingTexture: environmentMapTextureView equirectangular: false with: utilityResourceCache diffuseLightProbeComputationPipelineState intoCubeMap: cubeMapTexture size: cubeMapTextureSize on: commandList retainResourcesOn: resourcesList
+]
+
+{ #category : #API }
+AGPUTextureLightprobePreprocessor >> emitCommandsForGeneratingSpecularLightProbeFrom: environmentMapTextureView intoCubeMap: cubeMapTexture size: cubeMapTextureSize on: commandList retainResourcesOn: resourcesList [
+	| mipSizes mipCount computationPipelineState |
+	mipSizes := self computeMiplevelSizesFor: cubeMapTextureSize.
+	mipCount := mipSizes size.
+	computationPipelineState := utilityResourceCache specularLightProbeComputationPipelineState.
+	mipSizes doWithIndex: [ :mipSize :mipIndex |
+		| roughness |
+		roughness := (mipIndex - 1.0) / (mipCount - 1.0).
+		self emitCommandsForProcessingTexture: environmentMapTextureView equirectangular: false with: computationPipelineState intoCubeMap: cubeMapTexture size: mipSize level: mipIndex - 1 roughnessFactor: roughness on: commandList retainResourcesOn: resourcesList
+	]
 ]
 
 { #category : #API }

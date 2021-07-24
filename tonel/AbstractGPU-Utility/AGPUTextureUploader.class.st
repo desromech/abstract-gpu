@@ -353,17 +353,19 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture repeated: repeated 
 	^ self uploadForm: form intoTexture: texture computeMipmapsWith: (mipmapGenerator colorComputationPipelineStateWithQuality: quality) repeated: repeated quality: quality
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #API }
 AGPUTextureUploader >> uploadHDRI: hdri intoTexture: texture [
 	^ self uploadHDRI: hdri intoTexture: texture thenProcessWith: [:aCommandList :aListOfRetainedResources | ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #API }
 AGPUTextureUploader >> uploadHDRI: hdri intoTexture: hdriTexture thenProcessIntoLightProbe: lightProbe [
 	^ self uploadHDRI: hdri intoTexture: hdriTexture thenProcessWith: [:aCommandList :aListOfRetainedResources |
 		
 		lightProbePreprocessor
-			emitCommandsForConvertingHDRI: hdriTexture getOrCreateFullView extent: hdri width @ hdri height intoCubeMap: lightProbe environmentMap size: lightProbe environmentMapSize on: aCommandList retainResourcesOn: aListOfRetainedResources
+			emitCommandsForConvertingHDRI: hdriTexture getOrCreateFullView extent: hdri width @ hdri height intoCubeMap: lightProbe environmentMap size: lightProbe environmentMapSize on: aCommandList retainResourcesOn: aListOfRetainedResources;
+			emitCommandsForGeneratingDiffuseLightProbeFrom: lightProbe environmentMap getOrCreateFullView intoCubeMap: lightProbe diffuseLightProbe size: lightProbe diffuseLightProbeSize on: aCommandList retainResourcesOn: aListOfRetainedResources;
+			emitCommandsForGeneratingSpecularLightProbeFrom: lightProbe environmentMap getOrCreateFullView intoCubeMap: lightProbe specularLightProbe size: lightProbe specularLightProbeSize on: aCommandList retainResourcesOn: aListOfRetainedResources
 	]
 ]
 

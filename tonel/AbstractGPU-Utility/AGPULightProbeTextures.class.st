@@ -95,11 +95,11 @@ AGPULightProbeTextures >> readEnvironmentMapForms [
 { #category : #inspecting }
 AGPULightProbeTextures >> readSpecularLightProbeForms [
 	| sizes |
-	sizes := self computeMiplevelSizesFor: specularLightProbeSize.
+	sizes := AGPUTextureLightprobePreprocessor computeMiplevelSizesFor: specularLightProbeSize.
 
-	^ (0 to: 5) collect: [ :i |
-		sizes collectWithIndex: [ :levelSize :levelIndex |
-			self readTexture: specularLightProbe size: levelSize face: i level: levelIndex - 1
+	^ sizes collectWithIndex: [ :levelSize :levelIndex |
+		(0 to: 5) collect: [ :face |
+			self readTexture: specularLightProbe size: levelSize face: face level: levelIndex - 1
 		].
 	].
 ]
