@@ -20,7 +20,16 @@ Class {
 		'mipmapGenerationRepeatSamplerBinding',
 		'mipmapGenerationRenderpass',
 		'nonColorMipmapComputationPipelineState',
-		'normalMapMipmapComputationPipelineState'
+		'normalMapMipmapComputationPipelineState',
+		'cubeScreenQuadVertexShader',
+		'lightprobePreprocessingShaderSignature',
+		'lightprobePreprocessingSampler',
+		'lightprobePreprocessingSamplerBinding',
+		'hdrCubeFaceGenerationRenderpass',
+		'hdriToEnvironmentMapComputationPipelineState',
+		'equirectangularMapSampler',
+		'equirectangularMapSamplerBinding',
+		'hdriDecodeComputationPipelineState'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -67,6 +76,175 @@ AGPUUtilityResourceCache >> compileShader: sourceText type: shaderType [
 		]
 ]
 
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> cubeScreenQuadFlippedYVertexShaderSource [
+	^ '
+#version 450
+#line 5
+
+layout(location = 0) out vec3 outDirection;
+		
+const vec2 screenQuadVertices[3] = vec2[3](
+    vec2(-1.0, -1.0),		
+    vec2(-1.0, 3.0),
+    vec2(3.0, -1.0)
+);
+
+// Vulkan spec 15.6.4. Cube Map Face Selection
+const vec3 faceCoordinateTransformS[6] = vec3[6](
+	// Positive X
+	vec3(0.0, 0.0, -1.0),
+	// Negative X
+	vec3(0.0, 0.0,  1.0),
+	// Positive Y
+	vec3(1.0, 0.0,  0.0),
+	// Negative Y
+	vec3(1.0, 0.0,  0.0),
+	// Positive Z
+	vec3(1.0, 0.0,  0.0),
+	// Negative Z
+	vec3(-1.0, 0.0,  0.0)
+);
+
+const vec3 faceCoordinateTransformT[6] = vec3[6](
+	// Positive X
+	vec3(0.0, -1.0, 0.0),
+	// Negative X
+	vec3(0.0, -1.0, 0.0),
+	// Positive Y
+	vec3(0.0, 0.0, 1.0),
+	// Negative Y
+	vec3(0.0, 0.0, -1.0),
+	// Positive Z
+	vec3(0.0, -1.0, 0.0),
+	// Negative Z
+	vec3(0.0, -1.0, 0.0)
+);
+
+const vec3 faceCoordinateTransformR[6] = vec3[6](
+	// Positive X
+	vec3(1.0, 0.0, 0.0),
+	// Negative X
+	vec3(-1.0, 0.0, 0.0),
+	// Positive Y
+	vec3(0.0, 1.0, 0.0),
+	// Negative Y
+	vec3(0.0, -1.0, 0.0),
+	// Positive Z
+	vec3(0.0, 0.0, 1.0),
+	// Negative Z
+	vec3(0.0, 0.0, -1.0)
+);
+
+layout (push_constant) uniform FaceIndex
+{ 
+	uint faceIndex;
+};
+
+void main()
+{
+	vec2 position = screenQuadVertices[gl_VertexIndex];
+	vec3 str = vec3(position*vec2(1.0, -1.0), 1.0);
+	
+	mat3 faceTransform = mat3(faceCoordinateTransformS[faceIndex], faceCoordinateTransformT[faceIndex], faceCoordinateTransformR[faceIndex]);
+	outDirection = faceTransform * str;
+		
+	gl_Position = vec4(position, 0.0, 1.0);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #shaders }
+AGPUUtilityResourceCache >> cubeScreenQuadVertexShader [
+	^ mutex critical: [ self privateCubeScreenQuadVertexShader ]
+
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> cubeScreenQuadVertexShaderSource [
+	^ '
+#version 450
+#line 5
+
+layout(location = 0) out vec3 outDirection;
+
+const vec2 screenQuadVertices[3] = vec2[3](
+    vec2(-1.0, -1.0),		
+    vec2(-1.0, 3.0),
+    vec2(3.0, -1.0)
+);
+
+// Vulkan spec 15.6.4. Cube Map Face Selection
+const vec3 faceCoordinateTransformS[6] = vec3[6](
+	// Positive X
+	vec3(0.0, 0.0, -1.0),
+	// Negative X
+	vec3(0.0, 0.0,  1.0),
+	// Positive Y
+	vec3(1.0, 0.0,  0.0),
+	// Negative Y
+	vec3(1.0, 0.0,  0.0),
+	// Positive Z
+	vec3(1.0, 0.0,  0.0),
+	// Negative Z
+	vec3(-1.0, 0.0,  0.0)
+);
+
+const vec3 faceCoordinateTransformT[6] = vec3[6](
+	// Positive X
+	vec3(0.0, -1.0, 0.0),
+	// Negative X
+	vec3(0.0, -1.0, 0.0),
+	// Positive Y
+	vec3(0.0, 0.0, 1.0),
+	// Negative Y
+	vec3(0.0, 0.0, -1.0),
+	// Positive Z
+	vec3(0.0, -1.0, 0.0),
+	// Negative Z
+	vec3(0.0, -1.0, 0.0)
+);
+
+const vec3 faceCoordinateTransformR[6] = vec3[6](
+	// Positive X
+	vec3(1.0, 0.0, 0.0),
+	// Negative X
+	vec3(-1.0, 0.0, 0.0),
+	// Positive Y
+	vec3(0.0, 1.0, 0.0),
+	// Negative Y
+	vec3(0.0, -1.0, 0.0),
+	// Positive Z
+	vec3(0.0, 0.0, 1.0),
+	// Negative Z
+	vec3(0.0, 0.0, -1.0)
+);
+
+layout (push_constant) uniform FaceIndex
+{ 
+	uint faceIndex;
+};
+
+void main()
+{
+	vec2 position = screenQuadVertices[gl_VertexIndex];
+	vec3 str = vec3(position, 1.0);
+	
+	mat3 faceTransform = mat3(faceCoordinateTransformS[faceIndex], faceCoordinateTransformT[faceIndex], faceCoordinateTransformR[faceIndex]);
+	outDirection = faceTransform * str;
+		
+	gl_Position = vec4(position, 0.0, 1.0);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> equirectangularMapSamplerBinding [
+	^ equirectangularMapSamplerBinding
+]
+
 { #category : #private }
 AGPUUtilityResourceCache >> finishBuildingRequiredPipelineStateWith: builder [
 	| result |
@@ -85,10 +263,93 @@ AGPUUtilityResourceCache >> finishBuildingRequiredPipelineStateWith: builder [
 	^ result
 ]
 
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> hdrCubeFaceGenerationRenderpass [
+	^ mutex critical: [ self privateHdrCubeFaceGenerationRenderpass ]
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hdriDecodeComputationFragmentShader [
+	^ '
+#version 450
+#line 5
+
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform texture2D inputTexture;
+
+layout (location = 0) in vec2 inTexcoord;
+layout (location = 0) out vec4 outColor;
+
+void main()
+{
+	vec4 rgbe = texture(sampler2D(inputTexture, inputSampler), inTexcoord);
+	int exponent = int(rgbe.a*255.0);
+	
+	vec3 decodedSample = exponent > 0
+		? ldexp(rgbe.rgb, ivec3(exponent - 129))
+		: vec3(0.0);
+	outColor = vec4(decodedSample, 1.0);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> hdriDecodeComputationPipelineState [
+	^ mutex critical: [
+		hdriDecodeComputationPipelineState ifNil: [
+			hdriDecodeComputationPipelineState := self privateBuildLightProbeComputationPipelineStateWithFragmentShader: self hdriDecodeComputationFragmentShader
+		]
+	]
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> hdriToEnvironmentMapComputationFragmentShader [
+	^ '
+#version 450
+#line 5
+
+layout (set=0, binding = 0) uniform sampler inputSampler;
+layout (set=1, binding = 0) uniform texture2D inputTexture;
+
+layout (location = 0) in vec3 inDirection;
+layout (location = 0) out vec4 outColor;
+
+void main()
+{
+	vec3 direction = normalize(inDirection);
+	vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y)) *
+		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ 0.3183098861837907) + 0.5;	
+	
+	outColor = texture(sampler2D(inputTexture, inputSampler), uv);
+}
+
+' withUnixLineEndings
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> hdriToEnvironmentMapComputationPipelineState [
+	^ mutex critical: [
+		hdriToEnvironmentMapComputationPipelineState ifNil: [
+			hdriToEnvironmentMapComputationPipelineState := self privateBuildLightProbeCubeFaceComputationPipelineStateWithFragmentShader: self hdriToEnvironmentMapComputationFragmentShader
+		]
+	]
+]
+
 { #category : #initialization }
 AGPUUtilityResourceCache >> initializeWithDevice: aDevice [
 	device := aDevice.
 	mutex := Semaphore forMutualExclusion.
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> lightProbePreprocessingShaderSignature [
+	^ mutex critical: [ self privateLightprobePreprocessingShaderSignature ]
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> lightprobePreprocessingSamplerBinding [
+	^ lightprobePreprocessingSamplerBinding
 ]
 
 { #category : #'private - shaders' }
@@ -328,6 +589,38 @@ void main()
 ]
 
 { #category : #private }
+AGPUUtilityResourceCache >> privateBuildLightProbeComputationPipelineStateWithFragmentShader: fragmentComputationShader [
+	| builder |
+	builder := device createPipelineBuilder.
+	builder
+		setShaderSignature: self privateLightprobePreprocessingShaderSignature;
+		setRenderTargetFormat: 0 format: AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT;
+		setDepthStencilFormat: AGPU_TEXTURE_FORMAT_UNKNOWN;
+		attachShader: self privateScreenQuadVertexShader;
+		attachShader: (self compileShader: fragmentComputationShader type: AGPU_FRAGMENT_SHADER);
+		setPrimitiveType: AGPU_TRIANGLES.
+
+	^ self finishBuildingRequiredPipelineStateWith: builder
+
+]
+
+{ #category : #private }
+AGPUUtilityResourceCache >> privateBuildLightProbeCubeFaceComputationPipelineStateWithFragmentShader: fragmentComputationShader [
+	| builder |
+	builder := device createPipelineBuilder.
+	builder
+		setShaderSignature: self privateLightprobePreprocessingShaderSignature;
+		setRenderTargetFormat: 0 format: AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT;
+		setDepthStencilFormat: AGPU_TEXTURE_FORMAT_UNKNOWN;
+		attachShader: self privateCubeScreenQuadVertexShader;
+		attachShader: (self compileShader: fragmentComputationShader type: AGPU_FRAGMENT_SHADER);
+		setPrimitiveType: AGPU_TRIANGLES.
+
+	^ self finishBuildingRequiredPipelineStateWith: builder
+
+]
+
+{ #category : #private }
 AGPUUtilityResourceCache >> privateBuildMipmapComputationPipelineStateWithComputeShader: computeShader fragmentComputationShader: fragmentComputationShader [
 	| builder |
 	self privateUseComputeShaderForMipmapGeneration ifTrue: [
@@ -347,6 +640,88 @@ AGPUUtilityResourceCache >> privateBuildMipmapComputationPipelineStateWithComput
 	].
 	^ self finishBuildingRequiredPipelineStateWith: builder
 
+]
+
+{ #category : #'private - shaders' }
+AGPUUtilityResourceCache >> privateCubeScreenQuadVertexShader [
+	^ cubeScreenQuadVertexShader ifNil: [
+		| source |
+		source := device hasTopLeftNdcOrigin = device hasBottomLeftTextureCoordinates
+			ifTrue: [ self cubeScreenQuadVertexShaderSource ]
+			ifFalse: [ self cubeScreenQuadFlippedYVertexShaderSource ].	
+
+		cubeScreenQuadVertexShader := self compileShader: source type: AGPU_VERTEX_SHADER
+	]
+]
+
+{ #category : #'private - accessing' }
+AGPUUtilityResourceCache >> privateHdrCubeFaceGenerationRenderpass [
+	| colorAttachment |
+	hdrCubeFaceGenerationRenderpass ifNotNil: [ ^ hdrCubeFaceGenerationRenderpass ].
+	colorAttachment := AGPURenderpassColorAttachmentDescription externalNew.
+	[
+		| renderpassDescription |
+		colorAttachment
+			format: AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT;
+			begin_action: AGPU_ATTACHMENT_DISCARD;
+			end_action: AGPU_ATTACHMENT_KEEP;
+			sample_count: 1;
+			sample_quality: 0;
+			yourself.
+		renderpassDescription := AGPURenderpassDescription new.
+		renderpassDescription
+			color_attachment_count: 1;
+			color_attachments: colorAttachment.
+		hdrCubeFaceGenerationRenderpass := device createRenderPass: renderpassDescription.
+	] ensure: [ colorAttachment free ].
+	^ hdrCubeFaceGenerationRenderpass
+]
+
+{ #category : #'private - accessing' }
+AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
+	| builder |
+	lightprobePreprocessingShaderSignature ifNotNil: [ ^ lightprobePreprocessingShaderSignature ].
+
+	builder := device createShaderSignatureBuilder.
+	builder
+		beginBindingBank: 2;
+		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLER bindingPointCount: 1;
+		
+		beginBindingBank: 128;
+		"Input image"
+		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE bindingPointCount: 1.
+
+	builder
+		"faceIndex"
+		addBindingConstant;
+		"roughness"
+		addBindingConstant.
+
+	lightprobePreprocessingShaderSignature := builder build.
+
+	equirectangularMapSampler := device createSampler: (AGPUSamplerDescription new
+		filter: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+		address_u: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_v: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		max_lod: 0.0;
+		yourself).
+	
+	equirectangularMapSamplerBinding := lightprobePreprocessingShaderSignature createShaderResourceBinding: 0.
+	equirectangularMapSamplerBinding bindSampler: 0 sampler: equirectangularMapSampler.
+
+	lightprobePreprocessingSampler := device createSampler: (AGPUSamplerDescription new
+		filter: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
+		address_u: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		address_v: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+		max_lod: 0.0;
+		yourself).
+	
+	lightprobePreprocessingSamplerBinding := lightprobePreprocessingShaderSignature createShaderResourceBinding: 0.
+	lightprobePreprocessingSamplerBinding bindSampler: 0 sampler: lightprobePreprocessingSampler.
+
+	^ lightprobePreprocessingShaderSignature
 ]
 
 { #category : #'private - accessing' }

@@ -254,6 +254,11 @@ AGPURadianceHDRLoader >> pitch [
 ]
 
 { #category : #accessing }
+AGPURadianceHDRLoader >> pixels [
+	^ pixels
+]
+
+{ #category : #accessing }
 AGPURadianceHDRLoader >> properties [
 	^ properties
 ]

@@ -279,11 +279,6 @@ AGPUTextureMipmapGenerator >> emitMipmapGenerationCommandsWithRenderPipelineStat
 		level_count: 1;
 		yourself.
 
-	commandList
-		setShaderSignature: utilityResourceCache mipmapGenerationShaderSignature;
-		usePipelineState: computationPipelineState;
-		useShaderResources: samplerBinding.
-
 	currentLevelRange base_miplevel: currentLevelIndex.
 	sourceColorViewDescription subresource_range: currentLevelRange.
 		
@@ -311,6 +306,9 @@ AGPUTextureMipmapGenerator >> emitMipmapGenerationCommandsWithRenderPipelineStat
 			beginRenderPass: renderpass framebuffer: intermediateTextureFramebuffer bundle_content: 0;
 			setViewport: 0 y: 0 w: nextWidth h: nextHeight;
 			setScissor: 0 y: 0 w: nextWidth h: nextHeight;
+			setShaderSignature: utilityResourceCache mipmapGenerationShaderSignature;
+			usePipelineState: computationPipelineState;
+			useShaderResources: samplerBinding;
 			useShaderResources: binding;
 			pushConstants: 0 size: 16 values: quickConstants;
 			drawArrays: 3 instance_count: 1 first_vertex: 0 base_instance: 0;
