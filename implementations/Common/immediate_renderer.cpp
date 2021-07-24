@@ -135,7 +135,10 @@ size_t ImmediateTextureBindingSet::hash() const
         std::hash<agpu::texture_ref>()(emissionTexture) ^
         std::hash<agpu::texture_ref>()(normalTexture) ^
         std::hash<agpu::texture_ref>()(occlusionTexture) ^
-		std::hash<agpu::texture_ref>()(roughnessMetallicTexture);
+		std::hash<agpu::texture_ref>()(roughnessMetallicTexture) ^
+        std::hash<agpu::texture_ref>()(brdfLutTexture) ^
+        std::hash<agpu::texture_ref>()(diffuseLightProbeTexture) ^
+        std::hash<agpu::texture_ref>()(specularLightProbeTexture);
 }
 
 bool ImmediateTextureBindingSet::operator==(const ImmediateTextureBindingSet& other) const
@@ -144,7 +147,10 @@ bool ImmediateTextureBindingSet::operator==(const ImmediateTextureBindingSet& ot
         emissionTexture == other.emissionTexture &&
         normalTexture == other.normalTexture &&
         occlusionTexture == other.occlusionTexture &&
-		roughnessMetallicTexture == other.roughnessMetallicTexture;
+		roughnessMetallicTexture == other.roughnessMetallicTexture &&
+        brdfLutTexture == other.brdfLutTexture &&
+        diffuseLightProbeTexture == other.diffuseLightProbeTexture &&
+        specularLightProbeTexture == other.specularLightProbeTexture;
 }
 bool ImmediateTextureBindingSet::operator!=(const ImmediateTextureBindingSet& other) const
 {
@@ -582,6 +588,7 @@ agpu::shader_resource_binding_ref &ImmediateSharedRenderingStates::getSamplerSta
 	if(!samplerState.binding)
 		return defaultSampler;
 	samplerState.binding->bindSampler(0, samplerState.sampler);
+	samplerState.binding->bindSampler(1, brdfLutSampler);
 	samplerStates.insert(std::make_pair(canonicalizedDescription, samplerState));
 	return samplerStates[canonicalizedDescription].binding;
 }
@@ -599,8 +606,8 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         if(!builder) return false;
 
 		// Sampling state (Set 0)
-        builder->beginBindingBank(1);
-        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 32);
+        builder->beginBindingBank(32);
+        builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLER, 2);
 
 		// Lighting state (Set 1)
 		builder->beginBindingBank(1000);
@@ -629,6 +636,9 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Normal
 		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Occlusion
 		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Roughness metallic
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Brdf Lut
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Diffuse light probe
+		builder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // Specular light probe
 
         immediateShaderSignature = agpu::shader_signature_ref(builder->build());
         if(!immediateShaderSignature) return false;
@@ -640,10 +650,22 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
         if(!immediateShaderLibrary) return false;
     }
 
-    {
-        immediateSharedRenderingStates.reset(new ImmediateSharedRenderingStates());
-        if(!immediateSharedRenderingStates) return false;
+    immediateSharedRenderingStates.reset(new ImmediateSharedRenderingStates());
+    if(!immediateSharedRenderingStates) return false;
 
+    // Create brdf lut sampler
+    {
+        agpu_sampler_description samplerDescription = {};
+        samplerDescription.filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR;
+        samplerDescription.address_u = AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+        samplerDescription.address_v = AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+        samplerDescription.address_w = AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
+        samplerDescription.max_lod = 1000.0f;
+        immediateSharedRenderingStates->brdfLutSampler = agpu::sampler_ref(device->createSampler(&samplerDescription));
+        if(!immediateSharedRenderingStates->brdfLutSampler) return false;
+    }
+
+    {
 		ImmediateRendererSamplerStateDescription defaultSampleState = {
 			AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_LINEAR, 1,
 			AGPU_TEXTURE_ADDRESS_MODE_WRAP, AGPU_TEXTURE_ADDRESS_MODE_WRAP, AGPU_TEXTURE_ADDRESS_MODE_WRAP
@@ -680,6 +702,53 @@ bool StateTrackerCache::ensureImmediateRendererObjectsExists()
 		immediateSharedRenderingStates->defaultRoughnessMetallicTexture = texture;
 	}
 
+	// Create the default black transparent texture.
+	{
+		agpu_texture_description desc = {};
+		desc.type = AGPU_TEXTURE_2D;
+		desc.format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+		desc.width = 1;
+		desc.height = 1;
+		desc.depth = 1;
+		desc.layers = 1;
+		desc.miplevels = 1;
+		desc.sample_count = 1;
+		desc.sample_quality = 0;
+		desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
+		desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+		auto texture = agpu::texture_ref(device->createTexture(&desc));
+		if (!texture) return false;
+
+        uint32_t color = 0;
+        texture->uploadTextureData(0, 0, 4, 4, &color);
+
+		immediateSharedRenderingStates->defaultBrdfLutTexture = texture;;
+	}
+
+	// Create the default black transparent cube texture.
+	{
+		agpu_texture_description desc = {};
+		desc.type = AGPU_TEXTURE_CUBE;
+		desc.format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+		desc.width = 1;
+		desc.height = 1;
+		desc.depth = 1;
+		desc.layers = 6;
+		desc.miplevels = 1;
+		desc.sample_count = 1;
+		desc.sample_quality = 0;
+		desc.usage_modes = agpu_texture_usage_mode_mask(AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_UPLOADED);
+		desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+		auto texture = agpu::texture_ref(device->createTexture(&desc));
+		if (!texture) return false;
+
+        uint32_t color = 0;
+        for(int i = 0; i < 6; ++i)
+            texture->uploadTextureData(0, i, 4, 4, &color);
+
+		immediateSharedRenderingStates->defaultDiffuseLightProbeTexture = texture;
+		immediateSharedRenderingStates->defaultSpecularLightProbeTexture = texture;
+	}
 	// Create the default normal texture.
 	{
 		agpu_texture_description desc = {};
@@ -1196,6 +1265,15 @@ agpu_error ImmediateRenderer::bindTextureIn(const agpu::texture_ref & texture, a
 	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_ROUGHNESS_METALLIC:
 		currentRenderingState.textureBindingSet.roughnessMetallicTexture = texture;
 		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_BRDF_LUT:
+		currentRenderingState.textureBindingSet.brdfLutTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_DIFFUSE_LIGHT_PROBE:
+		currentRenderingState.textureBindingSet.diffuseLightProbeTexture = texture;
+		return AGPU_OK;
+	case AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_SPECULAR_LIGHT_PROBE:
+		currentRenderingState.textureBindingSet.specularLightProbeTexture = texture;
+		return AGPU_OK;
 	default: return AGPU_UNSUPPORTED;
 	}
 }
@@ -1241,6 +1319,12 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
 		sanitizedBindingSet.occlusionTexture = immediateSharedRenderingStates->defaultOcclusionTexture;
 	if(!sanitizedBindingSet.roughnessMetallicTexture)
 		sanitizedBindingSet.roughnessMetallicTexture = immediateSharedRenderingStates->defaultRoughnessMetallicTexture;
+	if(!sanitizedBindingSet.brdfLutTexture)
+		sanitizedBindingSet.brdfLutTexture = immediateSharedRenderingStates->defaultBrdfLutTexture;
+	if(!sanitizedBindingSet.diffuseLightProbeTexture)
+		sanitizedBindingSet.diffuseLightProbeTexture = immediateSharedRenderingStates->defaultDiffuseLightProbeTexture;
+	if(!sanitizedBindingSet.specularLightProbeTexture)
+		sanitizedBindingSet.specularLightProbeTexture = immediateSharedRenderingStates->defaultSpecularLightProbeTexture;
 
     // Do we have an existing binding.
     auto it = usedTextureBindingMap.find(sanitizedBindingSet);
@@ -1266,6 +1350,9 @@ agpu::shader_resource_binding_ref ImmediateRenderer::getValidTextureBindingFor(c
 	textureBinding->bindSampledTextureView(2, agpu::texture_view_ref(sanitizedBindingSet.normalTexture->getOrCreateFullView()));
 	textureBinding->bindSampledTextureView(3, agpu::texture_view_ref(sanitizedBindingSet.occlusionTexture->getOrCreateFullView()));
 	textureBinding->bindSampledTextureView(4, agpu::texture_view_ref(sanitizedBindingSet.roughnessMetallicTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(5, agpu::texture_view_ref(sanitizedBindingSet.brdfLutTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(6, agpu::texture_view_ref(sanitizedBindingSet.diffuseLightProbeTexture->getOrCreateFullView()));
+	textureBinding->bindSampledTextureView(7, agpu::texture_view_ref(sanitizedBindingSet.specularLightProbeTexture->getOrCreateFullView()));
     usedTextureBindingMap[sanitizedBindingSet] = textureBinding;
 
     return textureBinding;
@@ -1782,7 +1869,9 @@ agpu_error ImmediateRenderer::flushRenderingState(const ImmediateRenderingState 
 		currentStateTracker->useShaderResources(state.transformationStateBinding);
 	}
 
-    if(state.texturingEnabled && (!haveFlushedRenderingState || state.textureBindingSet != lastFlushedRenderingState.textureBindingSet))
+    if((state.texturingEnabled
+        || (state.lightingStateBinding && state.lightingModel == AGPU_IMMEDIATE_RENDERER_LIGHTING_MODEL_METALLIC_ROUGHNESS))
+        && (!haveFlushedRenderingState || state.textureBindingSet != lastFlushedRenderingState.textureBindingSet))
 	{
         currentStateTracker->useShaderResources(getValidTextureBindingFor(state.textureBindingSet));
 	}

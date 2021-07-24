@@ -781,6 +781,9 @@ enum ImmediateRendererTextureBinding valueType: Int32; values: #{
 	RoughnessMetallicAmbient: 3.
 	AmbientOcclusion: 4.
 	RoughnessMetallic: 5.
+	BrdfLut: 6.
+	DiffuseLightProbe: 7.
+	SpecularLightProbe: 8.
 }.
 
 struct DeviceOpenInfo definition: {

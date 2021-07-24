@@ -1126,6 +1126,9 @@
             <constant name="ImmediateRendererTextureBindingRoughnessMetallicAmbient" value="3" />
             <constant name="ImmediateRendererTextureBindingAmbientOcclusion" value="4" />
             <constant name="ImmediateRendererTextureBindingRoughnessMetallic" value="5" />
+            <constant name="ImmediateRendererTextureBindingBrdfLut" value="6" />
+            <constant name="ImmediateRendererTextureBindingDiffuseLightProbe" value="7" />
+            <constant name="ImmediateRendererTextureBindingSpecularLightProbe" value="8" />
         </enum>
     </constants>
 
