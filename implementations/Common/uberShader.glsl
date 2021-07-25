@@ -414,6 +414,7 @@ layout(location = 5) out vec3 outTangent;
 layout(location = 6) out vec3 outBitangent;
 #endif
 
+)uberShader" R"uberShader(
 void main()
 {
 #ifdef SKINNING_ENABLED
