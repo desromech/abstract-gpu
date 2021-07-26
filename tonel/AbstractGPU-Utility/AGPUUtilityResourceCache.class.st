@@ -493,18 +493,18 @@ AGPUUtilityResourceCache >> hdriDecodeComputationFragmentShader [
 #line 5
 
 layout (set=0, binding = 0) uniform sampler inputSampler;
-layout (set=1, binding = 0) uniform utexture2D inputTexture;
+layout (set=1, binding = 0) uniform texture2D inputTexture;
 
 layout (location = 0) in vec2 inTexcoord;
 layout (location = 0) out vec4 outColor;
 
 void main()
 {
-	vec4 rgbe = texture(usampler2D(inputTexture, inputSampler), inTexcoord);
-	int exponent = int(rgbe.a);
+	vec4 rgbe = texture(sampler2D(inputTexture, inputSampler), inTexcoord);
+	int exponent = int(rgbe.a*255.0);
 	
 	vec3 decodedSample = exponent > 0
-		? ldexp(rgbe.rgb + 0.5, ivec3(exponent - (128 + 8)))
+		? ldexp(rgbe.rgb, ivec3(exponent - 128))
 		: vec3(0.0);
 	outColor = vec4(decodedSample, 1.0);
 }

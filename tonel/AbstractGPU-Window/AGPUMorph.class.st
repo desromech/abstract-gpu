@@ -114,7 +114,12 @@ AGPUMorph >> createFramebuffer [
 			format: depthStencilFormat;
 			usage_modes: AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
 			main_usage_mode: AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
-			sample_count: 1.
+			sample_count: 1;
+			clear_value: (AGPUTextureClearValue new
+				depth_stencil: (AGPUDepthStencilValue new
+					depth: 1.0;
+					yourself);
+				yourself).
 		hasStencil ifTrue: [
 			depthStencilDesc
 				usage_modes: (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT bitOr: AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);

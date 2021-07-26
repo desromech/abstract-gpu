@@ -92,6 +92,7 @@ AGPUTextureMipmapGenerator >> copyFrom: sourceTexture usageMode: sourceUsageMode
 				base_miplevel: levelIndex;
 				level_count: 1;
 				yourself);
+		pushBufferTransitionBarrier: intermediateCopyBuffer old_usage: AGPU_COPY_SOURCE_BUFFER new_usage: AGPU_COPY_DESTINATION_BUFFER;
 
 		copyTextureToBuffer: sourceTexture buffer: intermediateCopyBuffer 
 			copy_region: (AGPUBufferImageCopyRegion new
@@ -105,8 +106,7 @@ AGPUTextureMipmapGenerator >> copyFrom: sourceTexture usageMode: sourceUsageMode
 				texture_usage_mode: AGPU_TEXTURE_USAGE_COPY_SOURCE;
 				yourself);
 				
-		memoryBarrier: 	AGPU_PIPELINE_STAGE_TRANSFER dest_stage: AGPU_PIPELINE_STAGE_TRANSFER
-				source_accesses: AGPU_ACCESS_TRANSFER_WRITE dest_accesses: AGPU_ACCESS_TRANSFER_READ;
+		popBufferTransitionBarrier;
 
 		copyBufferToTexture: intermediateCopyBuffer texture: destinationTexture copy_region:(AGPUBufferImageCopyRegion new
 				buffer_pitch: pitch;
