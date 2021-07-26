@@ -54,6 +54,12 @@ AGPULightProbeTextures >> diffuseLightProbeSize: anObject [
 	diffuseLightProbeSize := anObject
 ]
 
+{ #category : #'as yet unclassified' }
+AGPULightProbeTextures >> discardEnvironmentMap [
+	environmentMap := nil.
+	environmentMapSize := nil.
+]
+
 { #category : #accessing }
 AGPULightProbeTextures >> environmentMap [
 

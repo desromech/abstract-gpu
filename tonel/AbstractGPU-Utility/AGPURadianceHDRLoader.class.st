@@ -23,6 +23,19 @@ AGPURadianceHDRLoader class >> parseFrom: inputStream [
 	^ self new parseFrom: inputStream; yourself
 ]
 
+{ #category : #'as yet unclassified' }
+AGPURadianceHDRLoader class >> tryToLoadFromFileNamed: aFileName [
+	"We require the filesystem library for this."
+	(aFileName respondsTo: #asFileReference) ifFalse: [ ^ nil ].
+	^ self tryToLoadFromFileReference: aFileName asFileReference
+]
+
+{ #category : #'as yet unclassified' }
+AGPURadianceHDRLoader class >> tryToLoadFromFileReference: aFileReference [
+	aFileReference exists ifFalse: [ ^ nil ].
+	^ aFileReference binaryReadStreamDo: [ :in | self parseFrom: in ]
+]
+
 { #category : #accessing }
 AGPURadianceHDRLoader >> asForm [
 	^ self asFormWithExposure: 1.0
