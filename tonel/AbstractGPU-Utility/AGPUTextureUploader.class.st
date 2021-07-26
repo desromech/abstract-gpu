@@ -125,7 +125,7 @@ AGPUTextureUploader >> createAndUploadLightProbeForHDRI: hdri [
 { #category : #API }
 AGPUTextureUploader >> createAndUploadLightProbeForHDRI: hdri environmentMapSize: environmentMapSize diffuseLightProbeSize: diffuseLightProbeSize specularLightProbeSize: specularLightProbeSize [
 	| hdriTexture lightProbe |
-	hdriTexture := self createTextureForExtent: hdri extent format: AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM useMipmaps: false.
+	hdriTexture := self createTextureForExtent: hdri extent format: AGPU_TEXTURE_FORMAT_R8G8B8A8_UINT useMipmaps: false.
 	lightProbe := AGPULightProbeTextures new
 		environmentMapSize: environmentMapSize;
 		environmentMap: (self createHDRCubeTextureForSize: environmentMapSize useMipmaps: false);
@@ -156,7 +156,7 @@ AGPUTextureUploader >> createAndUploadTextureForForm: aForm repeated: repeated q
 { #category : #API }
 AGPUTextureUploader >> createAndUploadTextureForHDRI: hdri [
 	| texture |
-	texture := self createTextureForExtent: hdri extent format: AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM useMipmaps: false.
+	texture := self createTextureForExtent: hdri extent format: AGPU_TEXTURE_FORMAT_R8G8B8A8_UINT useMipmaps: false.
 	self uploadHDRI: hdri intoTexture: texture.
 	^ texture
 ]

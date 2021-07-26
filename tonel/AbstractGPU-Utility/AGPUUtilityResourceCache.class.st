@@ -33,7 +33,9 @@ Class {
 		'diffuseLightProbeComputationPipelineState',
 		'specularLightProbeComputationPipelineState',
 		'brdfLutGenerationRenderpass',
-		'brdfLutComputationPipelineState'
+		'brdfLutComputationPipelineState',
+		'hdriDecodeComputationSamplerBinding',
+		'hdriDecodeComputationSampler'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -491,18 +493,18 @@ AGPUUtilityResourceCache >> hdriDecodeComputationFragmentShader [
 #line 5
 
 layout (set=0, binding = 0) uniform sampler inputSampler;
-layout (set=1, binding = 0) uniform texture2D inputTexture;
+layout (set=1, binding = 0) uniform utexture2D inputTexture;
 
 layout (location = 0) in vec2 inTexcoord;
 layout (location = 0) out vec4 outColor;
 
 void main()
 {
-	vec4 rgbe = texture(sampler2D(inputTexture, inputSampler), inTexcoord);
-	int exponent = int(rgbe.a*255.0);
+	vec4 rgbe = texture(usampler2D(inputTexture, inputSampler), inTexcoord);
+	int exponent = int(rgbe.a);
 	
 	vec3 decodedSample = exponent > 0
-		? ldexp(rgbe.rgb, ivec3(exponent - 129))
+		? ldexp(rgbe.rgb + 0.5, ivec3(exponent - (128 + 8)))
 		: vec3(0.0);
 	outColor = vec4(decodedSample, 1.0);
 }
@@ -517,6 +519,11 @@ AGPUUtilityResourceCache >> hdriDecodeComputationPipelineState [
 			hdriDecodeComputationPipelineState := self privateBuildLightProbeComputationPipelineStateWithFragmentShader: self hdriDecodeComputationFragmentShader
 		]
 	]
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> hdriDecodeComputationSamplerBinding [
+	^ hdriDecodeComputationSamplerBinding
 ]
 
 { #category : #'private - shaders' }
@@ -962,7 +969,7 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 
 	builder := device createShaderSignatureBuilder.
 	builder
-		beginBindingBank: 2;
+		beginBindingBank: 3;
 		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLER bindingPointCount: 1;
 		
 		beginBindingBank: 128;
@@ -976,6 +983,17 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 		addBindingConstant.
 
 	lightprobePreprocessingShaderSignature := builder build.
+
+	hdriDecodeComputationSampler := device createSampler: (AGPUSamplerDescription new
+		filter: AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST;
+		address_u: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_v: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_w: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		max_lod: 0.0;
+		yourself).
+	
+	hdriDecodeComputationSamplerBinding := lightprobePreprocessingShaderSignature createShaderResourceBinding: 0.
+	hdriDecodeComputationSamplerBinding bindSampler: 0 sampler: hdriDecodeComputationSampler.
 
 	equirectangularMapSampler := device createSampler: (AGPUSamplerDescription new
 		filter: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
