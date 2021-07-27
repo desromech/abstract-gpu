@@ -213,7 +213,11 @@ AGPUSampleMesh >> encodedColors [
 
 { #category : #private }
 AGPUSampleMesh >> encodedIndices [
-	^ encodedIndices ifNil: [ encodedIndices := indices asWordArray ]
+	^ encodedIndices ifNil: [
+		encodedIndices := indices asWordArray shallowCopy.
+		ByteArray adoptInstance: encodedIndices.
+		encodedIndices
+	]
 ]
 
 { #category : #private }
@@ -323,8 +327,8 @@ AGPUSampleMesh >> vertexBinding [
 
 { #category : #accessing }
 AGPUSampleMesh >> vertexBuffer [
-	^ indexBuffer ifNil: [
-		indexBuffer := device createBuffer: (AGPUBufferDescription new
+	^ vertexBuffer ifNil: [
+		vertexBuffer := device createBuffer: (AGPUBufferDescription new
 			size: self encodedVertexBuffer size;
 			heap_type: AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
 			usage_modes: AGPU_ARRAY_BUFFER;
