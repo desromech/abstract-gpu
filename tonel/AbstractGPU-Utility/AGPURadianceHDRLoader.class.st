@@ -25,8 +25,19 @@ AGPURadianceHDRLoader class >> parseFrom: inputStream [
 
 { #category : #'as yet unclassified' }
 AGPURadianceHDRLoader class >> tryToLoadFromFileNamed: aFileName [
-	"We require the filesystem library for this."
-	(aFileName respondsTo: #asFileReference) ifFalse: [ ^ nil ].
+	"If we do not have FileReference, try to fallback into the Squeak FileStream class."
+	(aFileName respondsTo: #asFileReference) ifFalse: [
+		"In Squeak we might have FileStream."
+		(Smalltalk at: #FileStream ifAbsent: [ nil ]) ifNotNil: [ :cls |
+			| inputFile |
+			inputFile := cls readOnlyFileNamed: aFileName.
+			^ [
+				inputFile binary.
+				self parseFrom: inputFile
+			] ensure: [ inputFile close ]
+		].
+		^ nil
+	].
 	^ self tryToLoadFromFileReference: aFileName asFileReference
 ]
 

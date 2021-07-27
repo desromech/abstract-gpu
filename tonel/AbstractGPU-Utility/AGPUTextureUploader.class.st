@@ -333,7 +333,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture computeMipmapsWith:
 
 { #category : #private }
 AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExtent computeMipmapsWith: mipmapComputationPipelineState repeated: repeated quality: quality [
-	| convertedForm pitchAlignment pitch slicePitch mappedBuffer destRowIndex destRowAdvance sourceRowLength sourceIndex sourceBits |
+	| convertedForm pitchAlignment pitch slicePitch mappedBuffer mappedBufferCopier destRowIndex destRowAdvance sourceRowAdvance sourceIndex sourceBits |
 	self ensureLastOperationHasFinished.
 	convertedForm := form asFormOfDepth: 32.
 	pitchAlignment := device getLimitValue: AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT.
@@ -342,6 +342,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExte
 	self ensureUploadBufferWithCapacityFor: slicePitch.
 	
 	mappedBuffer := (uploadBuffer mapBuffer: AGPU_WRITE_ONLY) getHandle.
+	mappedBufferCopier := AGPUMemoryCopier forExternalAddress: mappedBuffer.
 	
 	"We need to flip the form."
 	destRowIndex := 1.
@@ -353,19 +354,25 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExte
 		destRowAdvance := pitch negated.
 	].
 	
-	sourceRowLength := form width.
 	sourceIndex := 1.
 	sourceBits := form bits.
-	1 to: form height do: [ :y |
-		| destIndex |
-		destIndex := destRowIndex.
-		1 to: sourceRowLength do: [ :x |
-			mappedBuffer unsignedLongAt: destIndex put: (sourceBits at: sourceIndex).
-			sourceIndex := sourceIndex + 1.
-			destIndex := destIndex + 4
-		].
+	sourceRowAdvance := form width * 4.
 	
-		destRowIndex := destRowIndex + destRowAdvance
+	sourceRowAdvance = destRowAdvance ifTrue: [
+		mappedBufferCopier replaceFrom: 1 to: slicePitch with: sourceBits startingAt: 1.
+	] ifFalse: [
+		| sourceRowIndex |
+		sourceRowIndex := 1.
+		1 to: form height do: [ :y |
+			mappedBufferCopier
+					replaceFrom: destRowIndex
+					to: destRowIndex + sourceRowAdvance - 1
+					with: sourceBits
+					startingAt: sourceRowIndex.
+		
+			sourceRowIndex := sourceRowIndex + sourceRowAdvance.
+			destRowIndex := destRowIndex + destRowAdvance.
+		].
 	].
 
 	uploadBuffer unmapBuffer.
@@ -429,7 +436,7 @@ AGPUTextureUploader >> uploadHDRI: hdri intoTexture: hdriTexture thenProcessInto
 { #category : #private }
 AGPUTextureUploader >> uploadHDRI: hdri intoTexture: texture thenProcessWith: processBlock [
 
-	| pitchAlignment pitch slicePitch mappedBuffer destRowIndex destRowAdvance sourceRowLength sourceRowIndex sourcePixels |
+	| pitchAlignment pitch slicePitch mappedBuffer mappedBufferCopier destRowIndex destRowAdvance sourceRowAdvance sourcePixels |
 	self ensureLastOperationHasFinished.
 	pitchAlignment := device getLimitValue: AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT.
 	pitch := hdri pitch alignedTo: pitchAlignment.
@@ -437,6 +444,7 @@ AGPUTextureUploader >> uploadHDRI: hdri intoTexture: texture thenProcessWith: pr
 	self ensureUploadBufferWithCapacityFor: slicePitch.
 	
 	mappedBuffer := (uploadBuffer mapBuffer: AGPU_WRITE_ONLY) getHandle.
+	mappedBufferCopier := AGPUMemoryCopier forExternalAddress: mappedBuffer.
 	
 	"We need to flip the form."
 	destRowIndex := 1.
@@ -448,15 +456,22 @@ AGPUTextureUploader >> uploadHDRI: hdri intoTexture: texture thenProcessWith: pr
 		destRowAdvance := pitch negated.
 	].
 	
-	sourceRowLength := hdri pitch.
-	sourceRowIndex := 1.
+	sourceRowAdvance := hdri pitch.
 	sourcePixels := hdri pixels.
-	1 to: hdri height do: [ :y |
-		mappedBuffer replaceFrom: destRowIndex to: destRowIndex + sourceRowLength - 1 with: sourcePixels startingAt: sourceRowIndex.
-	
-		destRowIndex := destRowIndex + destRowAdvance.
-		sourceRowIndex := sourceRowIndex + sourceRowLength.
+
+	sourceRowAdvance = destRowAdvance ifTrue: [
+		mappedBufferCopier replaceFrom: 1 to: slicePitch with: sourcePixels startingAt: 1.
+	] ifFalse: [
+		| sourceRowIndex |
+		sourceRowIndex := 1.
+		1 to: hdri height do: [ :y |
+			mappedBufferCopier replaceFrom: destRowIndex to: destRowIndex + sourceRowAdvance - 1 with: sourcePixels startingAt: sourceRowIndex.
+		
+			destRowIndex := destRowIndex + destRowAdvance.
+			sourceRowIndex := sourceRowIndex + sourceRowAdvance.
+		].
 	].
+
 
 	uploadBuffer unmapBuffer.
 
