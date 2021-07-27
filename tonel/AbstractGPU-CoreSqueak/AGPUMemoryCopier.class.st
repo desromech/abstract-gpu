@@ -5,29 +5,22 @@ Class {
 	#name : #AGPUMemoryCopier,
 	#superclass : #Object,
 	#instVars : [
-		'externalAddress'
+		'alien'
 	],
-	#category : #'AbstractGPU-CorePharo'
+	#category : #'AbstractGPU-CoreSqueak'
 }
 
 { #category : #'constructing' }
 AGPUMemoryCopier class >> forExternalAddress: anExternalAddress [
 	^ self basicNew externalAddress: anExternalAddress; yourself
 ]
-
-{ #category : #accessing }
-AGPUMemoryCopier >> externalAddress [
-
-	^ externalAddress
-]
-
 { #category : #accessing }
 AGPUMemoryCopier >> externalAddress: anExternalAddress [
 
-	externalAddress := anExternalAddress
+	alien := Alien forPointer: anExternalAddress asInteger
 ]
 
 { #category : #accessing }
 AGPUMemoryCopier >> replaceFrom: start to: stop with: replacement startingAt: repStart [
-	^ externalAddress replaceFrom: start to: stop with: replacement startingAt: repStart
+	^ alien replaceFrom: start to: stop with: replacement startingAt: repStart
 ]
