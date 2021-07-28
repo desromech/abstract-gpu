@@ -54,7 +54,7 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
 
         footprint.Width = (uint32_t)std::max(compressedBlockWidth, (footprint.Width + compressedBlockWidth - 1) / compressedBlockWidth * compressedBlockWidth);
         footprint.Height = (uint32_t)std::max(compressedBlockHeight, (footprint.Height + compressedBlockHeight - 1) / compressedBlockHeight * compressedBlockHeight);
-    
+
         footprint.RowPitch = (UINT)alignedTo(footprint.Width / compressedBlockWidth * compressedBlockSize, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
         *transferRows = footprint.Height / compressedBlockHeight;
         *transferSlicePitch = footprint.RowPitch * (footprint.Height / compressedBlockHeight);
@@ -111,12 +111,13 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     if (usageModes & AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     auto isDepthStencil = (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT)) != 0;
-	if (isDepthStencil)
-	{
-		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-		if ((usageModes & (AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STORAGE)) == 0)
-			desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
-	}
+    if (isDepthStencil)
+    {
+        desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+        if ((usageModes & (AGPU_TEXTURE_USAGE_SAMPLED | AGPU_TEXTURE_USAGE_STORAGE | AGPU_TEXTURE_USAGE_GENERAL)) == 0)
+            desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+    }
+
     if (usageModes & AGPU_TEXTURE_USAGE_STORAGE)
         desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
@@ -132,7 +133,7 @@ agpu::texture_ref ADXTexture::create(const agpu::device_ref &device, agpu_textur
     auto& descriptionClearValue = description->clear_value;
 	clearValueData.Format = (DXGI_FORMAT)defaultTypedFormatForTypeless(description->format, isDepthStencil);
     auto clearValuePointer = &clearValueData;
-    
+
     adxTexture->textureAspect = AGPU_TEXTURE_ASPECT_COLOR;
     if (usageModes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT))
     {

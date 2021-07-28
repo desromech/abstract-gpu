@@ -33,7 +33,9 @@ Class {
 		'diffuseLightProbeComputationPipelineState',
 		'specularLightProbeComputationPipelineState',
 		'brdfLutGenerationRenderpass',
-		'brdfLutComputationPipelineState'
+		'brdfLutComputationPipelineState',
+		'hdriDecodeComputationSamplerBinding',
+		'hdriDecodeComputationSampler'
 	],
 	#pools : [
 		'AGPUConstants'
@@ -74,18 +76,18 @@ void main()
 	float NdotV = inTexcoord.x;
 	float sinNdotV = sqrt(1.0 - NdotV*NdotV);
 	vec3 N = vec3(0.0, 0.0, 1.0);
-	
+
 	vec3 V = vec3(sinNdotV, 0.0, NdotV);
 	float roughness = inTexcoord.y;
 	float alpha = roughness*roughness;
-	
+
 	vec2 lutResult = vec2(0.0);
 	for(uint i = 0u; i < SampleCount; i += 1u)
 	{
 		vec2 Xi = hammersleySequence(i, SampleCount);
 		vec3 H = importanceSampleGGX(Xi, alpha, N);
 		vec3 L = normalize(2.0*dot(V, H)*H - V)	;
-			
+
 		float NdotH = clamp(H.z, 0.0, 1.0);
 		float NdotL = clamp(L.z, 0.0, 1.0);
 		float VdotH = clamp(dot(V, H), 0.0, 1.0);
@@ -93,15 +95,15 @@ void main()
 		{
 			float G = smithSchlickGGXMasking(alpha, NdotL, NdotV);
 			float G_vis = G*VdotH/(NdotH*NdotV);
-			
+
 			float fresnelCos = 1.0 - VdotH;
 			float fresnelCos2 = fresnelCos*fresnelCos;
 			float fresnelCos5 = fresnelCos2*fresnelCos2*fresnelCos;
-			
-			lutResult += G_vis*vec2(1.0f - fresnelCos5, fresnelCos5);	
+
+			lutResult += G_vis*vec2(1.0f - fresnelCos5, fresnelCos5);
 		}
-	}	
-	
+	}
+
 	outColor = vec4(lutResult / float(SampleCount), 0.0, 1.0);
 }
 
@@ -141,7 +143,7 @@ AGPUUtilityResourceCache >> compileShader: sourceText type: shaderType [
 			compileShader: AGPU_SHADER_LANGUAGE_DEVICE_SHADER options: '';
 			getResultAsShader
 		] on: AGPUError do: [ :e |
-			e errorCode = AGPU_COMPILATION_ERROR ifTrue: [ 
+			e errorCode = AGPU_COMPILATION_ERROR ifTrue: [
 				| logLength logBuffer compilationError |
 				logLength := shaderCompiler getCompilationLogLength.
 				logBuffer := ExternalAddress allocate: logLength + 1.
@@ -184,9 +186,9 @@ AGPUUtilityResourceCache >> cubeScreenQuadFlippedYVertexShaderSource [
 #line 5
 
 layout(location = 0) out vec3 outDirection;
-		
+
 const vec2 screenQuadVertices[3] = vec2[3](
-    vec2(-1.0, -1.0),		
+    vec2(-1.0, -1.0),
     vec2(-1.0, 3.0),
     vec2(3.0, -1.0)
 );
@@ -238,7 +240,7 @@ const vec3 faceCoordinateTransformR[6] = vec3[6](
 );
 
 layout (push_constant) uniform FaceIndex
-{ 
+{
 	uint faceIndex;
 };
 
@@ -246,10 +248,10 @@ void main()
 {
 	vec2 position = screenQuadVertices[gl_VertexIndex];
 	vec3 str = vec3(position*vec2(1.0, -1.0), 1.0);
-	
+
 	mat3 faceTransform = mat3(faceCoordinateTransformS[faceIndex], faceCoordinateTransformT[faceIndex], faceCoordinateTransformR[faceIndex]);
 	outDirection = faceTransform * str;
-		
+
 	gl_Position = vec4(position, 0.0, 1.0);
 }
 
@@ -271,7 +273,7 @@ AGPUUtilityResourceCache >> cubeScreenQuadVertexShaderSource [
 layout(location = 0) out vec3 outDirection;
 
 const vec2 screenQuadVertices[3] = vec2[3](
-    vec2(-1.0, -1.0),		
+    vec2(-1.0, -1.0),
     vec2(-1.0, 3.0),
     vec2(3.0, -1.0)
 );
@@ -323,7 +325,7 @@ const vec3 faceCoordinateTransformR[6] = vec3[6](
 );
 
 layout (push_constant) uniform FaceIndex
-{ 
+{
 	uint faceIndex;
 };
 
@@ -331,10 +333,10 @@ void main()
 {
 	vec2 position = screenQuadVertices[gl_VertexIndex];
 	vec3 str = vec3(position, 1.0);
-	
+
 	mat3 faceTransform = mat3(faceCoordinateTransformS[faceIndex], faceCoordinateTransformT[faceIndex], faceCoordinateTransformR[faceIndex]);
 	outDirection = faceTransform * str;
-		
+
 	gl_Position = vec4(position, 0.0, 1.0);
 }
 
@@ -361,8 +363,8 @@ const uint SampleThetaCount = 32u;
 const uint SamplePhiCount = 32u;
 const uint SampleCount = SampleThetaCount*SamplePhiCount;
 
-const	float dTheta = HalfPi / float(SampleThetaCount);	
-const	float dPhi = TwoPi / float(SamplePhiCount);	
+const	float dTheta = HalfPi / float(SampleThetaCount);
+const	float dPhi = TwoPi / float(SamplePhiCount);
 
 void main()
 {
@@ -370,25 +372,25 @@ void main()
 	vec3 upVector = vec3(0.0, 1.0, 0.0);
 	vec3 T = cross(upVector, N);
 	vec3 B = cross(N, T);
-	
+
 	vec3 irradiance = vec3(0.0);
-	
+
 	float theta = 0.0;
 	for(uint i = 0; i < SampleThetaCount; i += 1u)
-	{ 
+	{
 		float cosTheta = cos(theta);
 		float sinTheta = sin(theta);
 		float phi = 0.0;
 		float dS = sinTheta;
 		for(uint j = 0; j < SamplePhiCount; j += 1u)
-		{ 
+		{
 			float cosPhi = cos(phi);
 			float sinPhi = sin(phi);
 			vec3 tangentL = vec3(sinTheta*cosPhi, sinTheta*sinPhi, cosTheta);
 			vec3 L = tangentL.x * T + tangentL.y * B + tangentL.z * N;
 			vec3 sampl = textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb;
 			irradiance += sampl * cosTheta * dS;
-			
+
 			phi += dPhi;
 		}
 
@@ -421,7 +423,7 @@ AGPUUtilityResourceCache >> equirectangularMapSamplerBinding [
 AGPUUtilityResourceCache >> finishBuildingRequiredPipelineStateWith: builder [
 	| result |
 	result := builder build.
-	(result isNil or: [ result isNull ]) ifTrue: [ 
+	(result isNil or: [ result isNull ]) ifTrue: [
 		| logLength logBuffer buildingError |
 		logLength := builder getBuildingLogLength.
 		logBuffer := ExternalAddress allocate: logLength + 1.
@@ -440,7 +442,7 @@ AGPUUtilityResourceCache >> hammersleySequenceSourceCode [
 	^ '
 #line 4
 
-float radicalInverse(uint bits) 
+float radicalInverse(uint bits)
 {
 	// Method source code from https://learnopengl.com/PBR/IBL/Specular-IBL [ July, 2021 ]
 	bits = (bits << 16u) | (bits >> 16u);
@@ -452,7 +454,7 @@ float radicalInverse(uint bits)
 }
 
 vec2 hammersleySequence(uint i, uint sampleCount)
-{ 
+{
 	return vec2(float(i) / float(sampleCount), radicalInverse(i));
 }
 
@@ -500,9 +502,9 @@ void main()
 {
 	vec4 rgbe = texture(sampler2D(inputTexture, inputSampler), inTexcoord);
 	int exponent = int(rgbe.a*255.0);
-	
+
 	vec3 decodedSample = exponent > 0
-		? ldexp(rgbe.rgb, ivec3(exponent - 129))
+		? ldexp(rgbe.rgb, ivec3(exponent - 128))
 		: vec3(0.0);
 	outColor = vec4(decodedSample, 1.0);
 }
@@ -517,6 +519,11 @@ AGPUUtilityResourceCache >> hdriDecodeComputationPipelineState [
 			hdriDecodeComputationPipelineState := self privateBuildLightProbeComputationPipelineStateWithFragmentShader: self hdriDecodeComputationFragmentShader
 		]
 	]
+]
+
+{ #category : #'lightprobe preprocessing' }
+AGPUUtilityResourceCache >> hdriDecodeComputationSamplerBinding [
+	^ hdriDecodeComputationSamplerBinding
 ]
 
 { #category : #'private - shaders' }
@@ -535,8 +542,8 @@ void main()
 {
 	vec3 direction = normalize(inDirection);
 	vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y)) *
-		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ -0.3183098861837907) + 0.5;	
-	
+		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ -0.3183098861837907) + 0.5;
+
 	outColor = texture(sampler2D(inputTexture, inputSampler), uv);
 }
 
@@ -559,8 +566,8 @@ void main()
 {
 	vec3 direction = normalize(inDirection);
 	vec2 uv = vec2(atan(direction.z, direction.x), asin(direction.y)) *
-		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ -0.3183098861837907) + 0.5;	
-	
+		vec2(/*0.5 / pi */ 0.15915494309189535, /*0.5 / (pi/2) */ -0.3183098861837907) + 0.5;
+
 	outColor = texture(sampler2D(inputTexture, inputSampler), uv);
 }
 
@@ -599,13 +606,13 @@ vec3 importanceSampleGGX(vec2 Xi, float alpha, vec3 N)
 	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (alpha*alpha - 1.0)*Xi.y));
 	float sinTheta = sqrt(1.0 - cosTheta*cosTheta);
 	vec3 H = vec3(sinTheta*cos(phi), sinTheta*sin(phi), cosTheta);
-	
+
 	vec3 upVector = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
 	vec3 tangentX = normalize( cross( upVector , N ) );
 	vec3 tangentY = cross( N, tangentX );
 
 	// Tangent to world space
-	return tangentX * H.x + tangentY * H.y + N * H.z;	
+	return tangentX * H.x + tangentY * H.y + N * H.z;
 }
 
 '
@@ -639,7 +646,7 @@ layout (set=0, binding = 0, rgba8) uniform readonly image2D inputImage;
 layout (set=0, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destExtent;
 };
@@ -700,13 +707,13 @@ layout (location = 0) in vec2 inTexcoord;
 layout (location = 0) out vec4 outMiptexel;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destinationExtent;
 };
 
 vec4 fetchTexel(uvec2 texcoord)
-{ 
+{
 	vec2 samplingTexcoord = (vec2(texcoord) + 0.5) / vec2(sourceExtent);
 	return texture(sampler2D(inputTexture, inputSampler), samplingTexcoord);
 }
@@ -715,7 +722,7 @@ void main()
 {
 	uvec2 destinationTexcoord = uvec2(inTexcoord*vec2(destinationExtent));
 	uvec2 sourceTexcoordTopLeft = destinationTexcoord * 2u;
-	
+
 	vec4 result = (fetchTexel(sourceTexcoordTopLeft) + fetchTexel(sourceTexcoordTopLeft + uvec2(1u, 0u)) +
 		fetchTexel(sourceTexcoordTopLeft + uvec2(0u, 1u)) + fetchTexel(sourceTexcoordTopLeft + uvec2(1u, 1u))) * 0.25;
 	outMiptexel = result;
@@ -747,11 +754,11 @@ layout (set=1, binding = 0) uniform texture2D inputTexture;
 layout (set=1, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destExtent;
 };
-	
+
 shared vec4 fetchedTexels[16][16];
 
 void main()
@@ -788,13 +795,13 @@ layout (location = 0) in vec2 inTexcoord;
 layout (location = 0) out vec4 outMiptexel;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destinationExtent;
 };
 
 vec3 fetchTexel(uvec2 texcoord)
-{ 
+{
 	vec2 samplingTexcoord = (vec2(texcoord) + 0.5) / vec2(sourceExtent);
 	return texture(sampler2D(inputTexture, inputSampler), samplingTexcoord).xyz*2.0 - 1.0;
 }
@@ -803,7 +810,7 @@ void main()
 {
 	uvec2 destinationTexcoord = uvec2(inTexcoord*vec2(destinationExtent));
 	uvec2 sourceTexcoordTopLeft = destinationTexcoord * 2u;
-	
+
 	vec3 result = normalize(fetchTexel(sourceTexcoordTopLeft) + fetchTexel(sourceTexcoordTopLeft + uvec2(1u, 0u)) +
 		fetchTexel(sourceTexcoordTopLeft + uvec2(0u, 1u)) + fetchTexel(sourceTexcoordTopLeft + uvec2(1u, 1u)));
 	outMiptexel = vec4(result*0.5 + 0.5, 1.0);
@@ -835,7 +842,7 @@ layout (set=1, binding = 0) uniform texture2D inputTexture;
 layout (set=1, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destExtent;
 };
@@ -944,7 +951,7 @@ AGPUUtilityResourceCache >> privateCubeScreenQuadVertexShader [
 		| source |
 		source := self hasInvertedProjectionY
 			ifTrue: [ self cubeScreenQuadVertexShaderSource ]
-			ifFalse: [ self cubeScreenQuadFlippedYVertexShaderSource ].	
+			ifFalse: [ self cubeScreenQuadFlippedYVertexShaderSource ].
 
 		cubeScreenQuadVertexShader := self compileShader: source type: AGPU_VERTEX_SHADER
 	]
@@ -962,9 +969,9 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 
 	builder := device createShaderSignatureBuilder.
 	builder
-		beginBindingBank: 2;
+		beginBindingBank: 3;
 		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLER bindingPointCount: 1;
-		
+
 		beginBindingBank: 128;
 		"Input image"
 		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE bindingPointCount: 1.
@@ -977,6 +984,17 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 
 	lightprobePreprocessingShaderSignature := builder build.
 
+	hdriDecodeComputationSampler := device createSampler: (AGPUSamplerDescription new
+		filter: AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST;
+		address_u: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_v: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		address_w: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
+		max_lod: 0.0;
+		yourself).
+
+	hdriDecodeComputationSamplerBinding := lightprobePreprocessingShaderSignature createShaderResourceBinding: 0.
+	hdriDecodeComputationSamplerBinding bindSampler: 0 sampler: hdriDecodeComputationSampler.
+
 	equirectangularMapSampler := device createSampler: (AGPUSamplerDescription new
 		filter: AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST;
 		address_u: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
@@ -984,7 +1002,7 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 		address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
 		max_lod: 0.0;
 		yourself).
-	
+
 	equirectangularMapSamplerBinding := lightprobePreprocessingShaderSignature createShaderResourceBinding: 0.
 	equirectangularMapSamplerBinding bindSampler: 0 sampler: equirectangularMapSampler.
 
@@ -995,7 +1013,7 @@ AGPUUtilityResourceCache >> privateLightprobePreprocessingShaderSignature [
 		address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
 		max_lod: 0.0;
 		yourself).
-	
+
 	lightprobePreprocessingSamplerBinding := lightprobePreprocessingShaderSignature createShaderResourceBinding: 0.
 	lightprobePreprocessingSamplerBinding bindSampler: 0 sampler: lightprobePreprocessingSampler.
 
@@ -1016,7 +1034,7 @@ AGPUUtilityResourceCache >> privateMipmapGenerationShaderSignature [
 	builder
 		beginBindingBank: 2;
 		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLER bindingPointCount: 1;
-		
+
 		beginBindingBank: 256;
 		"Input image"
 		addBindingBankElement: AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE bindingPointCount: 1.
@@ -1043,7 +1061,7 @@ AGPUUtilityResourceCache >> privateMipmapGenerationShaderSignature [
 		address_w: AGPU_TEXTURE_ADDRESS_MODE_CLAMP;
 		max_lod: 0.0;
 		yourself).
-	
+
 	mipmapGenerationSamplerBinding := mipmapGenerationShaderSignature createShaderResourceBinding: 0.
 	mipmapGenerationSamplerBinding bindSampler: 0 sampler: mipmapGenerationSampler.
 
@@ -1054,7 +1072,7 @@ AGPUUtilityResourceCache >> privateMipmapGenerationShaderSignature [
 		address_w: AGPU_TEXTURE_ADDRESS_MODE_WRAP;
 		max_lod: 0.0;
 		yourself).
-	
+
 	mipmapGenerationRepeatSamplerBinding := mipmapGenerationShaderSignature createShaderResourceBinding: 0.
 	mipmapGenerationRepeatSamplerBinding bindSampler: 0 sampler: mipmapGenerationRepeatSampler.
 
@@ -1146,7 +1164,7 @@ layout (location = 0) in vec3 inDirection;
 layout (location = 0) out vec4 outColor;
 
 layout (push_constant) uniform FaceIndex
-{ 
+{
 	uint faceIndex;
 	float roughness;
 };
@@ -1158,16 +1176,16 @@ void main()
 	vec3 N = normalize(inDirection);
 	vec3 V = N;
 	float alpha = roughness*roughness;
-	
+
 	vec3 specular = vec3(0.0);
 	float totalWeight = 0.0;
-	
+
 	for(uint i = 0u; i < SampleCount; ++i)
-	{ 
+	{
 		vec2 Xi = hammersleySequence(i, SampleCount);
 		vec3 H = importanceSampleGGX(Xi, alpha, N);
 		vec3 L = normalize(2.0*dot(V,H)*H - V);
-		
+
 		float NdotL = clamp(dot(N, L), 0.0, 1.0);
 		if(NdotL > 0.0)
 		{
@@ -1176,7 +1194,7 @@ void main()
 			totalWeight += NdotL;
 		}
 	}
-	
+
 	specular /= totalWeight;
 	outColor = vec4(specular, 1.0);
 }
@@ -1206,7 +1224,7 @@ layout (location = 0) in vec2 inTexcoord;
 layout (location = 0) out vec4 outMiptexel;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destinationExtent;
 };
@@ -1214,14 +1232,14 @@ layout (push_constant) uniform Extents
 // See https://en.wikipedia.org/wiki/SRGB [May, 2021] for these conversion formulas.
 vec4 encodeSRGB(vec4 color)
 {
-	vec3 isPowerSection = vec3(lessThanEqual(color.rgb, vec3(0.0031308)));
+	vec3 isPowerSection = vec3(greaterThan(color.rgb, vec3(0.0031308)));
 	vec3 linearSection = 12.92 * color.rgb;
 	vec3 powerSection = 1.055 * pow(color.rgb, vec3(1.0/2.4)) - 0.055;
 	return vec4(mix(linearSection, powerSection, isPowerSection), color.a);
 }
 
 vec4 fetchTexel(uvec2 texcoord)
-{ 
+{
 	vec2 samplingTexcoord = (vec2(texcoord) + 0.5) / vec2(sourceExtent);
 	return texture(sampler2D(inputTexture, inputSampler), samplingTexcoord);
 }
@@ -1230,7 +1248,7 @@ void main()
 {
 	uvec2 destinationTexcoord = uvec2(inTexcoord*vec2(destinationExtent));
 	uvec2 sourceTexcoordTopLeft = destinationTexcoord * 2u;
-	
+
 	vec4 result = (fetchTexel(sourceTexcoordTopLeft) + fetchTexel(sourceTexcoordTopLeft + uvec2(1u, 0u)) +
 		fetchTexel(sourceTexcoordTopLeft + uvec2(0u, 1u)) + fetchTexel(sourceTexcoordTopLeft + uvec2(1u, 1u))) * 0.25;
 	outMiptexel = encodeSRGB(result);
@@ -1253,16 +1271,16 @@ layout (set=1, binding = 0) uniform texture2D inputTexture;
 layout (set=1, binding = 1, rgba8) uniform writeonly image2D outputImage;
 
 layout (push_constant) uniform Extents
-{ 
+{
 	uvec2 sourceExtent;
 	uvec2 destExtent;
 };
-	
+
 shared vec4 fetchedTexels[16][16];
 
 vec4 encodeSRGB(vec4 color)
 {
-	vec3 isPowerSection = vec3(lessThanEqual(color.rgb, vec3(0.0031308)));
+	vec3 isPowerSection = vec3(greaterThan(color.rgb, vec3(0.0031308)));
 	vec3 linearSection = 12.92 * color.rgb;
 	vec3 powerSection = 1.055 * pow(color.rgb, vec3(1.0/2.4)) - 0.055;
 	return vec4(mix(linearSection, powerSection, isPowerSection), color.a);

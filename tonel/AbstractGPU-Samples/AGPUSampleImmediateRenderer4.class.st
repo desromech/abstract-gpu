@@ -12,7 +12,9 @@ Class {
 		'normalTexture',
 		'currentLightingModel',
 		'cameraRotationY',
-		'cameraRotationX'
+		'cameraRotationX',
+		'lightProbe',
+		'brdfLutTexture'
 	],
 	#category : #'AbstractGPU-Samples'
 }
@@ -236,12 +238,22 @@ AGPUSampleImmediateRenderer4 >> initialize [
 
 { #category : #initialization }
 AGPUSampleImmediateRenderer4 >> initializeForNewSession [
+	| hdri |
 	super initializeForNewSession.
 
 	textureUploader := AGPUTextureUploader for: device.
 	texture := textureUploader createAndUploadTextureForForm: self checkboardTextureForm repeated: true quality: 1.
 	normalTexture := textureUploader createAndUploadTextureForNormalMapForm: self checkboardNormalMapTextureForm repeated: true quality: 1.
 	cubeMesh := (AGPUSampleMesh for: device) addCubeMinX: -0.5 y: -0.5 z: -0.5 maxX: 0.5 y: 0.5 z: 0.5.
+	hdri := AGPURadianceHDRLoader tryToLoadFromFileNamed: 'agpuSample.hdr'.
+	hdri ifNil: [
+		lightProbe := nil.
+		brdfLutTexture := nil
+	] ifNotNil: [
+		lightProbe := textureUploader createAndUploadLightProbeForHDRI: hdri.
+		lightProbe discardEnvironmentMap.
+		brdfLutTexture := textureUploader createAndComputeBRDFLut
+	].
 ]
 
 { #category : #'event handling' }
@@ -319,6 +331,15 @@ AGPUSampleImmediateRenderer4 >> render [
 		translate: cameraPositionX negated y: cameraPositionY negated z: cameraPositionZ negated;
 		rotate: cameraRotationX x: 1.0 y: 0.0 z: 0.0;
 		rotate: cameraRotationY x: 0.0 y: 1.0 z: 0.0.
+	brdfLutTexture ifNotNil: [ 
+		immediateRenderer bindTextureIn: brdfLutTexture binding: AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_BRDF_LUT.
+	].
+
+	lightProbe ifNotNil: [
+		immediateRenderer
+			bindTextureIn: lightProbe diffuseLightProbe binding: AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_DIFFUSE_LIGHT_PROBE;
+			bindTextureIn: lightProbe specularLightProbe binding: AGPU_IMMEDIATE_RENDERER_TEXTURE_BINDING_SPECULAR_LIGHT_PROBE
+	].
 		
 	self setupLightingOn: immediateRenderer.
 	immediateRenderer

@@ -38,6 +38,27 @@ AMtlCommandList::AMtlCommandList(const agpu::device_ref &device)
 
 AMtlCommandList::~AMtlCommandList()
 {
+    if(computeEncoder)
+    {
+        [computeEncoder endEncoding];
+        [computeEncoder release];
+        computeEncoder = nil;
+    }
+
+    if(renderEncoder)
+    {
+        [renderEncoder endEncoding];
+        [renderEncoder release];
+        renderEncoder = nil;
+    }
+    
+    if(blitEncoder)
+    {
+        [blitEncoder endEncoding];
+        [blitEncoder release];
+        renderEncoder = nil;
+    }
+
     if(buffer)
         [buffer release];
 }
@@ -374,6 +395,7 @@ agpu_error AMtlCommandList::close()
     if(computeEncoder)
     {
         [computeEncoder endEncoding];
+        [computeEncoder release];
         computeEncoder = nil;
     }
 
@@ -427,6 +449,7 @@ agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpa
     if(computeEncoder)
     {
         [computeEncoder endEncoding];
+        [computeEncoder release];
         computeEncoder = nil;
     }
 
@@ -444,6 +467,7 @@ agpu_error AMtlCommandList::endRenderPass (  )
         return AGPU_INVALID_OPERATION;
 
     [renderEncoder endEncoding];
+    [renderEncoder release];
     renderEncoder = nil;
     return AGPU_OK;
 }
@@ -640,6 +664,7 @@ void AMtlCommandList::beginBlitting()
     if(computeEncoder)
     {
         [computeEncoder endEncoding];
+        [computeEncoder release];
         computeEncoder = nil;
     }
     blitEncoder = [buffer blitCommandEncoder];

@@ -84,5 +84,5 @@ AGPUSampleImmediateRendererCommon >> generateProceduralNormalMapWithExtent: exte
 AGPUSampleImmediateRendererCommon >> initializeForNewSession [
 	super initializeForNewSession.
 	
-	mainRenderPass := self createRenderPassWithColor: Color black.
+	mainRenderPass := self createRenderPassWithColor: Color transparent.
 ]

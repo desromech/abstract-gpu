@@ -43,6 +43,10 @@ struct ImmediateTextureBindingSet
     agpu::texture_ref normalTexture;
     agpu::texture_ref occlusionTexture;
     agpu::texture_ref roughnessMetallicTexture;
+    
+    agpu::texture_ref brdfLutTexture;
+    agpu::texture_ref diffuseLightProbeTexture;
+    agpu::texture_ref specularLightProbeTexture;
 
     size_t hash() const;
     bool operator==(const ImmediateTextureBindingSet& other) const;
@@ -122,12 +126,16 @@ public:
     agpu::shader_signature_ref shaderSignature;
     agpu::device_ref device;
 
+    agpu::sampler_ref brdfLutSampler;
     agpu::shader_resource_binding_ref defaultSampler;
     agpu::texture_ref defaultAlbedoTexture;
     agpu::texture_ref defaultEmissionTexture;
     agpu::texture_ref defaultNormalTexture;
     agpu::texture_ref defaultOcclusionTexture;
     agpu::texture_ref defaultRoughnessMetallicTexture;
+    agpu::texture_ref defaultBrdfLutTexture;
+    agpu::texture_ref defaultDiffuseLightProbeTexture;
+    agpu::texture_ref defaultSpecularLightProbeTexture;
 
     agpu::shader_resource_binding_ref &getSamplerStateBindingFor(const ImmediateRendererSamplerStateDescription &description);
 

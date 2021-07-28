@@ -100,7 +100,7 @@ AGPUTextureLightprobePreprocessor >> emitCommandsForConvertingHDRI: hdriTextureV
 		setScissor: 0 y: 0 w: hdriTextureExtent x h: hdriTextureExtent y;
 		setShaderSignature: utilityResourceCache lightProbePreprocessingShaderSignature;
 		usePipelineState: utilityResourceCache hdriDecodeComputationPipelineState;
-		useShaderResources: utilityResourceCache equirectangularMapSamplerBinding;
+		useShaderResources: utilityResourceCache hdriDecodeComputationSamplerBinding;
 		useShaderResources: sourceBinding;
 		drawArrays: 3 instance_count: 1 first_vertex: 0 base_instance: 0;
 		endRenderPass.

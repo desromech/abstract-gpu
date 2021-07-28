@@ -160,6 +160,13 @@ layout(set=5, binding=0) uniform SkinningStateBlock
 
 #ifdef LIGHTING_ENABLED
 
+#if defined(PBR_METALLIC_ROUGHNESS) && defined(BUILD_FRAGMENT_SHADER)
+layout(set=0, binding=1) uniform sampler BrdfLutSampler;
+layout(set=6, binding=5) uniform texture2D BrdfLut;
+layout(set=6, binding=6) uniform textureCube DiffuseLightProbe;
+layout(set=6, binding=7) uniform textureCube SpecularLightProbe;
+#endif
+
 struct LightingParameters
 {
     vec4 ambientColor;
@@ -187,12 +194,23 @@ struct LightingParameters
 
 vec3 fresnelSchlick(vec3 F0, float cosTheta)
 {
-    float powFactor = 1.0f - cosTheta;
+    float powFactor = 1.0 - cosTheta;
     float powFactor2 = powFactor * powFactor;
     float powFactor4 = powFactor2 * powFactor2;
     float powValue = powFactor4 * powFactor;
 
     return F0 + (vec3(1.0) - F0) * powValue;
+}
+
+vec3 fresnelSchlickRoughness(vec3 F0, float cosTheta, float roughness)
+{
+	// Function obtained from: https://learnopengl.com/PBR/IBL/Diffuse-irradiance
+    float powFactor = 1.0 - cosTheta;
+    float powFactor2 = powFactor * powFactor;
+    float powFactor4 = powFactor2 * powFactor2;
+    float powValue = powFactor4 * powFactor;
+
+    return F0 + (max(vec3(1.0) - roughness, F0) - F0) * powValue;
 }
 
 float ggxSpecularDistribution(float alpha, float cosTheta)
@@ -295,8 +313,11 @@ vec4 computeLightContributionWith(in LightState light, in LightingParameters par
     return lightContribution*attenuation;
 }
 
+
 vec4 computeLightingWith(in LightingParameters parameters)
 {
+    vec4 color = vec4(0);
+
 #ifdef PBR_METALLIC_ROUGHNESS
     vec3 dielecticF0 = vec3(0.04);
 
@@ -313,13 +334,42 @@ vec4 computeLightingWith(in LightingParameters parameters)
     parameters.NdotV = clamp(dot(parameters.N, parameters.V), 0.0, 1.0);
     parameters.ambientColor = parameters.baseColor * parameters.occlusion;
 
+#   ifdef BUILD_FRAGMENT_SHADER
+	// Add the lighting cube.
+    vec3 R = reflect(-parameters.V, parameters.N);
+
+    // FIXME: Unfortunately, we do not have a separate model and view matrix. This should be computed in World space.
+    mat3 viewToModel = mat3(TransformationState.modelViewMatrix[0].xyz, TransformationState.modelViewMatrix[1].xyz, TransformationState.modelViewMatrix[2].xyz);
+    vec3 modelN = parameters.N * viewToModel;
+    vec3 modelR = R * viewToModel;
+
+    vec3 diffuseLightProbeSample = textureLod(samplerCube(DiffuseLightProbe, BrdfLutSampler), modelN, 0.0).rgb;
+
+	float specularLightProbeLevel = float(textureQueryLevels(samplerCube(SpecularLightProbe, BrdfLutSampler)) - 1) * parameters.roughness;
+    vec3 specularLightProbeSample = textureLod(samplerCube(SpecularLightProbe, BrdfLutSampler), modelR, specularLightProbeLevel).rgb;
+
+	vec2 ambientReflectionFactors = textureLod(sampler2D(BrdfLut, BrdfLutSampler), vec2(parameters.NdotV, parameters.roughness), 0.0).rg;
+    vec3 specularFactor = parameters.F0*ambientReflectionFactors.x + ambientReflectionFactors.y;
+
+    // Add the light probe.
+    color += vec4(diffuseLightProbeSample*parameters.diffuse.rgb + specularLightProbeSample*specularFactor, 0.0);
+
+    // Apply the occlusion factor.
+    color *= parameters.occlusion;
+
+#   endif
 #else
     parameters.ambientColor = MaterialState.ambient * parameters.baseColor;
     parameters.diffuse = MaterialState.diffuse*parameters.baseColor;
     parameters.specular = MaterialState.specular;
-#endif
-    vec4 color = parameters.emissionColor;
+
     color += LightingState.ambientLighting * parameters.ambientColor;
+
+#endif
+
+    color += LightingState.ambientLighting * parameters.ambientColor;
+
+    color += parameters.emissionColor;
 
     uint enabledLightMask = LightingState.enabledLightMask;
     for(int i = 0; i < 8 && (enabledLightMask != 0); ++i, enabledLightMask >>=1)
@@ -365,6 +415,7 @@ layout(location = 5) out vec3 outTangent;
 layout(location = 6) out vec3 outBitangent;
 #endif
 
+)uberShader" R"uberShader(
 void main()
 {
 #ifdef SKINNING_ENABLED
@@ -466,7 +517,7 @@ vec4 applyFog(vec4 cleanColor, vec3 inPosition)
     return applyFogWithState(ExtraRenderingState.fogState, cleanColor, inPosition);
 }
 
-layout(set=0, binding=0) uniform sampler Sampler0;
+layout(set=0, binding=0) uniform sampler TextureSampler;
 layout(set=6, binding=0) uniform texture2D AlbedoTexture;
 layout(set=6, binding=1) uniform texture2D EmissionTexture;
 layout(set=6, binding=2) uniform texture2D NormalTexture;
@@ -489,7 +540,7 @@ void main()
 {
     vec4 color = inColor;
 #ifdef TEXTURING_ENABLED
-    color *= textureProj(sampler2D(AlbedoTexture, Sampler0), inTexcoord);
+    color *= textureProj(sampler2D(AlbedoTexture, TextureSampler), inTexcoord);
 #endif
 
     // Alpha cutoff.
@@ -501,7 +552,7 @@ void main()
 #if defined(LIGHTING_ENABLED) && defined(PER_FRAGMENT_LIGHTING)
     vec4 emissionColor = MaterialState.emission*inColor;
 #   ifdef TEXTURING_ENABLED
-    emissionColor *= textureProj(sampler2D(EmissionTexture, Sampler0), inTexcoord);
+    emissionColor *= textureProj(sampler2D(EmissionTexture, TextureSampler), inTexcoord);
 #   endif
 
     LightingParameters parameters;
@@ -515,9 +566,9 @@ void main()
     parameters.metallic = MaterialState.metallicFactor;
 
 #       ifdef TEXTURING_ENABLED
-    parameters.occlusion *= textureProj(sampler2D(OcclusionTexture, Sampler0), inTexcoord).r;
+    parameters.occlusion *= textureProj(sampler2D(OcclusionTexture, TextureSampler), inTexcoord).r;
 
-    vec4 rm = textureProj(sampler2D(RoughnessMetallicTexture, Sampler0), inTexcoord);
+    vec4 rm = textureProj(sampler2D(RoughnessMetallicTexture, TextureSampler), inTexcoord);
     parameters.roughness *= rm.g;
     parameters.metallic *= rm.b;
 #       endif
@@ -529,7 +580,7 @@ void main()
     vec3 t = normalize(inTangent);
     vec3 b = normalize(inBitangent);
     vec3 n = normalize(inNormal);
-    vec3 tangentNormal = textureProj(sampler2D(NormalTexture, Sampler0), inTexcoord).xyz*2.0 - 1.0;
+    vec3 tangentNormal = textureProj(sampler2D(NormalTexture, TextureSampler), inTexcoord).xyz*2.0 - 1.0;
     parameters.N = normalize(mat3(t,b,n)*tangentNormal);
 #else
     parameters.N = normalize(inNormal);
