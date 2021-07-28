@@ -127,6 +127,27 @@ AGPURadianceHDRLoader >> extent [
 	^ width @ height
 ]
 
+{ #category : #parsing }
+AGPURadianceHDRLoader >> extractComponentsOf: line [
+	| in |
+	in := line readStream.
+	^ Array streamContents: [:outComponents |
+		[in peek ~~ nil] whileTrue: [
+			[in peek ~~ nil and: [in peek <= Character space]] whileTrue: [
+				in next
+			].
+		
+			in peek ~~ nil ifTrue: [
+				outComponents nextPut: (ByteString streamContents: [:out |
+					[in peek notNil and: [in peek > Character space]] whileTrue: [
+						 out nextPut: in next
+					]
+				])			
+			]
+		].
+	]
+]
+
 { #category : #accessing }
 AGPURadianceHDRLoader >> format [
 	^ format
@@ -168,7 +189,7 @@ AGPURadianceHDRLoader >> parseHeader: inputStream [
 	properties := Dictionary new.
 	[
 		line := self nextLineIn: inputStream.
-		line isNotEmpty 
+		line isEmpty not
 	] whileTrue: [
 		self parseInformationLine: line.
 	].
@@ -201,7 +222,7 @@ AGPURadianceHDRLoader >> parseInformationLine: line [
 { #category : #parsing }
 AGPURadianceHDRLoader >> parseResolutionLine: line [
 	| components |
-	components := line trimBoth splitOn: ' '.
+	components := self extractComponentsOf: line.
 	(components first = '-Y' and: [ components third = '+X' ]) ifFalse: [ 
 		self error: 'Unsupported hdr with non standard coordinate system: ' , line
 	].

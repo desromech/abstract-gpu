@@ -402,7 +402,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExte
 			yourself);
 		popTextureTransitionBarrier.
 		
-	(mipmapComputationPipelineState isNotNil and: [ mipmapGenerator shouldGenerateMipmapsForExtent: textureExtent ]) ifTrue: [
+	(mipmapComputationPipelineState notNil and: [ mipmapGenerator shouldGenerateMipmapsForExtent: textureExtent ]) ifTrue: [
 		mipmapGenerator emitMipmapGenerationCommandsWith: mipmapComputationPipelineState on: commandList retainResourcesOn: activeResources forTexture: texture extent: textureExtent repeated: repeated  sampleFromSuccessiveLevels: quality <= 1
 	].
 		
