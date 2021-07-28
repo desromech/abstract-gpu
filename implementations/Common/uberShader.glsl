@@ -339,8 +339,9 @@ vec4 computeLightingWith(in LightingParameters parameters)
     vec3 R = reflect(-parameters.V, parameters.N);
 
     // FIXME: Unfortunately, we do not have a separate model and view matrix. This should be computed in World space.
-    vec3 modelN = (TransformationState.inverseModelViewMatrix * vec4(parameters.N, 0.0f)).xyz;
-    vec3 modelR = (TransformationState.inverseModelViewMatrix * vec4(R, 0.0f)).xyz;
+    mat3 viewToModel = mat3(TransformationState.modelViewMatrix[0].xyz, TransformationState.modelViewMatrix[1].xyz, TransformationState.modelViewMatrix[2].xyz);
+    vec3 modelN = parameters.N * viewToModel;
+    vec3 modelR = R * viewToModel;
 
     vec3 diffuseLightProbeSample = textureLod(samplerCube(DiffuseLightProbe, BrdfLutSampler), modelN, 0.0).rgb;
 
