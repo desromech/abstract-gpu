@@ -9,6 +9,7 @@
 #include "framebuffer.hpp"
 #include "renderpass.hpp"
 #include "texture.hpp"
+#include "texture_view.hpp"
 #include "constants.hpp"
 
 namespace AgpuD3D12
@@ -122,7 +123,7 @@ void ADXCommandList::transitionTextureRangeUsageMode(const agpu::texture_ref& te
     }
 
     std::vector<D3D12_RESOURCE_BARRIER> barriers;
-    barriers.reserve(range.layer_count * range.level_count);
+    barriers.reserve(size_t(range.layer_count) * size_t(range.level_count));
     for (agpu_uint levelIndex = 0; levelIndex < range.level_count; ++levelIndex)
     {
         for (agpu_uint layerIndex = 0; layerIndex < range.layer_count; ++layerIndex)
@@ -135,7 +136,7 @@ void ADXCommandList::transitionTextureRangeUsageMode(const agpu::texture_ref& te
     commandList->ResourceBarrier(UINT(barriers.size()), barriers.data());
 }
 
-void ADXCommandList::transitionTextureUsageMode(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode)
+void ADXCommandList::transitionTextureUsageMode(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode, UINT subresource)
 {
 	if (sourceMode == destinationMode)
 		return;
@@ -145,7 +146,7 @@ void ADXCommandList::transitionTextureUsageMode(ID3D12Resource *resource, agpu_m
 	if (sourceState == destinationState)
 		return;
 
-	auto barrier = resourceTransitionBarrier(resource, sourceState, destinationState);
+	auto barrier = resourceTransitionBarrier(resource, sourceState, destinationState, subresource);
     commandList->ResourceBarrier(1, &barrier);
 }
 
@@ -365,19 +366,26 @@ agpu_error ADXCommandList::beginRenderPass(const agpu::renderpass_ref &renderpas
     for (size_t i = 0; i < adxFramebuffer->getColorBufferCount(); ++i)
     {
         auto &colorBuffer = adxFramebuffer->colorBuffers[i];
-        if (!colorBuffer)
+        auto &colorBufferView = adxFramebuffer->colorBufferViews[i];
+        if (!colorBuffer || !colorBufferView)
             return AGPU_ERROR;
 
         auto adxColorBuffer = colorBuffer.as<ADXTexture> ();
-        transitionTextureUsageMode(adxColorBuffer->resource.Get(), adxColorBuffer->description.heap_type, adxColorBuffer->description.main_usage_mode, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT);
+        auto adxColorBufferView = colorBufferView.as<ADXTextureView> ();
+        UINT subresource = adxColorBuffer->subresourceIndexForRangeBase(adxColorBufferView->description.subresource_range);
+        transitionTextureUsageMode(adxColorBuffer->resource.Get(), adxColorBuffer->description.heap_type, adxColorBuffer->description.main_usage_mode, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT, subresource);
     }
 
     if (adxFramebuffer->depthStencilView)
     {
 		auto &depthStencilBuffer = adxFramebuffer->depthStencilBuffer;
         auto adxDepthStencil = depthStencilBuffer.as<ADXTexture> ();
+
         auto depthStencilUsage = agpu_texture_usage_mode_mask(adxDepthStencil->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT));
-        transitionTextureUsageMode(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, adxDepthStencil->description.main_usage_mode, depthStencilUsage);
+        auto adxDepthStencilView = adxFramebuffer->depthStencilView.as<ADXTextureView>();
+        UINT subresource = adxDepthStencil->subresourceIndexForRangeBase(adxDepthStencilView->description.subresource_range);
+
+        transitionTextureUsageMode(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, adxDepthStencil->description.main_usage_mode, depthStencilUsage, subresource);
 
         auto desc = adxFramebuffer->getDepthStencilCpuHandle();
         commandList->OMSetRenderTargets((UINT)adxFramebuffer->colorBufferDescriptors.size(), adxFramebuffer->colorBufferDescriptors.data(), FALSE, &desc);
@@ -429,17 +437,24 @@ agpu_error ADXCommandList::endRenderPass()
 		auto& depthStencilBuffer = adxFramebuffer->depthStencilBuffer;
         auto adxDepthStencil = depthStencilBuffer.as<ADXTexture> ();
         auto depthStencilUsage = agpu_texture_usage_mode_mask(adxDepthStencil->description.usage_modes & (AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT));
-        transitionTextureUsageMode(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, depthStencilUsage, adxDepthStencil->description.main_usage_mode);
+
+        auto adxDepthStencilView = adxFramebuffer->depthStencilView.as<ADXTextureView>();
+        UINT subresource = adxDepthStencil->subresourceIndexForRangeBase(adxDepthStencilView->description.subresource_range);
+        transitionTextureUsageMode(adxDepthStencil->resource.Get(), adxDepthStencil->description.heap_type, depthStencilUsage, adxDepthStencil->description.main_usage_mode, subresource);
     }
 
     for (size_t i = 0; i < adxFramebuffer->getColorBufferCount(); ++i)
     {
         auto &colorBuffer = adxFramebuffer->colorBuffers[i];
-        if (!colorBuffer)
+        auto& colorBufferView = adxFramebuffer->colorBufferViews[i];
+        if (!colorBuffer || !colorBufferView)
             return AGPU_ERROR;
 
         auto adxColorBuffer = colorBuffer.as<ADXTexture> ();
-        transitionTextureUsageMode(adxColorBuffer->resource.Get(), adxColorBuffer->description.heap_type, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT, adxColorBuffer->description.main_usage_mode);
+        auto adxColorBufferView = colorBufferView.as<ADXTextureView>();
+        UINT subresource = adxColorBuffer->subresourceIndexForRangeBase(adxColorBufferView->description.subresource_range);
+
+        transitionTextureUsageMode(adxColorBuffer->resource.Get(), adxColorBuffer->description.heap_type, AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT, adxColorBuffer->description.main_usage_mode, subresource);
     }
 
     currentFramebuffer.reset();
@@ -460,8 +475,16 @@ agpu_error ADXCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destF
     for (size_t i = 0; i < adxDestFramebuffer->getColorBufferCount(); ++i)
     {
         auto &sourceTexture = adxSourceFramebuffer->colorBuffers[i];
+        auto &sourceTextureView = adxSourceFramebuffer->colorBufferViews[i];
+        auto &sourceRange = sourceTextureView.as<ADXTextureView>()->description.subresource_range;
+
         auto &destTexture = adxDestFramebuffer->colorBuffers[i];
-        resolveTexture(sourceTexture, 0, 0, destTexture, 0, 0, 1, 1, AGPU_TEXTURE_ASPECT_COLOR);
+        auto &destTextureView = adxDestFramebuffer->colorBufferViews[i];
+        auto &destRange = destTextureView.as<ADXTextureView>()->description.subresource_range;
+
+        resolveTexture(sourceTexture, sourceRange.base_miplevel, sourceRange.base_arraylayer,
+            destTexture, destRange.base_miplevel, destRange.base_arraylayer,
+            1, 1, AGPU_TEXTURE_ASPECT_COLOR);
     }
 
     return AGPU_OK;
@@ -469,19 +492,23 @@ agpu_error ADXCommandList::resolveFramebuffer(const agpu::framebuffer_ref &destF
 
 agpu_error ADXCommandList::resolveTexture(const agpu::texture_ref & sourceTexture, agpu_uint sourceLevel, agpu_uint sourceLayer, const agpu::texture_ref & destTexture, agpu_uint destLevel, agpu_uint destLayer, agpu_uint levelCount, agpu_uint layerCount, agpu_texture_aspect aspect)
 {
+    CHECK_POINTER(sourceTexture);
+    CHECK_POINTER(destTexture);
+
     auto adxDestTexture = destTexture.as<ADXTexture> ();
     auto adxSourceTexture = sourceTexture.as<ADXTexture> ();
 
     UINT sourceSubresource = adxSourceTexture->subresourceIndexFor(sourceLevel, sourceLayer);
     UINT destSubresource = adxDestTexture->subresourceIndexFor(destLevel, destLayer);
 
+    auto sourceTextureMode = adxSourceTexture->description.main_usage_mode;
+    auto destTextureMode = adxDestTexture->description.main_usage_mode;
+
 	// If there are not multiple samples, we just copy from one texture into the other one.
 	if (adxDestTexture->description.sample_count == 1 && adxSourceTexture->description.sample_count == 1)
 	{
-		auto sourceTextureMode = adxSourceTexture->description.main_usage_mode;
-		auto destTextureMode = adxDestTexture->description.main_usage_mode;
-		transitionTextureUsageMode(adxSourceTexture->resource.Get(), adxSourceTexture->description.heap_type, sourceTextureMode, AGPU_TEXTURE_USAGE_COPY_SOURCE);
-		transitionTextureUsageMode(adxDestTexture->resource.Get(), adxDestTexture->description.heap_type, destTextureMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION);
+		transitionTextureUsageMode(adxSourceTexture->resource.Get(), adxSourceTexture->description.heap_type, sourceTextureMode, AGPU_TEXTURE_USAGE_COPY_SOURCE, sourceSubresource);
+		transitionTextureUsageMode(adxDestTexture->resource.Get(), adxDestTexture->description.heap_type, destTextureMode, AGPU_TEXTURE_USAGE_COPY_DESTINATION, destSubresource);
 
 		D3D12_TEXTURE_COPY_LOCATION sourceRegion = {};
 		sourceRegion.pResource = adxSourceTexture->resource.Get();
@@ -495,13 +522,13 @@ agpu_error ADXCommandList::resolveTexture(const agpu::texture_ref & sourceTextur
 
 		commandList->CopyTextureRegion(&destRegion, 0, 0, 0, &sourceRegion, nullptr);
 
-		transitionTextureUsageMode(adxSourceTexture->resource.Get(), adxSourceTexture->description.heap_type, AGPU_TEXTURE_USAGE_COPY_SOURCE, sourceTextureMode);
-		transitionTextureUsageMode(adxDestTexture->resource.Get(), adxDestTexture->description.heap_type, AGPU_TEXTURE_USAGE_COPY_DESTINATION, destTextureMode);
+		transitionTextureUsageMode(adxSourceTexture->resource.Get(), adxSourceTexture->description.heap_type, AGPU_TEXTURE_USAGE_COPY_SOURCE, sourceTextureMode, sourceSubresource);
+		transitionTextureUsageMode(adxDestTexture->resource.Get(), adxDestTexture->description.heap_type, AGPU_TEXTURE_USAGE_COPY_DESTINATION, destTextureMode, destSubresource);
 		return AGPU_OK;
 	}
 
-    D3D12_RESOURCE_STATES destState = mapTextureUsageToResourceState(adxDestTexture->description.heap_type, adxDestTexture->description.main_usage_mode);
-    D3D12_RESOURCE_STATES sourceState = mapTextureUsageToResourceState(adxSourceTexture->description.heap_type, adxSourceTexture->description.main_usage_mode);
+    D3D12_RESOURCE_STATES destState = mapTextureUsageToResourceState(adxDestTexture->description.heap_type, destTextureMode);
+    D3D12_RESOURCE_STATES sourceState = mapTextureUsageToResourceState(adxSourceTexture->description.heap_type, sourceTextureMode);
 
     {
         D3D12_RESOURCE_BARRIER barriers[2] = {
@@ -695,7 +722,44 @@ agpu_error ADXCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer, 
 
 agpu_error ADXCommandList::copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region)
 {
-    return AGPU_UNIMPLEMENTED;
+    CHECK_POINTER(buffer);
+    CHECK_POINTER(texture);
+    CHECK_POINTER(copy_region);
+
+    auto adxBuffer = buffer.as<ADXBuffer>();
+    auto adxTexture = texture.as<ADXTexture>();
+
+    D3D12_TEXTURE_COPY_LOCATION sourceLocation = {};
+    sourceLocation.pResource = adxTexture->resource.Get();
+    sourceLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+    D3D12_TEXTURE_COPY_LOCATION destLocation = {};
+    destLocation.pResource = adxBuffer->resource.Get();
+    destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    destLocation.PlacedFootprint.Offset = copy_region->buffer_offset;
+    destLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT(adxTexture->description.format);
+    destLocation.PlacedFootprint.Footprint.Width = copy_region->buffer_pitch / adxTexture->texelSize * adxTexture->texelWidth;
+    destLocation.PlacedFootprint.Footprint.Height = copy_region->buffer_slice_pitch / copy_region->buffer_pitch * adxTexture->texelHeight;
+    destLocation.PlacedFootprint.Footprint.Depth = copy_region->texture_region.depth;
+    destLocation.PlacedFootprint.Footprint.RowPitch = copy_region->buffer_pitch;
+
+    D3D12_BOX sourceBox = {};
+    sourceBox.left = copy_region->texture_region.x; sourceBox.right = copy_region->texture_region.width;
+    sourceBox.top = copy_region->texture_region.y; sourceBox.bottom = copy_region->texture_region.height;
+    sourceBox.front = copy_region->texture_region.z; sourceBox.back = copy_region->texture_region.depth;
+
+    auto bufferAdvance = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
+    for (agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
+    {
+        sourceLocation.SubresourceIndex = adxTexture->subresourceIndexFor(copy_region->texture_subresource_level.miplevel, copy_region->texture_subresource_level.base_arraylayer + layer);
+
+        commandList->CopyTextureRegion(&destLocation, 0, 0, 0,
+            &sourceLocation,
+            &sourceBox);
+
+        sourceLocation.PlacedFootprint.Offset += bufferAdvance;
+    }
+    return AGPU_OK;
 }
 
 agpu_error ADXCommandList::copyTexture(const agpu::texture_ref& source_texture, const agpu::texture_ref& dest_texture, agpu_image_copy_region* copy_region)

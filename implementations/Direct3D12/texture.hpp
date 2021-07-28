@@ -31,6 +31,11 @@ public:
 
 public:
     UINT subresourceIndexFor(agpu_uint level, agpu_uint arrayIndex);
+    UINT subresourceIndexForRangeBase(const agpu_texture_subresource_range& range)
+    {
+        return subresourceIndexFor(range.base_miplevel, range.base_arraylayer);
+    }
+
     bool isArray();
     void releaseTextureHandle();
 

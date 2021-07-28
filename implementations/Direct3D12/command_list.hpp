@@ -84,7 +84,7 @@ public:
 
 private:
     void transitionTextureRangeUsageMode(const agpu::texture_ref &texture, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode, const agpu_texture_subresource_range &range);
-    void transitionTextureUsageMode(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode);
+    void transitionTextureUsageMode(ID3D12Resource *resource, agpu_memory_heap_type heapType, agpu_texture_usage_mode_mask sourceMode, agpu_texture_usage_mode_mask destinationMode, UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 	void transitionBufferUsageMode(ID3D12Resource* resource, agpu_memory_heap_type heapType, agpu_buffer_usage_mask sourceMode, agpu_buffer_usage_mask destinationMode);
 
     agpu_error setCommonState();
