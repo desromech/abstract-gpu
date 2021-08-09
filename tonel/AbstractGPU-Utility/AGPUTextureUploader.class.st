@@ -336,6 +336,7 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExte
 	| convertedForm pitchAlignment pitch slicePitch mappedBuffer mappedBufferCopier destRowIndex destRowAdvance sourceRowAdvance sourceIndex sourceBits |
 	self ensureLastOperationHasFinished.
 	convertedForm := form asFormOfDepth: 32.
+	convertedForm unhibernate.
 	pitchAlignment := device getLimitValue: AGPU_LIMIT_MIN_TEXTURE_DATA_PITCH_ALIGNMENT.
 	pitch := convertedForm width * 4 alignedTo: pitchAlignment.
 	slicePitch := pitch * convertedForm height.
