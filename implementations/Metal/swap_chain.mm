@@ -45,6 +45,10 @@
         metalLayer.contentsScale = 1.0;
         metalLayer.drawableSize = creationSize;
     }
+    else
+    {
+        metalLayer.contentsScale = [[NSScreen mainScreen] backingScaleFactor];
+    }
 }
 
 - (void) swapChainRecreatedInto: (AgpuMetal::AMtlSwapChain*)theNewSwapChain
