@@ -32,23 +32,25 @@
     [self setWantsLayer: YES];
     swapChain->metalLayer = metalLayer;
 
-    CGSize creationSize = {};
-    creationSize.width = swapChainInfo.width;
-    creationSize.height = swapChainInfo.height;
+    CGFloat backingScaleFactor = 1.0;
+    if((swapChainInfo.flags & AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI) != 0)
+    {
+        backingScaleFactor = [[NSScreen mainScreen] backingScaleFactor];
+    }
+    metalLayer.contentsScale = backingScaleFactor;
+
+    CGSize boundsSize = {};
+    boundsSize.width = swapChainInfo.width;
+    boundsSize.height = swapChainInfo.height;
 
     CGRect bounds = {};
-    bounds.size = creationSize;
+    bounds.size = boundsSize;
     metalLayer.bounds = bounds;
 
-    if((swapChainInfo.flags & AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI) == 0)
-    {
-        metalLayer.contentsScale = 1.0;
-        metalLayer.drawableSize = creationSize;
-    }
-    else
-    {
-        metalLayer.contentsScale = [[NSScreen mainScreen] backingScaleFactor];
-    }
+    CGSize drawableSize = {};
+    drawableSize.width = swapChainInfo.width*backingScaleFactor;
+    drawableSize.height = swapChainInfo.height*backingScaleFactor;
+    metalLayer.drawableSize = drawableSize;
 }
 
 - (void) swapChainRecreatedInto: (AgpuMetal::AMtlSwapChain*)theNewSwapChain
