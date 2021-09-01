@@ -5,6 +5,7 @@
 #include "texture_view.hpp"
 #include "sampler.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -22,10 +23,12 @@ void BufferBinding::reset()
 AMtlShaderResourceBinding::AMtlShaderResourceBinding(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlShaderResourceBinding);
 }
 
 AMtlShaderResourceBinding::~AMtlShaderResourceBinding()
 {
+    AgpuProfileDestructor(AMtlShaderResourceBinding);
 }
 
 agpu::shader_resource_binding_ref AMtlShaderResourceBinding::create(const agpu::device_ref &device, const agpu::shader_signature_ref &signature, agpu_uint elementIndex)

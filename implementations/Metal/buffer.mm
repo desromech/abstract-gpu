@@ -1,5 +1,6 @@
 #include "buffer.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -7,36 +8,37 @@ namespace AgpuMetal
 AMtlBuffer::AMtlBuffer(const agpu::device_ref &device)
     : device(device)
 {
-    handle = nil;
+    AgpuProfileConstructor(AMtlBuffer);
 }
 
 AMtlBuffer::~AMtlBuffer()
 {
-    if(handle)
-        [handle release];
+    AgpuProfileDestructor(AMtlBuffer);
 }
 
 agpu::buffer_ref AMtlBuffer::create ( const agpu::device_ref &device, agpu_buffer_description* description, agpu_pointer initial_data )
 {
     if(!description)
         return agpu::buffer_ref();
+    
+    @autoreleasepool {
+        id<MTLBuffer> handle = nil;
+        MTLResourceOptions options = mapBufferMemoryHeapType(description->heap_type);
+        if(initial_data && description->heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+            handle = [deviceForMetal->device newBufferWithBytes: initial_data length: description->size options: options];
+        else
+            handle = [deviceForMetal->device newBufferWithLength: description->size options: options];
 
-    id<MTLBuffer> handle = nil;
-    MTLResourceOptions options = mapBufferMemoryHeapType(description->heap_type);
-    if(initial_data && description->heap_type != AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
-        handle = [deviceForMetal->device newBufferWithBytes: initial_data length: description->size options: options];
-    else
-        handle = [deviceForMetal->device newBufferWithLength: description->size options: options];
+        auto result = agpu::makeObject<AMtlBuffer> (device);
+        auto buffer = result.as<AMtlBuffer> ();
+        buffer->description = *description;
+        buffer->handle = handle;
 
-    auto result = agpu::makeObject<AMtlBuffer> (device);
-    auto buffer = result.as<AMtlBuffer> ();
-    buffer->description = *description;
-    buffer->handle = handle;
-
-    if(initial_data && description->heap_type == AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
-        buffer->uploadBufferData(0, description->size, initial_data);
-
-    return result;
+        if(initial_data && description->heap_type == AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL)
+            buffer->uploadBufferData(0, description->size, initial_data);
+        
+        return result;
+    }
 }
 
 agpu_pointer AMtlBuffer::mapBuffer(agpu_mapping_access flags)

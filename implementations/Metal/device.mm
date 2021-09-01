@@ -18,6 +18,7 @@
 #include "platform.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -27,16 +28,16 @@ AMtlDevice::AMtlDevice()
     implicitResourceUploadCommandList(*this),
     implicitResourceReadbackCommandList(*this)
 {
+    AgpuProfileConstructor(AMtlDevice);
 }
 
 AMtlDevice::~AMtlDevice()
 {
+    AgpuProfileDestructor(AMtlDevice);
     implicitResourceUploadCommandList.destroy();
     implicitResourceReadbackCommandList.destroy();
 
     mainCommandQueue.reset();
-    if(device)
-        [device release];
 }
 
 agpu::device_ref AMtlDevice::open(id<MTLDevice> selectedDevice, agpu_device_open_info *openInfo)
@@ -45,12 +46,10 @@ agpu::device_ref AMtlDevice::open(id<MTLDevice> selectedDevice, agpu_device_open
     id<MTLDevice> mtlDevice = selectedDevice;
     if(!mtlDevice)
         return agpu::device_ref();
-    [mtlDevice retain];
 
     id<MTLCommandQueue> mainCommandQueue = [mtlDevice newCommandQueue];
     if(!mainCommandQueue)
     {
-        [mtlDevice release];
         return agpu::device_ref();
     }
 

@@ -1,5 +1,6 @@
 #include "vertex_layout.hpp"
 #include "texture_format.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -7,10 +8,12 @@ namespace AgpuMetal
 AMtlVertexLayout::AMtlVertexLayout(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlVertexLayout);
 }
 
 AMtlVertexLayout::~AMtlVertexLayout()
 {
+    AgpuProfileDestructor(AMtlVertexLayout);
 }
 
 agpu::vertex_layout_ref AMtlVertexLayout::create (const agpu::device_ref &device)

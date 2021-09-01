@@ -3,6 +3,7 @@
 #include "texture_format.hpp"
 #include "command_queue.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -10,16 +11,12 @@ namespace AgpuMetal
 AMtlTexture::AMtlTexture(const agpu::device_ref &device)
     : device(device)
 {
-    handle = nil;
-    linearViewHandle = nil;
+    AgpuProfileConstructor(AMtlTexture);
 }
 
 AMtlTexture::~AMtlTexture()
 {
-    if(handle)
-        [handle release];
-    if(linearViewHandle)
-        [linearViewHandle release];
+    AgpuProfileDestructor(AMtlTexture);
 }
 
 agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_texture_description* description)
@@ -44,7 +41,9 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         
         break;
     case AGPU_TEXTURE_CUBE:
+        isArray = description->layers > 6;
         descriptor.textureType = isArray ? MTLTextureTypeCubeArray : MTLTextureTypeCube;
+        descriptor.arrayLength = description->layers / 6;
         break;
     case AGPU_TEXTURE_3D:
         descriptor.textureType = MTLTextureType3D;
@@ -96,7 +95,6 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         descriptor.usage |= MTLTextureUsageShaderRead;
 
     auto handle = [deviceForMetal->device newTextureWithDescriptor: descriptor];
-    [descriptor release];
     if(!handle)
         return agpu::texture_ref();
 
@@ -114,7 +112,6 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         else
         {
             linearViewHandle = handle;
-            [linearViewHandle retain];
         }
 
     }
@@ -171,13 +168,14 @@ agpu_error AMtlTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, 
 #if TARGET_OS_OSX
         // Synchronize this with the GPU when using a managed texture.
         // TODO: Avoid this when is not needed.
-        id<MTLCommandBuffer> commandBuffer = [deviceForMetal->getDefaultCommandQueueHandle() commandBuffer];
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder synchronizeResource: handle];
-        [blitEncoder endEncoding];
-        [commandBuffer commit];
-        [commandBuffer waitUntilCompleted];
-        [commandBuffer release];
+        @autoreleasepool {
+            id<MTLCommandBuffer> commandBuffer = [deviceForMetal->getDefaultCommandQueueHandle() commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder synchronizeResource: handle];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
+            [commandBuffer waitUntilCompleted];
+        }
 #endif
 
         [handle getBytes: buffer bytesPerRow: pitch bytesPerImage: slicePitch 
