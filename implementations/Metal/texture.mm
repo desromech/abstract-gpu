@@ -41,7 +41,9 @@ agpu::texture_ref AMtlTexture::create(const agpu::device_ref &device, agpu_textu
         
         break;
     case AGPU_TEXTURE_CUBE:
+        isArray = description->layers > 6;
         descriptor.textureType = isArray ? MTLTextureTypeCubeArray : MTLTextureTypeCube;
+        descriptor.arrayLength = description->layers / 6;
         break;
     case AGPU_TEXTURE_3D:
         descriptor.textureType = MTLTextureType3D;

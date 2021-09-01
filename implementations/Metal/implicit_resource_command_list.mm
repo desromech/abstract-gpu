@@ -27,7 +27,9 @@ void AMtlImplicitResourceSetupCommandList::destroy()
 bool AMtlImplicitResourceSetupCommandList::setupCommandBuffer()
 {
     id<MTLCommandQueue> queue = commandQueue.as<AMtlCommandQueue> ()->handle;
-    commandBuffer = [queue commandBuffer];
+    @autoreleasepool {
+        commandBuffer = [queue commandBuffer];
+    }
     return commandBuffer != nil;
 }
 

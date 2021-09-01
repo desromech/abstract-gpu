@@ -55,7 +55,7 @@ agpu::texture_view_ref AMtlTextureView::create(const agpu::device_ref &device, c
             break;
         case AGPU_TEXTURE_CUBE:
             isArray = range.layer_count > 6;
-            textureType = isArray ? MTLTextureTypeCube : MTLTextureTypeCubeArray;
+            textureType = isArray ? MTLTextureTypeCubeArray : MTLTextureTypeCube;
             layerRange.length = range.layer_count / 6;
             break;
         case AGPU_TEXTURE_3D:
