@@ -5,6 +5,7 @@
 #include "shader_signature.hpp"
 #include "texture_format.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -12,11 +13,7 @@ namespace AgpuMetal
 AMtlGraphicsPipelineBuilder::AMtlGraphicsPipelineBuilder(const agpu::device_ref &device)
     : device(device)
 {
-    descriptor = nil;
-    depthStencilDescriptor = nil;
-    backStencilDescriptor = nil;
-    frontStencilDescriptor = nil;
-
+    AgpuProfileConstructor(AMtlGraphicsPipelineBuilder);
     renderTargetCount = 1;
     depthEnabled = false;
     stencilEnabled = false;
@@ -29,10 +26,7 @@ AMtlGraphicsPipelineBuilder::AMtlGraphicsPipelineBuilder(const agpu::device_ref 
 
 AMtlGraphicsPipelineBuilder::~AMtlGraphicsPipelineBuilder()
 {
-    if(descriptor)
-        [descriptor release];
-    if(depthStencilDescriptor)
-        [depthStencilDescriptor release];
+    AgpuProfileDestructor(AMtlGraphicsPipelineBuilder);
 }
 
 agpu::pipeline_builder_ref AMtlGraphicsPipelineBuilder::create(const agpu::device_ref &device)
@@ -52,68 +46,69 @@ agpu::pipeline_builder_ref AMtlGraphicsPipelineBuilder::create(const agpu::devic
 
 agpu::pipeline_state_ptr AMtlGraphicsPipelineBuilder::build()
 {
-    NSError *error;
+    @autoreleasepool {
+        NSError *error;
 
-    bool succeded = true;
-    for(auto &attachedShader : attachedShaders)
-    {
-        const auto &shader = attachedShader.shader;
-        if(!shader)
+        bool succeded = true;
+        for(auto &attachedShader : attachedShaders)
         {
-            succeded = false;
-            break;
-        }
+            const auto &shader = attachedShader.shader;
+            if(!shader)
+            {
+                succeded = false;
+                break;
+            }
 
-        AMtlShaderForSignatureRef shaderInstance;
-        auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
-        if(error || !shaderInstance || !shaderInstance->function)
-        {
-            succeded = false;
-            break;
-        }
+            AMtlShaderForSignatureRef shaderInstance;
+            auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, attachedShader.entryPoint, attachedShader.stage, &buildingLog, &shaderInstance);
+            if(error || !shaderInstance || !shaderInstance->function)
+            {
+                succeded = false;
+                break;
+            }
 
-        switch(attachedShader.stage)
-        {
-        case AGPU_VERTEX_SHADER:
-            descriptor.vertexFunction = shaderInstance->function;
-            break;
-        case AGPU_FRAGMENT_SHADER:
-            descriptor.fragmentFunction = shaderInstance->function;
-            break;
-        default:
-            succeded = false;
-            break;
+            switch(attachedShader.stage)
+            {
+            case AGPU_VERTEX_SHADER:
+                descriptor.vertexFunction = shaderInstance->function;
+                break;
+            case AGPU_FRAGMENT_SHADER:
+                descriptor.fragmentFunction = shaderInstance->function;
+                break;
+            default:
+                succeded = false;
+                break;
+            }
+
+            if(!succeded)
+                break;
         }
 
         if(!succeded)
-            break;
+            return nullptr;
+
+        auto amtlShaderSignature = shaderSignature.as<AMtlShaderSignature> ();
+        if(vertexLayout)
+        {
+            auto amtlVertexLayout = vertexLayout.as<AMtlVertexLayout> ();
+            auto vertexDescriptor = amtlVertexLayout->createVertexDescriptor(amtlShaderSignature->boundVertexBufferCount);
+            descriptor.vertexDescriptor = vertexDescriptor;
+        }
+
+        auto pipelineState = [deviceForMetal->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
+        if(!pipelineState)
+        {
+            auto description = [error localizedDescription];
+            buildingLog = [description UTF8String];
+            printf("Failed to build pipeline state: %s\n", buildingLog.c_str());
+            return nullptr;
+        }
+
+        depthStencilDescriptor.backFaceStencil = stencilEnabled ? backStencilDescriptor : nil;
+        depthStencilDescriptor.frontFaceStencil = stencilEnabled ? frontStencilDescriptor : nil;
+
+        return AMtlPipelineState::createRender(device, this, pipelineState).disown();
     }
-
-    if(!succeded)
-        return nullptr;
-
-    auto amtlShaderSignature = shaderSignature.as<AMtlShaderSignature> ();
-    if(vertexLayout)
-    {
-        auto amtlVertexLayout = vertexLayout.as<AMtlVertexLayout> ();
-        auto vertexDescriptor = amtlVertexLayout->createVertexDescriptor(amtlShaderSignature->boundVertexBufferCount);
-        descriptor.vertexDescriptor = vertexDescriptor;
-        [vertexDescriptor release];
-    }
-
-    auto pipelineState = [deviceForMetal->device newRenderPipelineStateWithDescriptor: descriptor error: &error];
-    if(!pipelineState)
-    {
-        auto description = [error localizedDescription];
-        buildingLog = [description UTF8String];
-        printf("Failed to build pipeline state: %s\n", buildingLog.c_str());
-        return nullptr;
-    }
-
-    depthStencilDescriptor.backFaceStencil = stencilEnabled ? backStencilDescriptor : nil;
-    depthStencilDescriptor.frontFaceStencil = stencilEnabled ? frontStencilDescriptor : nil;
-
-    return AMtlPipelineState::createRender(device, this, pipelineState).disown();
 }
 
 agpu_error AMtlGraphicsPipelineBuilder::attachShader(const agpu::shader_ref &shader)

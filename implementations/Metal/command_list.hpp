@@ -2,6 +2,8 @@
 #define AGPU_METAL_COMMAND_LIST_HPP
 
 #include "device.hpp"
+#include <functional>
+#include <vector>
 
 namespace AgpuMetal
 {
@@ -59,6 +61,12 @@ public:
 	virtual agpu_error copyTextureToBuffer(const agpu::texture_ref & texture, const agpu::buffer_ref & buffer, agpu_buffer_image_copy_region* copy_region) override;
 	virtual agpu_error copyTexture(const agpu::texture_ref & source_texture, const agpu::texture_ref & dest_texture, agpu_image_copy_region* copy_region) override;
     
+    id<MTLCommandBuffer> getValidHandleForCommitting();
+
+private:
+    void resetCommandState();
+    void concretizeRecordedCommands();
+
     void beginBlitting();
     void endBlitting();
 
@@ -75,7 +83,18 @@ public:
     agpu::device_ref device;
     agpu_command_list_type type;
     agpu::command_allocator_ref allocator;
-    id<MTLCommandBuffer> buffer;
+
+    agpu_bool isOpen;
+    agpu_bool inRenderPass;
+    std::vector<std::function<void()> > recordedCommands;
+    id<MTLCommandBuffer> handle;
+
+    template<typename FT>
+    void recordCommand(const FT &f)
+    {
+        recordedCommands.push_back(f);
+    }
+
     id<MTLBlitCommandEncoder> blitEncoder;
     id<MTLRenderCommandEncoder> renderEncoder;
     id<MTLComputeCommandEncoder> computeEncoder;
@@ -88,15 +107,11 @@ public:
 
     agpu::pipeline_state_ref currentPipeline;
     agpu::shader_signature_ref currentShaderSignature;
-    agpu_bool used;
     agpu::shader_resource_binding_ref activeShaderResourceBindings[MaxActiveResourceBindings];
     agpu::shader_resource_binding_ref activeComputeShaderResourceBindings[MaxActiveResourceBindings];
 
     bool pushConstantsModified;
     uint8_t pushConstantsBuffer[MaxPushConstantBufferSize];
-
-    bool computePushConstantsModified;
-    uint8_t computePushConstantsBuffer[MaxPushConstantBufferSize];
 };
 
 } // End of namespace AgpuMetal

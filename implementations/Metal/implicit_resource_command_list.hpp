@@ -58,11 +58,7 @@ public:
 
 	void destroy()
 	{
-		if (bufferHandle)
-		{
-			[bufferHandle release];
-            bufferHandle = nil;
-		}
+		bufferHandle = nil;
 		AMtlImplicitResourceSetupCommandList::destroy();
 	}
 
@@ -74,7 +70,6 @@ public:
             stagingBufferCapacity = std::max(stagingBufferCapacity, size_t(InitialCapacity));
             if(bufferHandle)
             {
-                [bufferHandle release];
                 bufferHandle = nil;
                 stagingBufferBasePointer = nullptr;
             }
@@ -89,56 +84,64 @@ public:
 
     bool uploadBufferData(id<MTLBuffer> destBuffer, size_t offset, size_t size)
     {
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder copyFromBuffer: bufferHandle sourceOffset: 0
-            toBuffer: destBuffer destinationOffset: offset
-            size: size];
-        [blitEncoder endEncoding];
-        
-        return true;
+        @autoreleasepool {
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder copyFromBuffer: bufferHandle sourceOffset: 0
+                toBuffer: destBuffer destinationOffset: offset
+                size: size];
+            [blitEncoder endEncoding];
+            
+            return true;
+        }
     }
 
     bool readbackBufferData(id<MTLBuffer> sourceBuffer, size_t offset, size_t size)
     {
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder copyFromBuffer: sourceBuffer sourceOffset: offset
-            toBuffer: bufferHandle destinationOffset: 0
-            size: size];
-        [blitEncoder endEncoding];
-        
-        return true;
+        @autoreleasepool {
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder copyFromBuffer: sourceBuffer sourceOffset: offset
+                toBuffer: bufferHandle destinationOffset: 0
+                size: size];
+            [blitEncoder endEncoding];
+            
+            return true;
+        }
     }
 
     bool uploadBufferDataToImage(id<MTLTexture> destImage, size_t level, size_t layerIndex, MTLRegion region, agpu_int pitch, agpu_int slicePitch)
     {
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder copyFromBuffer: bufferHandle
-                      sourceOffset: 0
-                 sourceBytesPerRow: pitch
-               sourceBytesPerImage: slicePitch
-                        sourceSize: region.size
-                         toTexture: destImage
-                  destinationSlice: layerIndex
-                  destinationLevel: level
-                 destinationOrigin: region.origin];
-        [blitEncoder endEncoding];
-        return true;
+        @autoreleasepool {
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder copyFromBuffer: bufferHandle
+                        sourceOffset: 0
+                    sourceBytesPerRow: pitch
+                sourceBytesPerImage: slicePitch
+                            sourceSize: region.size
+                            toTexture: destImage
+                    destinationSlice: layerIndex
+                    destinationLevel: level
+                    destinationOrigin: region.origin];
+            [blitEncoder endEncoding];
+            return true;
+        }
     }
 
     bool readbackImageDataToBuffer(id<MTLTexture> sourceImage, size_t level, size_t layerIndex, MTLRegion region, agpu_int pitch, agpu_int slicePitch)
     {
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder copyFromTexture:sourceImage
-                        sourceSlice: layerIndex
-                        sourceLevel: level
-                       sourceOrigin: region.origin
-                         sourceSize: region.size
-                           toBuffer: bufferHandle
-                  destinationOffset:0
-             destinationBytesPerRow:pitch
-           destinationBytesPerImage:slicePitch];
-        [blitEncoder endEncoding];
-        return true;
+        @autoreleasepool {
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder copyFromTexture:sourceImage
+                            sourceSlice: layerIndex
+                            sourceLevel: level
+                        sourceOrigin: region.origin
+                            sourceSize: region.size
+                            toBuffer: bufferHandle
+                    destinationOffset:0
+                destinationBytesPerRow:pitch
+            destinationBytesPerImage:slicePitch];
+            [blitEncoder endEncoding];
+            return true;
+        }
     }
     
     size_t currentStagingBufferSize;

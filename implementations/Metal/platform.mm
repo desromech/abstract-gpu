@@ -1,6 +1,7 @@
 #include "platform.hpp"
 #include "device.hpp"
 #include "../Common/offline_shader_compiler.hpp"
+#include "../Common/memory_profiler.hpp"
 #include <mutex>
 
 namespace AgpuMetal
@@ -18,8 +19,8 @@ agpu_bool isFeatureSupportedInDevice(id<MTLDevice> device, agpu_feature feature)
         return true;
 
     case AGPU_FEATURE_COMMAND_LIST_REUSE:
-    case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE:
-        return false;
+    case AGPU_FEATURE_NON_EMULATED_COMMAND_LIST_REUSE: // Normal command lists are also emulated.
+        return true;
 
     case AGPU_FEATURE_DUAL_SOURCE_BLENDING:
 	case AGPU_FEATURE_COMPUTE_SHADER:
@@ -129,8 +130,6 @@ MetalPlatform::MetalPlatform()
 
 MetalPlatform::~MetalPlatform()
 {
-    if(allDevices)
-        [allDevices release];
 }
 
 agpu::device_ptr MetalPlatform::openDevice(agpu_device_open_info* openInfo)

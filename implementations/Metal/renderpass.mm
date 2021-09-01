@@ -2,6 +2,7 @@
 #include "framebuffer.hpp"
 #include "texture.hpp"
 #include "texture_view.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -31,12 +32,14 @@ inline MTLStoreAction mapStoreAction(agpu_renderpass_attachment_action action)
 AMtlRenderPass::AMtlRenderPass(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlRenderPass);
     hasDepthStencil = false;
     hasStencil = false;
 }
 
 AMtlRenderPass::~AMtlRenderPass()
 {
+    AgpuProfileDestructor(AMtlRenderPass);
 }
 
 agpu::renderpass_ref AMtlRenderPass::create(const agpu::device_ref &device, agpu_renderpass_description *description)

@@ -2,18 +2,19 @@
 #include "texture.hpp"
 #include "texture_format.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
 AMtlTextureView::AMtlTextureView(const agpu::device_ref &device, const agpu::texture_ref &texture, const agpu_texture_view_description &description, id<MTLTexture> handle)
     : device(device), texture(texture), description(description), handle(handle)
 {
+    AgpuProfileConstructor(AMtlTextureView);
 }
 
 AMtlTextureView::~AMtlTextureView()
 {
-    if(handle)
-        [handle release];
+    AgpuProfileDestructor(AMtlTextureView);
 }
 
 agpu::texture_view_ref AMtlTextureView::create(const agpu::device_ref &device, const agpu::texture_ref &texture, agpu_texture_view_description *description)
@@ -71,10 +72,6 @@ agpu::texture_view_ref AMtlTextureView::create(const agpu::device_ref &device, c
                                          slices: layerRange];
         if(!handle)
             return agpu::texture_view_ref();
-    }
-    else
-    {
-        [handle retain];
     }
 
     return agpu::makeObject<AMtlTextureView> (device, texture, *description, handle);

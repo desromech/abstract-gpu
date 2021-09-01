@@ -1,5 +1,6 @@
 #include "sampler.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 #include <algorithm>
 
 namespace AgpuMetal
@@ -71,12 +72,12 @@ inline MTLSamplerAddressMode mapAddressMode(agpu_texture_address_mode mode)
 AMtlSampler::AMtlSampler(const agpu::device_ref &device, id<MTLSamplerState> handle)
     : device(device), handle(handle)
 {
+    AgpuProfileConstructor(AMtlSampler);
 }
 
 AMtlSampler::~AMtlSampler()
 {
-    if(handle)
-        [handle release];
+    AgpuProfileDestructor(AMtlSampler);
 }
 
 agpu::sampler_ref AMtlSampler::create(const agpu::device_ref &device, agpu_sampler_description *description)
@@ -95,7 +96,6 @@ agpu::sampler_ref AMtlSampler::create(const agpu::device_ref &device, agpu_sampl
     descriptor.compareFunction = mapCompareFunction(description->comparison_function);
 
     auto handle = [deviceForMetal->device newSamplerStateWithDescriptor: descriptor];
-    [descriptor release];
     if(!handle)
         return agpu::sampler_ref();
 

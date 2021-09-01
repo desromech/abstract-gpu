@@ -4,6 +4,10 @@
 #include "implicit_resource_command_list.hpp"
 #import <Metal/Metal.h>
 
+#if ! __has_feature(objc_arc)
+#error "ARC is off. This is mandatory for the AGPU Metal backend."
+#endif
+
 namespace AgpuMetal
 {
 

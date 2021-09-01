@@ -1,5 +1,6 @@
 #include "command_allocator.hpp"
 #include "command_queue.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -7,10 +8,12 @@ namespace AgpuMetal
 AMtlCommandAllocator::AMtlCommandAllocator(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlCommandAllocator);
 }
 
 AMtlCommandAllocator::~AMtlCommandAllocator()
 {
+    AgpuProfileDestructor(AMtlCommandAllocator);
 }
 
 agpu::command_allocator_ref AMtlCommandAllocator::create ( const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_queue_ref &queue )

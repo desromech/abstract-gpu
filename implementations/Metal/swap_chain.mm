@@ -3,6 +3,7 @@
 #include "command_queue.hpp"
 #include "texture_format.hpp"
 #include "texture.hpp"
+#include "../Common/memory_profiler.hpp"
 
 @implementation AGPUSwapChainView
 -(AGPUSwapChainView*) initWithSwapChain: (AgpuMetal::AMtlSwapChain*)theSwapChain
@@ -70,17 +71,14 @@ namespace AgpuMetal
 AMtlSwapChain::AMtlSwapChain(const agpu::device_ref &device)
     : device(device)
 {
-    window = nil;
-    view = nil;
-    metalLayer = nil;
+    AgpuProfileConstructor(AMtlSwapChain);
 }
 
 AMtlSwapChain::~AMtlSwapChain()
 {
+    AgpuProfileDestructor(AMtlSwapChain);
     if(view)
         [view removeFromSuperview];
-    if(window)
-        [window release];
 }
 
 agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const agpu::command_queue_ref &presentQueue, agpu_swap_chain_create_info *createInfo)
@@ -88,112 +86,113 @@ agpu::swap_chain_ref AMtlSwapChain::create(const agpu::device_ref &device, const
     if(!createInfo || !createInfo->window)
         return agpu::swap_chain_ref();
 
-    auto result = agpu::makeObject<AMtlSwapChain> (device);
-    auto amtlSwapChain = result.as<AMtlSwapChain> ();
-    amtlSwapChain->swapChainInfo = *createInfo;
-    
-    // If there is an old swap chain, we should just borrow its view and resize its drawable.
-    AMtlSwapChain *oldMtlSwapChain = nullptr;
-    if(createInfo->old_swap_chain)
-    {
-        auto oldSwapChainRef = agpu::swap_chain_ref::import(createInfo->old_swap_chain);
-        oldMtlSwapChain = oldSwapChainRef.as<AMtlSwapChain> ();
-        amtlSwapChain->window = oldMtlSwapChain->window;
-        amtlSwapChain->view = oldMtlSwapChain->view;
-
-        oldMtlSwapChain->window = nil;
-        oldMtlSwapChain->view = nil;
-        [amtlSwapChain->view swapChainRecreatedInto: amtlSwapChain];
-    }
-    else
-    {
-        auto window = (__bridge NSWindow*)createInfo->window;
-        [window retain];
-        amtlSwapChain->window = window;
-
-        // Create the view
-        amtlSwapChain->view = [[AGPUSwapChainView alloc] initWithSwapChain: amtlSwapChain];
-        if(amtlSwapChain->view == nil)
-            return agpu::swap_chain_ref();
-
-        if(createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW)
+    @autoreleasepool {
+        auto result = agpu::makeObject<AMtlSwapChain> (device);
+        auto amtlSwapChain = result.as<AMtlSwapChain> ();
+        amtlSwapChain->swapChainInfo = *createInfo;
+        
+        // If there is an old swap chain, we should just borrow its view and resize its drawable.
+        AMtlSwapChain *oldMtlSwapChain = nullptr;
+        if(createInfo->old_swap_chain)
         {
-            [window.contentView addSubview: amtlSwapChain->view];
+            auto oldSwapChainRef = agpu::swap_chain_ref::import(createInfo->old_swap_chain);
+            oldMtlSwapChain = oldSwapChainRef.as<AMtlSwapChain> ();
+            amtlSwapChain->window = oldMtlSwapChain->window;
+            amtlSwapChain->view = oldMtlSwapChain->view;
+
+            oldMtlSwapChain->window = nil;
+            oldMtlSwapChain->view = nil;
+            [amtlSwapChain->view swapChainRecreatedInto: amtlSwapChain];
         }
         else
         {
-            window.contentView = amtlSwapChain->view;        
-        }        
-    }
+            auto window = (__bridge NSWindow*)createInfo->window;
+            amtlSwapChain->window = window;
 
-    auto drawable = [amtlSwapChain->metalLayer nextDrawable];
-    if(!drawable)
-        return agpu::swap_chain_ref();
+            // Create the view
+            amtlSwapChain->view = [[AGPUSwapChainView alloc] initWithSwapChain: amtlSwapChain];
+            if(amtlSwapChain->view == nil)
+                return agpu::swap_chain_ref();
 
-    // Fetch the actual drawable size.
-    CGSize drawableSize = amtlSwapChain->metalLayer.drawableSize;
-    agpu_uint drawableWidth = drawableSize.width;
-    agpu_uint drawableHeight = drawableSize.height;
-    amtlSwapChain->swapChainInfo.width = drawableWidth;
-    amtlSwapChain->swapChainInfo.height = drawableHeight;
+            if(createInfo->flags & AGPU_SWAP_CHAIN_FLAG_OVERLAY_WINDOW)
+            {
+                [window.contentView addSubview: amtlSwapChain->view];
+            }
+            else
+            {
+                window.contentView = amtlSwapChain->view;        
+            }        
+        }
 
-    // Create the depth stencil buffer
-    agpu::texture_ref depthStencilBuffer;
-    agpu::texture_view_ref depthStencilBufferView;
-    bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
-    bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
-    if(hasDepth || hasStencil)
-    {
-        // Depth stencil buffer descriptions.
-        agpu_texture_description depthStencilDesc = {};
-        depthStencilDesc.type = AGPU_TEXTURE_2D;
-        depthStencilDesc.width = drawableWidth;
-        depthStencilDesc.height = drawableHeight;
-        depthStencilDesc.depth = 1;
-        depthStencilDesc.layers = 1;
-        depthStencilDesc.format = createInfo->depth_stencil_format;
-        depthStencilDesc.miplevels = 1;
-        depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
-        if (hasDepth)
-            depthStencilDesc.usage_modes = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
-        if (hasStencil)
-            depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
-        depthStencilDesc.main_usage_mode = depthStencilDesc.usage_modes;
-
-        depthStencilBuffer = AMtlTexture::create(device, &depthStencilDesc);
-        if (!depthStencilBuffer)
+        auto drawable = [amtlSwapChain->metalLayer nextDrawable];
+        if(!drawable)
             return agpu::swap_chain_ref();
 
-        // Get the depth stencil buffer view description.
-        depthStencilBufferView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
+        // Fetch the actual drawable size.
+        CGSize drawableSize = amtlSwapChain->metalLayer.drawableSize;
+        agpu_uint drawableWidth = drawableSize.width;
+        agpu_uint drawableHeight = drawableSize.height;
+        amtlSwapChain->swapChainInfo.width = drawableWidth;
+        amtlSwapChain->swapChainInfo.height = drawableHeight;
+
+        // Create the depth stencil buffer
+        agpu::texture_ref depthStencilBuffer;
+        agpu::texture_view_ref depthStencilBufferView;
+        bool hasDepth = hasDepthComponent(createInfo->depth_stencil_format);
+        bool hasStencil = hasStencilComponent(createInfo->depth_stencil_format);
+        if(hasDepth || hasStencil)
+        {
+            // Depth stencil buffer descriptions.
+            agpu_texture_description depthStencilDesc = {};
+            depthStencilDesc.type = AGPU_TEXTURE_2D;
+            depthStencilDesc.width = drawableWidth;
+            depthStencilDesc.height = drawableHeight;
+            depthStencilDesc.depth = 1;
+            depthStencilDesc.layers = 1;
+            depthStencilDesc.format = createInfo->depth_stencil_format;
+            depthStencilDesc.miplevels = 1;
+            depthStencilDesc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+            if (hasDepth)
+                depthStencilDesc.usage_modes = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
+            if (hasStencil)
+                depthStencilDesc.usage_modes = agpu_texture_usage_mode_mask(depthStencilDesc.usage_modes | AGPU_TEXTURE_USAGE_STENCIL_ATTACHMENT);
+            depthStencilDesc.main_usage_mode = depthStencilDesc.usage_modes;
+
+            depthStencilBuffer = AMtlTexture::create(device, &depthStencilDesc);
+            if (!depthStencilBuffer)
+                return agpu::swap_chain_ref();
+
+            // Get the depth stencil buffer view description.
+            depthStencilBufferView = agpu::texture_view_ref(depthStencilBuffer->getOrCreateFullView());
+        }
+
+        // Create the framebuffers
+        amtlSwapChain->framebuffers.reserve(createInfo->buffer_count);
+        for(agpu_uint i = 0; i < createInfo->buffer_count; ++i)
+        {
+            // Create the framebuffer
+            auto framebuffer = AMtlFramebuffer::createForSwapChain(device, drawableWidth, drawableHeight, depthStencilBufferView);
+            if(!framebuffer)
+                return agpu::swap_chain_ref();
+
+            amtlSwapChain->framebuffers.push_back(framebuffer);
+            amtlSwapChain->presentCommands.push_back(nil);
+        }
+
+        // Set the drawable of the first framebuffer
+        if(oldMtlSwapChain)
+        {
+            oldMtlSwapChain->framebuffers[oldMtlSwapChain->currentFramebufferIndex]
+                .as<AMtlFramebuffer> ()->releaseDrawable();
+        }
+                
+        amtlSwapChain->currentFramebufferIndex = 0;
+        const auto &fb = amtlSwapChain->framebuffers[amtlSwapChain->currentFramebufferIndex];
+        fb.as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
+
+        amtlSwapChain->presentQueue = presentQueue;
+        return result;
     }
-
-    // Create the framebuffers
-    amtlSwapChain->framebuffers.reserve(createInfo->buffer_count);
-    for(agpu_uint i = 0; i < createInfo->buffer_count; ++i)
-    {
-        // Create the framebuffer
-        auto framebuffer = AMtlFramebuffer::createForSwapChain(device, drawableWidth, drawableHeight, depthStencilBufferView);
-        if(!framebuffer)
-            return agpu::swap_chain_ref();
-
-        amtlSwapChain->framebuffers.push_back(framebuffer);
-        amtlSwapChain->presentCommands.push_back(nil);
-    }
-
-    // Set the drawable of the first framebuffer
-    if(oldMtlSwapChain)
-    {
-        oldMtlSwapChain->framebuffers[oldMtlSwapChain->currentFramebufferIndex]
-            .as<AMtlFramebuffer> ()->releaseDrawable();
-    }
-            
-    amtlSwapChain->currentFramebufferIndex = 0;
-    const auto &fb = amtlSwapChain->framebuffers[amtlSwapChain->currentFramebufferIndex];
-    fb.as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
-
-    amtlSwapChain->presentQueue = presentQueue;
-    return result;
 }
 
 agpu_error AMtlSwapChain::swapBuffers()
@@ -201,24 +200,24 @@ agpu_error AMtlSwapChain::swapBuffers()
     if(!view)
         return AGPU_INVALID_OPERATION;
 
-    auto currentFramebuffer = framebuffers[currentFramebufferIndex];
-    auto &presentCommand = presentCommands[currentFramebufferIndex];
-    if(presentCommand)
-        [presentCommand release];
-    presentCommand = [presentQueue.as<AMtlCommandQueue> ()->handle commandBuffer];
-    [presentCommand presentDrawable: currentFramebuffer.as<AMtlFramebuffer> ()->drawable];
-    [presentCommand commit];
+    @autoreleasepool {
+        auto currentFramebuffer = framebuffers[currentFramebufferIndex];
+        auto &presentCommand = presentCommands[currentFramebufferIndex];
+        presentCommand = [presentQueue.as<AMtlCommandQueue> ()->handle commandBuffer];
+        [presentCommand presentDrawable: currentFramebuffer.as<AMtlFramebuffer> ()->drawable];
+        [presentCommand commit];
 
-    // Release the old drawable
-    currentFramebufferIndex = (currentFramebufferIndex + 1) % framebuffers.size();
-    framebuffers[currentFramebufferIndex].as<AMtlFramebuffer> ()->releaseDrawable();
+        // Release the old drawable
+        currentFramebufferIndex = (currentFramebufferIndex + 1) % framebuffers.size();
+        framebuffers[currentFramebufferIndex].as<AMtlFramebuffer> ()->releaseDrawable();
 
-    auto drawable = [metalLayer nextDrawable];
-    framebuffers[currentFramebufferIndex].as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
-    if(!drawable)
-        return AGPU_ERROR;
+        auto drawable = [metalLayer nextDrawable];
+        framebuffers[currentFramebufferIndex].as<AMtlFramebuffer> ()->setDrawable(drawable, drawable.texture);
+        if(!drawable)
+            return AGPU_ERROR;
 
-    return AGPU_OK;
+        return AGPU_OK;
+    }
 }
 
 

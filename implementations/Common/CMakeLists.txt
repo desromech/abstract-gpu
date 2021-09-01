@@ -9,6 +9,8 @@ set(AgpuCommonHighLevelInterfaces_SOURCES
     state_tracker.hpp
     immediate_renderer.cpp
     immediate_renderer.hpp
+    memory_profiler.cpp
+    memory_profiler.hpp
     overlay_window.hpp
     overlay_window.cpp
     overlay_window_win32.cpp

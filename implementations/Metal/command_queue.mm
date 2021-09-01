@@ -1,6 +1,7 @@
 #include "command_queue.hpp"
 #include "command_list.hpp"
 #include "fence.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -8,13 +9,12 @@ namespace AgpuMetal
 AMtlCommandQueue::AMtlCommandQueue(const agpu::device_ref &device)
     : weakDevice(device)
 {
-    handle = nil;
+    AgpuProfileConstructor(AMtlCommandQueue);
 }
 
 AMtlCommandQueue::~AMtlCommandQueue()
 {
-    if(handle)
-        [handle release];
+    AgpuProfileDestructor(AMtlCommandQueue);
 }
 
 agpu::command_queue_ref AMtlCommandQueue::create(const agpu::device_ref &device, id<MTLCommandQueue> handle)
@@ -34,17 +34,11 @@ agpu_error AMtlCommandQueue::addCommandList(const agpu::command_list_ref &comman
 {
     CHECK_POINTER(command_list);
     auto amtlCommandList = command_list.as<AMtlCommandList> ();
-    if(amtlCommandList->used)
-    {
-        printf("TODO: Recreate a command list for resubmitting\n");
-        return AGPU_OK;
-    }
-
-    if(!amtlCommandList->buffer)
+    auto concreteHandle = amtlCommandList->getValidHandleForCommitting();
+    if(!concreteHandle)
         return AGPU_INVALID_PARAMETER;
-
-    [amtlCommandList->buffer commit];
-    amtlCommandList->used = true;
+    if(concreteHandle)
+        [concreteHandle commit];
     return AGPU_OK;
 }
 

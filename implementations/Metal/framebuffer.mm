@@ -1,18 +1,21 @@
 #include "framebuffer.hpp"
 #include "texture.hpp"
 #include "texture_view.hpp"
+#include "../Common/memory_profiler.hpp"
+
 namespace AgpuMetal
 {
     
 AMtlFramebuffer::AMtlFramebuffer(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlFramebuffer);
     ownedBySwapChain = false;
-    drawable = nil;
 }
 
 AMtlFramebuffer::~AMtlFramebuffer()
 {
+    AgpuProfileDestructor(AMtlFramebuffer);
 }
 
 agpu::framebuffer_ref AMtlFramebuffer::create(const agpu::device_ref &device, agpu_uint width, agpu_uint height, agpu_uint colorCount, agpu::texture_view_ref *colorViews, const agpu::texture_view_ref &depthStencilView)
@@ -73,8 +76,6 @@ agpu::framebuffer_ref AMtlFramebuffer::createForSwapChain(const agpu::device_ref
 
 void AMtlFramebuffer::releaseDrawable()
 {
-    if(drawable)
-        [drawable release];
     drawable = nil;
 }
 
