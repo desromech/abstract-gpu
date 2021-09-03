@@ -656,8 +656,11 @@ agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, ag
     if(size + offset > MaxPushConstantBufferSize)
         return AGPU_OUT_OF_BOUNDS;
 
+    uint8_t localCopy[MaxPushConstantBufferSize];
+    memcpy(localCopy, values, size);
+
     recordCommand([=] {
-        memcpy(pushConstantsBuffer + offset, values, size);
+        memcpy(pushConstantsBuffer + offset, localCopy, size);
         pushConstantsModified = true;
     });
     return AGPU_OK;
