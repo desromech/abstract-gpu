@@ -38,7 +38,6 @@ AMtlCommandList::AMtlCommandList(const agpu::device_ref &device)
 AMtlCommandList::~AMtlCommandList()
 {
     AgpuProfileDestructor(AMtlCommandList);
-    close();
 }
 
 agpu::command_list_ref AMtlCommandList::create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state)
