@@ -408,12 +408,15 @@ agpu_error AVkGraphicsPipelineBuilder::setPolygonMode(agpu_polygon_mode mode)
 
 agpu_error AVkGraphicsPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &layout)
 {
-    CHECK_POINTER(layout);
-    auto avkLayout = layout.as<AVkVertexLayout> ();
-
     vertexBindings.clear();
     vertexAttributes.clear();
+    memset(&vertexInputState, 0, sizeof(vertexInputState));
+    vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
+    if(!layout)
+        return AGPU_OK;
+
+    auto avkLayout = layout.as<AVkVertexLayout> ();
     vertexBindings.reserve(avkLayout->bufferDimensions.size());
 
     for (auto &bufferData : avkLayout->bufferDimensions)

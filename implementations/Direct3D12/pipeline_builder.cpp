@@ -381,8 +381,12 @@ agpu_error ADXPipelineBuilder::setPrimitiveType(agpu_primitive_topology type)
 
 agpu_error ADXPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &layout)
 {
-    CHECK_POINTER(layout);
     vertexLayout = layout;
+    if(!vertexLayout)
+    {
+        memset(description.InputLayout, 0, sizeof(description.InputLayout));
+        return AGPU_OK;
+    }
 
     auto adxVertexLayout = layout.as<ADXVertexLayout> ();
 
