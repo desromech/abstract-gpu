@@ -384,7 +384,7 @@ agpu_error ADXPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &la
     vertexLayout = layout;
     if(!vertexLayout)
     {
-        memset(description.InputLayout, 0, sizeof(description.InputLayout));
+        memset(&description.InputLayout, 0, sizeof(description.InputLayout));
         return AGPU_OK;
     }
 
