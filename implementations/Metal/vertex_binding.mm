@@ -1,6 +1,7 @@
 #include "vertex_binding.hpp"
 #include "vertex_layout.hpp"
 #include "buffer.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -8,10 +9,12 @@ namespace AgpuMetal
 AMtlVertexBinding::AMtlVertexBinding(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlVertexBinding);
 }
 
 AMtlVertexBinding::~AMtlVertexBinding()
 {
+    AgpuProfileDestructor(AMtlVertexBinding);
 }
 
 agpu::vertex_binding_ref AMtlVertexBinding::create(const agpu::device_ref &device, const agpu::vertex_layout_ref &layout)

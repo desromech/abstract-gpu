@@ -1,5 +1,6 @@
 #include "shader_signature_builder.hpp"
 #include "shader_signature.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -7,11 +8,13 @@ namespace AgpuMetal
 AMtlShaderSignatureBuilder::AMtlShaderSignatureBuilder(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlShaderSignatureBuilder);
     memset(bindingPointsUsed, 0, sizeof(bindingPointsUsed));
 }
 
 AMtlShaderSignatureBuilder::~AMtlShaderSignatureBuilder()
 {
+    AgpuProfileDestructor(AMtlShaderSignatureBuilder);
 }
 
 agpu::shader_signature_builder_ref AMtlShaderSignatureBuilder::create(const agpu::device_ref &device)

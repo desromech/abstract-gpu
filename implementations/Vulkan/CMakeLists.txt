@@ -58,6 +58,7 @@ include_directories(${VULKAN_INCLUDE_DIRS})
 
 add_definitions(
     -DAGPU_BUILD
+    -DVMA_STATIC_VULKAN_FUNCTIONS=0 # Do not link with newer vulkan functions staticly. This causes some crashes.
 )
 
 if(BUILD_WITH_OPENVR)

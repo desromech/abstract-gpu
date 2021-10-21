@@ -60,6 +60,8 @@ add_library(${AgpuMetal} SHARED
     ${AGPU_Metal_SOURCES}
     $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl> $<TARGET_OBJECTS:spirv-cross-msl>
     ${AgpuCommonHighLevelInterfaces_LIBS})
+set_property (TARGET ${AgpuMetal} APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+
 add_dependencies(${AgpuMetal}
     spirv-cross-core spirv-cross-glsl spirv-cross-msl
     ${AgpuCommonHighLevelInterfaces_DEPS})

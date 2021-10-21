@@ -1,17 +1,19 @@
 #include "implicit_resource_command_list.hpp"
 #include "command_queue.hpp"
 #include "constants.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
 AMtlImplicitResourceSetupCommandList::AMtlImplicitResourceSetupCommandList(AMtlDevice &cdevice)
     : device(cdevice)
 {
-    commandBuffer = nil;
+    AgpuProfileConstructor(AMtlImplicitResourceSetupCommandList);
 }
 
 AMtlImplicitResourceSetupCommandList::~AMtlImplicitResourceSetupCommandList()
 {
+    AgpuProfileDestructor(AMtlImplicitResourceSetupCommandList);
 }
 
 void AMtlImplicitResourceSetupCommandList::destroy()
@@ -19,14 +21,15 @@ void AMtlImplicitResourceSetupCommandList::destroy()
     if(!commandBuffer)
         return;
 
-    [commandBuffer release];
     commandBuffer = nil;
 }
 
 bool AMtlImplicitResourceSetupCommandList::setupCommandBuffer()
 {
     id<MTLCommandQueue> queue = commandQueue.as<AMtlCommandQueue> ()->handle;
-    commandBuffer = [queue commandBuffer];
+    @autoreleasepool {
+        commandBuffer = [queue commandBuffer];
+    }
     return commandBuffer != nil;
 }
 
@@ -34,7 +37,6 @@ bool AMtlImplicitResourceSetupCommandList::submitCommandBuffer()
 {
     [commandBuffer commit];
     [commandBuffer waitUntilCompleted];
-    [commandBuffer release];
     commandBuffer = nil;
     return true;
 }

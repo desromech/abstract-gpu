@@ -1,5 +1,6 @@
 #include "shader.hpp"
 #include "shader_signature.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -27,28 +28,25 @@ static inline bool isEntryPointNameBlacklisted(const std::string &entryPointName
 
 AMtlShaderForSignature::AMtlShaderForSignature()
 {
-    library = nil;
-    function = nil;
+    AgpuProfileConstructor(AMtlShaderForSignature);
 }
 
 AMtlShaderForSignature::~AMtlShaderForSignature()
 {
-    if(function)
-        [function release];
-    if(library)
-        [library release];
 }
 
 agpu_error AMtlShaderForSignature::compile(std::string *errorMessage, agpu_cstring options)
 {
-    if(language == AGPU_SHADER_LANGUAGE_METAL)
-        return compileMetalSource(errorMessage, options);
-    else if(language == AGPU_SHADER_LANGUAGE_METAL_AIR)
-        return compileMetalBlob(errorMessage, options);
-    else
-    {
-        *errorMessage = "Unsupported shader language";
-        return AGPU_UNSUPPORTED;
+    @autoreleasepool {
+        if(language == AGPU_SHADER_LANGUAGE_METAL)
+            return compileMetalSource(errorMessage, options);
+        else if(language == AGPU_SHADER_LANGUAGE_METAL_AIR)
+            return compileMetalBlob(errorMessage, options);
+        else
+        {
+            *errorMessage = "Unsupported shader language";
+            return AGPU_UNSUPPORTED;
+        }
     }
 }
 
@@ -64,7 +62,6 @@ agpu_error AMtlShaderForSignature::compileMetalSource ( std::string *errorMessag
     NSError *error = nil;
     auto compileOptions = [[MTLCompileOptions alloc] init];
     library = [deviceForMetal->device newLibraryWithSource: sourceString options: compileOptions error: &error];
-    [sourceString release];
     
     // Always read the error, if there is one.
     if(error)
@@ -80,7 +77,6 @@ agpu_error AMtlShaderForSignature::compileMetalSource ( std::string *errorMessag
     {
         auto entryPointString = [[NSString alloc] initWithBytes: &entryPoint[0] length: entryPoint.size() encoding: NSUTF8StringEncoding];
         function = [library newFunctionWithName: entryPointString];
-        [entryPointString release];
     }
     if(!function)
         function = [library newFunctionWithName: @"agpu_main"];
@@ -104,10 +100,12 @@ agpu_error AMtlShaderForSignature::compileMetalBlob ( std::string *errorMessage,
 AMtlShader::AMtlShader(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlShader);
 }
 
 AMtlShader::~AMtlShader()
 {
+    AgpuProfileDestructor(AMtlShader);
 }
 
 agpu::shader_ref AMtlShader::create(const agpu::device_ref &device, agpu_shader_type type)
@@ -287,7 +285,7 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
     }
     
 	// Compile the shader instance object.
-	auto error = shaderInstance->compile(errorMessage, "");
+    auto error = shaderInstance->compile(errorMessage, "");
     //printf("Shader compilation error %d: %s\n", error, errorMessage->c_str());
         
     if(getenv("DUMP_SHADERS") ||

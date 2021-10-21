@@ -10,6 +10,7 @@
 #include "shader_resource_binding.hpp"
 #include "texture.hpp"
 #include "texture_view.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -27,40 +28,16 @@ inline MTLIndexType mapIndexType(agpu_size stride)
 AMtlCommandList::AMtlCommandList(const agpu::device_ref &device)
     : device(device)
 {
-    buffer = nil;
-    blitEncoder = nil;
-    renderEncoder = nil;
-    computeEncoder = nil;
-    used = false;
+    AgpuProfileConstructor(AMtlCommandList);
+    isOpen = false;
+    inRenderPass = false;
     pushConstantsModified = true;
     memset(pushConstantsBuffer, 0, sizeof(pushConstantsBuffer));
 }
 
 AMtlCommandList::~AMtlCommandList()
 {
-    if(computeEncoder)
-    {
-        [computeEncoder endEncoding];
-        [computeEncoder release];
-        computeEncoder = nil;
-    }
-
-    if(renderEncoder)
-    {
-        [renderEncoder endEncoding];
-        [renderEncoder release];
-        renderEncoder = nil;
-    }
-    
-    if(blitEncoder)
-    {
-        [blitEncoder endEncoding];
-        [blitEncoder release];
-        renderEncoder = nil;
-    }
-
-    if(buffer)
-        [buffer release];
+    AgpuProfileDestructor(AMtlCommandList);
 }
 
 agpu::command_list_ref AMtlCommandList::create(const agpu::device_ref &device, agpu_command_list_type type, const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state)
@@ -75,52 +52,55 @@ agpu::command_list_ref AMtlCommandList::create(const agpu::device_ref &device, a
     if(error != AGPU_OK)
         return agpu::command_list_ref();
 
-    if(initial_pipeline_state)
-        commandList->usePipelineState(initial_pipeline_state);
-
     return result;
 }
 
 agpu_error AMtlCommandList::setShaderSignature(const agpu::shader_signature_ref &signature)
 {
-    currentShaderSignature = signature;
+    recordCommand([=]{
+        currentShaderSignature = signature;
 
-    auto oldPipeline = currentPipeline;
-    currentPipeline.reset();
+        auto oldPipeline = currentPipeline;
+        currentPipeline.reset();
 
-    for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
-        activeShaderResourceBindings[i].reset();
-    for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
-        activeComputeShaderResourceBindings[i].reset();
+        for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
+            activeShaderResourceBindings[i].reset();
+        for(size_t i = 0; i < MaxActiveResourceBindings; ++i)
+            activeComputeShaderResourceBindings[i].reset();
 
-    if(oldPipeline)
-        usePipelineState(oldPipeline);
+        if(oldPipeline)
+            usePipelineState(oldPipeline);
+    });
 
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::setViewport ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
-    MTLViewport viewport;
-    viewport.originX = x;
-    viewport.originY = y;
-    viewport.width = w;
-    viewport.height = h;
-    viewport.znear = 0.0;
-    viewport.zfar = 1.0;
-    [renderEncoder setViewport: viewport];
+    recordCommand([=]{
+        MTLViewport viewport;
+        viewport.originX = x;
+        viewport.originY = y;
+        viewport.width = w;
+        viewport.height = h;
+        viewport.znear = 0.0;
+        viewport.zfar = 1.0;
+        [renderEncoder setViewport: viewport];
+    });
 
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::setScissor ( agpu_int x, agpu_int y, agpu_int w, agpu_int h )
 {
-    MTLScissorRect scissor;
-    scissor.x = x;
-    scissor.y = y;
-    scissor.width = w;
-    scissor.height = h;
-    [renderEncoder setScissorRect: scissor];
+    recordCommand([=]{
+        MTLScissorRect scissor;
+        scissor.x = x;
+        scissor.y = y;
+        scissor.width = w;
+        scissor.height = h;
+        [renderEncoder setScissorRect: scissor];
+    });
 
     return AGPU_OK;
 }
@@ -129,28 +109,38 @@ agpu_error AMtlCommandList::usePipelineState(const agpu::pipeline_state_ref &pip
 {
     CHECK_POINTER(pipeline);
 
-    currentPipeline = pipeline;
+    currentPipeline = pipeline; // Keep this copy for validation purposes.
 
-    if(currentShaderSignature)
-    {
-        auto amtlPipeline = currentPipeline.as<AMtlPipelineState> ();
-        if(renderEncoder)
-            amtlPipeline->applyRenderCommands(renderEncoder);
-        if(computeEncoder)
-            amtlPipeline->applyComputeCommands(computeEncoder);
-    }
+    recordCommand([=]{
+        currentPipeline = pipeline;
+
+        if(currentShaderSignature)
+        {
+            auto amtlPipeline = currentPipeline.as<AMtlPipelineState> ();
+            if(renderEncoder)
+                amtlPipeline->applyRenderCommands(renderEncoder);
+            if(computeEncoder)
+                amtlPipeline->applyComputeCommands(computeEncoder);
+        }
+    });
 
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::useVertexBinding(const agpu::vertex_binding_ref &vertex_binding)
 {
-    currentVertexBinding = vertex_binding;
-    for(auto &buffer : currentVertexBinding.as<AMtlVertexBinding> ()->buffers)
+    for(auto &buffer : vertex_binding.as<AMtlVertexBinding> ()->buffers)
     {
         if(!buffer)
             return AGPU_INVALID_PARAMETER;
     }
+
+    // Keep this copy for validation purposes.
+    currentVertexBinding = vertex_binding;
+
+    recordCommand([=] {
+        currentVertexBinding = vertex_binding;
+    });
 
     return AGPU_OK;
 }
@@ -165,21 +155,39 @@ agpu_error AMtlCommandList::useIndexBuffer(const agpu::buffer_ref &index_buffer)
 agpu_error AMtlCommandList::useIndexBufferAt(const agpu::buffer_ref &index_buffer, agpu_size offset, agpu_size index_size)
 {
     CHECK_POINTER(index_buffer);
+
+    // Keep this copy for validation purposes.
     currentIndexBuffer = index_buffer;
     currentIndexBufferOffset = offset;
     currentIndexBufferStride = index_size;
+
+    recordCommand([=] {
+        currentIndexBuffer = index_buffer;
+        currentIndexBufferOffset = offset;
+        currentIndexBufferStride = index_size;
+    });
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::useDrawIndirectBuffer(const agpu::buffer_ref &draw_buffer)
 {
+    // Keep this copy for validation purposes.
     currentIndirectBuffer = draw_buffer;
+
+    recordCommand([=] {
+        currentIndirectBuffer = draw_buffer;
+    });
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::useComputeDispatchIndirectBuffer(const agpu::buffer_ref &dispatch_buffer)
 {
+    // Keep this copy for validation purposes.
     currentComputeDispatchIndirectBuffer = dispatch_buffer;
+    
+    recordCommand([=] {
+        currentComputeDispatchIndirectBuffer = dispatch_buffer;
+    });
     return AGPU_OK;
 }
 
@@ -194,7 +202,9 @@ agpu_error AMtlCommandList::useShaderResourcesInSlot(const agpu::shader_resource
     CHECK_POINTER(binding);
     if(slot >= MaxActiveResourceBindings) return AGPU_UNSUPPORTED;
 
-    activeShaderResourceBindings[slot] = binding;
+    recordCommand([=] {
+        activeShaderResourceBindings[slot] = binding;
+    });
     return AGPU_OK;
 }
 
@@ -210,7 +220,9 @@ agpu_error AMtlCommandList::useComputeShaderResourcesInSlot(const agpu::shader_r
     if(slot >= MaxActiveResourceBindings)
         return AGPU_UNSUPPORTED;
 
-    activeComputeShaderResourceBindings[slot] = binding;
+    recordCommand([=] {
+        activeComputeShaderResourceBindings[slot] = binding;
+    });
     return AGPU_OK;
 }
 
@@ -272,7 +284,7 @@ void AMtlCommandList::updateComputeState()
 {
     if(!computeEncoder)
     {
-        computeEncoder = [buffer computeCommandEncoder];
+        computeEncoder = [handle computeCommandEncoder];
         currentPipeline.as<AMtlPipelineState> ()->applyComputeCommands(computeEncoder);
     }
 
@@ -307,12 +319,14 @@ agpu_error AMtlCommandList::drawArrays ( agpu_uint vertex_count, agpu_uint insta
     if(!currentPipeline)
         return AGPU_INVALID_OPERATION;
 
-    updateRenderState();
-    [renderEncoder drawPrimitives: currentPipeline.as<AMtlPipelineState> ()->getCommandState().primitiveType
-                       vertexStart: first_vertex
-                        vertexCount: vertex_count
-                    instanceCount: instance_count
-                     baseInstance: base_instance];
+    recordCommand([=] {
+        updateRenderState();
+        [renderEncoder drawPrimitives: currentPipeline.as<AMtlPipelineState> ()->getCommandState().primitiveType
+                        vertexStart: first_vertex
+                            vertexCount: vertex_count
+                        instanceCount: instance_count
+                        baseInstance: base_instance];
+    });
     return AGPU_OK;
 }
 
@@ -328,16 +342,18 @@ agpu_error AMtlCommandList::drawElements ( agpu_uint index_count, agpu_uint inst
     if(!currentIndexBuffer || !currentPipeline)
         return AGPU_INVALID_OPERATION;
 
-    updateRenderState();
-    auto indexBuffer = currentIndexBuffer.as<AMtlBuffer> ();
-    [renderEncoder drawIndexedPrimitives: currentPipeline.as<AMtlPipelineState> ()->getCommandState().primitiveType
-                   indexCount: index_count
-                    indexType: mapIndexType(currentIndexBufferStride)
-                  indexBuffer: indexBuffer->handle
-            indexBufferOffset: currentIndexBufferOffset + first_index*currentIndexBufferStride
-                instanceCount: instance_count
-                   baseVertex: base_vertex
-                 baseInstance: base_instance];
+    recordCommand([=] {
+        updateRenderState();
+        auto indexBuffer = currentIndexBuffer.as<AMtlBuffer> ();
+        [renderEncoder drawIndexedPrimitives: currentPipeline.as<AMtlPipelineState> ()->getCommandState().primitiveType
+                    indexCount: index_count
+                        indexType: mapIndexType(currentIndexBufferStride)
+                    indexBuffer: indexBuffer->handle
+                indexBufferOffset: currentIndexBufferOffset + first_index*currentIndexBufferStride
+                    instanceCount: instance_count
+                    baseVertex: base_vertex
+                    baseInstance: base_instance];
+    });
     return AGPU_OK;
 }
 
@@ -354,15 +370,17 @@ agpu_error AMtlCommandList::dispatchCompute ( agpu_uint group_count_x, agpu_uint
         return AGPU_INVALID_OPERATION;
 
     auto pipeline = currentPipeline.as<AMtlPipelineState> ();
-    if(!pipeline->extraState->isCompute() || renderEncoder)
+    if(!pipeline->extraState->isCompute() || inRenderPass)
         return AGPU_INVALID_OPERATION;
 
-    updateComputeState();
-    MTLSize threadgroups;
-    threadgroups.width = group_count_x;
-    threadgroups.height = group_count_y;
-    threadgroups.depth = group_count_z;
-    [computeEncoder dispatchThreadgroups: threadgroups threadsPerThreadgroup: pipeline->extraState->getLocalSize()];
+    recordCommand([=] {
+        updateComputeState();
+        MTLSize threadgroups;
+        threadgroups.width = group_count_x;
+        threadgroups.height = group_count_y;
+        threadgroups.depth = group_count_z;
+        [computeEncoder dispatchThreadgroups: threadgroups threadsPerThreadgroup: pipeline->extraState->getLocalSize()];
+    });
     return AGPU_OK;
 }
 
@@ -372,16 +390,20 @@ agpu_error AMtlCommandList::dispatchComputeIndirect ( agpu_size offset )
         return AGPU_INVALID_OPERATION;
 
     auto pipeline = currentPipeline.as<AMtlPipelineState> ();
-    if(!pipeline->extraState->isCompute() || renderEncoder)
+    if(!pipeline->extraState->isCompute() || inRenderPass)
         return AGPU_INVALID_OPERATION;
-
-    updateComputeState();
+    recordCommand([=] {
+        updateComputeState();
+        // TODO: Implement this method.
+    });
     return AGPU_UNIMPLEMENTED;
 }
 
 agpu_error AMtlCommandList::setStencilReference(agpu_uint reference)
 {
-    [renderEncoder setStencilReferenceValue: reference];
+    recordCommand([=] {
+        [renderEncoder setStencilReferenceValue: reference];
+    });
     return AGPU_OK;
 }
 
@@ -392,13 +414,8 @@ agpu_error AMtlCommandList::executeBundle(const agpu::command_list_ref &bundle)
 
 agpu_error AMtlCommandList::close()
 {
-    if(computeEncoder)
-    {
-        [computeEncoder endEncoding];
-        [computeEncoder release];
-        computeEncoder = nil;
-    }
-
+    isOpen = false;
+    concretizeRecordedCommands();
     return AGPU_OK;
 }
 
@@ -409,13 +426,25 @@ agpu_error AMtlCommandList::reset(const agpu::command_allocator_ref &allocator, 
     // Store the new allocator.
     this->allocator = allocator;
 
-    // Create the buffer.
-    if(buffer)
-        [buffer release];
-    auto commandQueueHandle = allocator.as<AMtlCommandAllocator> ()->queue.as<AMtlCommandQueue> ()->handle;
-    buffer = [commandQueueHandle commandBuffer];
-    used = false;
+    handle = nil;
+    isOpen = true;
+    inRenderPass = false;
+    recordedCommands.clear();
+    resetCommandState(); // For validation purposes.
+    
+    if(initial_pipeline_state)
+        usePipelineState(initial_pipeline_state);
 
+    return AGPU_OK;
+}
+
+agpu_error AMtlCommandList::resetBundle(const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state, agpu_inheritance_info* inheritance_info)
+{
+    return reset(allocator, initial_pipeline_state);
+}
+
+void AMtlCommandList::resetCommandState()
+{
     currentIndirectBuffer.reset();
     currentComputeDispatchIndirectBuffer.reset();
     currentIndexBuffer.reset();
@@ -427,18 +456,56 @@ agpu_error AMtlCommandList::reset(const agpu::command_allocator_ref &allocator, 
         activeComputeShaderResourceBindings[i].reset();
     }
 
-    currentPipeline = initial_pipeline_state;
+    currentPipeline.reset();
     currentShaderSignature.reset();
 
     pushConstantsModified = true;
     memset(pushConstantsBuffer, 0, sizeof(pushConstantsBuffer));
-
-    return AGPU_OK;
 }
 
-agpu_error AMtlCommandList::resetBundle(const agpu::command_allocator_ref &allocator, const agpu::pipeline_state_ref &initial_pipeline_state, agpu_inheritance_info* inheritance_info)
+void AMtlCommandList::concretizeRecordedCommands()
 {
-    return reset(allocator, initial_pipeline_state);
+    @autoreleasepool {
+        auto commandQueueHandle = allocator.as<AMtlCommandAllocator> ()->queue.as<AMtlCommandQueue> ()->handle;
+        handle = [commandQueueHandle commandBufferWithUnretainedReferences];
+
+        // Reset the active command state.
+        resetCommandState();
+
+        // Execute the recorded commands.
+        for(auto &command : recordedCommands)
+            command();
+
+        // Clear any remaining references.
+        resetCommandState();
+        if(computeEncoder)
+        {
+            [computeEncoder endEncoding];
+            computeEncoder = nil;
+        }
+
+        if(renderEncoder)
+        {
+            [renderEncoder endEncoding];
+            renderEncoder = nil;
+        }
+        
+        if(blitEncoder)
+        {
+            [blitEncoder endEncoding];
+            renderEncoder = nil;
+        }
+    }
+}
+
+id<MTLCommandBuffer> AMtlCommandList::getValidHandleForCommitting()
+{
+    if(!handle && !isOpen)
+        concretizeRecordedCommands();
+
+    auto result = handle;
+    handle = nil;
+    return result;
 }
 
 agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpass, const agpu::framebuffer_ref &framebuffer, agpu_bool bundle_content)
@@ -446,29 +513,35 @@ agpu_error AMtlCommandList::beginRenderPass(const agpu::renderpass_ref &renderpa
     CHECK_POINTER(renderpass);
     CHECK_POINTER(framebuffer);
 
-    if(computeEncoder)
-    {
-        [computeEncoder endEncoding];
-        [computeEncoder release];
-        computeEncoder = nil;
-    }
+    if(inRenderPass)
+        return AGPU_INVALID_OPERATION;
 
-    auto descriptor = renderpass.as<AMtlRenderPass> ()->createDescriptor(framebuffer);
-    renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
-    [descriptor release];
+    recordCommand([=] {
+        if(computeEncoder)
+        {
+            [computeEncoder endEncoding];
+            computeEncoder = nil;
+        }
 
-    currentPipeline.reset();
+        auto descriptor = renderpass.as<AMtlRenderPass> ()->createDescriptor(framebuffer);
+        renderEncoder = [handle renderCommandEncoderWithDescriptor: descriptor];
+
+        currentPipeline.reset();
+    });
+    inRenderPass = true;
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::endRenderPass (  )
 {
-    if(!renderEncoder)
+    if(!inRenderPass)
         return AGPU_INVALID_OPERATION;
 
-    [renderEncoder endEncoding];
-    [renderEncoder release];
-    renderEncoder = nil;
+    recordCommand([=] {
+        [renderEncoder endEncoding];
+        renderEncoder = nil;
+    });
+    inRenderPass = false;
     return AGPU_OK;
 }
 
@@ -525,56 +598,56 @@ agpu_error AMtlCommandList::doResolveTexture(id<MTLTexture> sourceTexture, agpu_
 {
     if(levelCount == 0 || layerCount == 0)
         return AGPU_OK;
-        
-    if(sourceTexture.sampleCount == destTexture.sampleCount)
-    {
-        MTLOrigin copyOrigin = {};
-        MTLSize copySize = {sourceTexture.width, sourceTexture.height, sourceTexture.depth};
-        blitEncoder = [buffer blitCommandEncoder];
+
+    recordCommand([=] {
+        if(sourceTexture.sampleCount == destTexture.sampleCount)
+        {
+            MTLOrigin copyOrigin = {};
+            MTLSize copySize = {sourceTexture.width, sourceTexture.height, sourceTexture.depth};
+            blitEncoder = [handle blitCommandEncoder];
+
+            for(agpu_uint layerIndex = 0; layerIndex < layerCount; ++layerIndex)
+            {
+                for(agpu_uint levelIndex = 0; levelIndex < levelCount; ++levelIndex)
+                {
+                    [blitEncoder copyFromTexture: sourceTexture
+                            sourceSlice: sourceLayer + layerIndex sourceLevel: sourceLevel + levelIndex
+                            sourceOrigin: copyOrigin sourceSize: copySize
+                        toTexture: destTexture
+                        destinationSlice: destLayer + layerIndex destinationLevel: destLevel + levelIndex
+                        destinationOrigin: copyOrigin];
+                }            
+            }
+            [blitEncoder endEncoding];
+            blitEncoder = nil;
+            return;
+        }
 
         for(agpu_uint layerIndex = 0; layerIndex < layerCount; ++layerIndex)
         {
             for(agpu_uint levelIndex = 0; levelIndex < levelCount; ++levelIndex)
             {
-                [blitEncoder copyFromTexture: sourceTexture
-                        sourceSlice: sourceLayer + layerIndex sourceLevel: sourceLevel + levelIndex
-                        sourceOrigin: copyOrigin sourceSize: copySize
-                      toTexture: destTexture
-                      destinationSlice: destLayer + layerIndex destinationLevel: destLevel + levelIndex
-                      destinationOrigin: copyOrigin];
-            }            
+                auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+                auto passAttachment = descriptor.colorAttachments[0];
+
+                // Set the source attachment
+                passAttachment.texture = sourceTexture;
+                passAttachment.loadAction = MTLLoadActionLoad;
+                passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
+                passAttachment.level = sourceLevel + levelIndex;
+                passAttachment.slice = sourceLayer + layerIndex;
+
+                // Set the resolve attachment
+                passAttachment.resolveTexture = destTexture;
+                passAttachment.resolveLevel = destLevel + levelIndex;
+                passAttachment.resolveSlice = destLayer + layerIndex;
+
+                renderEncoder = [handle renderCommandEncoderWithDescriptor: descriptor];
+                [renderEncoder endEncoding];
+                renderEncoder = nil;
+            }
         }
-        [blitEncoder endEncoding];
-        [blitEncoder release];
-        blitEncoder = nil;
-        return AGPU_OK;
-    }
-
-    for(agpu_uint layerIndex = 0; layerIndex < layerCount; ++layerIndex)
-    {
-        for(agpu_uint levelIndex = 0; levelIndex < levelCount; ++levelIndex)
-        {
-            auto descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-            auto passAttachment = descriptor.colorAttachments[0];
-
-            // Set the source attachment
-            passAttachment.texture = sourceTexture;
-            passAttachment.loadAction = MTLLoadActionLoad;
-            passAttachment.storeAction = MTLStoreActionStoreAndMultisampleResolve;
-            passAttachment.level = sourceLevel + levelIndex;
-            passAttachment.slice = sourceLayer + layerIndex;
-
-            // Set the resolve attachment
-            passAttachment.resolveTexture = destTexture;
-            passAttachment.resolveLevel = destLevel + levelIndex;
-            passAttachment.resolveSlice = destLayer + layerIndex;
-
-            renderEncoder = [buffer renderCommandEncoderWithDescriptor: descriptor];
-            [descriptor release];
-            [renderEncoder endEncoding];
-            renderEncoder = nil;
-        }
-    }
+    });
     return AGPU_OK;
 }
 
@@ -583,46 +656,52 @@ agpu_error AMtlCommandList::pushConstants ( agpu_uint offset, agpu_uint size, ag
     if(size + offset > MaxPushConstantBufferSize)
         return AGPU_OUT_OF_BOUNDS;
 
-    memcpy(pushConstantsBuffer + offset, values, size);
-    pushConstantsModified = true;
+    uint8_t localCopy[MaxPushConstantBufferSize];
+    memcpy(localCopy, values, size);
+
+    recordCommand([=] {
+        memcpy(pushConstantsBuffer + offset, localCopy, size);
+        pushConstantsModified = true;
+    });
     return AGPU_OK;
 }
 
 agpu_error AMtlCommandList::memoryBarrier(agpu_pipeline_stage_flags source_stage, agpu_pipeline_stage_flags dest_stage, agpu_access_flags source_accesses, agpu_access_flags dest_accesses)
 {
-    // Disabled, not found on CI server.
-    MTLBarrierScope scope = MTLBarrierScopeBuffers | MTLBarrierScopeTextures;
-    if((source_stage & AGPU_PIPELINE_STAGE_COMPUTE_SHADER) != 0 && computeEncoder)
-        [computeEncoder memoryBarrierWithScope: MTLBarrierScopeBuffers | MTLBarrierScopeTextures];
+    recordCommand([=] {
+        MTLBarrierScope scope = MTLBarrierScopeBuffers | MTLBarrierScopeTextures;
+        if((source_stage & AGPU_PIPELINE_STAGE_COMPUTE_SHADER) != 0 && computeEncoder)
+            [computeEncoder memoryBarrierWithScope: MTLBarrierScopeBuffers | MTLBarrierScopeTextures];
 
-    if(renderEncoder)
-    {
-        auto combinedAccesses = source_accesses | dest_accesses;
-        if(combinedAccesses & (
-            AGPU_ACCESS_COLOR_ATTACHMENT_READ | AGPU_ACCESS_COLOR_ATTACHMENT_WRITE |
-            AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ | AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE
-        ))
-            scope |= MTLBarrierScopeRenderTargets;
+        if(renderEncoder)
+        {
+            auto combinedAccesses = source_accesses | dest_accesses;
+            if(combinedAccesses & (
+                AGPU_ACCESS_COLOR_ATTACHMENT_READ | AGPU_ACCESS_COLOR_ATTACHMENT_WRITE |
+                AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ | AGPU_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE
+            ))
+                scope |= MTLBarrierScopeRenderTargets;
 
-        MTLRenderStages sourceStages = 0;
-        MTLRenderStages destStages = 0;
-        if(source_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
-            sourceStages |= MTLRenderStageVertex;
-        if(source_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
-            sourceStages |= MTLRenderStageFragment;
-        if(source_stage & AGPU_PIPELINE_STAGE_BOTTOM_OF_PIPE)
-            sourceStages = MTLRenderStageVertex | MTLRenderStageFragment;
+            MTLRenderStages sourceStages = 0;
+            MTLRenderStages destStages = 0;
+            if(source_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
+                sourceStages |= MTLRenderStageVertex;
+            if(source_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
+                sourceStages |= MTLRenderStageFragment;
+            if(source_stage & AGPU_PIPELINE_STAGE_BOTTOM_OF_PIPE)
+                sourceStages = MTLRenderStageVertex | MTLRenderStageFragment;
 
-        if(dest_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
-            destStages |= MTLRenderStageVertex;
-        if(dest_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
-            destStages |= MTLRenderStageFragment;
-        if(dest_stage & AGPU_PIPELINE_STAGE_TOP_OF_PIPE)
-            destStages = MTLRenderStageVertex | MTLRenderStageFragment;
+            if(dest_stage & AGPU_PIPELINE_STAGE_VERTEX_SHADER)
+                destStages |= MTLRenderStageVertex;
+            if(dest_stage & AGPU_PIPELINE_STAGE_FRAGMENT_SHADER)
+                destStages |= MTLRenderStageFragment;
+            if(dest_stage & AGPU_PIPELINE_STAGE_TOP_OF_PIPE)
+                destStages = MTLRenderStageVertex | MTLRenderStageFragment;
 
-        [renderEncoder memoryBarrierWithScope: scope
-            afterStages: sourceStages beforeStages: destStages];
-    }
+            [renderEncoder memoryBarrierWithScope: scope
+                afterStages: sourceStages beforeStages: destStages];
+        }
+    });
     return AGPU_OK;
 }
 
@@ -664,16 +743,14 @@ void AMtlCommandList::beginBlitting()
     if(computeEncoder)
     {
         [computeEncoder endEncoding];
-        [computeEncoder release];
         computeEncoder = nil;
     }
-    blitEncoder = [buffer blitCommandEncoder];
+    blitEncoder = [handle blitCommandEncoder];
 }
 
 void AMtlCommandList::endBlitting()
 {
     [blitEncoder endEncoding];
-    [blitEncoder release];
     blitEncoder = nil;
 }
 
@@ -682,13 +759,15 @@ agpu_error AMtlCommandList::copyBuffer(const agpu::buffer_ref & source_buffer, a
     CHECK_POINTER(source_buffer);
     CHECK_POINTER(dest_buffer);
 
-    beginBlitting();
-    [blitEncoder copyFromBuffer: source_buffer.as<AMtlBuffer> ()->handle
-        sourceOffset: source_offset
-        toBuffer: dest_buffer.as<AMtlBuffer> ()->handle
-        destinationOffset: dest_offset
-        size: copy_size];
-    endBlitting();
+    recordCommand([=] {
+        beginBlitting();
+        [blitEncoder copyFromBuffer: source_buffer.as<AMtlBuffer> ()->handle
+            sourceOffset: source_offset
+            toBuffer: dest_buffer.as<AMtlBuffer> ()->handle
+            destinationOffset: dest_offset
+            size: copy_size];
+        endBlitting();
+    });
     return AGPU_OK;
 }
 
@@ -698,26 +777,28 @@ agpu_error AMtlCommandList::copyBufferToTexture(const agpu::buffer_ref & buffer,
     CHECK_POINTER(texture);
     CHECK_POINTER(copy_region);
 
-    beginBlitting();
-    MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
-    MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
-    auto bufferOffset = copy_region->buffer_offset;
-    auto offsetIncrement = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
-    for(agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
-    {
-        [blitEncoder copyFromBuffer: buffer.as<AMtlBuffer> ()->handle
-                sourceOffset: bufferOffset
-            sourceBytesPerRow: copy_region->buffer_pitch
-        sourceBytesPerImage: copy_region->buffer_slice_pitch
-                    sourceSize: regionSize
-                    toTexture: texture.as<AMtlTexture> ()->handle
-            destinationSlice: copy_region->texture_subresource_level.base_arraylayer + layer
-            destinationLevel: copy_region->texture_subresource_level.miplevel
-            destinationOrigin: regionOrigin];
+    recordCommand([=] {
+        beginBlitting();
+        MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
+        MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
+        auto bufferOffset = copy_region->buffer_offset;
+        auto offsetIncrement = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
+        for(agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
+        {
+            [blitEncoder copyFromBuffer: buffer.as<AMtlBuffer> ()->handle
+                    sourceOffset: bufferOffset
+                sourceBytesPerRow: copy_region->buffer_pitch
+            sourceBytesPerImage: copy_region->buffer_slice_pitch
+                        sourceSize: regionSize
+                        toTexture: texture.as<AMtlTexture> ()->handle
+                destinationSlice: copy_region->texture_subresource_level.base_arraylayer + layer
+                destinationLevel: copy_region->texture_subresource_level.miplevel
+                destinationOrigin: regionOrigin];
 
-        bufferOffset += offsetIncrement;
-    }
-    endBlitting();
+            bufferOffset += offsetIncrement;
+        }
+        endBlitting();
+    });
     return AGPU_OK;
 }
 
@@ -727,26 +808,28 @@ agpu_error AMtlCommandList::copyTextureToBuffer(const agpu::texture_ref & textur
     CHECK_POINTER(texture);
     CHECK_POINTER(copy_region);
 
-    beginBlitting();
-    MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
-    MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
-    auto bufferOffset = copy_region->buffer_offset;
-    auto offsetIncrement = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
-    for(agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
-    {
-        [blitEncoder copyFromTexture: texture.as<AMtlTexture> ()->handle
-                sourceSlice: copy_region->texture_subresource_level.base_arraylayer + layer
-                sourceLevel: copy_region->texture_subresource_level.miplevel
-            sourceOrigin: regionOrigin
-                sourceSize: regionSize
-                toBuffer: buffer.as<AMtlBuffer> ()->handle
-        destinationOffset: bufferOffset
-    destinationBytesPerRow: copy_region->buffer_pitch
-    destinationBytesPerImage: copy_region->buffer_slice_pitch];
+    recordCommand([=] {
+        beginBlitting();
+        MTLOrigin regionOrigin = {copy_region->texture_region.x, copy_region->texture_region.y, copy_region->texture_region.z};
+        MTLSize regionSize = {copy_region->texture_region.width, copy_region->texture_region.height, copy_region->texture_region.depth};
+        auto bufferOffset = copy_region->buffer_offset;
+        auto offsetIncrement = copy_region->buffer_slice_pitch * copy_region->texture_region.depth;
+        for(agpu_uint layer = 0; layer < copy_region->texture_subresource_level.layer_count; ++layer)
+        {
+            [blitEncoder copyFromTexture: texture.as<AMtlTexture> ()->handle
+                    sourceSlice: copy_region->texture_subresource_level.base_arraylayer + layer
+                    sourceLevel: copy_region->texture_subresource_level.miplevel
+                sourceOrigin: regionOrigin
+                    sourceSize: regionSize
+                    toBuffer: buffer.as<AMtlBuffer> ()->handle
+            destinationOffset: bufferOffset
+        destinationBytesPerRow: copy_region->buffer_pitch
+        destinationBytesPerImage: copy_region->buffer_slice_pitch];
 
-        bufferOffset += offsetIncrement;
-    }
-    endBlitting();
+            bufferOffset += offsetIncrement;
+        }
+        endBlitting();
+    });
     return AGPU_OK;
 }
 
@@ -758,24 +841,26 @@ agpu_error AMtlCommandList::copyTexture(const agpu::texture_ref & source_texture
     if(copy_region->source_subresource_level.layer_count != copy_region->destination_subresource_level.layer_count)
         return AGPU_INVALID_PARAMETER;
 
-    beginBlitting();
-    MTLOrigin sourceOrigin = {copy_region->source_offset.x, copy_region->source_offset.y, copy_region->source_offset.z};
-    MTLOrigin destinationOrigin = {copy_region->destination_offset.x, copy_region->destination_offset.y, copy_region->destination_offset.z};
-    MTLSize extent = {copy_region->extent.width, copy_region->extent.height, copy_region->extent.depth};
+    recordCommand([=] {
+        beginBlitting();
+        MTLOrigin sourceOrigin = {copy_region->source_offset.x, copy_region->source_offset.y, copy_region->source_offset.z};
+        MTLOrigin destinationOrigin = {copy_region->destination_offset.x, copy_region->destination_offset.y, copy_region->destination_offset.z};
+        MTLSize extent = {copy_region->extent.width, copy_region->extent.height, copy_region->extent.depth};
 
-    for(agpu_uint layer = 0; layer < copy_region->source_subresource_level.layer_count; ++layer)
-    {
-        [blitEncoder copyFromTexture: source_texture.as<AMtlTexture> ()->linearViewHandle
-            sourceSlice: copy_region->source_subresource_level.base_arraylayer + layer
-            sourceLevel: copy_region->source_subresource_level.miplevel
-           sourceOrigin: sourceOrigin
-             sourceSize: extent
-              toTexture: dest_texture.as<AMtlTexture> ()->linearViewHandle
-       destinationSlice: copy_region->destination_subresource_level.base_arraylayer + layer
-       destinationLevel: copy_region->destination_subresource_level.miplevel
-      destinationOrigin: destinationOrigin];
-    }
-    endBlitting();
+        for(agpu_uint layer = 0; layer < copy_region->source_subresource_level.layer_count; ++layer)
+        {
+            [blitEncoder copyFromTexture: source_texture.as<AMtlTexture> ()->linearViewHandle
+                sourceSlice: copy_region->source_subresource_level.base_arraylayer + layer
+                sourceLevel: copy_region->source_subresource_level.miplevel
+            sourceOrigin: sourceOrigin
+                sourceSize: extent
+                toTexture: dest_texture.as<AMtlTexture> ()->linearViewHandle
+        destinationSlice: copy_region->destination_subresource_level.base_arraylayer + layer
+        destinationLevel: copy_region->destination_subresource_level.miplevel
+        destinationOrigin: destinationOrigin];
+        }
+        endBlitting();
+    });
     return AGPU_OK;
 }
 

@@ -1,14 +1,14 @@
 #include "pipeline_state.hpp"
 #include "pipeline_builder.hpp"
 #include "compute_pipeline_builder.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
     
 AGPUMTLRenderPipelineState::AGPUMTLRenderPipelineState()
 {
-    depthStencilState = nil;
-    
+    AgpuProfileConstructor(AGPUMTLRenderPipelineState);
     depthBiasConstantFactor = 0.0f;
     depthBiasClamp = 0.0f;
     depthBiasSlopeFactor = 0.0f;
@@ -16,10 +16,7 @@ AGPUMTLRenderPipelineState::AGPUMTLRenderPipelineState()
 
 AGPUMTLRenderPipelineState::~AGPUMTLRenderPipelineState()
 {
-    if(handle)
-        [handle release];
-    if(depthStencilState)
-        [depthStencilState release];
+    AgpuProfileDestructor(AGPUMTLRenderPipelineState);
 }
 
 void AGPUMTLRenderPipelineState::applyRenderCommands(id<MTLRenderCommandEncoder> renderEncoder)
@@ -33,13 +30,12 @@ void AGPUMTLRenderPipelineState::applyRenderCommands(id<MTLRenderCommandEncoder>
 
 AGPUMTLComputePipelineState::AGPUMTLComputePipelineState()
 {
-    handle = nil;
+    AgpuProfileConstructor(AGPUMTLComputePipelineState);
 }
 
 AGPUMTLComputePipelineState::~AGPUMTLComputePipelineState()
 {
-    if(handle)
-        [handle release];
+    AgpuProfileDestructor(AGPUMTLComputePipelineState);
 }
 
 void AGPUMTLComputePipelineState::applyComputeCommands(id<MTLComputeCommandEncoder> computeEncoder)
@@ -50,10 +46,12 @@ void AGPUMTLComputePipelineState::applyComputeCommands(id<MTLComputeCommandEncod
 AMtlPipelineState::AMtlPipelineState(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlPipelineState);
 }
 
 AMtlPipelineState::~AMtlPipelineState()
 {
+    AgpuProfileDestructor(AMtlPipelineState);
 }
 
 agpu::pipeline_state_ref AMtlPipelineState::createRender(const agpu::device_ref &device, AMtlGraphicsPipelineBuilder *builder, id<MTLRenderPipelineState> handle)

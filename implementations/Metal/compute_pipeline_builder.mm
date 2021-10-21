@@ -2,6 +2,7 @@
 #include "shader.hpp"
 #include "shader_signature.hpp"
 #include "pipeline_state.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -9,10 +10,12 @@ namespace AgpuMetal
 AMtlComputePipelineBuilder::AMtlComputePipelineBuilder(const agpu::device_ref &device)
     : device(device)
 {
+    AgpuProfileConstructor(AMtlComputePipelineBuilder);
 }
 
 AMtlComputePipelineBuilder::~AMtlComputePipelineBuilder()
 {
+    AgpuProfileDestructor(AMtlComputePipelineBuilder);
 }
 
 agpu::compute_pipeline_builder_ref AMtlComputePipelineBuilder::create(const agpu::device_ref &device)
@@ -30,24 +33,26 @@ agpu::pipeline_state_ptr AMtlComputePipelineBuilder::build ()
         return nullptr;
     }
 
-    AMtlShaderForSignatureRef shaderInstance;
-    auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, shaderEntryPoint, AGPU_COMPUTE_SHADER, &buildingLog, &shaderInstance);
-    if(error || !shaderInstance || !shaderInstance->function)
-        return nullptr;
+    @autoreleasepool {
+        AMtlShaderForSignatureRef shaderInstance;
+        auto error = shader.as<AMtlShader> ()->getOrCreateShaderInstanceForSignature(shaderSignature, shaderEntryPoint, AGPU_COMPUTE_SHADER, &buildingLog, &shaderInstance);
+        if(error || !shaderInstance || !shaderInstance->function)
+            return nullptr;
 
-    localSize = shaderInstance->localSize;
+        localSize = shaderInstance->localSize;
 
-    NSError *nsError;
-    auto pipelineState = [deviceForMetal->device newComputePipelineStateWithFunction: shaderInstance->function error: &nsError];
-    if(!pipelineState)
-    {
-        auto description = [nsError localizedDescription];
-        buildingLog = [description UTF8String];
-        printf("Failed to build pipeline state: %s\n", buildingLog.c_str());
-        return nullptr;
+        NSError *nsError;
+        auto pipelineState = [deviceForMetal->device newComputePipelineStateWithFunction: shaderInstance->function error: &nsError];
+        if(!pipelineState)
+        {
+            auto description = [nsError localizedDescription];
+            buildingLog = [description UTF8String];
+            printf("Failed to build pipeline state: %s\n", buildingLog.c_str());
+            return nullptr;
+        }
+
+        return AMtlPipelineState::createCompute(device, this, pipelineState).disown();
     }
-
-    return AMtlPipelineState::createCompute(device, this, pipelineState).disown();
 }
 
 agpu_error AMtlComputePipelineBuilder::attachShader(const agpu::shader_ref &newShader)

@@ -1,4 +1,5 @@
 #include "fence.hpp"
+#include "../Common/memory_profiler.hpp"
 
 namespace AgpuMetal
 {
@@ -6,17 +7,15 @@ namespace AgpuMetal
 AMtlFence::AMtlFence(const agpu::device_ref &device)
     : weakDevice(device)
 {
-    fenceCommand = nil;
+    AgpuProfileConstructor(AMtlFence);
     isSignaled = false;
 }
 
 AMtlFence::~AMtlFence()
 {
+    AgpuProfileDestructor(AMtlFence);
     if(fenceCommand)
-    {
-        [fenceCommand release];
-        fenceCommand = nil;
-    }
+        [fenceCommand waitUntilCompleted];
 }
 
 agpu::fence_ref AMtlFence::create(const agpu::device_ref &device)
@@ -34,8 +33,7 @@ agpu_error AMtlFence::waitOnClient()
         if(fenceCommand)
         {
             [fenceCommand waitUntilCompleted];
-            [fenceCommand release];
-            fenceCommand = nil;            
+            fenceCommand = nil;
         }
     }
 
@@ -44,19 +42,20 @@ agpu_error AMtlFence::waitOnClient()
 
 agpu_error AMtlFence::signalOnQueue(id<MTLCommandQueue> queue)
 {
-    std::unique_lock<std::mutex> l(mutex);
-    if(fenceCommand)
-        [fenceCommand release];
-
-    isSignaled = false;
-    fenceCommand = [queue commandBuffer];
-    [fenceCommand addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+    @autoreleasepool {
         std::unique_lock<std::mutex> l(mutex);
-        isSignaled = true;
-        signaledCondition.notify_all();
-    }];
-    [fenceCommand commit];
-    return AGPU_OK;
+        isSignaled = false;
+        if(fenceCommand)
+            [fenceCommand waitUntilCompleted];
+        fenceCommand = [queue commandBuffer];
+        [fenceCommand addCompletedHandler:^(id<MTLCommandBuffer> cb) {
+            std::unique_lock<std::mutex> l(mutex);
+            isSignaled = true;
+            signaledCondition.notify_all();
+        }];
+        [fenceCommand commit];
+        return AGPU_OK;
+    }
 }
 
 } // End of namespace AgpuMetal
