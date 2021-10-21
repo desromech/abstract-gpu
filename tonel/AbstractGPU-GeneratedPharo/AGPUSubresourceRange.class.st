@@ -1,14 +1,14 @@
 Class {
 	#name : #AGPUSubresourceRange,
+	#superclass : #FFIExternalStructure,
 	#pools : [
 		'AGPUConstants',
 		'AGPUTypes'
 	],
-	#superclass : #FFIExternalStructure,
 	#category : 'AbstractGPU-GeneratedPharo'
 }
 
-{ #category : #'definition' }
+{ #category : #definition }
 AGPUSubresourceRange class >> fieldsDesc [
 	"
 	self rebuildFieldAccessors
@@ -21,4 +21,3 @@ AGPUSubresourceRange class >> fieldsDesc [
 		 agpu_uint layer_count;
 	)
 ]
-

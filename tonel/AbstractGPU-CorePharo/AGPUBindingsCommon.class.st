@@ -1,3 +1,6 @@
+"
+I provide common APIs for the different AGPU bindings.
+"
 Class {
 	#name : #AGPUBindingsCommon,
 	#superclass : #Object,

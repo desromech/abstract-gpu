@@ -1,3 +1,6 @@
+"
+I wrap an AGPU error code.
+"
 Class {
 	#name : #AGPUError,
 	#superclass : #Error,

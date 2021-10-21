@@ -1,14 +1,21 @@
+"
+I hold the global AGPU entry points, and some facilities for selecting devices and platforms.
+"
 Class {
 	#name : #AGPU,
 	#superclass : #AGPUBindingsCommon,
 	#instVars : [
-		'session',
 		'mainPlatform',
-		'mainDevice'
+		'mainDevice',
+		'deviceSession',
+		'platformSessions',
+		'platforms',
+		'deviceDescriptions'
 	],
 	#classVars : [
 		'AllowVR',
 		'DebugLayerEnabled',
+		'PreferredMainDeviceName',
 		'UniqueInstance',
 		'VSyncEnabled'
 	],
@@ -22,6 +29,10 @@ AGPU class >> agpuSettingsOn: aBuilder [
 		label: 'AbstractGPU';
 		description: 'AbstractGPU Settings';
 		with: [
+			(aBuilder pickOne: #preferredMainDeviceName)
+				domainValues: #('') , self availableMainDeviceNames;
+				label: 'Preferred Main Device Name';
+				description: 'This selects the name of the preffered main device.'.
 			(aBuilder setting: #debugLayerEnabled)
 				label: 'Debug Layer enabled';
 				description: 'This enables the graphics API debug layer (Vulkan Only).'.
@@ -45,6 +56,11 @@ AGPU class >> allowVR: aBoolean [
 ]
 
 { #category : #preferences }
+AGPU class >> availableMainDeviceNames [
+	^ self deviceDescriptions collect: [ :each | each fullName ]
+]
+
+{ #category : #preferences }
 AGPU class >> debugLayerEnabled [
 	^ DebugLayerEnabled ifNil: [ DebugLayerEnabled := false ]
 ]
@@ -52,6 +68,11 @@ AGPU class >> debugLayerEnabled [
 { #category : #preferences }
 AGPU class >> debugLayerEnabled: aBoolean [
 	^ DebugLayerEnabled := aBoolean
+]
+
+{ #category : #'platform querying' }
+AGPU class >> deviceDescriptions [
+	^ self uniqueInstance deviceDescriptions
 ]
 
 { #category : #'platform querying' }
@@ -88,6 +109,16 @@ AGPU class >> platforms [
 	^ self uniqueInstance platforms
 ]
 
+{ #category : #preferences }
+AGPU class >> preferredMainDeviceName [
+	^ PreferredMainDeviceName ifNil: [ PreferredMainDeviceName := '' ]
+]
+
+{ #category : #preferences }
+AGPU class >> preferredMainDeviceName: aString [
+	^ PreferredMainDeviceName := aString
+]
+
 { #category : #accessing }
 AGPU class >> session [
 	^ Smalltalk session
@@ -120,17 +151,64 @@ AGPU >> allowVR [
 ]
 
 { #category : #'main device' }
-AGPU >> checkSession [
-	(session ~~ Smalltalk session or: [mainDevice isNil]) ifTrue: [
+AGPU >> checkDeviceSession [
+	(deviceSession ~~ Smalltalk session or: [mainDevice isNil]) ifTrue: [
 		self openMainDevice.
-		session := Smalltalk session.
+		deviceSession := Smalltalk session.
 	].
 
+]
+
+{ #category : #'platform querying' }
+AGPU >> checkPlatformsSession [
+	self fetchPlatforms.
+	self fetchDevices.
 ]
 
 { #category : #'main device' }
 AGPU >> debugLayerEnabled [
 	^ self class debugLayerEnabled
+]
+
+{ #category : #'platform querying' }
+AGPU >> deviceDescriptions [
+	self checkPlatformsSession.
+	^ deviceDescriptions
+]
+
+{ #category : #private }
+AGPU >> fetchDevices [
+	deviceDescriptions := OrderedCollection new.
+	platforms doWithIndex: [ :platform :platormIndex |
+		| platformName |
+		platformName := platform getName.
+		0 to: platform getGpuCount - 1 do: [ :gpuIndex |
+			deviceDescriptions add: (AGPUDeviceDescription new
+				id: deviceDescriptions size;
+				platformIndex: platormIndex - 1;
+				gpuIndex: gpuIndex;
+				platformName: platformName;
+				name: (platform getGpuName: gpuIndex);
+				type: (platform getGpuDeviceType: gpuIndex);
+				yourself)
+		]
+	].
+]
+
+{ #category : #'platform querying' }
+AGPU >> fetchPlatforms [
+	| platformCount platformPointers platformCountRet pointerSize |
+	platformCount := self platformCount.
+	platformCountRet := ExternalAddress allocate: 4.
+	platforms := [
+		pointerSize := Smalltalk wordSize.
+		platformPointers := ExternalAddress allocate: pointerSize * platformCount.
+		[
+			self getPlatforms: platformCount platforms: platformPointers ret_numplatforms: platformCountRet.
+			platformCount := platformCountRet unsignedLongAt: 1.
+			(1 to: platformCount) collect: [ :i | (Smalltalk at: #AGPUPlatform) forManualHandle: (platformPointers pointerAt: (i-1)*pointerSize + 1)]
+		] ensure: [ platformPointers free ]
+	] ensure: [ platformCountRet free ].
 ]
 
 { #category : #'platform querying' }
@@ -140,23 +218,38 @@ AGPU >> firstPlatform [
 
 { #category : #'main device' }
 AGPU >> mainDevice [
-	self checkSession.
+	self checkDeviceSession.
 	^ mainDevice
 ]
 
 { #category : #'main device' }
 AGPU >> mainPlatform [
-	self checkSession.
+	self checkDeviceSession.
 	^ mainPlatform
 ]
 
 { #category : #'main device' }
 AGPU >> openMainDevice [
-	| deviceOpenInfo |
-	mainPlatform := self firstPlatform.
+	| deviceOpenInfo mainPlatformIndex mainGpuIndex |
+	mainPlatformIndex := 0.
+	mainGpuIndex := 0.
+	self preferredMainDeviceName ifNotEmpty: [ 
+		self deviceDescriptions detect: [ :each | each fullName = self preferredMainDeviceName ] ifFound: [ :mainDeviceDescription |
+			mainPlatformIndex := mainDeviceDescription platformIndex.
+			mainGpuIndex := mainDeviceDescription gpuIndex.
+		]
+	].
+
+	self platforms ifEmpty: [ 
+		self error: 'No AGPU platform is available.'
+	].
+
+	mainPlatform := platforms at: mainPlatformIndex + 1.
 	mainPlatform ifNil: [ self error: 'No AGPU platform is available.' ].
 
-	deviceOpenInfo := AGPUDeviceOpenInfo new debug_layer: self debugLayerEnabled asBit.
+	deviceOpenInfo := AGPUDeviceOpenInfo new
+		gpu_index: mainGpuIndex;
+		debug_layer: self debugLayerEnabled asBit.
 	self allowVR ifTrue: [ 
 		deviceOpenInfo open_flags: (AGPUConstants bindingOf: #AGPU_DEVICE_OPEN_FLAG_ALLOW_VR) value.
 	].
@@ -178,16 +271,11 @@ AGPU >> platformCount [
 
 { #category : #'platform querying' }
 AGPU >> platforms [
-	| platformCount platformPointers platformCountRet pointerSize |
-	platformCount := self platformCount.
-	platformCountRet := ExternalAddress allocate: 4.
-	[
-		pointerSize := Smalltalk wordSize.
-		platformPointers := ExternalAddress allocate: pointerSize * platformCount.
-		[
-			self getPlatforms: platformCount platforms: platformPointers ret_numplatforms: platformCountRet.
-			platformCount := platformCountRet unsignedLongAt: 1.
-			^ (1 to: platformCount) collect: [ :i | (Smalltalk at: #AGPUPlatform) forManualHandle: (platformPointers pointerAt: (i-1)*pointerSize + 1)]
-		] ensure: [ platformPointers free ]
-	] ensure: [ platformCountRet free ].
+	self checkPlatformsSession.
+	^ platforms
+]
+
+{ #category : #preferences }
+AGPU >> preferredMainDeviceName [
+	^ self class preferredMainDeviceName
 ]

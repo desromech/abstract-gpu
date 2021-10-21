@@ -10,7 +10,7 @@ Class {
 	#category : #'AbstractGPU-CorePharo'
 }
 
-{ #category : #'constructing' }
+{ #category : #constructing }
 AGPUMemoryCopier class >> forExternalAddress: anExternalAddress [
 	^ self basicNew externalAddress: anExternalAddress; yourself
 ]

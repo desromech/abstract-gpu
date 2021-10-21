@@ -4,24 +4,23 @@ Class {
 	#category : 'AbstractGPU-GeneratedPharo'
 }
 
-{ #category : #'wrappers' }
+{ #category : #wrappers }
 AGPUFence >> addReference [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance addReference_fence: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 
-{ #category : #'wrappers' }
+{ #category : #wrappers }
 AGPUFence >> primitiveRelease [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance release_fence: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 
-{ #category : #'wrappers' }
+{ #category : #wrappers }
 AGPUFence >> waitOnClient [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance waitOnClient_fence: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
-

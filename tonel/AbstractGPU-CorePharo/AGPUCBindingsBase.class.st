@@ -1,3 +1,6 @@
+"
+I provide the base glue code for the generated C API bindings.
+"
 Class {
 	#name : #AGPUCBindingsBase,
 	#superclass : #PhaNAPILibrary,

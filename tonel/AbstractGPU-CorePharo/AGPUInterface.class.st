@@ -1,3 +1,6 @@
+"
+I provide common APIs for interfaces that are exported from AGPU.
+"
 Class {
 	#name : #AGPUInterface,
 	#superclass : #AGPUBindingsCommon,

@@ -4,24 +4,23 @@ Class {
 	#category : 'AbstractGPU-GeneratedPharo'
 }
 
-{ #category : #'wrappers' }
+{ #category : #wrappers }
 AGPUTextureView >> addReference [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance addReference_texture_view: (self validHandle).
 	self checkErrorCode: resultValue_
 ]
 
-{ #category : #'wrappers' }
-AGPUTextureView >> primitiveRelease [
-	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance release_texture_view: (self validHandle).
-	self checkErrorCode: resultValue_
-]
-
-{ #category : #'wrappers' }
+{ #category : #wrappers }
 AGPUTextureView >> getTexture [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance getTexture_texture_view: (self validHandle).
 	^ AGPUTexture forHandle: resultValue_
 ]
 
+{ #category : #wrappers }
+AGPUTextureView >> primitiveRelease [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance release_texture_view: (self validHandle).
+	self checkErrorCode: resultValue_
+]
