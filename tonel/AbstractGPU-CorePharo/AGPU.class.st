@@ -8,7 +8,7 @@ Class {
 		'mainPlatform',
 		'mainDevice',
 		'deviceSession',
-		'platformSessions',
+		'platformSession',
 		'platforms',
 		'deviceDescriptions'
 	],
@@ -30,7 +30,7 @@ AGPU class >> agpuSettingsOn: aBuilder [
 		description: 'AbstractGPU Settings';
 		with: [
 			(aBuilder pickOne: #preferredMainDeviceName)
-				domainValues: #('') , self availableMainDeviceNames;
+				domainValues: #('') , self availableDeviceNames;
 				label: 'Preferred Main Device Name';
 				description: 'This selects the name of the preffered main device.'.
 			(aBuilder setting: #debugLayerEnabled)
@@ -56,7 +56,7 @@ AGPU class >> allowVR: aBoolean [
 ]
 
 { #category : #preferences }
-AGPU class >> availableMainDeviceNames [
+AGPU class >> availableDeviceNames [
 	^ self deviceDescriptions collect: [ :each | each fullName ]
 ]
 
@@ -161,8 +161,12 @@ AGPU >> checkDeviceSession [
 
 { #category : #'platform querying' }
 AGPU >> checkPlatformsSession [
-	self fetchPlatforms.
-	self fetchDevices.
+	(platformSession ~~ Smalltalk session or: [platforms isNil]) ifTrue: [
+		self fetchPlatforms.
+		self fetchDevices.
+		platformSession := Smalltalk session.
+	].
+
 ]
 
 { #category : #'main device' }
