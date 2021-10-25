@@ -356,8 +356,8 @@ AGPUTextureUploader >> uploadForm: form intoTexture: texture extent: textureExte
 	].
 	
 	sourceIndex := 1.
-	sourceBits := form bits.
-	sourceRowAdvance := form width * 4.
+	sourceBits := convertedForm bits.
+	sourceRowAdvance := convertedForm width * 4.
 	
 	sourceRowAdvance = destRowAdvance ifTrue: [
 		mappedBufferCopier replaceFrom: 1 to: slicePitch with: sourceBits startingAt: 1.

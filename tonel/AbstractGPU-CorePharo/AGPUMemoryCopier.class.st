@@ -29,5 +29,9 @@ AGPUMemoryCopier >> externalAddress: anExternalAddress [
 
 { #category : #accessing }
 AGPUMemoryCopier >> replaceFrom: start to: stop with: replacement startingAt: repStart [
-	^ externalAddress replaceFrom: start to: stop with: replacement startingAt: repStart
+	| sourceAddress destAddress size |
+	sourceAddress := replacement tfPointerAddress + (repStart - 1).
+	destAddress := externalAddress + (start - 1).
+	size := stop - start + 1.
+	LibC memCopy: sourceAddress to: destAddress size: size
 ]
