@@ -368,7 +368,6 @@ agpu_error AMtlGraphicsPipelineBuilder::setPolygonMode(agpu_polygon_mode mode)
 
 agpu_error AMtlGraphicsPipelineBuilder::setVertexLayout(const agpu::vertex_layout_ref &layout)
 {
-    CHECK_POINTER(layout);
     this->vertexLayout = layout;
     return AGPU_OK;
 }
