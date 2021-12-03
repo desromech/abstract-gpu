@@ -68,6 +68,33 @@ AGPUTextureUploader >> beginCommandList [
 ]
 
 { #category : #API }
+AGPUTextureUploader >> convertEnvironmentMap: environmentMap intoDiffuseLightProbe: lightProbeTexture size: lightProbeTextureSize [
+	^ self emitCommandsWith: [:aCommandList :aListOfRetainedResources |
+		
+		lightProbePreprocessor
+			emitCommandsForGeneratingDiffuseLightProbeFrom: environmentMap getOrCreateFullView intoCubeMap: lightProbeTexture size: lightProbeTextureSize on: aCommandList retainResourcesOn: aListOfRetainedResources
+	]
+]
+
+{ #category : #API }
+AGPUTextureUploader >> convertEnvironmentMap: environmentMap intoSpecularLightProbe: lightProbeTexture size: lightProbeTextureSize [
+	^ self emitCommandsWith: [:aCommandList :aListOfRetainedResources |
+		
+		lightProbePreprocessor
+			emitCommandsForGeneratingSpecularLightProbeFrom: environmentMap getOrCreateFullView intoCubeMap: lightProbeTexture size: lightProbeTextureSize on: aCommandList retainResourcesOn: aListOfRetainedResources
+	]
+]
+
+{ #category : #API }
+AGPUTextureUploader >> convertHDRI: hdriTexture extent: hdriTextureExtent intoEnvironmentMap: environmentMapTexture size: environmentMapSize [
+	^ self emitCommandsWith: [:aCommandList :aListOfRetainedResources |
+		
+		lightProbePreprocessor
+			emitCommandsForConvertingHDRI: hdriTexture getOrCreateFullView extent: hdriTextureExtent intoCubeMap: environmentMapTexture size: environmentMapSize on: aCommandList retainResourcesOn: aListOfRetainedResources
+	]
+]
+
+{ #category : #API }
 AGPUTextureUploader >> createAndComputeBRDFLut [
 	| texture size textureViewDescription textureViewAttachment framebuffer |
 	size := self class brdfLutSize.
@@ -268,6 +295,18 @@ AGPUTextureUploader >> createTextureForHDRI: hdri [
 { #category : #API }
 AGPUTextureUploader >> createTextureForNonColorForm: aForm [
 	^ self createNonColorTextureForExtent: aForm extent depth: 32
+]
+
+{ #category : #private }
+AGPUTextureUploader >> emitCommandsWith: aBlock [
+	self ensureLastOperationHasFinished.
+	self beginCommandList.
+	aBlock value: commandList value: activeResources.
+
+	commandList
+		close.
+	self submitCommandList
+
 ]
 
 { #category : #private }
