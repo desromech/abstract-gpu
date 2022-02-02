@@ -25,8 +25,8 @@ public:
     id<MTLTexture> getColorTexture(agpu_uint index);
 
     agpu::device_ref device;
-    agpu_uint width;
-    agpu_uint height;
+    agpu_uint width = 0;
+    agpu_uint height = 0;
     std::vector<agpu::texture_ref> colorBuffers;
     std::vector<agpu::texture_view_ref> colorBufferViews;
     

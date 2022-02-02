@@ -61,6 +61,8 @@ agpu::framebuffer_ref AMtlFramebuffer::createForSwapChain(const agpu::device_ref
     // Create the framebuffer object.
     auto result = agpu::makeObject<AMtlFramebuffer> (device);
     auto framebuffer = result.as<AMtlFramebuffer> ();
+    framebuffer->width = width;
+    framebuffer->height = height;
 
     // Add the depth stencil references.
     if(depthStencilView)
