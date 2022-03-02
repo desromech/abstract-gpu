@@ -60,7 +60,7 @@ add_dependencies(AgpuOpenGL
     ${AgpuCommonHighLevelInterfaces_DEPS})
 target_link_libraries(AgpuOpenGL
     ${OPENGL_gl_LIBRARY} $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-glsl>
-    ${AgpuCommonHighLevelInterfaces_LIBS})
+    )
 if(UNIX AND NOT APPLE)
     target_link_libraries(AgpuOpenGL -pthread)
 endif()

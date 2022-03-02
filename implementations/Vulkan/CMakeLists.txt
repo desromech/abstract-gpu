@@ -84,15 +84,13 @@ else()
     set(AgpuVulkan Agpu)
 endif()
 
-add_library(${AgpuVulkan} SHARED ${AGPU_Vulkan_SOURCES})
-add_dependencies(${AgpuVulkan} ${AgpuCommonHighLevelInterfaces_DEPS})
+set(AllVulkanSources ${AGPU_Vulkan_SOURCES} ${AgpuCommonHighLevelInterfaces_LIBS})
 
 if(BUILD_WITH_OPENVR)
-    add_dependencies(${AgpuVulkan} openvr_embeddedapi)
     include_directories(${OPENVR_INCLUDE})
-    target_link_libraries(${AgpuVulkan}
-        $<TARGET_OBJECTS:openvr_embeddedapi>)
+    set(AllVulkanSources ${AllVulkanSources} $<TARGET_OBJECTS:openvr_embeddedapi>)
 endif()
-target_link_libraries(${AgpuVulkan}
-    ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES}
-    ${AgpuCommonHighLevelInterfaces_LIBS})
+
+add_library(${AgpuVulkan} SHARED ${AllVulkanSources})
+
+target_link_libraries(${AgpuVulkan} ${VULKAN_LIBRARY} ${VULKAN_WSYS_LIBRARIES})
