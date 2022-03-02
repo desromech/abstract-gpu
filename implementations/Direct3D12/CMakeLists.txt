@@ -78,22 +78,15 @@ if(BUILD_MULTIPLE_BACKENDS)
 else()
     set(AgpuDirect3D12 Agpu)
 endif()
-add_library(${AgpuDirect3D12} SHARED ${AGPU_Direct3D12_SOURCES})
-add_dependencies(${AgpuDirect3D12}
-	spirv-cross-core spirv-cross-glsl spirv-cross-hlsl
-	${AgpuCommonHighLevelInterfaces_DEPS}
+
+set(AllD3D12Sources
+    ${AGPU_Direct3D12_SOURCES} ${AgpuCommonHighLevelInterfaces_LIBS}
+    $<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-hlsl> $<TARGET_OBJECTS:spirv-cross-glsl>
 )
 if(BUILD_OPENVR)
-    add_dependencies(${AgpuDirect3D12} openvr_embeddedapi)
+    set(AllD3D12Sources ${AllD3D12Sources} $<TARGET_OBJECTS:openvr_embeddedapi>)
+    include_directories(${OPENVR_INCLUDE})
 endif()
 
-include_directories(${OPENVR_INCLUDE})
-target_link_libraries(${AgpuDirect3D12}
-    ${D3D12_LIBRARIES}
-	$<TARGET_OBJECTS:spirv-cross-core> $<TARGET_OBJECTS:spirv-cross-hlsl> $<TARGET_OBJECTS:spirv-cross-glsl>
-    ${AgpuCommonHighLevelInterfaces_LIBS}
-)
-
-if(BUILD_OPENVR)
-    add_dependencies(${AgpuDirect3D12} $<TARGET_OBJECTS:openvr_embeddedapi> ${OPENVR_LIBS})
-endif()
+add_library(${AgpuDirect3D12} SHARED ${AllD3D12Sources})
+target_link_libraries(${AgpuDirect3D12} ${D3D12_LIBRARIES})

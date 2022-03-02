@@ -95,6 +95,13 @@ if(APPLE)
 	set(BUILD_WITH_OPENVR OFF)
 	set(BUILD_MULTIPLE_BACKENDS OFF)
 	set(BUILD_TOOLS OFF)
+# We only support vulkan in linux, so do not build the icd and the other backends.
+elseif(UNIX)
+	set(BUILD_VULKAN ON)
+	set(BUILD_OPENGL OFF)
+	set(BUILD_D3D12 OFF)
+	set(BUILD_METAL OFF)
+	set(BUILD_MULTIPLE_BACKENDS OFF)
 endif()
 
 find_path(X11_INCLUDE_DIRS
