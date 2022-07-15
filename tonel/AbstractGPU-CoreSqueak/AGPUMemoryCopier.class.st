@@ -17,7 +17,7 @@ AGPUMemoryCopier class >> forExternalAddress: anExternalAddress [
 { #category : #accessing }
 AGPUMemoryCopier >> externalAddress: anExternalAddress [
 
-	alien := Alien forPointer: anExternalAddress asInteger
+	alien := (Smalltalk at: #Alien ifAbsent: [Smalltalk at: #AlienStub]) forPointer: anExternalAddress asInteger
 ]
 
 { #category : #accessing }
