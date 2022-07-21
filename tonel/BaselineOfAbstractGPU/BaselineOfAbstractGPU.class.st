@@ -48,7 +48,12 @@ BaselineOfAbstractGPU >> baselineForSqueak: spec [
 				versionString: #development;
 				loads: #('Core')
 		];
-		package: #'AbstractGPU-CoreSqueak' with: [];
+		baseline: #'PhaNAPI' with: [
+			spec repository: 'github://ronsaldo/phanapi'
+		];
+		package: #'AbstractGPU-CoreSqueak' with: [
+			spec requires: #(#'PhaNAPI' )
+		];
 		package: #'AbstractGPU-GeneratedSqueak' with: [
 			spec requires: #(#'AbstractGPU-CoreSqueak' )
 		];
