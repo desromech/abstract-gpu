@@ -17,7 +17,7 @@ BaselineOfAbstractGPU >> baselineForPharo: spec [
 	spec postLoadDoIt: #postLoadActionsForPharo.
 	spec
 		baseline: #'PhaNAPI' with: [
-			spec repository: 'github://ronsaldo/phanapi'
+			spec repository: 'github://desromech/phanapi'
 		];
 		package: #'AbstractGPU-CorePharo' with: [
 			spec requires: #(#'PhaNAPI' ).
@@ -49,7 +49,7 @@ BaselineOfAbstractGPU >> baselineForSqueak: spec [
 				loads: #('Core')
 		];
 		baseline: #'PhaNAPI' with: [
-			spec repository: 'github://ronsaldo/phanapi'
+			spec repository: 'github://desromech/phanapi'
 		];
 		package: #'AbstractGPU-CoreSqueak' with: [
 			spec requires: #(#'PhaNAPI' )
