@@ -33,7 +33,7 @@ playground:
 ```smalltalk
 Metacello new
    baseline: 'AbstractGPU';
-   repository: 'github://ronsaldo/abstract-gpu/tonel';
+   repository: 'github://desromech/abstract-gpu/tonel';
    load
 ```
 
