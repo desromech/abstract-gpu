@@ -53,6 +53,12 @@ AGPUTextureLightprobePreprocessor class >> defaultSpecularLightProbeSize [
 ]
 
 { #category : #'instance creation' }
+AGPUTextureLightprobePreprocessor class >> floatArray [
+
+	^ Float32Array
+]
+
+{ #category : #'instance creation' }
 AGPUTextureLightprobePreprocessor class >> for: device [
 	^ self for: device utilityResourceCache: (AGPUUtilityResourceCache for: device)
 ]
@@ -159,7 +165,7 @@ AGPUTextureLightprobePreprocessor >> emitCommandsForProcessingTexture: sourceTex
 		useShaderResources: samplerBinding;
 		useShaderResources: sourceBinding;
 		pushConstants: 0 size: 4 values: (WordArray with: faceId);
-		pushConstants: 4 size: 4 values: (FloatArray with: roughnessFactor);
+		pushConstants: 4 size: 4 values: ((self class floatArray) with: roughnessFactor);
 		drawArrays: 3 instance_count: 1 first_vertex: 0 base_instance: 0;
 		endRenderPass;
 
