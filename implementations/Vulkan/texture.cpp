@@ -99,7 +99,7 @@ static void computeBufferImageTransferLayout(const agpu_texture_description &des
         auto uncompressedPixelSize = pixelSizeOfTextureFormat(description.format);
         layout->rowPitch = (extent.width*uncompressedPixelSize + 3) & -4;
         layout->depthPitch = layout->rowPitch * extent.height;
-        layout->size = layout->depthPitch;
+        layout->size = layout->depthPitch * extent.depth;
         copy->bufferRowLength = uint32_t(layout->rowPitch / uncompressedPixelSize);
         copy->bufferImageHeight = uint32_t(extent.height);
     }
@@ -432,13 +432,21 @@ agpu_error AVkTexture::readTextureSubData(agpu_int level, agpu_int arrayIndex, a
             }
             else
             {
-                auto srcRow = reinterpret_cast<uint8_t*> (readbackPointer);
-                auto dstRow = reinterpret_cast<uint8_t*> (buffer);
-                for (uint32_t y = 0; y < copy.imageExtent.height; ++y)
+                auto srcSlice = reinterpret_cast<uint8_t*> (readbackPointer);
+                auto dstSlice = reinterpret_cast<uint8_t*> (buffer);
+                for (uint32_t z = 0; z < copy.imageExtent.depth; ++z)
                 {
-                    memcpy(dstRow, srcRow, pitch);
-                    srcRow += layout.rowPitch;
-                    dstRow += pitch;
+                    auto srcRow = srcSlice;
+                    auto dstRow = dstSlice;
+                    for (uint32_t y = 0; y < copy.imageExtent.height; ++y)
+                    {
+                        memcpy(dstRow, srcRow, pitch);
+                        srcRow += layout.rowPitch;
+                        dstRow += pitch;
+                    }
+
+                    srcSlice += layout.depthPitch;
+                    destSize += slicePitch;
                 }
             }
         }
@@ -494,13 +502,21 @@ agpu_error AVkTexture::uploadTextureSubData (agpu_int level, agpu_int arrayIndex
         }
         else
         {
-            auto srcRow = reinterpret_cast<uint8_t*> (data);
-            auto dstRow = reinterpret_cast<uint8_t*> (bufferPointer);
-            for (uint32_t y = 0; y < extent.height; ++y)
+            auto srcSlice = reinterpret_cast<uint8_t*> (data);
+            auto dstSlice = reinterpret_cast<uint8_t*> (bufferPointer);
+            for(uint32_t z = 0; z < extent.depth; ++z)
             {
-                memcpy(dstRow, srcRow, pitch);
-                srcRow += pitch;
-                dstRow += layout.rowPitch;
+                auto srcRow = srcSlice;
+                auto dstRow = dstSlice;
+                for (uint32_t y = 0; y < extent.height; ++y)
+                {
+                    memcpy(dstRow, srcRow, pitch);
+                    srcRow += pitch;
+                    dstRow += layout.rowPitch;
+                }
+
+                srcSlice += slicePitch;
+                dstSlice += layout.depthPitch;
             }
         }
 
