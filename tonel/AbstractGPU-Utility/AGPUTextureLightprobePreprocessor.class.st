@@ -159,7 +159,7 @@ AGPUTextureLightprobePreprocessor >> emitCommandsForProcessingTexture: sourceTex
 		useShaderResources: samplerBinding;
 		useShaderResources: sourceBinding;
 		pushConstants: 0 size: 4 values: (WordArray with: faceId);
-		pushConstants: 4 size: 4 values: (FloatArray with: roughnessFactor);
+		pushConstants: 4 size: 4 values: (self floatArrayClass with: roughnessFactor);
 		drawArrays: 3 instance_count: 1 first_vertex: 0 base_instance: 0;
 		endRenderPass;
 
@@ -254,6 +254,11 @@ AGPUTextureLightprobePreprocessor >> ensureIntermediateResourcesForSize: require
 	intermediateTextureView := intermediateTexture createView: intermediateTextureViewDescription.
 
 	intermediateTextureFramebuffer := device createFrameBuffer: intermediateTextureSize height: intermediateTextureSize colorCount: 1 colorViews: (AGPU packListOfReferences: {intermediateTextureView}) depthStencilView: nil.
+]
+
+{ #category : #'as yet unclassified' }
+AGPUTextureLightprobePreprocessor >> floatArrayClass [
+	^ Smalltalk at: #Float32Array ifAbsent: [ Smalltalk at: #FloatArray ]
 ]
 
 { #category : #initialization }
