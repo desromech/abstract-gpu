@@ -61,6 +61,21 @@ inline agpu_vr_tracked_device_class mapTrackedDeviceClass(vr::TrackedDeviceClass
     }
 }
 
+inline agpu_vr_tracked_device_role mapTrackedDeviceRole(vr::ETrackedControllerRole role)
+{
+    switch(role)
+    {
+	case vr::TrackedControllerRole_Invalid:
+    default:
+        return AGPU_VR_TRACKED_DEVICE_ROLE_INVALID;
+
+	case vr::TrackedControllerRole_LeftHand: return AGPU_VR_TRACKED_DEVICE_ROLE_LEFT_HAND;
+	case vr::TrackedControllerRole_RightHand:  return AGPU_VR_TRACKED_DEVICE_ROLE_RIGHT_HAND;
+	case vr::TrackedControllerRole_OptOut: return AGPU_VR_TRACKED_DEVICE_ROLE_OPT_OUT;
+	case vr::TrackedControllerRole_Treadmill:   return AGPU_VR_TRACKED_DEVICE_ROLE_THREADMILL;
+    }
+}
+
 AVkVrSystem::AVkVrSystem(const agpu::device_ref &device)
     : weakDevice(device), sharedContext(deviceForVk->sharedContext), submissionCommandBufferIndex(0)
 {
@@ -160,7 +175,7 @@ agpu_vr_tracked_device_pose AVkVrSystem::convertTrackedDevicePose(agpu_uint devi
     auto device = weakDevice.lock();
     convertedPose.device_id = deviceId;
     convertedPose.device_class = mapTrackedDeviceClass(sharedContext->vrSystem->GetTrackedDeviceClass(deviceId));
-    convertedPose.device_role = AGPU_VR_TRACKED_DEVICE_ROLE_INVALID;
+    convertedPose.device_role = mapTrackedDeviceRole(sharedContext->vrSystem->GetControllerRoleForTrackedDeviceIndex(deviceId));
 
     convertedPose.device_to_absolute_tracking = convertOVRMatrix(devicePose.mDeviceToAbsoluteTracking);
     convertedPose.velocity = convertOVRVector3(devicePose.vVelocity);
