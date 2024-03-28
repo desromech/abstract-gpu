@@ -4,21 +4,14 @@ Class {
 	#category : 'AbstractGPU-GeneratedPharo'
 }
 
-{ #category : #initialization }
-AGPUGeneratedDoIt class >> initializeBindings [
-	<script>
-	self initializeConstants.
-	self initializeStructures.
-]
-
-{ #category : #initialization }
+{ #category : #'initialization' }
 AGPUGeneratedDoIt class >> initializeConstants [
 	<script>
 	AGPUTypes initialize.
 	AGPUConstants initialize.
 ]
 
-{ #category : #initialization }
+{ #category : #'initialization' }
 AGPUGeneratedDoIt class >> initializeStructures [
 	<script>
 	AGPUDeviceOpenInfo rebuildFieldAccessors.
@@ -58,6 +51,9 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrDualAnalogEvent rebuildFieldAccessors.
 	AGPUVrEventData rebuildFieldAccessors.
 	AGPUVrEvent rebuildFieldAccessors.
+	AGPUVrRenderModelTexture rebuildFieldAccessors.
+	AGPUVrRenderModelVertex rebuildFieldAccessors.
+	AGPUVrRenderModel rebuildFieldAccessors.
 	AGPUImmediateRendererLightClassic rebuildFieldAccessors.
 	AGPUImmediateRendererLightPbr rebuildFieldAccessors.
 	AGPUImmediateRendererLight rebuildFieldAccessors.
@@ -66,3 +62,11 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUImmediateRendererMaterialFlatColor rebuildFieldAccessors.
 	AGPUImmediateRendererMaterial rebuildFieldAccessors.
 ]
+
+{ #category : #'initialization' }
+AGPUGeneratedDoIt class >> initializeBindings [
+	<script>
+	self initializeConstants.
+	self initializeStructures.
+]
+

@@ -50,6 +50,9 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrDualAnalogEvent defineFields.
 	AGPUVrEventData defineFields.
 	AGPUVrEvent defineFields.
+	AGPUVrRenderModelTexture defineFields.
+	AGPUVrRenderModelVertex defineFields.
+	AGPUVrRenderModel defineFields.
 	AGPUImmediateRendererLightClassic defineFields.
 	AGPUImmediateRendererLightPbr defineFields.
 	AGPUImmediateRendererLight defineFields.

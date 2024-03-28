@@ -1,5 +1,5 @@
 Class {
-	#name : #AGPUVector4f,
+	#name : #AGPUVrRenderModelTexture,
 	#pools : [
 		'AGPUConstants',
 		'AGPUTypes'
@@ -9,15 +9,15 @@ Class {
 }
 
 { #category : #'definition' }
-AGPUVector4f class >> fieldsDesc [
+AGPUVrRenderModelTexture class >> fieldsDesc [
 	"
 	self rebuildFieldAccessors
 	"
     ^ #(
-		 agpu_float x;
-		 agpu_float y;
-		 agpu_float z;
-		 agpu_float w;
+		 agpu_ushort width;
+		 agpu_ushort height;
+		 agpu_uint pitch;
+		 agpu_byte* data;
 	)
 ]
 

@@ -2,6 +2,9 @@
 #define AGPU_VULKAN_VR_SYSTEM_HPP
 
 #include "device.hpp"
+#include <memory>
+#include <unordered_map>
+#include <string>
 
 namespace AgpuVulkan
 {
@@ -34,6 +37,20 @@ public:
     agpu::texture_ref rightEyeTexture;
 };
 
+class VrRenderModel
+{
+public:
+    vr::RenderModel_t* vrRenderModel = nullptr;
+    vr::RenderModel_TextureMap_t *vrRenderModelTexture = nullptr;
+
+    std::vector<agpu_vr_render_model_vertex> convertedVertexData;
+    agpu_vr_render_model_texture agpuRenderModelTexture;
+    agpu_vr_render_model agpuRenderModel;
+
+    void convertVertexData();
+    void convertTextureData();
+};
+
 class AVkVrSystem : public agpu::vr_system
 {
 public:
@@ -59,6 +76,7 @@ public:
 	virtual agpu_size getMaxRenderTrackedDevicePoseCount() override;
 	virtual agpu_size getCurrentRenderTrackedDevicePoseCount() override;
 	virtual agpu_error getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) override;
+    virtual agpu_vr_render_model* getTrackedDeviceRenderModel(agpu_size index) override;
 
     virtual agpu_bool pollEvent ( agpu_vr_event* event ) override;
 
@@ -72,6 +90,8 @@ private:
     std::vector<agpu_vr_tracked_device_pose> currentRenderTrackedDevicePoses;
     vr::TrackedDevicePose_t trackedDevicesPose[vr::k_unMaxTrackedDeviceCount];
     vr::TrackedDevicePose_t renderTrackedDevicesPose[vr::k_unMaxTrackedDeviceCount];
+
+    std::unordered_map<std::string, std::shared_ptr<VrRenderModel>> renderModels;
 
     std::mutex submissionMutex;
 

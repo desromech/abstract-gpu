@@ -1073,6 +1073,30 @@ typedef struct agpu_vr_event {
 	agpu_vr_event_data data;
 } agpu_vr_event;
 
+/* Structure agpu_vr_render_model_texture. */
+typedef struct agpu_vr_render_model_texture {
+	agpu_ushort width;
+	agpu_ushort height;
+	agpu_uint pitch;
+	agpu_byte* data;
+} agpu_vr_render_model_texture;
+
+/* Structure agpu_vr_render_model_vertex. */
+typedef struct agpu_vr_render_model_vertex {
+	agpu_vector3f position;
+	agpu_vector3f normal;
+	agpu_vector2f texcoord;
+} agpu_vr_render_model_vertex;
+
+/* Structure agpu_vr_render_model. */
+typedef struct agpu_vr_render_model {
+	agpu_uint vertex_count;
+	agpu_vr_render_model_vertex* vertices;
+	agpu_uint triangle_count;
+	agpu_ushort* indices;
+	agpu_vr_render_model_texture* texture;
+} agpu_vr_render_model;
+
 /* Structure agpu_immediate_renderer_light_classic. */
 typedef struct agpu_immediate_renderer_light_classic {
 	agpu_vector4f ambient;
@@ -1260,6 +1284,7 @@ typedef agpu_error (*agpuGetCurrentVRTrackedDevicePoseInto_FUN) (agpu_vr_system*
 typedef agpu_size (*agpuGetMaxVRRenderTrackedDevicePoseCount_FUN) (agpu_vr_system* vr_system);
 typedef agpu_size (*agpuGetCurrentVRRenderTrackedDevicePoseCount_FUN) (agpu_vr_system* vr_system);
 typedef agpu_error (*agpuGetCurrentVRRenderTrackedDevicePoseInto_FUN) (agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest);
+typedef agpu_vr_render_model* (*agpuGetVRTrackedDeviceRenderModel_FUN) (agpu_vr_system* vr_system, agpu_size index);
 typedef agpu_bool (*agpuPollVREvent_FUN) (agpu_vr_system* vr_system, agpu_vr_event* event);
 
 AGPU_EXPORT agpu_error agpuAddVRSystemReference(agpu_vr_system* vr_system);
@@ -1278,6 +1303,7 @@ AGPU_EXPORT agpu_error agpuGetCurrentVRTrackedDevicePoseInto(agpu_vr_system* vr_
 AGPU_EXPORT agpu_size agpuGetMaxVRRenderTrackedDevicePoseCount(agpu_vr_system* vr_system);
 AGPU_EXPORT agpu_size agpuGetCurrentVRRenderTrackedDevicePoseCount(agpu_vr_system* vr_system);
 AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto(agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest);
+AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel(agpu_vr_system* vr_system, agpu_size index);
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* vr_system, agpu_vr_event* event);
 
 /* Methods for interface agpu_swap_chain. */
@@ -2067,6 +2093,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetMaxVRRenderTrackedDevicePoseCount_FUN agpuGetMaxVRRenderTrackedDevicePoseCount;
 	agpuGetCurrentVRRenderTrackedDevicePoseCount_FUN agpuGetCurrentVRRenderTrackedDevicePoseCount;
 	agpuGetCurrentVRRenderTrackedDevicePoseInto_FUN agpuGetCurrentVRRenderTrackedDevicePoseInto;
+	agpuGetVRTrackedDeviceRenderModel_FUN agpuGetVRTrackedDeviceRenderModel;
 	agpuPollVREvent_FUN agpuPollVREvent;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;

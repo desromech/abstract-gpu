@@ -369,6 +369,27 @@
             <field name="data" type="vr_event_data" />
         </struct>
 
+        <struct name="vr_render_model_texture">
+            <field name="width" type="ushort" />
+            <field name="height" type="ushort" />
+            <field name="pitch" type="uint" />
+            <field name="data" type="byte*" />
+        </struct>
+
+        <struct name="vr_render_model_vertex">
+            <field name="position" type="vector3f" />
+            <field name="normal" type="vector3f" />
+            <field name="texcoord" type="vector2f" />
+        </struct>
+
+        <struct name="vr_render_model">
+            <field name="vertex_count" type="uint" />
+            <field name="vertices" type="vr_render_model_vertex*" />
+            <field name="triangle_count" type="uint" />
+            <field name="indices" type="ushort*" />
+            <field name="texture" type="vr_render_model_texture*" />
+        </struct>
+
         <struct name="immediate_renderer_light_classic">
             <field name="ambient" type="vector4f" />
             <field name="diffuse" type="vector4f" />
@@ -1374,6 +1395,10 @@
             <method name="getCurrentRenderTrackedDevicePoseInto" cname="GetCurrentVRRenderTrackedDevicePoseInto" returnType="error">
                 <arg name="index" type="size" />
                 <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
+            <method name="getTrackedDeviceRenderModel" cname="GetVRTrackedDeviceRenderModel" returnType="vr_render_model*">
+                <arg name="index" type="size" />
             </method>
 
             <method name="pollEvent" cname="PollVREvent" returnType="bool">

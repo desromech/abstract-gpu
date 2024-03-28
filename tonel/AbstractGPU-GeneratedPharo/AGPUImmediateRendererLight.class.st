@@ -1,14 +1,14 @@
 Class {
 	#name : #AGPUImmediateRendererLight,
-	#superclass : #FFIExternalUnion,
 	#pools : [
 		'AGPUConstants',
 		'AGPUTypes'
 	],
-	#category : #'AbstractGPU-GeneratedPharo'
+	#superclass : #FFIExternalUnion,
+	#category : 'AbstractGPU-GeneratedPharo'
 }
 
-{ #category : #definition }
+{ #category : #'definition' }
 AGPUImmediateRendererLight class >> fieldsDesc [
 	"
 	self rebuildFieldAccessors
@@ -19,26 +19,3 @@ AGPUImmediateRendererLight class >> fieldsDesc [
 	)
 ]
 
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererLight >> classic [
-	"This method was automatically generated"
-	^ AGPUImmediateRendererLightClassic fromHandle: (handle referenceStructAt: 1 length: AGPUImmediateRendererLightClassic byteSize)
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererLight >> classic: anObject [
-	"This method was automatically generated"
-	handle structAt: 1 put: anObject getHandle length: 96.
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererLight >> pbr [
-	"This method was automatically generated"
-	^ AGPUImmediateRendererLightPbr fromHandle: (handle referenceStructAt: 1 length: AGPUImmediateRendererLightPbr byteSize)
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererLight >> pbr: anObject [
-	"This method was automatically generated"
-	handle structAt: 1 put: anObject getHandle length: 96.
-]
