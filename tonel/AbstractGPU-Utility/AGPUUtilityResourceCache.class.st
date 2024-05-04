@@ -360,7 +360,7 @@ const float Pi = 3.141592653589793;
 const float TwoPi = 6.283185307179586;
 
 const uint SampleThetaCount = 32u;
-const uint SamplePhiCount = 32u;
+const uint SamplePhiCount = 128u;
 const uint SampleCount = SampleThetaCount*SamplePhiCount;
 
 const	float dTheta = HalfPi / float(SampleThetaCount);
@@ -369,8 +369,8 @@ const	float dPhi = TwoPi / float(SamplePhiCount);
 void main()
 {
 	vec3 N = normalize(inDirection);
-	vec3 upVector = vec3(0.0, 1.0, 0.0);
-	vec3 T = cross(upVector, N);
+	vec3 upVector = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+	vec3 T = normalize(cross(upVector, N));
 	vec3 B = cross(N, T);
 
 	vec3 irradiance = vec3(0.0);
@@ -388,7 +388,7 @@ void main()
 			float sinPhi = sin(phi);
 			vec3 tangentL = vec3(sinTheta*cosPhi, sinTheta*sinPhi, cosTheta);
 			vec3 L = tangentL.x * T + tangentL.y * B + tangentL.z * N;
-			vec3 sampl = textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb;
+			vec3 sampl = log(1.0 + textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb);
 			irradiance += sampl * cosTheta * dS;
 
 			phi += dPhi;
@@ -397,7 +397,7 @@ void main()
 		theta += dTheta;
 	}
 
-	irradiance = irradiance * (Pi / float(SampleCount));
+	irradiance = exp(irradiance * (Pi / float(SampleCount))) - 1.0;
 	//irradiance = textureLod(samplerCube(inputTexture, inputSampler), inDirection, 0.0).rgb;
 	outColor = vec4(irradiance, 1.0);
 }
@@ -1189,13 +1189,13 @@ void main()
 		float NdotL = clamp(dot(N, L), 0.0, 1.0);
 		if(NdotL > 0.0)
 		{
-			vec3 sampl = textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb;
+			vec3 sampl = log(1.0 + textureLod(samplerCube(inputTexture, inputSampler), L, 0.0).rgb);
 			specular += sampl*NdotL;
 			totalWeight += NdotL;
 		}
 	}
 
-	specular /= totalWeight;
+	specular = exp(specular / totalWeight) - 1.0;
 	outColor = vec4(specular, 1.0);
 }
 
