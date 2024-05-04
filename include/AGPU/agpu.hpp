@@ -511,6 +511,11 @@ public:
 		agpuThrowIfFailed(agpuGetCurrentVRRenderTrackedDevicePoseInto(this, index, dest));
 	}
 
+	inline agpu_vr_render_model* getTrackedDeviceRenderModel(agpu_size index)
+	{
+		return agpuGetVRTrackedDeviceRenderModel(this, index);
+	}
+
 	inline agpu_bool pollEvent(agpu_vr_event* event)
 	{
 		return agpuPollVREvent(this, event);

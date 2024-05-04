@@ -16,6 +16,14 @@ AGPUMemoryCopier class >> forExternalAddress: anExternalAddress [
 ]
 
 { #category : #accessing }
+AGPUMemoryCopier >> copyBytes: byteCount at: start into: destination at: destinationStart [
+	| sourceAddress destAddress |
+	sourceAddress := externalAddress + (start - 1).
+	destAddress := destination tfPointerAddress + (destinationStart - 1).
+	LibC memCopy: sourceAddress to: destAddress size: byteCount
+]
+
+{ #category : #accessing }
 AGPUMemoryCopier >> externalAddress [
 
 	^ externalAddress

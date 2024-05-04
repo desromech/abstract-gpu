@@ -61,6 +61,52 @@ inline agpu_vr_tracked_device_class mapTrackedDeviceClass(vr::TrackedDeviceClass
     }
 }
 
+inline agpu_vr_tracked_device_role mapTrackedDeviceRole(vr::ETrackedControllerRole role)
+{
+    switch(role)
+    {
+	case vr::TrackedControllerRole_Invalid:
+    default:
+        return AGPU_VR_TRACKED_DEVICE_ROLE_INVALID;
+
+	case vr::TrackedControllerRole_LeftHand: return AGPU_VR_TRACKED_DEVICE_ROLE_LEFT_HAND;
+	case vr::TrackedControllerRole_RightHand:  return AGPU_VR_TRACKED_DEVICE_ROLE_RIGHT_HAND;
+	case vr::TrackedControllerRole_OptOut: return AGPU_VR_TRACKED_DEVICE_ROLE_OPT_OUT;
+	case vr::TrackedControllerRole_Treadmill:   return AGPU_VR_TRACKED_DEVICE_ROLE_THREADMILL;
+    }
+}
+
+void VrRenderModel::convertVertexData()
+{
+    convertedVertexData.reserve(vrRenderModel->unVertexCount);
+    for(uint32_t i = 0; i < vrRenderModel->unVertexCount; ++i)
+    {
+        auto &vertex = vrRenderModel->rVertexData[i];
+
+        agpu_vr_render_model_vertex convertedVertex = {};
+        convertedVertex.position = convertOVRVector3(vertex.vPosition);
+        convertedVertex.normal = convertOVRVector3(vertex.vNormal);
+        convertedVertex.texcoord.x = vertex.rfTextureCoord[0];
+        convertedVertex.texcoord.y = vertex.rfTextureCoord[1];
+        convertedVertexData.emplace_back(convertedVertex);
+    }
+
+    agpuRenderModel.vertex_count = convertedVertexData.size();
+    agpuRenderModel.vertices = convertedVertexData.data();
+    agpuRenderModel.triangle_count = vrRenderModel->unTriangleCount;
+	agpuRenderModel.indices = const_cast<uint16_t*> (vrRenderModel->rIndexData);
+}
+
+void VrRenderModel::convertTextureData()
+{
+    agpuRenderModelTexture.width = vrRenderModelTexture->unWidth;
+    agpuRenderModelTexture.height = vrRenderModelTexture->unHeight;
+    agpuRenderModelTexture.pitch = vrRenderModelTexture->unWidth*4;
+    agpuRenderModelTexture.data = const_cast<uint8_t*> (vrRenderModelTexture->rubTextureMapData);
+
+    agpuRenderModel.texture = &agpuRenderModelTexture;
+}
+
 AVkVrSystem::AVkVrSystem(const agpu::device_ref &device)
     : weakDevice(device), sharedContext(deviceForVk->sharedContext), submissionCommandBufferIndex(0)
 {
@@ -160,7 +206,7 @@ agpu_vr_tracked_device_pose AVkVrSystem::convertTrackedDevicePose(agpu_uint devi
     auto device = weakDevice.lock();
     convertedPose.device_id = deviceId;
     convertedPose.device_class = mapTrackedDeviceClass(sharedContext->vrSystem->GetTrackedDeviceClass(deviceId));
-    convertedPose.device_role = AGPU_VR_TRACKED_DEVICE_ROLE_INVALID;
+    convertedPose.device_role = mapTrackedDeviceRole(sharedContext->vrSystem->GetControllerRoleForTrackedDeviceIndex(deviceId));
 
     convertedPose.device_to_absolute_tracking = convertOVRMatrix(devicePose.mDeviceToAbsoluteTracking);
     convertedPose.velocity = convertOVRVector3(devicePose.vVelocity);
@@ -168,7 +214,6 @@ agpu_vr_tracked_device_pose AVkVrSystem::convertTrackedDevicePose(agpu_uint devi
 
     return convertedPose;
 }
-
 
 agpu_error AVkVrSystem::waitAndFetchPoses()
 {
@@ -221,6 +266,42 @@ agpu_error AVkVrSystem::getCurrentRenderTrackedDevicePoseInto ( agpu_size index,
 
     *dest = currentRenderTrackedDevicePoses[index];
     return AGPU_OK;
+}
+
+agpu_vr_render_model* AVkVrSystem::getTrackedDeviceRenderModel(agpu_size index)
+{
+    if(index >= currentRenderTrackedDevicePoses.size())
+        return nullptr;
+
+    char renderModelName[vr::k_unMaxPropertyStringSize];
+    if(!vr::VRSystem()->GetStringTrackedDeviceProperty(index, vr::Prop_RenderModelName_String, renderModelName, sizeof(renderModelName)))
+        return nullptr;
+
+    if(renderModels.find(renderModelName) == renderModels.end())
+        renderModels.insert(std::make_pair(renderModelName, std::make_shared<VrRenderModel> ()));
+
+    // Load the render model.    
+    auto renderModel = renderModels[renderModelName];
+    if(!renderModel->vrRenderModel)
+    {
+        auto error = vr::VRRenderModels()->LoadRenderModel_Async(renderModelName, &renderModel->vrRenderModel);
+        if(error || !renderModel->vrRenderModel)
+            return nullptr;
+
+        renderModel->convertVertexData();
+    }
+
+    if(!renderModel->vrRenderModelTexture && renderModel->vrRenderModel->diffuseTextureId >= 0)
+    {
+        auto error = vr::VRRenderModels()->LoadTexture_Async(renderModel->vrRenderModel->diffuseTextureId, &renderModel->vrRenderModelTexture);
+        if(error == vr::VRRenderModelError_Loading)
+            return nullptr;
+
+        if(!error && renderModel->vrRenderModelTexture)
+            renderModel->convertTextureData();
+    }
+
+    return &renderModel->agpuRenderModel;
 }
 
 agpu_bool AVkVrSystem::pollEvent ( agpu_vr_event* event )

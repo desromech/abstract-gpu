@@ -129,6 +129,9 @@ Class {
 		'agpu_vr_dual_analog_event',
 		'agpu_vr_event_data',
 		'agpu_vr_event',
+		'agpu_vr_render_model_texture',
+		'agpu_vr_render_model_vertex',
+		'agpu_vr_render_model',
 		'agpu_immediate_renderer_light_classic',
 		'agpu_immediate_renderer_light_pbr',
 		'agpu_immediate_renderer_light',
@@ -276,6 +279,9 @@ AGPUTypes class >> initialize [
 	agpu_vr_dual_analog_event := AGPUVrDualAnalogEvent.
 	agpu_vr_event_data := AGPUVrEventData.
 	agpu_vr_event := AGPUVrEvent.
+	agpu_vr_render_model_texture := AGPUVrRenderModelTexture.
+	agpu_vr_render_model_vertex := AGPUVrRenderModelVertex.
+	agpu_vr_render_model := AGPUVrRenderModel.
 	agpu_immediate_renderer_light_classic := AGPUImmediateRendererLightClassic.
 	agpu_immediate_renderer_light_pbr := AGPUImmediateRendererLightPbr.
 	agpu_immediate_renderer_light := AGPUImmediateRendererLight.

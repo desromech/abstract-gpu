@@ -489,6 +489,14 @@ AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto ( agpu_vr_sys
 	return (*dispatchTable)->agpuGetCurrentVRRenderTrackedDevicePoseInto ( vr_system, index, dest );
 }
 
+AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel ( agpu_vr_system* vr_system, agpu_size index )
+{
+	if (vr_system == nullptr)
+		return (agpu_vr_render_model*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRTrackedDeviceRenderModel ( vr_system, index );
+}
+
 AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
 {
 	if (vr_system == nullptr)

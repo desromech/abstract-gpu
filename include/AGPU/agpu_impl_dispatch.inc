@@ -339,6 +339,11 @@ AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto(agpu_vr_syste
 	return asRef(agpu::vr_system, self)->getCurrentRenderTrackedDevicePoseInto(index, dest);
 }
 
+AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel(agpu_vr_system* self, agpu_size index)
+{
+	return asRef(agpu::vr_system, self)->getTrackedDeviceRenderModel(index);
+}
+
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* self, agpu_vr_event* event)
 {
 	return asRef(agpu::vr_system, self)->pollEvent(event);

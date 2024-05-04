@@ -51,7 +51,7 @@ AGPUInterface >> isNull [
 
 { #category : #finalization }
 AGPUInterface >> release [
-	self class finalizationRegistry remove: self.
+	self class finalizationRegistry remove: self ifAbsent: [].
 	self primitiveRelease.
 	handle := nil.
 ]

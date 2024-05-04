@@ -583,6 +583,7 @@ public:
 	virtual agpu_size getMaxRenderTrackedDevicePoseCount() = 0;
 	virtual agpu_size getCurrentRenderTrackedDevicePoseCount() = 0;
 	virtual agpu_error getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
+	virtual agpu_vr_render_model* getTrackedDeviceRenderModel(agpu_size index) = 0;
 	virtual agpu_bool pollEvent(agpu_vr_event* event) = 0;
 };
 
