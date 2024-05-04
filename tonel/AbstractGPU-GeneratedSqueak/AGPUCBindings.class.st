@@ -1574,8 +1574,20 @@ AGPUCBindings >> setComputeStage_state_tracker: state_tracker shader: shader ent
 ]
 
 { #category : #'state_tracker' }
+AGPUCBindings >> setComputeStageWithMain_state_tracker: state_tracker shader: shader [
+	<cdecl: long 'agpuStateTrackerSetComputeStageWithMain' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
 AGPUCBindings >> setVertexStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
 	<cdecl: long 'agpuStateTrackerSetVertexStage' (void* void* byte*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setVertexStageWithMain_state_tracker: state_tracker shader: shader [
+	<cdecl: long 'agpuStateTrackerSetVertexStageWithMain' (void* void*)>
 	^ self externalCallFailed
 ]
 
@@ -1586,8 +1598,20 @@ AGPUCBindings >> setFragmentStage_state_tracker: state_tracker shader: shader en
 ]
 
 { #category : #'state_tracker' }
+AGPUCBindings >> setFragmentStageWithMain_state_tracker: state_tracker shader: shader [
+	<cdecl: long 'agpuStateTrackerSetFragmentStageWithMain' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
 AGPUCBindings >> setGeometryStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
 	<cdecl: long 'agpuStateTrackerSetGeometryStage' (void* void* byte*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setGeometryStageWithMain_state_tracker: state_tracker shader: shader [
+	<cdecl: long 'agpuStateTrackerSetGeometryStageWithMain' (void* void*)>
 	^ self externalCallFailed
 ]
 
@@ -1598,8 +1622,20 @@ AGPUCBindings >> setTessellationControlStage_state_tracker: state_tracker shader
 ]
 
 { #category : #'state_tracker' }
+AGPUCBindings >> setTessellationControlStageWithMain_state_tracker: state_tracker shader: shader [
+	<cdecl: long 'agpuStateTrackerSetTessellationControlStageWithMain' (void* void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
 AGPUCBindings >> setTessellationEvaluationStage_state_tracker: state_tracker shader: shader entryPoint: entryPoint [
 	<cdecl: long 'agpuStateTrackerSetTessellationEvaluationStage' (void* void* byte*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'state_tracker' }
+AGPUCBindings >> setTessellationEvaluationStageWithMain_state_tracker: state_tracker shader: shader [
+	<cdecl: long 'agpuStateTrackerSetTessellationEvaluationStageWithMain' (void* void*)>
 	^ self externalCallFailed
 ]
 

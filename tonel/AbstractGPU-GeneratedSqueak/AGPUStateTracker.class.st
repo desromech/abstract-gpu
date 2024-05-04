@@ -68,9 +68,23 @@ AGPUStateTracker >> setComputeStage: shader entryPoint: entryPoint [
 ]
 
 { #category : #'wrappers' }
+AGPUStateTracker >> setComputeStageWithMain: shader [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setComputeStageWithMain_state_tracker: (self validHandle) shader: (self validHandleOf: shader).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUStateTracker >> setVertexStage: shader entryPoint: entryPoint [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setVertexStage_state_tracker: (self validHandle) shader: (self validHandleOf: shader) entryPoint: entryPoint.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUStateTracker >> setVertexStageWithMain: shader [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setVertexStageWithMain_state_tracker: (self validHandle) shader: (self validHandleOf: shader).
 	self checkErrorCode: resultValue_
 ]
 
@@ -82,9 +96,23 @@ AGPUStateTracker >> setFragmentStage: shader entryPoint: entryPoint [
 ]
 
 { #category : #'wrappers' }
+AGPUStateTracker >> setFragmentStageWithMain: shader [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setFragmentStageWithMain_state_tracker: (self validHandle) shader: (self validHandleOf: shader).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUStateTracker >> setGeometryStage: shader entryPoint: entryPoint [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setGeometryStage_state_tracker: (self validHandle) shader: (self validHandleOf: shader) entryPoint: entryPoint.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUStateTracker >> setGeometryStageWithMain: shader [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setGeometryStageWithMain_state_tracker: (self validHandle) shader: (self validHandleOf: shader).
 	self checkErrorCode: resultValue_
 ]
 
@@ -96,9 +124,23 @@ AGPUStateTracker >> setTessellationControlStage: shader entryPoint: entryPoint [
 ]
 
 { #category : #'wrappers' }
+AGPUStateTracker >> setTessellationControlStageWithMain: shader [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setTessellationControlStageWithMain_state_tracker: (self validHandle) shader: (self validHandleOf: shader).
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUStateTracker >> setTessellationEvaluationStage: shader entryPoint: entryPoint [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance setTessellationEvaluationStage_state_tracker: (self validHandle) shader: (self validHandleOf: shader) entryPoint: entryPoint.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
+AGPUStateTracker >> setTessellationEvaluationStageWithMain: shader [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance setTessellationEvaluationStageWithMain_state_tracker: (self validHandle) shader: (self validHandleOf: shader).
 	self checkErrorCode: resultValue_
 ]
 

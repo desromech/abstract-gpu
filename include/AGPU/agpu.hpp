@@ -1764,9 +1764,19 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerSetComputeStage(this, shader.get(), entryPoint));
 	}
 
+	inline void setComputeStageWithMain(const agpu_ref<agpu_shader>& shader)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetComputeStageWithMain(this, shader.get()));
+	}
+
 	inline void setVertexStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
 	{
 		agpuThrowIfFailed(agpuStateTrackerSetVertexStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setVertexStageWithMain(const agpu_ref<agpu_shader>& shader)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetVertexStageWithMain(this, shader.get()));
 	}
 
 	inline void setFragmentStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
@@ -1774,9 +1784,19 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerSetFragmentStage(this, shader.get(), entryPoint));
 	}
 
+	inline void setFragmentStageWithMain(const agpu_ref<agpu_shader>& shader)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetFragmentStageWithMain(this, shader.get()));
+	}
+
 	inline void setGeometryStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
 	{
 		agpuThrowIfFailed(agpuStateTrackerSetGeometryStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setGeometryStageWithMain(const agpu_ref<agpu_shader>& shader)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetGeometryStageWithMain(this, shader.get()));
 	}
 
 	inline void setTessellationControlStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
@@ -1784,9 +1804,19 @@ public:
 		agpuThrowIfFailed(agpuStateTrackerSetTessellationControlStage(this, shader.get(), entryPoint));
 	}
 
+	inline void setTessellationControlStageWithMain(const agpu_ref<agpu_shader>& shader)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetTessellationControlStageWithMain(this, shader.get()));
+	}
+
 	inline void setTessellationEvaluationStage(const agpu_ref<agpu_shader>& shader, agpu_cstring entryPoint)
 	{
 		agpuThrowIfFailed(agpuStateTrackerSetTessellationEvaluationStage(this, shader.get(), entryPoint));
+	}
+
+	inline void setTessellationEvaluationStageWithMain(const agpu_ref<agpu_shader>& shader)
+	{
+		agpuThrowIfFailed(agpuStateTrackerSetTessellationEvaluationStageWithMain(this, shader.get()));
 	}
 
 	inline void setBlendState(agpu_int renderTargetMask, agpu_bool enabled)

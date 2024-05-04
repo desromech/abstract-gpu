@@ -105,11 +105,21 @@ agpu_error AbstractStateTracker::setComputeStage(const agpu::shader_ref & shader
     return AGPU_OK;
 }
 
+agpu_error AbstractStateTracker::setComputeStageWithMain(const agpu::shader_ref & shader)
+{
+    return setComputeStage(shader, "main");
+}
+
 agpu_error AbstractStateTracker::setVertexStage(const agpu::shader_ref & shader, agpu_cstring entryPoint)
 {
     if(graphicsPipelineStateDescription.vertexStage.set(shader, entryPoint))
         invalidateGraphicsPipelineState();
     return AGPU_OK;
+}
+
+agpu_error AbstractStateTracker::setVertexStageWithMain(const agpu::shader_ref & shader)
+{
+    return setVertexStage(shader, "main");
 }
 
 agpu_error AbstractStateTracker::setFragmentStage(const agpu::shader_ref & shader, agpu_cstring entryPoint)
@@ -119,11 +129,21 @@ agpu_error AbstractStateTracker::setFragmentStage(const agpu::shader_ref & shade
     return AGPU_OK;
 }
 
+agpu_error AbstractStateTracker::setFragmentStageWithMain(const agpu::shader_ref & shader)
+{
+    return setFragmentStage(shader, "main");
+}
+
 agpu_error AbstractStateTracker::setGeometryStage(const agpu::shader_ref & shader, agpu_cstring entryPoint)
 {
     if(graphicsPipelineStateDescription.geometryStage.set(shader, entryPoint))
         invalidateGraphicsPipelineState();
     return AGPU_OK;
+}
+
+agpu_error AbstractStateTracker::setGeometryStageWithMain(const agpu::shader_ref & shader)
+{
+    return setGeometryStage(shader, "main");
 }
 
 agpu_error AbstractStateTracker::setTessellationControlStage(const agpu::shader_ref & shader, agpu_cstring entryPoint)
@@ -133,11 +153,21 @@ agpu_error AbstractStateTracker::setTessellationControlStage(const agpu::shader_
     return AGPU_OK;
 }
 
+agpu_error AbstractStateTracker::setTessellationControlStageWithMain(const agpu::shader_ref & shader)
+{
+    return setTessellationControlStage(shader, "main");
+}
+
 agpu_error AbstractStateTracker::setTessellationEvaluationStage(const agpu::shader_ref & shader, agpu_cstring entryPoint)
 {
     if(graphicsPipelineStateDescription.tessellationEvaluationStage.set(shader, entryPoint))
         invalidateGraphicsPipelineState();
     return AGPU_OK;
+}
+
+agpu_error AbstractStateTracker::setTessellationEvaluationStageWithMain(const agpu::shader_ref & shader)
+{
+    return setTessellationEvaluationStage(shader, "main");
 }
 
 agpu_error AbstractStateTracker::setBlendState(agpu_int renderTargetMask, agpu_bool enabled)

@@ -30,14 +30,20 @@ public:
     // Compute pipeline methods
 	virtual agpu_error resetComputePipeline() override;
 	virtual agpu_error setComputeStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setComputeStageWithMain(const agpu::shader_ref & shader) override;
 
     // Graphics pipeline methods
     virtual agpu_error resetGraphicsPipeline() override;
 	virtual agpu_error setVertexStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setVertexStageWithMain(const agpu::shader_ref & shader) override;
 	virtual agpu_error setFragmentStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setFragmentStageWithMain(const agpu::shader_ref & shader) override;
     virtual agpu_error setGeometryStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+    virtual agpu_error setGeometryStageWithMain(const agpu::shader_ref & shader) override;
 	virtual agpu_error setTessellationControlStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setTessellationControlStageWithMain(const agpu::shader_ref & shader) override;
 	virtual agpu_error setTessellationEvaluationStage(const agpu::shader_ref & shader, agpu_cstring entryPoint) override;
+	virtual agpu_error setTessellationEvaluationStageWithMain(const agpu::shader_ref & shader) override;
 	virtual agpu_error setBlendState(agpu_int renderTargetMask, agpu_bool enabled) override;
 	virtual agpu_error setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation) override;
 	virtual agpu_error setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled) override;

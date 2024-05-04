@@ -1,14 +1,14 @@
 Class {
 	#name : #AGPUImmediateRendererMaterial,
-	#superclass : #FFIExternalUnion,
 	#pools : [
 		'AGPUConstants',
 		'AGPUTypes'
 	],
-	#category : #'AbstractGPU-GeneratedPharo'
+	#superclass : #FFIExternalUnion,
+	#category : 'AbstractGPU-GeneratedPharo'
 }
 
-{ #category : #definition }
+{ #category : #'definition' }
 AGPUImmediateRendererMaterial class >> fieldsDesc [
 	"
 	self rebuildFieldAccessors
@@ -20,38 +20,3 @@ AGPUImmediateRendererMaterial class >> fieldsDesc [
 	)
 ]
 
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererMaterial >> classic [
-	"This method was automatically generated"
-	^ AGPUImmediateRendererMaterialClassic fromHandle: (handle referenceStructAt: 1 length: AGPUImmediateRendererMaterialClassic byteSize)
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererMaterial >> classic: anObject [
-	"This method was automatically generated"
-	handle structAt: 1 put: anObject getHandle length: 72.
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererMaterial >> flat_color [
-	"This method was automatically generated"
-	^ AGPUImmediateRendererMaterialFlatColor fromHandle: (handle referenceStructAt: 1 length: AGPUImmediateRendererMaterialFlatColor byteSize)
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererMaterial >> flat_color: anObject [
-	"This method was automatically generated"
-	handle structAt: 1 put: anObject getHandle length: 20.
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererMaterial >> metallic_roughness [
-	"This method was automatically generated"
-	^ AGPUImmediateRendererMaterialMetallicRoughness fromHandle: (handle referenceStructAt: 1 length: AGPUImmediateRendererMaterialMetallicRoughness byteSize)
-]
-
-{ #category : #'accessing - structure variables' }
-AGPUImmediateRendererMaterial >> metallic_roughness: anObject [
-	"This method was automatically generated"
-	handle structAt: 1 put: anObject getHandle length: 48.
-]

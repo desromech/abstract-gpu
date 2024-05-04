@@ -2310,10 +2310,18 @@
                 <arg name="entryPoint" type="cstring" />
             </method>
 
+            <method name="setComputeStageWithMain" cname="StateTrackerSetComputeStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
             <!-- Graphics pipeline methods -->
             <method name="setVertexStage" cname="StateTrackerSetVertexStage" returnType="error">
                 <arg name="shader" type="shader*" />
                 <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setVertexStageWithMain" cname="StateTrackerSetVertexStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
             </method>
 
             <method name="setFragmentStage" cname="StateTrackerSetFragmentStage" returnType="error">
@@ -2321,9 +2329,17 @@
                 <arg name="entryPoint" type="cstring" />
             </method>
 
+            <method name="setFragmentStageWithMain" cname="StateTrackerSetFragmentStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
             <method name="setGeometryStage" cname="StateTrackerSetGeometryStage" returnType="error">
                 <arg name="shader" type="shader*" />
                 <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setGeometryStageWithMain" cname="StateTrackerSetGeometryStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
             </method>
 
             <method name="setTessellationControlStage" cname="StateTrackerSetTessellationControlStage" returnType="error">
@@ -2331,9 +2347,17 @@
                 <arg name="entryPoint" type="cstring" />
             </method>
 
+            <method name="setTessellationControlStageWithMain" cname="StateTrackerSetTessellationControlStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
             <method name="setTessellationEvaluationStage" cname="StateTrackerSetTessellationEvaluationStage" returnType="error">
                 <arg name="shader" type="shader*" />
                 <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setTessellationEvaluationStageWithMain" cname="StateTrackerSetTessellationEvaluationStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
             </method>
 
             <method name="setBlendState" cname="StateTrackerSetBlendState" returnType="error">

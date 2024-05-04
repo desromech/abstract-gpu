@@ -1596,10 +1596,22 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStage(agpu_state_tracker* self,
 	return asRef(agpu::state_tracker, self)->setComputeStage(asRef(agpu::shader, shader), entryPoint);
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStageWithMain(agpu_state_tracker* self, agpu_shader* shader)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setComputeStageWithMain(asRef(agpu::shader, shader));
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->setVertexStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStageWithMain(agpu_state_tracker* self, agpu_shader* shader)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setVertexStageWithMain(asRef(agpu::shader, shader));
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
@@ -1608,10 +1620,22 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage(agpu_state_tracker* self
 	return asRef(agpu::state_tracker, self)->setFragmentStage(asRef(agpu::shader, shader), entryPoint);
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStageWithMain(agpu_state_tracker* self, agpu_shader* shader)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setFragmentStageWithMain(asRef(agpu::shader, shader));
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->setGeometryStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStageWithMain(agpu_state_tracker* self, agpu_shader* shader)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setGeometryStageWithMain(asRef(agpu::shader, shader));
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
@@ -1620,10 +1644,22 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage(agpu_state_tr
 	return asRef(agpu::state_tracker, self)->setTessellationControlStage(asRef(agpu::shader, shader), entryPoint);
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStageWithMain(agpu_state_tracker* self, agpu_shader* shader)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setTessellationControlStageWithMain(asRef(agpu::shader, shader));
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage(agpu_state_tracker* self, agpu_shader* shader, agpu_cstring entryPoint)
 {
 	if(!self) return AGPU_NULL_POINTER;
 	return asRef(agpu::state_tracker, self)->setTessellationEvaluationStage(asRef(agpu::shader, shader), entryPoint);
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStageWithMain(agpu_state_tracker* self, agpu_shader* shader)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::state_tracker, self)->setTessellationEvaluationStageWithMain(asRef(agpu::shader, shader));
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState(agpu_state_tracker* self, agpu_int renderTargetMask, agpu_bool enabled)

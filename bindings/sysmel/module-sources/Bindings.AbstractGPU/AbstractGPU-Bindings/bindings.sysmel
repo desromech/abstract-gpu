@@ -1417,11 +1417,17 @@ function agpuStateTrackerReset externC (state_tracker: StateTracker pointer) => 
 function agpuStateTrackerResetGraphicsPipeline externC (state_tracker: StateTracker pointer) => Error.
 function agpuStateTrackerResetComputePipeline externC (state_tracker: StateTracker pointer) => Error.
 function agpuStateTrackerSetComputeStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetComputeStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
 function agpuStateTrackerSetVertexStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetVertexStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
 function agpuStateTrackerSetFragmentStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetFragmentStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
 function agpuStateTrackerSetGeometryStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetGeometryStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
 function agpuStateTrackerSetTessellationControlStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetTessellationControlStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
 function agpuStateTrackerSetTessellationEvaluationStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetTessellationEvaluationStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
 function agpuStateTrackerSetBlendState externC (state_tracker: StateTracker pointer, renderTargetMask: Int32, enabled: Int32) => Error.
 function agpuStateTrackerSetBlendFunction externC (state_tracker: StateTracker pointer, renderTargetMask: Int32, sourceFactor: BlendingFactor, destFactor: BlendingFactor, colorOperation: BlendingOperation, sourceAlphaFactor: BlendingFactor, destAlphaFactor: BlendingFactor, alphaOperation: BlendingOperation) => Error.
 function agpuStateTrackerSetColorMask externC (state_tracker: StateTracker pointer, renderTargetMask: Int32, redEnabled: Int32, greenEnabled: Int32, blueEnabled: Int32, alphaEnabled: Int32) => Error.
@@ -2436,20 +2442,38 @@ StateTracker extend: {
 	inline method setComputeStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetComputeStage(self address, shader getPointer, entryPoint)).
 
+	inline method setComputeStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetComputeStageWithMain(self address, shader getPointer)).
+
 	inline method setVertexStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetVertexStage(self address, shader getPointer, entryPoint)).
+
+	inline method setVertexStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetVertexStageWithMain(self address, shader getPointer)).
 
 	inline method setFragmentStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetFragmentStage(self address, shader getPointer, entryPoint)).
 
+	inline method setFragmentStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetFragmentStageWithMain(self address, shader getPointer)).
+
 	inline method setGeometryStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetGeometryStage(self address, shader getPointer, entryPoint)).
+
+	inline method setGeometryStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetGeometryStageWithMain(self address, shader getPointer)).
 
 	inline method setTessellationControlStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetTessellationControlStage(self address, shader getPointer, entryPoint)).
 
+	inline method setTessellationControlStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetTessellationControlStageWithMain(self address, shader getPointer)).
+
 	inline method setTessellationEvaluationStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetTessellationEvaluationStage(self address, shader getPointer, entryPoint)).
+
+	inline method setTessellationEvaluationStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetTessellationEvaluationStageWithMain(self address, shader getPointer)).
 
 	inline method setBlendState: (renderTargetMask: Int32) enabled: (enabled: Int32) ::=> Void
 		:= throwIfError: (agpuStateTrackerSetBlendState(self address, renderTargetMask, enabled)).

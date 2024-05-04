@@ -921,11 +921,17 @@ public:
 	virtual agpu_error resetGraphicsPipeline() = 0;
 	virtual agpu_error resetComputePipeline() = 0;
 	virtual agpu_error setComputeStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setComputeStageWithMain(const shader_ref & shader) = 0;
 	virtual agpu_error setVertexStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setVertexStageWithMain(const shader_ref & shader) = 0;
 	virtual agpu_error setFragmentStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setFragmentStageWithMain(const shader_ref & shader) = 0;
 	virtual agpu_error setGeometryStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setGeometryStageWithMain(const shader_ref & shader) = 0;
 	virtual agpu_error setTessellationControlStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setTessellationControlStageWithMain(const shader_ref & shader) = 0;
 	virtual agpu_error setTessellationEvaluationStage(const shader_ref & shader, agpu_cstring entryPoint) = 0;
+	virtual agpu_error setTessellationEvaluationStageWithMain(const shader_ref & shader) = 0;
 	virtual agpu_error setBlendState(agpu_int renderTargetMask, agpu_bool enabled) = 0;
 	virtual agpu_error setBlendFunction(agpu_int renderTargetMask, agpu_blending_factor sourceFactor, agpu_blending_factor destFactor, agpu_blending_operation colorOperation, agpu_blending_factor sourceAlphaFactor, agpu_blending_factor destAlphaFactor, agpu_blending_operation alphaOperation) = 0;
 	virtual agpu_error setColorMask(agpu_int renderTargetMask, agpu_bool redEnabled, agpu_bool greenEnabled, agpu_bool blueEnabled, agpu_bool alphaEnabled) = 0;

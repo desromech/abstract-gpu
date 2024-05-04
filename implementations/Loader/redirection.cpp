@@ -2089,12 +2089,28 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStage ( agpu_state_tracker* sta
 	return (*dispatchTable)->agpuStateTrackerSetComputeStage ( state_tracker, shader, entryPoint );
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerSetComputeStageWithMain ( agpu_state_tracker* state_tracker, agpu_shader* shader )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetComputeStageWithMain ( state_tracker, shader );
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
 {
 	if (state_tracker == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerSetVertexStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetVertexStageWithMain ( agpu_state_tracker* state_tracker, agpu_shader* shader )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetVertexStageWithMain ( state_tracker, shader );
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
@@ -2105,12 +2121,28 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStage ( agpu_state_tracker* st
 	return (*dispatchTable)->agpuStateTrackerSetFragmentStage ( state_tracker, shader, entryPoint );
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerSetFragmentStageWithMain ( agpu_state_tracker* state_tracker, agpu_shader* shader )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetFragmentStageWithMain ( state_tracker, shader );
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
 {
 	if (state_tracker == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerSetGeometryStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetGeometryStageWithMain ( agpu_state_tracker* state_tracker, agpu_shader* shader )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetGeometryStageWithMain ( state_tracker, shader );
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
@@ -2121,12 +2153,28 @@ AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStage ( agpu_state_
 	return (*dispatchTable)->agpuStateTrackerSetTessellationControlStage ( state_tracker, shader, entryPoint );
 }
 
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationControlStageWithMain ( agpu_state_tracker* state_tracker, agpu_shader* shader )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetTessellationControlStageWithMain ( state_tracker, shader );
+}
+
 AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStage ( agpu_state_tracker* state_tracker, agpu_shader* shader, agpu_cstring entryPoint )
 {
 	if (state_tracker == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
 	return (*dispatchTable)->agpuStateTrackerSetTessellationEvaluationStage ( state_tracker, shader, entryPoint );
+}
+
+AGPU_EXPORT agpu_error agpuStateTrackerSetTessellationEvaluationStageWithMain ( agpu_state_tracker* state_tracker, agpu_shader* shader )
+{
+	if (state_tracker == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (state_tracker);
+	return (*dispatchTable)->agpuStateTrackerSetTessellationEvaluationStageWithMain ( state_tracker, shader );
 }
 
 AGPU_EXPORT agpu_error agpuStateTrackerSetBlendState ( agpu_state_tracker* state_tracker, agpu_int renderTargetMask, agpu_bool enabled )
