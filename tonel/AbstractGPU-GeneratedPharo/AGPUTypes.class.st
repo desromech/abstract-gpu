@@ -212,7 +212,7 @@ AGPUTypes class >> initialize [
 	agpu_size := #'uint'.
 	agpu_enum := #'int'.
 	agpu_bool := #'int'.
-	agpu_ulong := #'ulong long'.
+	agpu_ulong := #'ulonglong'.
 	agpu_float := #'float'.
 	agpu_double := #'double'.
 	agpu_bitfield := #'uint'.
