@@ -265,7 +265,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     }
     else
     {
-        texture->texelSize = pixelSizeOfTextureFormat(description->format);
+        texture->texelSize = uint8_t(pixelSizeOfTextureFormat(description->format));
         texture->texelWidth = 1;
         texture->texelHeight = 1;
     }

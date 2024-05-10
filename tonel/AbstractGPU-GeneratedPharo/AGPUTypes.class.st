@@ -43,6 +43,7 @@ Class {
 		'agpu_vr_button',
 		'agpu_vr_dual_analog_which',
 		'agpu_vr_event_type',
+		'agpu_vr_controller_axis_type',
 		'agpu_immediate_renderer_vertex_attribute',
 		'agpu_immediate_renderer_lighting_model',
 		'agpu_immediate_renderer_fog_mode',
@@ -57,6 +58,7 @@ Class {
 		'agpu_size',
 		'agpu_enum',
 		'agpu_bool',
+		'agpu_ulong',
 		'agpu_float',
 		'agpu_double',
 		'agpu_bitfield',
@@ -126,6 +128,8 @@ Class {
 		'agpu_vr_tracked_device_pose',
 		'agpu_vr_generic_event',
 		'agpu_vr_controller_event',
+		'agpu_vr_controller_axis_state',
+		'agpu_vr_controller_state',
 		'agpu_vr_dual_analog_event',
 		'agpu_vr_event_data',
 		'agpu_vr_event',
@@ -193,6 +197,7 @@ AGPUTypes class >> initialize [
 	agpu_vr_button := #int.
 	agpu_vr_dual_analog_which := #int.
 	agpu_vr_event_type := #int.
+	agpu_vr_controller_axis_type := #int.
 	agpu_immediate_renderer_vertex_attribute := #int.
 	agpu_immediate_renderer_lighting_model := #int.
 	agpu_immediate_renderer_fog_mode := #int.
@@ -207,6 +212,7 @@ AGPUTypes class >> initialize [
 	agpu_size := #'uint'.
 	agpu_enum := #'int'.
 	agpu_bool := #'int'.
+	agpu_ulong := #'ulong long'.
 	agpu_float := #'float'.
 	agpu_double := #'double'.
 	agpu_bitfield := #'uint'.
@@ -276,6 +282,8 @@ AGPUTypes class >> initialize [
 	agpu_vr_tracked_device_pose := AGPUVrTrackedDevicePose.
 	agpu_vr_generic_event := AGPUVrGenericEvent.
 	agpu_vr_controller_event := AGPUVrControllerEvent.
+	agpu_vr_controller_axis_state := AGPUVrControllerAxisState.
+	agpu_vr_controller_state := AGPUVrControllerState.
 	agpu_vr_dual_analog_event := AGPUVrDualAnalogEvent.
 	agpu_vr_event_data := AGPUVrEventData.
 	agpu_vr_event := AGPUVrEvent.

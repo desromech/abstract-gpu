@@ -380,6 +380,12 @@ AGPUCBindings >> getTrackedDeviceRenderModel_vr_system: vr_system index: index [
 ]
 
 { #category : #'vr_system' }
+AGPUCBindings >> getControllerState_vr_system: vr_system index: index dest: dest [
+	<cdecl: long 'agpuGetVRControllerState' (void* ulong AGPUVrControllerState*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'vr_system' }
 AGPUCBindings >> pollEvent_vr_system: vr_system event: event [
 	<cdecl: long 'agpuPollVREvent' (void* AGPUVrEvent*)>
 	^ self externalCallFailed

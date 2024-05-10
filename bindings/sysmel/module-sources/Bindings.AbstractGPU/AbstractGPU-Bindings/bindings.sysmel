@@ -748,6 +748,13 @@ enum VrEventType valueType: Int32; values: #{
 	DualAnalogCancel: 257.
 }.
 
+enum VrControllerAxisType valueType: Int32; values: #{
+	None: 0.
+	VrControllerAxisTrackPad: 1.
+	VrControllerAxisJoystick: 2.
+	VrControllerAxisTrigger: 3.
+}.
+
 enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
 	Position: 0.
 	Color: 1.
@@ -1068,6 +1075,22 @@ struct VrControllerEvent definition: {
 	public field button type: UInt32.
 }.
 
+struct VrControllerAxisState definition: {
+	public field type type: VrControllerAxisType.
+	public field x type: Float32.
+	public field y type: Float32.
+}.
+
+struct VrControllerState definition: {
+	public field buttons_pressed type: UInt64.
+	public field buttons_touched type: UInt64.
+	public field axis0 type: VrControllerAxisState.
+	public field axis1 type: VrControllerAxisState.
+	public field axis2 type: VrControllerAxisState.
+	public field axis3 type: VrControllerAxisState.
+	public field axis4 type: VrControllerAxisState.
+}.
+
 struct VrDualAnalogEvent definition: {
 	public field x type: Float32.
 	public field y type: Float32.
@@ -1239,6 +1262,7 @@ function agpuGetMaxVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem p
 function agpuGetCurrentVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
 function agpuGetCurrentVRRenderTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
 function agpuGetVRTrackedDeviceRenderModel externC (vr_system: VrSystem pointer, index: UInt32) => VrRenderModel pointer.
+function agpuGetVRControllerState externC (vr_system: VrSystem pointer, index: UInt32, dest: VrControllerState pointer) => Int32.
 function agpuPollVREvent externC (vr_system: VrSystem pointer, event: VrEvent pointer) => Int32.
 function agpuAddSwapChainReference externC (swap_chain: SwapChain pointer) => Error.
 function agpuReleaseSwapChain externC (swap_chain: SwapChain pointer) => Error.
@@ -1797,6 +1821,9 @@ VrSystem extend: {
 
 	inline method getTrackedDeviceRenderModel: (index: UInt32) ::=> VrRenderModel pointer
 		:= agpuGetVRTrackedDeviceRenderModel(self address, index).
+
+	inline method getControllerState: (index: UInt32) dest: (dest: VrControllerState pointer) ::=> Int32
+		:= agpuGetVRControllerState(self address, index, dest).
 
 	inline method pollEvent: (event: VrEvent pointer) ::=> Int32
 		:= agpuPollVREvent(self address, event).

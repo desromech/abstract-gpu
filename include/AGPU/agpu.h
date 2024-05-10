@@ -31,6 +31,7 @@ typedef void* agpu_pointer;
 typedef unsigned int agpu_size;
 typedef int agpu_enum;
 typedef int agpu_bool;
+typedef unsigned long long agpu_ulong;
 typedef float agpu_float;
 typedef double agpu_double;
 typedef unsigned int agpu_bitfield;
@@ -694,6 +695,13 @@ typedef enum {
 } agpu_vr_event_type;
 
 typedef enum {
+	AGPU_VR_CONTROLLER_AXIS_TYPE_NONE = 0,
+	AGPU_VR_CONTROLLER_AXIS_TRACK_PAD = 1,
+	AGPU_VR_CONTROLLER_AXIS_JOYSTICK = 2,
+	AGPU_VR_CONTROLLER_AXIS_TRIGGER = 3,
+} agpu_vr_controller_axis_type;
+
+typedef enum {
 	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_POSITION = 0,
 	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_COLOR = 1,
 	AGPU_IMMEDIATE_RENDERER_VERTEX_ATTRIBUTE_NORMAL = 2,
@@ -1048,6 +1056,24 @@ typedef struct agpu_vr_controller_event {
 	agpu_uint button;
 } agpu_vr_controller_event;
 
+/* Structure agpu_vr_controller_axis_state. */
+typedef struct agpu_vr_controller_axis_state {
+	agpu_vr_controller_axis_type type;
+	agpu_float x;
+	agpu_float y;
+} agpu_vr_controller_axis_state;
+
+/* Structure agpu_vr_controller_state. */
+typedef struct agpu_vr_controller_state {
+	agpu_ulong buttons_pressed;
+	agpu_ulong buttons_touched;
+	agpu_vr_controller_axis_state axis0;
+	agpu_vr_controller_axis_state axis1;
+	agpu_vr_controller_axis_state axis2;
+	agpu_vr_controller_axis_state axis3;
+	agpu_vr_controller_axis_state axis4;
+} agpu_vr_controller_state;
+
 /* Structure agpu_vr_dual_analog_event. */
 typedef struct agpu_vr_dual_analog_event {
 	agpu_float x;
@@ -1285,6 +1311,7 @@ typedef agpu_size (*agpuGetMaxVRRenderTrackedDevicePoseCount_FUN) (agpu_vr_syste
 typedef agpu_size (*agpuGetCurrentVRRenderTrackedDevicePoseCount_FUN) (agpu_vr_system* vr_system);
 typedef agpu_error (*agpuGetCurrentVRRenderTrackedDevicePoseInto_FUN) (agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest);
 typedef agpu_vr_render_model* (*agpuGetVRTrackedDeviceRenderModel_FUN) (agpu_vr_system* vr_system, agpu_size index);
+typedef agpu_bool (*agpuGetVRControllerState_FUN) (agpu_vr_system* vr_system, agpu_size index, agpu_vr_controller_state* dest);
 typedef agpu_bool (*agpuPollVREvent_FUN) (agpu_vr_system* vr_system, agpu_vr_event* event);
 
 AGPU_EXPORT agpu_error agpuAddVRSystemReference(agpu_vr_system* vr_system);
@@ -1304,6 +1331,7 @@ AGPU_EXPORT agpu_size agpuGetMaxVRRenderTrackedDevicePoseCount(agpu_vr_system* v
 AGPU_EXPORT agpu_size agpuGetCurrentVRRenderTrackedDevicePoseCount(agpu_vr_system* vr_system);
 AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto(agpu_vr_system* vr_system, agpu_size index, agpu_vr_tracked_device_pose* dest);
 AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel(agpu_vr_system* vr_system, agpu_size index);
+AGPU_EXPORT agpu_bool agpuGetVRControllerState(agpu_vr_system* vr_system, agpu_size index, agpu_vr_controller_state* dest);
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* vr_system, agpu_vr_event* event);
 
 /* Methods for interface agpu_swap_chain. */
@@ -2106,6 +2134,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetCurrentVRRenderTrackedDevicePoseCount_FUN agpuGetCurrentVRRenderTrackedDevicePoseCount;
 	agpuGetCurrentVRRenderTrackedDevicePoseInto_FUN agpuGetCurrentVRRenderTrackedDevicePoseInto;
 	agpuGetVRTrackedDeviceRenderModel_FUN agpuGetVRTrackedDeviceRenderModel;
+	agpuGetVRControllerState_FUN agpuGetVRControllerState;
 	agpuPollVREvent_FUN agpuPollVREvent;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;

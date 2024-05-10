@@ -516,6 +516,11 @@ public:
 		return agpuGetVRTrackedDeviceRenderModel(this, index);
 	}
 
+	inline agpu_bool getControllerState(agpu_size index, agpu_vr_controller_state* dest)
+	{
+		return agpuGetVRControllerState(this, index, dest);
+	}
+
 	inline agpu_bool pollEvent(agpu_vr_event* event)
 	{
 		return agpuPollVREvent(this, event);

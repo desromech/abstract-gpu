@@ -319,6 +319,11 @@ AGPUCBindings >> getTrackedDeviceRenderModel_vr_system: vr_system index: index [
 ]
 
 { #category : #'vr_system' }
+AGPUCBindings >> getControllerState_vr_system: vr_system index: index dest: dest [
+	^ self ffiCall: #(agpu_bool agpuGetVRControllerState (agpu_vr_system* vr_system , agpu_size index , agpu_vr_controller_state* dest) )
+]
+
+{ #category : #'vr_system' }
 AGPUCBindings >> pollEvent_vr_system: vr_system event: event [
 	^ self ffiCall: #(agpu_bool agpuPollVREvent (agpu_vr_system* vr_system , agpu_vr_event* event) )
 ]

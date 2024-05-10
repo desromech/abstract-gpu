@@ -48,6 +48,7 @@
         <typedef name="size" ctype="unsigned int" sysmelType="UInt32" />
         <typedef name="enum" ctype="int" sysmelType="Int32" />
         <typedef name="bool" ctype="int" sysmelType="Int32" />
+        <typedef name="ulong" ctype="unsigned long long" sysmelType="UInt64" />
 
         <typedef name="float" ctype="float" sysmelType="Float32" />
         <typedef name="double" ctype="double" sysmelType="Float64" />
@@ -345,6 +346,23 @@
 
         <struct name="vr_controller_event">
             <field name="button" type="uint" />
+        </struct>
+
+        <struct name="vr_controller_axis_state">
+            <field name="type" type="vr_controller_axis_type" />
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+        </struct>
+
+        <struct name="vr_controller_state">
+            <field name="buttons_pressed" type="ulong" />
+            <field name="buttons_touched" type="ulong" />
+
+            <field name="axis0" type="vr_controller_axis_state" />
+            <field name="axis1" type="vr_controller_axis_state" />
+            <field name="axis2" type="vr_controller_axis_state" />
+            <field name="axis3" type="vr_controller_axis_state" />
+            <field name="axis4" type="vr_controller_axis_state" />
         </struct>
 
         <struct name="vr_dual_analog_event">
@@ -1114,6 +1132,13 @@
             <constant name="VrEventTypeDualAnalogCancel" value="257" />
         </enum>
 
+        <enum name="vr_controller_axis_type" optionalPrefix="VrControllerAxisType">
+            <constant name="VrControllerAxisTypeNone" value="0" />
+            <constant name="VrControllerAxisTrackPad" value="1" />
+            <constant name="VrControllerAxisJoystick" value="2" />
+            <constant name="VrControllerAxisTrigger" value="3" />
+        </enum>
+
         <enum name="immediate_renderer_vertex_attribute" optionalPrefix="ImmediateRendererVertexAttribute">
             <constant name="ImmediateRendererVertexAttributePosition" value="0" />
             <constant name="ImmediateRendererVertexAttributeColor" value="1" />
@@ -1399,6 +1424,11 @@
 
             <method name="getTrackedDeviceRenderModel" cname="GetVRTrackedDeviceRenderModel" returnType="vr_render_model*">
                 <arg name="index" type="size" />
+            </method>
+
+            <method name="getControllerState" cname="GetVRControllerState" returnType="bool">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_controller_state*" />
             </method>
 
             <method name="pollEvent" cname="PollVREvent" returnType="bool">

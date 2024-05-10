@@ -77,6 +77,7 @@ public:
 	virtual agpu_size getCurrentRenderTrackedDevicePoseCount() override;
 	virtual agpu_error getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) override;
     virtual agpu_vr_render_model* getTrackedDeviceRenderModel(agpu_size index) override;
+	virtual agpu_bool getControllerState(agpu_size index, agpu_vr_controller_state *dest) override;
 
     virtual agpu_bool pollEvent ( agpu_vr_event* event ) override;
 

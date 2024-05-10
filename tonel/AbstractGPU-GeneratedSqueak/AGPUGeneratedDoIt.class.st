@@ -47,6 +47,8 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrTrackedDevicePose defineFields.
 	AGPUVrGenericEvent defineFields.
 	AGPUVrControllerEvent defineFields.
+	AGPUVrControllerAxisState defineFields.
+	AGPUVrControllerState defineFields.
 	AGPUVrDualAnalogEvent defineFields.
 	AGPUVrEventData defineFields.
 	AGPUVrEvent defineFields.

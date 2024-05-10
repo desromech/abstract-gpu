@@ -344,6 +344,11 @@ AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel(agpu_vr_syst
 	return asRef(agpu::vr_system, self)->getTrackedDeviceRenderModel(index);
 }
 
+AGPU_EXPORT agpu_bool agpuGetVRControllerState(agpu_vr_system* self, agpu_size index, agpu_vr_controller_state* dest)
+{
+	return asRef(agpu::vr_system, self)->getControllerState(index, dest);
+}
+
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* self, agpu_vr_event* event)
 {
 	return asRef(agpu::vr_system, self)->pollEvent(event);
