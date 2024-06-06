@@ -219,6 +219,11 @@ AGPUCBindings >> getVRSystem_device: device [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> createWindowScraper_device: device [
+	^ self ffiCall: #(agpu_window_scraper* agpuCreateWindowScraper (agpu_device* device) )
+]
+
+{ #category : #'device' }
 AGPUCBindings >> createOfflineShaderCompiler_device: device [
 	^ self ffiCall: #(agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice (agpu_device* device) )
 ]
@@ -326,6 +331,66 @@ AGPUCBindings >> getControllerState_vr_system: vr_system index: index dest: dest
 { #category : #'vr_system' }
 AGPUCBindings >> pollEvent_vr_system: vr_system event: event [
 	^ self ffiCall: #(agpu_bool agpuPollVREvent (agpu_vr_system* vr_system , agpu_vr_event* event) )
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> addReference_window_scraper: window_scraper [
+	^ self ffiCall: #(agpu_error agpuAddWindowScraperReference (agpu_window_scraper* window_scraper) )
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> release_window_scraper: window_scraper [
+	^ self ffiCall: #(agpu_error agpuReleaseWindowScraper (agpu_window_scraper* window_scraper) )
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> enumerateWindows_window_scraper: window_scraper [
+	^ self ffiCall: #(agpu_uint agpuWindowScraperEnumerateWindows (agpu_window_scraper* window_scraper) )
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> getWindowTitle_window_scraper: window_scraper index: index [
+	^ self ffiCall: #(agpu_cstring agpuWindowScraperGetWindowTitle (agpu_window_scraper* window_scraper , agpu_uint index) )
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> createWindowHandle_window_scraper: window_scraper index: index [
+	^ self ffiCall: #(agpu_window_scraper_handle* agpuWindowScraperCreateWindowHandle (agpu_window_scraper* window_scraper , agpu_uint index) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> addReference_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_error agpuAddWindowScraperHandleReference (agpu_window_scraper_handle* window_scraper_handle) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> release_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_error agpuReleaseWindowHandleScraper (agpu_window_scraper_handle* window_scraper_handle) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> isValid_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_bool agpuWindowScraperHandleIsValid (agpu_window_scraper_handle* window_scraper_handle) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> isVisible_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_bool agpuWindowScraperHandleIsVisible (agpu_window_scraper_handle* window_scraper_handle) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> getWidth_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_uint agpuWindowScraperHandleGetWidth (agpu_window_scraper_handle* window_scraper_handle) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> getHeight_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_uint agpuWindowScraperHandleGetHeight (agpu_window_scraper_handle* window_scraper_handle) )
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> captureInTexture_window_scraper_handle: window_scraper_handle [
+	^ self ffiCall: #(agpu_texture* agpuWindowScraperHandleCaptureInTexture (agpu_window_scraper_handle* window_scraper_handle) )
 ]
 
 { #category : #'swap_chain' }

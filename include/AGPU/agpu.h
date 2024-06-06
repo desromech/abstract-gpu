@@ -44,6 +44,8 @@ typedef char* agpu_string_buffer;
 typedef struct _agpu_platform agpu_platform;
 typedef struct _agpu_device agpu_device;
 typedef struct _agpu_vr_system agpu_vr_system;
+typedef struct _agpu_window_scraper agpu_window_scraper;
+typedef struct _agpu_window_scraper_handle agpu_window_scraper_handle;
 typedef struct _agpu_swap_chain agpu_swap_chain;
 typedef struct _agpu_compute_pipeline_builder agpu_compute_pipeline_builder;
 typedef struct _agpu_pipeline_builder agpu_pipeline_builder;
@@ -1256,6 +1258,7 @@ typedef agpu_device_type (*agpuGetDeviceType_FUN) (agpu_device* device);
 typedef agpu_bool (*agpuIsFeatureSupportedOnDevice_FUN) (agpu_device* device, agpu_feature feature);
 typedef agpu_uint (*agpuGetLimitValue_FUN) (agpu_device* device, agpu_limit limit);
 typedef agpu_vr_system* (*agpuGetVRSystem_FUN) (agpu_device* device);
+typedef agpu_window_scraper* (*agpuCreateWindowScraper_FUN) (agpu_device* device);
 typedef agpu_offline_shader_compiler* (*agpuCreateOfflineShaderCompilerForDevice_FUN) (agpu_device* device);
 typedef agpu_state_tracker_cache* (*agpuCreateStateTrackerCache_FUN) (agpu_device* device, agpu_command_queue* command_queue_family);
 typedef agpu_error (*agpuFinishDeviceExecution_FUN) (agpu_device* device);
@@ -1289,6 +1292,7 @@ AGPU_EXPORT agpu_device_type agpuGetDeviceType(agpu_device* device);
 AGPU_EXPORT agpu_bool agpuIsFeatureSupportedOnDevice(agpu_device* device, agpu_feature feature);
 AGPU_EXPORT agpu_uint agpuGetLimitValue(agpu_device* device, agpu_limit limit);
 AGPU_EXPORT agpu_vr_system* agpuGetVRSystem(agpu_device* device);
+AGPU_EXPORT agpu_window_scraper* agpuCreateWindowScraper(agpu_device* device);
 AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* device);
 AGPU_EXPORT agpu_state_tracker_cache* agpuCreateStateTrackerCache(agpu_device* device, agpu_command_queue* command_queue_family);
 AGPU_EXPORT agpu_error agpuFinishDeviceExecution(agpu_device* device);
@@ -1333,6 +1337,36 @@ AGPU_EXPORT agpu_error agpuGetCurrentVRRenderTrackedDevicePoseInto(agpu_vr_syste
 AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel(agpu_vr_system* vr_system, agpu_size index);
 AGPU_EXPORT agpu_bool agpuGetVRControllerState(agpu_vr_system* vr_system, agpu_size index, agpu_vr_controller_state* dest);
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* vr_system, agpu_vr_event* event);
+
+/* Methods for interface agpu_window_scraper. */
+typedef agpu_error (*agpuAddWindowScraperReference_FUN) (agpu_window_scraper* window_scraper);
+typedef agpu_error (*agpuReleaseWindowScraper_FUN) (agpu_window_scraper* window_scraper);
+typedef agpu_uint (*agpuWindowScraperEnumerateWindows_FUN) (agpu_window_scraper* window_scraper);
+typedef agpu_cstring (*agpuWindowScraperGetWindowTitle_FUN) (agpu_window_scraper* window_scraper, agpu_uint index);
+typedef agpu_window_scraper_handle* (*agpuWindowScraperCreateWindowHandle_FUN) (agpu_window_scraper* window_scraper, agpu_uint index);
+
+AGPU_EXPORT agpu_error agpuAddWindowScraperReference(agpu_window_scraper* window_scraper);
+AGPU_EXPORT agpu_error agpuReleaseWindowScraper(agpu_window_scraper* window_scraper);
+AGPU_EXPORT agpu_uint agpuWindowScraperEnumerateWindows(agpu_window_scraper* window_scraper);
+AGPU_EXPORT agpu_cstring agpuWindowScraperGetWindowTitle(agpu_window_scraper* window_scraper, agpu_uint index);
+AGPU_EXPORT agpu_window_scraper_handle* agpuWindowScraperCreateWindowHandle(agpu_window_scraper* window_scraper, agpu_uint index);
+
+/* Methods for interface agpu_window_scraper_handle. */
+typedef agpu_error (*agpuAddWindowScraperHandleReference_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+typedef agpu_error (*agpuReleaseWindowHandleScraper_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+typedef agpu_bool (*agpuWindowScraperHandleIsValid_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+typedef agpu_bool (*agpuWindowScraperHandleIsVisible_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+typedef agpu_uint (*agpuWindowScraperHandleGetWidth_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+typedef agpu_uint (*agpuWindowScraperHandleGetHeight_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+typedef agpu_texture* (*agpuWindowScraperHandleCaptureInTexture_FUN) (agpu_window_scraper_handle* window_scraper_handle);
+
+AGPU_EXPORT agpu_error agpuAddWindowScraperHandleReference(agpu_window_scraper_handle* window_scraper_handle);
+AGPU_EXPORT agpu_error agpuReleaseWindowHandleScraper(agpu_window_scraper_handle* window_scraper_handle);
+AGPU_EXPORT agpu_bool agpuWindowScraperHandleIsValid(agpu_window_scraper_handle* window_scraper_handle);
+AGPU_EXPORT agpu_bool agpuWindowScraperHandleIsVisible(agpu_window_scraper_handle* window_scraper_handle);
+AGPU_EXPORT agpu_uint agpuWindowScraperHandleGetWidth(agpu_window_scraper_handle* window_scraper_handle);
+AGPU_EXPORT agpu_uint agpuWindowScraperHandleGetHeight(agpu_window_scraper_handle* window_scraper_handle);
+AGPU_EXPORT agpu_texture* agpuWindowScraperHandleCaptureInTexture(agpu_window_scraper_handle* window_scraper_handle);
 
 /* Methods for interface agpu_swap_chain. */
 typedef agpu_error (*agpuAddSwapChainReference_FUN) (agpu_swap_chain* swap_chain);
@@ -2114,6 +2148,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuIsFeatureSupportedOnDevice_FUN agpuIsFeatureSupportedOnDevice;
 	agpuGetLimitValue_FUN agpuGetLimitValue;
 	agpuGetVRSystem_FUN agpuGetVRSystem;
+	agpuCreateWindowScraper_FUN agpuCreateWindowScraper;
 	agpuCreateOfflineShaderCompilerForDevice_FUN agpuCreateOfflineShaderCompilerForDevice;
 	agpuCreateStateTrackerCache_FUN agpuCreateStateTrackerCache;
 	agpuFinishDeviceExecution_FUN agpuFinishDeviceExecution;
@@ -2136,6 +2171,18 @@ typedef struct _agpu_icd_dispatch {
 	agpuGetVRTrackedDeviceRenderModel_FUN agpuGetVRTrackedDeviceRenderModel;
 	agpuGetVRControllerState_FUN agpuGetVRControllerState;
 	agpuPollVREvent_FUN agpuPollVREvent;
+	agpuAddWindowScraperReference_FUN agpuAddWindowScraperReference;
+	agpuReleaseWindowScraper_FUN agpuReleaseWindowScraper;
+	agpuWindowScraperEnumerateWindows_FUN agpuWindowScraperEnumerateWindows;
+	agpuWindowScraperGetWindowTitle_FUN agpuWindowScraperGetWindowTitle;
+	agpuWindowScraperCreateWindowHandle_FUN agpuWindowScraperCreateWindowHandle;
+	agpuAddWindowScraperHandleReference_FUN agpuAddWindowScraperHandleReference;
+	agpuReleaseWindowHandleScraper_FUN agpuReleaseWindowHandleScraper;
+	agpuWindowScraperHandleIsValid_FUN agpuWindowScraperHandleIsValid;
+	agpuWindowScraperHandleIsVisible_FUN agpuWindowScraperHandleIsVisible;
+	agpuWindowScraperHandleGetWidth_FUN agpuWindowScraperHandleGetWidth;
+	agpuWindowScraperHandleGetHeight_FUN agpuWindowScraperHandleGetHeight;
+	agpuWindowScraperHandleCaptureInTexture_FUN agpuWindowScraperHandleCaptureInTexture;
 	agpuAddSwapChainReference_FUN agpuAddSwapChainReference;
 	agpuReleaseSwapChain_FUN agpuReleaseSwapChain;
 	agpuSwapBuffers_FUN agpuSwapBuffers;

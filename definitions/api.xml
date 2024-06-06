@@ -1346,6 +1346,9 @@
             <method name="getVRSystem" cname="GetVRSystem" returnType="vr_system*">
             </method>
 
+            <method name="createWindowScraper" cname="CreateWindowScraper" returnType="window_scraper*">
+            </method>
+
             <!-- Common utilities -->
             <method name="createOfflineShaderCompiler" cname="CreateOfflineShaderCompilerForDevice" returnType="offline_shader_compiler*">
             </method>
@@ -1433,6 +1436,48 @@
 
             <method name="pollEvent" cname="PollVREvent" returnType="bool">
                 <arg name="event" type="vr_event*" />
+            </method>
+        </interface>
+
+        <interface name="window_scraper">
+            <method name="addReference" cname="AddWindowScraperReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseWindowScraper" returnType="error">
+            </method>
+
+            <method name="enumerateWindows" cname="WindowScraperEnumerateWindows" returnType="uint">
+            </method>
+
+            <method name="getWindowTitle" cname="WindowScraperGetWindowTitle" returnType="cstring">
+                <arg name="index" type="uint" />
+            </method>
+
+            <method name="createWindowHandle" cname="WindowScraperCreateWindowHandle" returnType="window_scraper_handle*">
+                <arg name="index" type="uint" />
+            </method>
+        </interface>
+
+        <interface name="window_scraper_handle">
+            <method name="addReference" cname="AddWindowScraperHandleReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseWindowHandleScraper" returnType="error">
+            </method>
+
+            <method name="isValid" cname="WindowScraperHandleIsValid" returnType="bool">
+            </method>
+
+            <method name="isVisible" cname="WindowScraperHandleIsVisible" returnType="bool">
+            </method>
+
+            <method name="getWidth" cname="WindowScraperHandleGetWidth" returnType="uint">
+            </method>
+
+            <method name="getHeight" cname="WindowScraperHandleGetHeight" returnType="uint">
+            </method>
+
+            <method name="captureInTexture" cname="WindowScraperHandleCaptureInTexture" returnType="texture*">
             </method>
         </interface>
 

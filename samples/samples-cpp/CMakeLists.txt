@@ -29,3 +29,6 @@ target_link_libraries(Sample-Cpp-Immediate-1 SampleCppCommon)
 
 add_executable(Sample-Cpp-Immediate-2 SampleImmediate2.cpp)
 target_link_libraries(Sample-Cpp-Immediate-2 SampleCppCommon)
+
+add_executable(Sample-Cpp-WindowScraper SampleWindowScraper.cpp)
+target_link_libraries(Sample-Cpp-WindowScraper SampleCppCommon)

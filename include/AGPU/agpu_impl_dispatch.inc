@@ -229,6 +229,11 @@ AGPU_EXPORT agpu_vr_system* agpuGetVRSystem(agpu_device* self)
 	return reinterpret_cast<agpu_vr_system*> (asRef(agpu::device, self)->getVRSystem());
 }
 
+AGPU_EXPORT agpu_window_scraper* agpuCreateWindowScraper(agpu_device* self)
+{
+	return reinterpret_cast<agpu_window_scraper*> (asRef(agpu::device, self)->createWindowScraper());
+}
+
 AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice(agpu_device* self)
 {
 	return reinterpret_cast<agpu_offline_shader_compiler*> (asRef(agpu::device, self)->createOfflineShaderCompiler());
@@ -352,6 +357,78 @@ AGPU_EXPORT agpu_bool agpuGetVRControllerState(agpu_vr_system* self, agpu_size i
 AGPU_EXPORT agpu_bool agpuPollVREvent(agpu_vr_system* self, agpu_vr_event* event)
 {
 	return asRef(agpu::vr_system, self)->pollEvent(event);
+}
+
+//==============================================================================
+// window_scraper C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddWindowScraperReference(agpu_window_scraper* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::window_scraper, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseWindowScraper(agpu_window_scraper* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::window_scraper, self)->release();
+}
+
+AGPU_EXPORT agpu_uint agpuWindowScraperEnumerateWindows(agpu_window_scraper* self)
+{
+	return asRef(agpu::window_scraper, self)->enumerateWindows();
+}
+
+AGPU_EXPORT agpu_cstring agpuWindowScraperGetWindowTitle(agpu_window_scraper* self, agpu_uint index)
+{
+	return asRef(agpu::window_scraper, self)->getWindowTitle(index);
+}
+
+AGPU_EXPORT agpu_window_scraper_handle* agpuWindowScraperCreateWindowHandle(agpu_window_scraper* self, agpu_uint index)
+{
+	return reinterpret_cast<agpu_window_scraper_handle*> (asRef(agpu::window_scraper, self)->createWindowHandle(index));
+}
+
+//==============================================================================
+// window_scraper_handle C dispatching functions.
+//==============================================================================
+
+AGPU_EXPORT agpu_error agpuAddWindowScraperHandleReference(agpu_window_scraper_handle* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::window_scraper_handle, self)->retain();
+}
+
+AGPU_EXPORT agpu_error agpuReleaseWindowHandleScraper(agpu_window_scraper_handle* self)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRefCounter(agpu::window_scraper_handle, self)->release();
+}
+
+AGPU_EXPORT agpu_bool agpuWindowScraperHandleIsValid(agpu_window_scraper_handle* self)
+{
+	return asRef(agpu::window_scraper_handle, self)->isValid();
+}
+
+AGPU_EXPORT agpu_bool agpuWindowScraperHandleIsVisible(agpu_window_scraper_handle* self)
+{
+	return asRef(agpu::window_scraper_handle, self)->isVisible();
+}
+
+AGPU_EXPORT agpu_uint agpuWindowScraperHandleGetWidth(agpu_window_scraper_handle* self)
+{
+	return asRef(agpu::window_scraper_handle, self)->getWidth();
+}
+
+AGPU_EXPORT agpu_uint agpuWindowScraperHandleGetHeight(agpu_window_scraper_handle* self)
+{
+	return asRef(agpu::window_scraper_handle, self)->getHeight();
+}
+
+AGPU_EXPORT agpu_texture* agpuWindowScraperHandleCaptureInTexture(agpu_window_scraper_handle* self)
+{
+	return reinterpret_cast<agpu_texture*> (asRef(agpu::window_scraper_handle, self)->captureInTexture());
 }
 
 //==============================================================================

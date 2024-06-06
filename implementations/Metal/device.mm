@@ -19,6 +19,7 @@
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
 #include "../Common/memory_profiler.hpp"
+#include "../Common/window_scraper.hpp"
 
 namespace AgpuMetal
 {
@@ -204,6 +205,11 @@ agpu_bool AMtlDevice::hasBottomLeftTextureCoordinates()
 agpu::vr_system_ptr AMtlDevice::getVRSystem()
 {
     return nullptr;
+}
+
+agpu::window_scraper_ptr AMtlDevice::createWindowScraper()
+{
+    return AgpuCommon::createWindowScraper(refFromThis<agpu::device> ()).disown();
 }
 
 agpu::offline_shader_compiler_ptr AMtlDevice::createOfflineShaderCompiler()

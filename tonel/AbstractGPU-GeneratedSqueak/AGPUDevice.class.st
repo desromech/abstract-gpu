@@ -208,6 +208,13 @@ AGPUDevice >> getVRSystem [
 ]
 
 { #category : #'wrappers' }
+AGPUDevice >> createWindowScraper [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance createWindowScraper_device: (self validHandle).
+	^ AGPUWindowScraper forHandle: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUDevice >> createOfflineShaderCompiler [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance createOfflineShaderCompiler_device: (self validHandle).

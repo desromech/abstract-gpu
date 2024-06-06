@@ -21,6 +21,7 @@
 #include "sampler.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
+#include "../Common/window_scraper.hpp"
 
 #define GET_INSTANCE_PROC_ADDR(procName) \
     {                                                                          \
@@ -920,6 +921,11 @@ agpu_bool AVkDevice::hasBottomLeftTextureCoordinates()
 agpu::vr_system_ptr AVkDevice::getVRSystem()
 {
     return vrSystemWrapper.disownedNewRef();
+}
+
+agpu::window_scraper_ptr AVkDevice::createWindowScraper()
+{
+    return AgpuCommon::createWindowScraper(refFromThis<agpu::device> ()).disown();
 }
 
 agpu::offline_shader_compiler_ptr AVkDevice::createOfflineShaderCompiler()

@@ -70,6 +70,8 @@ Class {
 		'agpu_platform',
 		'agpu_device',
 		'agpu_vr_system',
+		'agpu_window_scraper',
+		'agpu_window_scraper_handle',
 		'agpu_swap_chain',
 		'agpu_compute_pipeline_builder',
 		'agpu_pipeline_builder',
@@ -224,6 +226,8 @@ AGPUTypes class >> initialize [
 	agpu_platform := #'void'.
 	agpu_device := #'void'.
 	agpu_vr_system := #'void'.
+	agpu_window_scraper := #'void'.
+	agpu_window_scraper_handle := #'void'.
 	agpu_swap_chain := #'void'.
 	agpu_compute_pipeline_builder := #'void'.
 	agpu_pipeline_builder := #'void'.
