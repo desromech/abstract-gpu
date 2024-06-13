@@ -13,6 +13,22 @@
 namespace AgpuCommon
 {
 
+class Win32WithDpiAwareness
+{
+public:
+    Win32WithDpiAwareness()
+    {
+        oldContext = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+    }
+
+    ~Win32WithDpiAwareness()
+    {
+        SetThreadDpiAwarenessContext(oldContext);
+    }
+
+    DPI_AWARENESS_CONTEXT oldContext;
+};
+
 class Win32WindowScraperHandle : public agpu::window_scraper_handle
 {
 public:
@@ -33,6 +49,8 @@ public:
 
 	virtual agpu_uint getWidth() override
     {
+        Win32WithDpiAwareness dpiAware;
+
         RECT rect = {};
         GetClientRect(hwnd, &rect);
         return rect.right - rect.left;
@@ -40,6 +58,8 @@ public:
 
 	virtual agpu_uint getHeight() override
     {
+        Win32WithDpiAwareness dpiAware;
+
         RECT rect = {};
         GetClientRect(hwnd, &rect);
         return rect.bottom - rect.top;
@@ -47,6 +67,8 @@ public:
     
 	virtual agpu::texture_ptr captureInTexture() override
     {
+        Win32WithDpiAwareness dpiAware;
+
         if(!isValid())
             return nullptr;
 
@@ -58,7 +80,7 @@ public:
         if(IsRectEmpty(&rect))
             return lastCapturedTexture.disownedNewRef();
 
-        HDC dc = GetDC(hwnd);
+        HDC dc = GetDC(GetDesktopWindow());
         if(!dc)
             return lastCapturedTexture.disownedNewRef();
 
@@ -134,7 +156,7 @@ public:
 
         // Upload the bitmap into the texture.
         //printf("Upload texture %d %d\n", int(captureWidth), int(captureHeight));
-        lastCapturedTexture->uploadTextureData(0, 0, rowPitch, slicePitch, captureDataBuffer.data());
+        lastCapturedTexture->uploadTextureData(0, 0, -rowPitch, slicePitch, captureDataBuffer.data() + (captureHeight - 1)*rowPitch);
 
         return lastCapturedTexture.disownedNewRef();
     }
