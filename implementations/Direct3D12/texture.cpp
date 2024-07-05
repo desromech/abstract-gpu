@@ -326,9 +326,10 @@ agpu_error ADXTexture::uploadTextureSubData(agpu_int level, agpu_int arrayIndex,
         {
             auto srcRow = reinterpret_cast<uint8_t*> (data);
             auto dstRow = reinterpret_cast<uint8_t*> (bufferPointer);
+            auto absPitch = pitch >= 0 ? pitch : -pitch;
             for (uint32_t y = 0; y < transferRows; ++y)
             {
-                memcpy(dstRow, srcRow, pitch);
+                memcpy(dstRow, srcRow, absPitch);
                 srcRow += pitch;
                 dstRow += copyFootprint.RowPitch;
             }
