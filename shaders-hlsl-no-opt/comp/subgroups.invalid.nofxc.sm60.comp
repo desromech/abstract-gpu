@@ -40,18 +40,18 @@ void main()
 	//bool inverse_ballot_value = subgroupInverseBallot(ballot_value);
 	//bool bit_extracted = subgroupBallotBitExtract(uvec4(10u), 8u);
 	uint bit_count = subgroupBallotBitCount(ballot_value);
-	//uint inclusive_bit_count = subgroupBallotInclusiveBitCount(ballot_value);
-	//uint exclusive_bit_count = subgroupBallotExclusiveBitCount(ballot_value);
+	uint inclusive_bit_count = subgroupBallotInclusiveBitCount(ballot_value);
+	uint exclusive_bit_count = subgroupBallotExclusiveBitCount(ballot_value);
 	//uint lsb = subgroupBallotFindLSB(ballot_value);
 	//uint msb = subgroupBallotFindMSB(ballot_value);
 
 	// shuffle
-	//uint shuffled = subgroupShuffle(10u, 8u);
-	//uint shuffled_xor = subgroupShuffleXor(30u, 8u);
+	uint shuffled = subgroupShuffle(10u, 8u);
+	uint shuffled_xor = subgroupShuffleXor(30u, 8u);
 
 	// shuffle relative 
-	//uint shuffled_up = subgroupShuffleUp(20u, 4u);
-	//uint shuffled_down = subgroupShuffleDown(20u, 4u);
+	uint shuffled_up = subgroupShuffleUp(20u, 4u);
+	uint shuffled_down = subgroupShuffleDown(20u, 4u);
 
 	// vote
 	bool has_all = subgroupAll(true);

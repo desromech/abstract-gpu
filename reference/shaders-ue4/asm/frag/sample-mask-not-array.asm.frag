@@ -1,7 +1,48 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#pragma clang diagnostic ignored "-Wmissing-braces"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
+
+template<typename T, size_t Num>
+struct spvUnsafeArray
+{
+    T elements[Num ? Num : 1];
+    
+    thread T& operator [] (size_t pos) thread
+    {
+        return elements[pos];
+    }
+    constexpr const thread T& operator [] (size_t pos) const thread
+    {
+        return elements[pos];
+    }
+    
+    device T& operator [] (size_t pos) device
+    {
+        return elements[pos];
+    }
+    constexpr const device T& operator [] (size_t pos) const device
+    {
+        return elements[pos];
+    }
+    
+    constexpr const constant T& operator [] (size_t pos) const constant
+    {
+        return elements[pos];
+    }
+    
+    threadgroup T& operator [] (size_t pos) threadgroup
+    {
+        return elements[pos];
+    }
+    constexpr const threadgroup T& operator [] (size_t pos) const threadgroup
+    {
+        return elements[pos];
+    }
+};
 
 struct type_View
 {
@@ -462,7 +503,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant type_View& View [[bu
     {
         _215 = in.in_var_TEXCOORD7;
     }
-    float3 _216 = fast::max(Material.Material_VectorExpressions[1].xyz * float3(((1.0 + dot(float3(-1.0, -1.5, 3.0) / float3(sqrt(12.25)), normalize(float3x3(in.in_var_TEXCOORD10_centroid.xyz, cross(in.in_var_TEXCOORD11_centroid.xyz, in.in_var_TEXCOORD10_centroid.xyz) * float3(in.in_var_TEXCOORD11_centroid.w), in.in_var_TEXCOORD11_centroid.xyz) * normalize((float3(0.0, 0.0, 1.0) * float3(View.View_NormalOverrideParameter.w)) + View.View_NormalOverrideParameter.xyz)))) * 0.5) + 0.20000000298023223876953125), float3(0.0));
+    float3 _216 = fast::max(Material.Material_VectorExpressions[1].xyz * float3(((1.0 + dot(float3(-1.0, -1.5, 3.0) / float3(sqrt(12.25)), fast::normalize(float3x3(in.in_var_TEXCOORD10_centroid.xyz, cross(in.in_var_TEXCOORD11_centroid.xyz, in.in_var_TEXCOORD10_centroid.xyz) * float3(in.in_var_TEXCOORD11_centroid.w), in.in_var_TEXCOORD11_centroid.xyz) * fast::normalize((float3(0.0, 0.0, 1.0) * float3(View.View_NormalOverrideParameter.w)) + View.View_NormalOverrideParameter.xyz)))) * 0.5) + 0.20000000298023223876953125), float3(0.0));
     float3 _246;
     if (View.View_OutOfBoundsMask > 0.0)
     {
@@ -470,7 +511,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant type_View& View [[bu
         float3 _245;
         if (any(abs(_142 - View_PrimitiveSceneData._m0[_222 + 5u].xyz) > (View_PrimitiveSceneData._m0[_222 + 19u].xyz + float3(1.0))))
         {
-            _245 = mix(float3(1.0, 1.0, 0.0), float3(0.0, 1.0, 1.0), select(float3(0.0), float3(1.0), float3(fract(dot(_142, float3(0.57700002193450927734375)) * 0.00200000009499490261077880859375)) > float3(0.5)));
+            _245 = mix(float3(1.0, 1.0, 0.0), float3(0.0, 1.0, 1.0), float3(float3(fract(dot(_142, float3(0.57700002193450927734375)) * 0.00200000009499490261077880859375)) > float3(0.5)));
         }
         else
         {
@@ -482,19 +523,19 @@ fragment main0_out main0(main0_in in [[stage_in]], constant type_View& View [[bu
     {
         _246 = _216;
     }
-    float4 _256 = float4((_246 * float3(_215.w)) + _215.xyz, _108);
-    _256.w = 1.0;
+    float4 _255 = float4((_246 * float3(_215.w)) + _215.xyz, _108);
+    _255.w = 1.0;
     float4 _268;
     uint _269;
     if (View.View_NumSceneColorMSAASamples > 1)
     {
-        _268 = _256 * float4(float(View.View_NumSceneColorMSAASamples) * 0.25);
-        _269 = gl_SampleMaskIn & 15u;
+        _268 = _255 * float4(float(View.View_NumSceneColorMSAASamples) * 0.25);
+        _269 = (spvUnsafeArray<uint, 1>({ uint(gl_SampleMaskIn) }))[0] & 15u;
     }
     else
     {
-        _268 = _256;
-        _269 = gl_SampleMaskIn;
+        _268 = _255;
+        _269 = (spvUnsafeArray<uint, 1>({ uint(gl_SampleMaskIn) }))[0];
     }
     out.out_var_SV_Target0 = _268;
     out.gl_SampleMask = _269;
