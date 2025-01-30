@@ -2045,6 +2045,8 @@ available through VmaAllocatorCreateInfo::pRecordSettings.
     #endif // #if VMA_VULKAN_VERSION >= 1001000
 #endif // #if defined(__ANDROID__) && VMA_STATIC_VULKAN_FUNCTIONS && VK_NO_PROTOTYPES
 
+#include <stdio.h> // For a CI complaint
+
 #ifndef VULKAN_H_
     #include <vulkan/vulkan.h>
 #endif
