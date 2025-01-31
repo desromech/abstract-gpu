@@ -1849,6 +1849,14 @@ AGPU_EXPORT agpu_error agpuBindSampledTextureView ( agpu_shader_resource_binding
 	return (*dispatchTable)->agpuBindSampledTextureView ( shader_resource_binding, location, view );
 }
 
+AGPU_EXPORT agpu_error agpuBindArrayOfSampledTextureView ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_int first_index, agpu_uint count, agpu_texture_view** views )
+{
+	if (shader_resource_binding == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (shader_resource_binding);
+	return (*dispatchTable)->agpuBindArrayOfSampledTextureView ( shader_resource_binding, location, first_index, count, views );
+}
+
 AGPU_EXPORT agpu_error agpuBindStorageImageView ( agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture_view* view )
 {
 	if (shader_resource_binding == nullptr)

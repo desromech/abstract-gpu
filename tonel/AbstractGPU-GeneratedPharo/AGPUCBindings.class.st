@@ -1164,6 +1164,11 @@ AGPUCBindings >> bindSampledTextureView_shader_resource_binding: shader_resource
 ]
 
 { #category : #'shader_resource_binding' }
+AGPUCBindings >> bindArrayOfSampledTextureView_shader_resource_binding: shader_resource_binding location: location first_index: first_index count: count views: views [
+	^ self ffiCall: #(agpu_error agpuBindArrayOfSampledTextureView (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_int first_index , agpu_uint count , agpu_texture_view** views) )
+]
+
+{ #category : #'shader_resource_binding' }
 AGPUCBindings >> bindStorageImageView_shader_resource_binding: shader_resource_binding location: location view: view [
 	^ self ffiCall: #(agpu_error agpuBindStorageImageView (agpu_shader_resource_binding* shader_resource_binding , agpu_int location , agpu_texture_view* view) )
 ]

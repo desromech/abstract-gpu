@@ -51,7 +51,7 @@ agpu::shader_signature_ref AVkShaderSignature::create(const agpu::device_ref &de
         {
             if (descriptorTypes.find(int(bindingDesc.descriptorType)) == descriptorTypes.end())
                 descriptorTypes[int(bindingDesc.descriptorType)] = 0;
-            ++descriptorTypes[int(bindingDesc.descriptorType)];
+            descriptorTypes[int(bindingDesc.descriptorType)] += bindingDesc.descriptorCount;
         }
  
         poolSizes.clear();

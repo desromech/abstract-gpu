@@ -1408,6 +1408,7 @@ function agpuBindUniformBufferRange externC (shader_resource_binding: ShaderReso
 function agpuBindStorageBuffer externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, storage_buffer: Buffer pointer) => Error.
 function agpuBindStorageBufferRange externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, storage_buffer: Buffer pointer, offset: UInt32, size: UInt32) => Error.
 function agpuBindSampledTextureView externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, view: TextureView pointer) => Error.
+function agpuBindArrayOfSampledTextureView externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, first_index: Int32, count: UInt32, views: TextureView pointer pointer) => Error.
 function agpuBindStorageImageView externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, view: TextureView pointer) => Error.
 function agpuBindSampler externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, sampler: Sampler pointer) => Error.
 function agpuAddFenceReference externC (fence: Fence pointer) => Error.
@@ -2361,6 +2362,9 @@ ShaderResourceBinding extend: {
 
 	inline method bindSampledTextureView: (location: Int32) view: (view: TextureViewRef const ref) ::=> Void
 		:= throwIfError: (agpuBindSampledTextureView(self address, location, view getPointer)).
+
+	inline method bindArrayOfSampledTextureView: (location: Int32) firstIndex: (first_index: Int32) count: (count: UInt32) views: (views: TextureViewRef pointer) ::=> Void
+		:= throwIfError: (agpuBindArrayOfSampledTextureView(self address, location, first_index, count, views reinterpretCastTo: TextureView pointer pointer)).
 
 	inline method bindStorageImageView: (location: Int32) view: (view: TextureViewRef const ref) ::=> Void
 		:= throwIfError: (agpuBindStorageImageView(self address, location, view getPointer)).

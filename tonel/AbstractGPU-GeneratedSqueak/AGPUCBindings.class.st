@@ -1394,6 +1394,12 @@ AGPUCBindings >> bindSampledTextureView_shader_resource_binding: shader_resource
 ]
 
 { #category : #'shader_resource_binding' }
+AGPUCBindings >> bindArrayOfSampledTextureView_shader_resource_binding: shader_resource_binding location: location first_index: first_index count: count views: views [
+	<cdecl: long 'agpuBindArrayOfSampledTextureView' (void* long long ulong void**)>
+	^ self externalCallFailed
+]
+
+{ #category : #'shader_resource_binding' }
 AGPUCBindings >> bindStorageImageView_shader_resource_binding: shader_resource_binding location: location view: view [
 	<cdecl: long 'agpuBindStorageImageView' (void* long void*)>
 	^ self externalCallFailed

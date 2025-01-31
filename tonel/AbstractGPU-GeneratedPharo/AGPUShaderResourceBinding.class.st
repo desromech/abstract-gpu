@@ -54,6 +54,13 @@ AGPUShaderResourceBinding >> bindSampledTextureView: location view: view [
 ]
 
 { #category : #'wrappers' }
+AGPUShaderResourceBinding >> bindArrayOfSampledTextureView: location first_index: first_index count: count views: views [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance bindArrayOfSampledTextureView_shader_resource_binding: (self validHandle) location: location first_index: first_index count: count views: views.
+	self checkErrorCode: resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUShaderResourceBinding >> bindStorageImageView: location view: view [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance bindStorageImageView_shader_resource_binding: (self validHandle) location: location view: (self validHandleOf: view).

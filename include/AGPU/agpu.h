@@ -1690,6 +1690,7 @@ typedef agpu_error (*agpuBindUniformBufferRange_FUN) (agpu_shader_resource_bindi
 typedef agpu_error (*agpuBindStorageBuffer_FUN) (agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer);
 typedef agpu_error (*agpuBindStorageBufferRange_FUN) (agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size);
 typedef agpu_error (*agpuBindSampledTextureView_FUN) (agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture_view* view);
+typedef agpu_error (*agpuBindArrayOfSampledTextureView_FUN) (agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_int first_index, agpu_uint count, agpu_texture_view** views);
 typedef agpu_error (*agpuBindStorageImageView_FUN) (agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture_view* view);
 typedef agpu_error (*agpuBindSampler_FUN) (agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler* sampler);
 
@@ -1700,6 +1701,7 @@ AGPU_EXPORT agpu_error agpuBindUniformBufferRange(agpu_shader_resource_binding* 
 AGPU_EXPORT agpu_error agpuBindStorageBuffer(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer);
 AGPU_EXPORT agpu_error agpuBindStorageBufferRange(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_buffer* storage_buffer, agpu_size offset, agpu_size size);
 AGPU_EXPORT agpu_error agpuBindSampledTextureView(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture_view* view);
+AGPU_EXPORT agpu_error agpuBindArrayOfSampledTextureView(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_int first_index, agpu_uint count, agpu_texture_view** views);
 AGPU_EXPORT agpu_error agpuBindStorageImageView(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_texture_view* view);
 AGPU_EXPORT agpu_error agpuBindSampler(agpu_shader_resource_binding* shader_resource_binding, agpu_int location, agpu_sampler* sampler);
 
@@ -2275,6 +2277,7 @@ typedef struct _agpu_icd_dispatch {
 	agpuBindStorageBuffer_FUN agpuBindStorageBuffer;
 	agpuBindStorageBufferRange_FUN agpuBindStorageBufferRange;
 	agpuBindSampledTextureView_FUN agpuBindSampledTextureView;
+	agpuBindArrayOfSampledTextureView_FUN agpuBindArrayOfSampledTextureView;
 	agpuBindStorageImageView_FUN agpuBindStorageImageView;
 	agpuBindSampler_FUN agpuBindSampler;
 	agpuAddFenceReference_FUN agpuAddFenceReference;

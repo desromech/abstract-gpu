@@ -23,6 +23,7 @@ public:
     virtual agpu_error bindStorageBuffer(agpu_int location, const agpu::buffer_ref &storage_buffer) override;
     virtual agpu_error bindStorageBufferRange(agpu_int location, const agpu::buffer_ref &storage_buffer, agpu_size offset, agpu_size size) override;
 	virtual agpu_error bindSampledTextureView(agpu_int location, const agpu::texture_view_ref &view) override;
+    virtual agpu_error bindArrayOfSampledTextureView(agpu_int location, agpu_int first_index, agpu_uint count, agpu::texture_view_ref* views) override;
 	virtual agpu_error bindStorageImageView(agpu_int location, const agpu::texture_view_ref &view) override;
 	virtual agpu_error bindSampler(agpu_int location, const agpu::sampler_ref &sampler) override;
 

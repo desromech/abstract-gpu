@@ -151,6 +151,41 @@ agpu_error AVkShaderResourceBinding::bindSampledTextureView(agpu_int location, c
     return AGPU_OK;
 }
 
+agpu_error AVkShaderResourceBinding::bindArrayOfSampledTextureView(agpu_int location, agpu_int first_index, agpu_uint count, agpu::texture_view_ref* views)
+{
+    CHECK_POINTER(views);
+    if (location < 0 || location >= (int)bindingDescription->types.size())
+        return AGPU_OUT_OF_BOUNDS;
+
+    if (bindingDescription->types[location] != AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE)
+        return AGPU_INVALID_OPERATION;
+
+    std::vector<VkDescriptorImageInfo> imageInfos;
+    imageInfos.reserve(count);
+    for(size_t i = 0; i < count; ++i)
+    {
+        auto avkView = views[i].as<AVkTextureView> ();
+
+        VkDescriptorImageInfo imageInfo = {};
+        imageInfo.imageLayout = avkView->imageLayout;
+        imageInfo.imageView = avkView->handle;
+        imageInfo.sampler = VK_NULL_HANDLE;
+        imageInfos.push_back(imageInfo);
+    }
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = count;
+    write.descriptorType = bindingDescription->bindings[location].descriptorType;
+    write.dstSet = descriptorSet;
+    write.dstArrayElement = first_index;
+    write.dstBinding = location;
+    write.pImageInfo = imageInfos.data();
+
+    vkUpdateDescriptorSets(deviceForVk->device, 1, &write, 0, nullptr);
+    return AGPU_OK;
+}
+
 agpu_error AVkShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref &view)
 {
     CHECK_POINTER(view);

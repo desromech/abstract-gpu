@@ -77,66 +77,6 @@ public:
         return *this;
     }
 
-    bool operator==(const agpu_ref<T> &other) const
-    {
-        return pointer == other.pointer;
-    }
-
-    bool operator==(const T *otherPointer) const
-    {
-        return pointer == otherPointer;
-    }
-
-    bool operator!=(const agpu_ref<T> &other) const
-    {
-        return pointer != other.pointer;
-    }
-
-    bool operator!=(const T *otherPointer) const
-    {
-        return pointer != otherPointer;
-    }
-
-    bool operator<(const agpu_ref<T> &other) const
-    {
-        return pointer < other.pointer;
-    }
-
-    bool operator<(const T *otherPointer) const
-    {
-        return pointer < otherPointer;
-    }
-
-    bool operator<=(const agpu_ref<T> &other) const
-    {
-        return pointer < other.pointer;
-    }
-
-    bool operator<=(const T *otherPointer) const
-    {
-        return pointer <= otherPointer;
-    }
-
-    bool operator>(const agpu_ref<T> &other) const
-    {
-        return pointer > other.pointer;
-    }
-
-    bool operator>(const T *otherPointer) const
-    {
-        return pointer > otherPointer;
-    }
-
-    bool operator>=(const agpu_ref<T> &other) const
-    {
-        return pointer > other.pointer;
-    }
-
-    bool operator>=(const T *otherPointer) const
-    {
-        return pointer >= otherPointer;
-    }
-    
 	void reset(T *newPointer = nullptr)
 	{
 		if(pointer)
@@ -1568,6 +1508,11 @@ public:
 	inline void bindSampledTextureView(agpu_int location, const agpu_ref<agpu_texture_view>& view)
 	{
 		agpuThrowIfFailed(agpuBindSampledTextureView(this, location, view.get()));
+	}
+
+	inline void bindArrayOfSampledTextureView(agpu_int location, agpu_int first_index, agpu_uint count, agpu_ref<agpu_texture_view>* views)
+	{
+		agpuThrowIfFailed(agpuBindArrayOfSampledTextureView(this, location, first_index, count, reinterpret_cast<agpu_texture_view**> (views)));
 	}
 
 	inline void bindStorageImageView(agpu_int location, const agpu_ref<agpu_texture_view>& view)

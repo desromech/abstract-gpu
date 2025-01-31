@@ -2205,6 +2205,13 @@
                 <arg name="view" type="texture_view*" />
             </method>
 
+            <method name="bindArrayOfSampledTextureView" cname="BindArrayOfSampledTextureView" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="first_index" type="int" />
+                <arg name="count" type="uint" />
+                <arg name="views" type="texture_view**" />
+            </method>
+
             <method name="bindStorageImageView" cname="BindStorageImageView" returnType="error">
                 <arg name="location" type="int" />
                 <arg name="view" type="texture_view*" />

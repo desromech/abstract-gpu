@@ -867,6 +867,7 @@ public:
 	virtual agpu_error bindStorageBuffer(agpu_int location, const buffer_ref & storage_buffer) = 0;
 	virtual agpu_error bindStorageBufferRange(agpu_int location, const buffer_ref & storage_buffer, agpu_size offset, agpu_size size) = 0;
 	virtual agpu_error bindSampledTextureView(agpu_int location, const texture_view_ref & view) = 0;
+	virtual agpu_error bindArrayOfSampledTextureView(agpu_int location, agpu_int first_index, agpu_uint count, texture_view_ref* views) = 0;
 	virtual agpu_error bindStorageImageView(agpu_int location, const texture_view_ref & view) = 0;
 	virtual agpu_error bindSampler(agpu_int location, const sampler_ref & sampler) = 0;
 };

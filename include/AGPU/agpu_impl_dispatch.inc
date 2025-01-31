@@ -1409,6 +1409,12 @@ AGPU_EXPORT agpu_error agpuBindSampledTextureView(agpu_shader_resource_binding* 
 	return asRef(agpu::shader_resource_binding, self)->bindSampledTextureView(location, asRef(agpu::texture_view, view));
 }
 
+AGPU_EXPORT agpu_error agpuBindArrayOfSampledTextureView(agpu_shader_resource_binding* self, agpu_int location, agpu_int first_index, agpu_uint count, agpu_texture_view** views)
+{
+	if(!self) return AGPU_NULL_POINTER;
+	return asRef(agpu::shader_resource_binding, self)->bindArrayOfSampledTextureView(location, first_index, count, reinterpret_cast<agpu::texture_view_ref*> (views));
+}
+
 AGPU_EXPORT agpu_error agpuBindStorageImageView(agpu_shader_resource_binding* self, agpu_int location, agpu_texture_view* view)
 {
 	if(!self) return AGPU_NULL_POINTER;
