@@ -130,6 +130,12 @@ agpu_error AMtlShaderResourceBinding::bindSampledTextureView(agpu_int location, 
     return AGPU_OK;
 }
 
+
+agpu_error AMtlShaderResourceBinding::bindArrayOfSampledTextureView(agpu_int location, agpu_int first_index, agpu_uint count, agpu::texture_view_ref* views)
+{
+    return AGPU_UNSUPPORTED;
+}
+
 agpu_error AMtlShaderResourceBinding::bindStorageImageView(agpu_int location, const agpu::texture_view_ref &view)
 {
     CHECK_POINTER(view);
