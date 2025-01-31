@@ -337,6 +337,14 @@ AGPU_EXPORT agpu_vr_system* agpuGetVRSystem ( agpu_device* device )
 	return (*dispatchTable)->agpuGetVRSystem ( device );
 }
 
+AGPU_EXPORT agpu_window_scraper* agpuCreateWindowScraper ( agpu_device* device )
+{
+	if (device == nullptr)
+		return (agpu_window_scraper*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (device);
+	return (*dispatchTable)->agpuCreateWindowScraper ( device );
+}
+
 AGPU_EXPORT agpu_offline_shader_compiler* agpuCreateOfflineShaderCompilerForDevice ( agpu_device* device )
 {
 	if (device == nullptr)
@@ -497,12 +505,116 @@ AGPU_EXPORT agpu_vr_render_model* agpuGetVRTrackedDeviceRenderModel ( agpu_vr_sy
 	return (*dispatchTable)->agpuGetVRTrackedDeviceRenderModel ( vr_system, index );
 }
 
+AGPU_EXPORT agpu_bool agpuGetVRControllerState ( agpu_vr_system* vr_system, agpu_size index, agpu_vr_controller_state* dest )
+{
+	if (vr_system == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
+	return (*dispatchTable)->agpuGetVRControllerState ( vr_system, index, dest );
+}
+
 AGPU_EXPORT agpu_bool agpuPollVREvent ( agpu_vr_system* vr_system, agpu_vr_event* event )
 {
 	if (vr_system == nullptr)
 		return (agpu_bool)0;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (vr_system);
 	return (*dispatchTable)->agpuPollVREvent ( vr_system, event );
+}
+
+AGPU_EXPORT agpu_error agpuAddWindowScraperReference ( agpu_window_scraper* window_scraper )
+{
+	if (window_scraper == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper);
+	return (*dispatchTable)->agpuAddWindowScraperReference ( window_scraper );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseWindowScraper ( agpu_window_scraper* window_scraper )
+{
+	if (window_scraper == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper);
+	return (*dispatchTable)->agpuReleaseWindowScraper ( window_scraper );
+}
+
+AGPU_EXPORT agpu_uint agpuWindowScraperEnumerateWindows ( agpu_window_scraper* window_scraper )
+{
+	if (window_scraper == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper);
+	return (*dispatchTable)->agpuWindowScraperEnumerateWindows ( window_scraper );
+}
+
+AGPU_EXPORT agpu_cstring agpuWindowScraperGetWindowTitle ( agpu_window_scraper* window_scraper, agpu_uint index )
+{
+	if (window_scraper == nullptr)
+		return (agpu_cstring)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper);
+	return (*dispatchTable)->agpuWindowScraperGetWindowTitle ( window_scraper, index );
+}
+
+AGPU_EXPORT agpu_window_scraper_handle* agpuWindowScraperCreateWindowHandle ( agpu_window_scraper* window_scraper, agpu_uint index )
+{
+	if (window_scraper == nullptr)
+		return (agpu_window_scraper_handle*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper);
+	return (*dispatchTable)->agpuWindowScraperCreateWindowHandle ( window_scraper, index );
+}
+
+AGPU_EXPORT agpu_error agpuAddWindowScraperHandleReference ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuAddWindowScraperHandleReference ( window_scraper_handle );
+}
+
+AGPU_EXPORT agpu_error agpuReleaseWindowHandleScraper ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return AGPU_NULL_POINTER;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuReleaseWindowHandleScraper ( window_scraper_handle );
+}
+
+AGPU_EXPORT agpu_bool agpuWindowScraperHandleIsValid ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuWindowScraperHandleIsValid ( window_scraper_handle );
+}
+
+AGPU_EXPORT agpu_bool agpuWindowScraperHandleIsVisible ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return (agpu_bool)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuWindowScraperHandleIsVisible ( window_scraper_handle );
+}
+
+AGPU_EXPORT agpu_uint agpuWindowScraperHandleGetWidth ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuWindowScraperHandleGetWidth ( window_scraper_handle );
+}
+
+AGPU_EXPORT agpu_uint agpuWindowScraperHandleGetHeight ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return (agpu_uint)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuWindowScraperHandleGetHeight ( window_scraper_handle );
+}
+
+AGPU_EXPORT agpu_texture* agpuWindowScraperHandleCaptureInTexture ( agpu_window_scraper_handle* window_scraper_handle )
+{
+	if (window_scraper_handle == nullptr)
+		return (agpu_texture*)0;
+	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (window_scraper_handle);
+	return (*dispatchTable)->agpuWindowScraperHandleCaptureInTexture ( window_scraper_handle );
 }
 
 AGPU_EXPORT agpu_error agpuAddSwapChainReference ( agpu_swap_chain* swap_chain )

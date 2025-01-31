@@ -385,6 +385,16 @@ typedef ref_counter<vr_system> *vr_system_ptr;
 typedef ref<vr_system> vr_system_ref;
 typedef weak_ref<vr_system> vr_system_weakref;
 
+struct window_scraper;
+typedef ref_counter<window_scraper> *window_scraper_ptr;
+typedef ref<window_scraper> window_scraper_ref;
+typedef weak_ref<window_scraper> window_scraper_weakref;
+
+struct window_scraper_handle;
+typedef ref_counter<window_scraper_handle> *window_scraper_handle_ptr;
+typedef ref<window_scraper_handle> window_scraper_handle_ref;
+typedef weak_ref<window_scraper_handle> window_scraper_handle_weakref;
+
 struct swap_chain;
 typedef ref_counter<swap_chain> *swap_chain_ptr;
 typedef ref<swap_chain> swap_chain_ref;
@@ -558,6 +568,7 @@ public:
 	virtual agpu_bool isFeatureSupported(agpu_feature feature) = 0;
 	virtual agpu_uint getLimitValue(agpu_limit limit) = 0;
 	virtual vr_system_ptr getVRSystem() = 0;
+	virtual window_scraper_ptr createWindowScraper() = 0;
 	virtual offline_shader_compiler_ptr createOfflineShaderCompiler() = 0;
 	virtual state_tracker_cache_ptr createStateTrackerCache(const command_queue_ref & command_queue_family) = 0;
 	virtual agpu_error finishExecution() = 0;
@@ -584,7 +595,32 @@ public:
 	virtual agpu_size getCurrentRenderTrackedDevicePoseCount() = 0;
 	virtual agpu_error getCurrentRenderTrackedDevicePoseInto(agpu_size index, agpu_vr_tracked_device_pose* dest) = 0;
 	virtual agpu_vr_render_model* getTrackedDeviceRenderModel(agpu_size index) = 0;
+	virtual agpu_bool getControllerState(agpu_size index, agpu_vr_controller_state* dest) = 0;
 	virtual agpu_bool pollEvent(agpu_vr_event* event) = 0;
+};
+
+
+// Interface wrapper for agpu_window_scraper.
+struct window_scraper : base_interface
+{
+public:
+	typedef window_scraper main_interface;
+	virtual agpu_uint enumerateWindows() = 0;
+	virtual agpu_cstring getWindowTitle(agpu_uint index) = 0;
+	virtual window_scraper_handle_ptr createWindowHandle(agpu_uint index) = 0;
+};
+
+
+// Interface wrapper for agpu_window_scraper_handle.
+struct window_scraper_handle : base_interface
+{
+public:
+	typedef window_scraper_handle main_interface;
+	virtual agpu_bool isValid() = 0;
+	virtual agpu_bool isVisible() = 0;
+	virtual agpu_uint getWidth() = 0;
+	virtual agpu_uint getHeight() = 0;
+	virtual texture_ptr captureInTexture() = 0;
 };
 
 

@@ -81,7 +81,7 @@ struct main0_out
 struct main0_in
 {
     VertexOutput_1 p;
-    ushort2 m_171;
+    ushort2 m_174;
     float4 gl_Position;
 };
 
@@ -110,7 +110,7 @@ kernel void main0(uint3 gl_GlobalInvocationID [[thread_position_in_grid]], devic
     device main0_out* gl_out = &spvOut[gl_GlobalInvocationID.x - gl_GlobalInvocationID.x % 3];
     device main0_in* gl_in = &spvIn[min(gl_GlobalInvocationID.x / 3, spvIndirectParams[1] - 1) * spvIndirectParams[0]];
     uint gl_InvocationID = gl_GlobalInvocationID.x % 3;
-    uint gl_PrimitiveID = min(gl_GlobalInvocationID.x / 3, spvIndirectParams[1]);
+    uint gl_PrimitiveID = min(gl_GlobalInvocationID.x / 3, spvIndirectParams[1] - 1);
     spvUnsafeArray<VertexOutput, 3> p;
     p[0].pos = gl_in[0].gl_Position;
     p[0].uv = gl_in[0].p.uv;
@@ -119,8 +119,7 @@ kernel void main0(uint3 gl_GlobalInvocationID [[thread_position_in_grid]], devic
     p[2].pos = gl_in[2].gl_Position;
     p[2].uv = gl_in[2].p.uv;
     uint i = gl_InvocationID;
-    spvUnsafeArray<VertexOutput, 3> param;
-    param = p;
+    spvUnsafeArray<VertexOutput, 3> param = p;
     uint param_1 = i;
     HSOut flattenTemp = _hs_main(param, param_1);
     gl_out[gl_InvocationID].gl_Position = flattenTemp.pos;
@@ -128,8 +127,7 @@ kernel void main0(uint3 gl_GlobalInvocationID [[thread_position_in_grid]], devic
     threadgroup_barrier(mem_flags::mem_device | mem_flags::mem_threadgroup);
     if (int(gl_InvocationID) == 0)
     {
-        spvUnsafeArray<VertexOutput, 3> param_2;
-        param_2 = p;
+        spvUnsafeArray<VertexOutput, 3> param_2 = p;
         HSConstantOut _patchConstantResult = PatchHS(param_2);
         spvTessLevel[gl_PrimitiveID].edgeTessellationFactor[0] = half(_patchConstantResult.EdgeTess[0]);
         spvTessLevel[gl_PrimitiveID].edgeTessellationFactor[1] = half(_patchConstantResult.EdgeTess[1]);

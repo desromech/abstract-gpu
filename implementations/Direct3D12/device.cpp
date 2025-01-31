@@ -20,6 +20,7 @@
 #include "sampler.hpp"
 #include "../Common/offline_shader_compiler.hpp"
 #include "../Common/state_tracker_cache.hpp"
+#include "../Common/window_scraper.hpp"
 
 namespace AgpuD3D12
 {
@@ -307,6 +308,11 @@ agpu::vr_system_ptr ADXDevice::getVRSystem()
 {
     // TODO: Implement this with OpenVR, Windows Mixed Reality, and the HoloLens streaming API.
     return nullptr;
+}
+
+agpu::window_scraper_ptr ADXDevice::createWindowScraper()
+{
+    return AgpuCommon::createWindowScraper(refFromThis<agpu::device> ()).disown();
 }
 
 agpu::offline_shader_compiler_ptr ADXDevice::createOfflineShaderCompiler()

@@ -17,8 +17,8 @@ struct main0_patchOut
 
 struct main0_in
 {
-    uint3 m_78;
-    ushort2 m_82;
+    uint3 m_79;
+    ushort2 m_84;
     float4 gl_Position;
 };
 
@@ -34,7 +34,7 @@ kernel void main0(uint3 gl_GlobalInvocationID [[thread_position_in_grid]], devic
     device main0_patchOut& patchOut = spvPatchOut[gl_GlobalInvocationID.x / 1];
     device main0_in* gl_in = &spvIn[min(gl_GlobalInvocationID.x / 1, spvIndirectParams[1] - 1) * spvIndirectParams[0]];
     uint gl_InvocationID = gl_GlobalInvocationID.x % 1;
-    uint gl_PrimitiveID = min(gl_GlobalInvocationID.x / 1, spvIndirectParams[1]);
+    uint gl_PrimitiveID = min(gl_GlobalInvocationID.x / 1, spvIndirectParams[1] - 1);
     spvTessLevel[gl_PrimitiveID].insideTessellationFactor[0] = half(8.8999996185302734375);
     spvTessLevel[gl_PrimitiveID].insideTessellationFactor[1] = half(6.900000095367431640625);
     spvTessLevel[gl_PrimitiveID].edgeTessellationFactor[0] = half(8.8999996185302734375);

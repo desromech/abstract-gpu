@@ -124,6 +124,13 @@ AGPUVrSystem >> getTrackedDeviceRenderModel: index [
 ]
 
 { #category : #'wrappers' }
+AGPUVrSystem >> getControllerState: index dest: dest [
+	| resultValue_ |
+	resultValue_ := AGPUCBindings uniqueInstance getControllerState_vr_system: (self validHandle) index: index dest: dest.
+	^ resultValue_
+]
+
+{ #category : #'wrappers' }
 AGPUVrSystem >> pollEvent: event [
 	| resultValue_ |
 	resultValue_ := AGPUCBindings uniqueInstance pollEvent_vr_system: (self validHandle) event: event.

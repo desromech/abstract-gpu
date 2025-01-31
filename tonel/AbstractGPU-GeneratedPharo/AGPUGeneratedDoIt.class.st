@@ -48,6 +48,8 @@ AGPUGeneratedDoIt class >> initializeStructures [
 	AGPUVrTrackedDevicePose rebuildFieldAccessors.
 	AGPUVrGenericEvent rebuildFieldAccessors.
 	AGPUVrControllerEvent rebuildFieldAccessors.
+	AGPUVrControllerAxisState rebuildFieldAccessors.
+	AGPUVrControllerState rebuildFieldAccessors.
 	AGPUVrDualAnalogEvent rebuildFieldAccessors.
 	AGPUVrEventData rebuildFieldAccessors.
 	AGPUVrEvent rebuildFieldAccessors.

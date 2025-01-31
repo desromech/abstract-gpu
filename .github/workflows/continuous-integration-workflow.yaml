@@ -34,7 +34,7 @@ jobs:
               run: ./scripts/ci-package-artifacts.sh
 
             - name: Upload artifacts
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                   name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
                   path: artifacts/dist/*
@@ -76,7 +76,7 @@ jobs:
               run: ./scripts/ci-package-artifacts.sh
 
             - name: Upload artifacts
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                   name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
                   path: artifacts/dist/*
@@ -134,7 +134,7 @@ jobs:
               run: ./scripts/ci-package-artifacts.ps1
 
             - name: Upload artifacts
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                   name: build-${{ env.PLATFORM_NAME }}-${{ env.BUILD_MODE }}
                   path: artifacts/dist/*

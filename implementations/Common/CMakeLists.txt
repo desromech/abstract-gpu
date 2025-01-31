@@ -14,6 +14,9 @@ set(AgpuCommonHighLevelInterfaces_SOURCES
     overlay_window.hpp
     overlay_window.cpp
     overlay_window_win32.cpp
+
+    window_scraper.cpp
+    window_scraper_win32.cpp
 )
 
 add_library(AgpuCommonHighLevelInterfaces OBJECT ${AgpuCommonHighLevelInterfaces_SOURCES})

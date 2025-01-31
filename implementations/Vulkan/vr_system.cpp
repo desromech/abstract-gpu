@@ -91,7 +91,7 @@ void VrRenderModel::convertVertexData()
         convertedVertexData.emplace_back(convertedVertex);
     }
 
-    agpuRenderModel.vertex_count = convertedVertexData.size();
+    agpuRenderModel.vertex_count = agpu_uint(convertedVertexData.size());
     agpuRenderModel.vertices = convertedVertexData.data();
     agpuRenderModel.triangle_count = vrRenderModel->unTriangleCount;
 	agpuRenderModel.indices = const_cast<uint16_t*> (vrRenderModel->rIndexData);
@@ -302,6 +302,39 @@ agpu_vr_render_model* AVkVrSystem::getTrackedDeviceRenderModel(agpu_size index)
     }
 
     return &renderModel->agpuRenderModel;
+}
+
+agpu_bool AVkVrSystem::getControllerState(agpu_size index, agpu_vr_controller_state *dest)
+{
+    memset(dest, 0, sizeof(*dest));
+
+    vr::VRControllerState_t state = {0};
+    if(!vr::VRSystem()->GetControllerState(index, &state, sizeof(state)))
+        return false;
+
+    dest->buttons_pressed = state.ulButtonPressed;
+    dest->buttons_touched = state.ulButtonTouched;
+
+    dest->axis0.type = agpu_vr_controller_axis_type(vr::VRSystem()->GetInt32TrackedDeviceProperty(index, vr::Prop_Axis0Type_Int32));
+    dest->axis0.x = state.rAxis[0].x;
+    dest->axis0.y = state.rAxis[0].y;
+
+    dest->axis1.type = agpu_vr_controller_axis_type(vr::VRSystem()->GetInt32TrackedDeviceProperty(index, vr::Prop_Axis1Type_Int32));
+    dest->axis1.x = state.rAxis[1].x;
+    dest->axis1.y = state.rAxis[1].y;
+
+    dest->axis2.type = agpu_vr_controller_axis_type(vr::VRSystem()->GetInt32TrackedDeviceProperty(index, vr::Prop_Axis2Type_Int32));
+    dest->axis2.x = state.rAxis[2].x;
+    dest->axis2.y = state.rAxis[2].y;
+
+    dest->axis3.type = agpu_vr_controller_axis_type(vr::VRSystem()->GetInt32TrackedDeviceProperty(index, vr::Prop_Axis3Type_Int32));
+    dest->axis3.x = state.rAxis[3].x;
+    dest->axis3.y = state.rAxis[3].y;
+
+    dest->axis4.type = agpu_vr_controller_axis_type(vr::VRSystem()->GetInt32TrackedDeviceProperty(index, vr::Prop_Axis4Type_Int32));
+    dest->axis4.x = state.rAxis[4].x;
+    dest->axis4.y = state.rAxis[4].y;
+    return true;
 }
 
 agpu_bool AVkVrSystem::pollEvent ( agpu_vr_event* event )

@@ -95,6 +95,8 @@ template SmartRefPtr(PT: Type)
 class Platform definition: {}.
 class Device definition: {}.
 class VrSystem definition: {}.
+class WindowScraper definition: {}.
+class WindowScraperHandle definition: {}.
 class SwapChain definition: {}.
 class ComputePipelineBuilder definition: {}.
 class PipelineBuilder definition: {}.
@@ -748,6 +750,13 @@ enum VrEventType valueType: Int32; values: #{
 	DualAnalogCancel: 257.
 }.
 
+enum VrControllerAxisType valueType: Int32; values: #{
+	None: 0.
+	VrControllerAxisTrackPad: 1.
+	VrControllerAxisJoystick: 2.
+	VrControllerAxisTrigger: 3.
+}.
+
 enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
 	Position: 0.
 	Color: 1.
@@ -1068,6 +1077,22 @@ struct VrControllerEvent definition: {
 	public field button type: UInt32.
 }.
 
+struct VrControllerAxisState definition: {
+	public field type type: VrControllerAxisType.
+	public field x type: Float32.
+	public field y type: Float32.
+}.
+
+struct VrControllerState definition: {
+	public field buttons_pressed type: UInt64.
+	public field buttons_touched type: UInt64.
+	public field axis0 type: VrControllerAxisState.
+	public field axis1 type: VrControllerAxisState.
+	public field axis2 type: VrControllerAxisState.
+	public field axis3 type: VrControllerAxisState.
+	public field axis4 type: VrControllerAxisState.
+}.
+
 struct VrDualAnalogEvent definition: {
 	public field x type: Float32.
 	public field y type: Float32.
@@ -1219,6 +1244,7 @@ function agpuGetDeviceType externC (device: Device pointer) => DeviceType.
 function agpuIsFeatureSupportedOnDevice externC (device: Device pointer, feature: Feature) => Int32.
 function agpuGetLimitValue externC (device: Device pointer, limit: Limit) => UInt32.
 function agpuGetVRSystem externC (device: Device pointer) => VrSystem pointer.
+function agpuCreateWindowScraper externC (device: Device pointer) => WindowScraper pointer.
 function agpuCreateOfflineShaderCompilerForDevice externC (device: Device pointer) => OfflineShaderCompiler pointer.
 function agpuCreateStateTrackerCache externC (device: Device pointer, command_queue_family: CommandQueue pointer) => StateTrackerCache pointer.
 function agpuFinishDeviceExecution externC (device: Device pointer) => Error.
@@ -1239,7 +1265,20 @@ function agpuGetMaxVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem p
 function agpuGetCurrentVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
 function agpuGetCurrentVRRenderTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
 function agpuGetVRTrackedDeviceRenderModel externC (vr_system: VrSystem pointer, index: UInt32) => VrRenderModel pointer.
+function agpuGetVRControllerState externC (vr_system: VrSystem pointer, index: UInt32, dest: VrControllerState pointer) => Int32.
 function agpuPollVREvent externC (vr_system: VrSystem pointer, event: VrEvent pointer) => Int32.
+function agpuAddWindowScraperReference externC (window_scraper: WindowScraper pointer) => Error.
+function agpuReleaseWindowScraper externC (window_scraper: WindowScraper pointer) => Error.
+function agpuWindowScraperEnumerateWindows externC (window_scraper: WindowScraper pointer) => UInt32.
+function agpuWindowScraperGetWindowTitle externC (window_scraper: WindowScraper pointer, index: UInt32) => Char8 const pointer.
+function agpuWindowScraperCreateWindowHandle externC (window_scraper: WindowScraper pointer, index: UInt32) => WindowScraperHandle pointer.
+function agpuAddWindowScraperHandleReference externC (window_scraper_handle: WindowScraperHandle pointer) => Error.
+function agpuReleaseWindowHandleScraper externC (window_scraper_handle: WindowScraperHandle pointer) => Error.
+function agpuWindowScraperHandleIsValid externC (window_scraper_handle: WindowScraperHandle pointer) => Int32.
+function agpuWindowScraperHandleIsVisible externC (window_scraper_handle: WindowScraperHandle pointer) => Int32.
+function agpuWindowScraperHandleGetWidth externC (window_scraper_handle: WindowScraperHandle pointer) => UInt32.
+function agpuWindowScraperHandleGetHeight externC (window_scraper_handle: WindowScraperHandle pointer) => UInt32.
+function agpuWindowScraperHandleCaptureInTexture externC (window_scraper_handle: WindowScraperHandle pointer) => Texture pointer.
 function agpuAddSwapChainReference externC (swap_chain: SwapChain pointer) => Error.
 function agpuReleaseSwapChain externC (swap_chain: SwapChain pointer) => Error.
 function agpuSwapBuffers externC (swap_chain: SwapChain pointer) => Error.
@@ -1578,6 +1617,8 @@ function agpuEndImmediateRendererMesh externC (immediate_renderer: ImmediateRend
 ################################################################################
 compileTime constant DeviceRef := SmartRefPtr(Device).
 compileTime constant VrSystemRef := SmartRefPtr(VrSystem).
+compileTime constant WindowScraperRef := SmartRefPtr(WindowScraper).
+compileTime constant WindowScraperHandleRef := SmartRefPtr(WindowScraperHandle).
 compileTime constant SwapChainRef := SmartRefPtr(SwapChain).
 compileTime constant ComputePipelineBuilderRef := SmartRefPtr(ComputePipelineBuilder).
 compileTime constant PipelineBuilderRef := SmartRefPtr(PipelineBuilder).
@@ -1736,6 +1777,9 @@ Device extend: {
 	inline method getVRSystem ::=> VrSystemRef
 		:= VrSystemRef for: (agpuGetVRSystem(self address)).
 
+	inline method createWindowScraper ::=> WindowScraperRef
+		:= WindowScraperRef for: (agpuCreateWindowScraper(self address)).
+
 	inline method createOfflineShaderCompiler ::=> OfflineShaderCompilerRef
 		:= OfflineShaderCompilerRef for: (agpuCreateOfflineShaderCompilerForDevice(self address)).
 
@@ -1799,8 +1843,53 @@ VrSystem extend: {
 	inline method getTrackedDeviceRenderModel: (index: UInt32) ::=> VrRenderModel pointer
 		:= agpuGetVRTrackedDeviceRenderModel(self address, index).
 
+	inline method getControllerState: (index: UInt32) dest: (dest: VrControllerState pointer) ::=> Int32
+		:= agpuGetVRControllerState(self address, index, dest).
+
 	inline method pollEvent: (event: VrEvent pointer) ::=> Int32
 		:= agpuPollVREvent(self address, event).
+
+}.
+
+WindowScraper extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddWindowScraperReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseWindowScraper(self address)).
+
+	inline method enumerateWindows ::=> UInt32
+		:= agpuWindowScraperEnumerateWindows(self address).
+
+	inline method getWindowTitle: (index: UInt32) ::=> Char8 const pointer
+		:= agpuWindowScraperGetWindowTitle(self address, index).
+
+	inline method createWindowHandle: (index: UInt32) ::=> WindowScraperHandleRef
+		:= WindowScraperHandleRef for: (agpuWindowScraperCreateWindowHandle(self address, index)).
+
+}.
+
+WindowScraperHandle extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddWindowScraperHandleReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseWindowHandleScraper(self address)).
+
+	inline method isValid ::=> Int32
+		:= agpuWindowScraperHandleIsValid(self address).
+
+	inline method isVisible ::=> Int32
+		:= agpuWindowScraperHandleIsVisible(self address).
+
+	inline method getWidth ::=> UInt32
+		:= agpuWindowScraperHandleGetWidth(self address).
+
+	inline method getHeight ::=> UInt32
+		:= agpuWindowScraperHandleGetHeight(self address).
+
+	inline method captureInTexture ::=> TextureRef
+		:= TextureRef for: (agpuWindowScraperHandleCaptureInTexture(self address)).
 
 }.
 

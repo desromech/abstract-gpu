@@ -265,7 +265,7 @@ agpu::texture_ref AVkTexture::create(const agpu::device_ref &device, agpu_textur
     }
     else
     {
-        texture->texelSize = pixelSizeOfTextureFormat(description->format);
+        texture->texelSize = uint8_t(pixelSizeOfTextureFormat(description->format));
         texture->texelWidth = 1;
         texture->texelHeight = 1;
     }
@@ -504,13 +504,15 @@ agpu_error AVkTexture::uploadTextureSubData (agpu_int level, agpu_int arrayIndex
         {
             auto srcSlice = reinterpret_cast<uint8_t*> (data);
             auto dstSlice = reinterpret_cast<uint8_t*> (bufferPointer);
+            auto absPitch = pitch < 0 ? -pitch : pitch;
+            auto rowCopySize = std::min(absPitch, agpu_int(layout.rowPitch));
             for(uint32_t z = 0; z < extent.depth; ++z)
             {
                 auto srcRow = srcSlice;
                 auto dstRow = dstSlice;
                 for (uint32_t y = 0; y < extent.height; ++y)
                 {
-                    memcpy(dstRow, srcRow, pitch);
+                    memcpy(dstRow, srcRow, rowCopySize);
                     srcRow += pitch;
                     dstRow += layout.rowPitch;
                 }

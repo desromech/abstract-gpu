@@ -345,6 +345,11 @@ public:
 		return agpuGetVRSystem(this);
 	}
 
+	inline agpu_ref<agpu_window_scraper> createWindowScraper()
+	{
+		return agpuCreateWindowScraper(this);
+	}
+
 	inline agpu_ref<agpu_offline_shader_compiler> createOfflineShaderCompiler()
 	{
 		return agpuCreateOfflineShaderCompilerForDevice(this);
@@ -456,6 +461,11 @@ public:
 		return agpuGetVRTrackedDeviceRenderModel(this, index);
 	}
 
+	inline agpu_bool getControllerState(agpu_size index, agpu_vr_controller_state* dest)
+	{
+		return agpuGetVRControllerState(this, index, dest);
+	}
+
 	inline agpu_bool pollEvent(agpu_vr_event* event)
 	{
 		return agpuPollVREvent(this, event);
@@ -464,6 +474,88 @@ public:
 };
 
 typedef agpu_ref<agpu_vr_system> agpu_vr_system_ref;
+
+// Interface wrapper for agpu_window_scraper.
+struct _agpu_window_scraper
+{
+private:
+	_agpu_window_scraper() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddWindowScraperReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseWindowScraper(this));
+	}
+
+	inline agpu_uint enumerateWindows()
+	{
+		return agpuWindowScraperEnumerateWindows(this);
+	}
+
+	inline agpu_cstring getWindowTitle(agpu_uint index)
+	{
+		return agpuWindowScraperGetWindowTitle(this, index);
+	}
+
+	inline agpu_ref<agpu_window_scraper_handle> createWindowHandle(agpu_uint index)
+	{
+		return agpuWindowScraperCreateWindowHandle(this, index);
+	}
+
+};
+
+typedef agpu_ref<agpu_window_scraper> agpu_window_scraper_ref;
+
+// Interface wrapper for agpu_window_scraper_handle.
+struct _agpu_window_scraper_handle
+{
+private:
+	_agpu_window_scraper_handle() {}
+
+public:
+	inline void addReference()
+	{
+		agpuThrowIfFailed(agpuAddWindowScraperHandleReference(this));
+	}
+
+	inline void release()
+	{
+		agpuThrowIfFailed(agpuReleaseWindowHandleScraper(this));
+	}
+
+	inline agpu_bool isValid()
+	{
+		return agpuWindowScraperHandleIsValid(this);
+	}
+
+	inline agpu_bool isVisible()
+	{
+		return agpuWindowScraperHandleIsVisible(this);
+	}
+
+	inline agpu_uint getWidth()
+	{
+		return agpuWindowScraperHandleGetWidth(this);
+	}
+
+	inline agpu_uint getHeight()
+	{
+		return agpuWindowScraperHandleGetHeight(this);
+	}
+
+	inline agpu_ref<agpu_texture> captureInTexture()
+	{
+		return agpuWindowScraperHandleCaptureInTexture(this);
+	}
+
+};
+
+typedef agpu_ref<agpu_window_scraper_handle> agpu_window_scraper_handle_ref;
 
 // Interface wrapper for agpu_swap_chain.
 struct _agpu_swap_chain

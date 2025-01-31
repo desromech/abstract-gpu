@@ -698,7 +698,7 @@ int SampleBase::main(int argc, const char **argv)
     screenWidth = 640;
     screenHeight = 480;
 
-    int flags = SDL_WINDOW_RESIZABLE;
+    int flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 
     // Get the platform.
     agpu_uint numPlatforms;

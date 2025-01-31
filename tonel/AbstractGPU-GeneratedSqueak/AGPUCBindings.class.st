@@ -260,6 +260,12 @@ AGPUCBindings >> getVRSystem_device: device [
 ]
 
 { #category : #'device' }
+AGPUCBindings >> createWindowScraper_device: device [
+	<cdecl: void* 'agpuCreateWindowScraper' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'device' }
 AGPUCBindings >> createOfflineShaderCompiler_device: device [
 	<cdecl: void* 'agpuCreateOfflineShaderCompilerForDevice' (void*)>
 	^ self externalCallFailed
@@ -380,8 +386,86 @@ AGPUCBindings >> getTrackedDeviceRenderModel_vr_system: vr_system index: index [
 ]
 
 { #category : #'vr_system' }
+AGPUCBindings >> getControllerState_vr_system: vr_system index: index dest: dest [
+	<cdecl: long 'agpuGetVRControllerState' (void* ulong AGPUVrControllerState*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'vr_system' }
 AGPUCBindings >> pollEvent_vr_system: vr_system event: event [
 	<cdecl: long 'agpuPollVREvent' (void* AGPUVrEvent*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> addReference_window_scraper: window_scraper [
+	<cdecl: long 'agpuAddWindowScraperReference' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> release_window_scraper: window_scraper [
+	<cdecl: long 'agpuReleaseWindowScraper' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> enumerateWindows_window_scraper: window_scraper [
+	<cdecl: ulong 'agpuWindowScraperEnumerateWindows' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> getWindowTitle_window_scraper: window_scraper index: index [
+	<cdecl: char* 'agpuWindowScraperGetWindowTitle' (void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper' }
+AGPUCBindings >> createWindowHandle_window_scraper: window_scraper index: index [
+	<cdecl: void* 'agpuWindowScraperCreateWindowHandle' (void* ulong)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> addReference_window_scraper_handle: window_scraper_handle [
+	<cdecl: long 'agpuAddWindowScraperHandleReference' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> release_window_scraper_handle: window_scraper_handle [
+	<cdecl: long 'agpuReleaseWindowHandleScraper' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> isValid_window_scraper_handle: window_scraper_handle [
+	<cdecl: long 'agpuWindowScraperHandleIsValid' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> isVisible_window_scraper_handle: window_scraper_handle [
+	<cdecl: long 'agpuWindowScraperHandleIsVisible' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> getWidth_window_scraper_handle: window_scraper_handle [
+	<cdecl: ulong 'agpuWindowScraperHandleGetWidth' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> getHeight_window_scraper_handle: window_scraper_handle [
+	<cdecl: ulong 'agpuWindowScraperHandleGetHeight' (void*)>
+	^ self externalCallFailed
+]
+
+{ #category : #'window_scraper_handle' }
+AGPUCBindings >> captureInTexture_window_scraper_handle: window_scraper_handle [
+	<cdecl: void* 'agpuWindowScraperHandleCaptureInTexture' (void*)>
 	^ self externalCallFailed
 ]
 
