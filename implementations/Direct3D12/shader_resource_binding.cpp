@@ -90,6 +90,11 @@ agpu_error ADXShaderResourceBinding::bindStorageBufferRange(agpu_int location, c
 	return AGPU_OK;
 }
 
+agpu_error ADXShaderResourceBinding::bindArrayOfSampledTextureView(agpu_int location, agpu_int first_index, agpu_uint count, agpu::texture_view_ref* views)
+{
+	return AGPU_UNSUPPORTED;
+}
+
 agpu_error ADXShaderResourceBinding::bindSampledTextureView(agpu_int location, const agpu::texture_view_ref & view)
 {
 	CHECK_POINTER(view);
