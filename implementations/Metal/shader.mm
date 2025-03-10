@@ -286,7 +286,7 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
     
 	// Compile the shader instance object.
     auto error = shaderInstance->compile(errorMessage, "");
-    //printf("Shader compilation error %d: %s\n", error, errorMessage->c_str());
+    printf("Shader compilation error %d: %s\n", error, errorMessage->c_str());
         
     if(getenv("DUMP_SHADERS") ||
 		(error != AGPU_OK && getenv("DUMP_SHADERS_ON_ERROR")))

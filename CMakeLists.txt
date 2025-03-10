@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(AGPU)
 
 if(APPLE)
-	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+	set(CMAKE_OSX_ARCHITECTURES "arm64")
 endif()
 
 option(AGPU_BUILD_SAMPLES "Build AGPU Samples" OFF)
@@ -15,6 +15,8 @@ option(BUILD_WITH_OPENVR "Build with OpenVR support" ON)
 
 option(BUILD_MULTIPLE_BACKENDS "Build multiple backends" ON)
 option(BUILD_TOOLS "Build the tools" ON)
+
+set(AGPU_BUILD_SAMPLES TRUE)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
 	set(UWP YES)

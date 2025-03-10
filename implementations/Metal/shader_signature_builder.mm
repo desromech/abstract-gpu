@@ -60,7 +60,7 @@ agpu_error AMtlShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding
     int bindingPointTypeIndex = (int)mapBindingType(type);
     for(agpu_uint i = 0; i < bindingPointCount; ++i)
     {
-        bank.elements.push_back(ShaderSignatureBankElement(type, bindingPointCount, bindingPointsUsed[bindingPointTypeIndex]));
+        bank.elements.push_back(ShaderSignatureBankElement(type, 1, bindingPointsUsed[bindingPointTypeIndex]));
         bank.elementTypeCounts[bindingPointTypeIndex] += 1;
         bindingPointsUsed[bindingPointTypeIndex] += 1;
     }
@@ -69,7 +69,16 @@ agpu_error AMtlShaderSignatureBuilder::addBindingBankElement(agpu_shader_binding
 
 agpu_error AMtlShaderSignatureBuilder::addBindingBankArray(agpu_shader_binding_type type, agpu_uint size)
 {
-    return AGPU_UNIMPLEMENTED;
+    if(elements.empty() || elements.back().type != ShaderSignatureElementType::Bank)
+        return AGPU_INVALID_OPERATION;
+
+    auto &bank = elements.back();
+    int bindingPointTypeIndex = (int)mapBindingType(type);
+
+    bank.elements.push_back(ShaderSignatureBankElement(type, size, bindingPointsUsed[bindingPointTypeIndex]));
+    bank.elementTypeCounts[bindingPointTypeIndex] += size;
+    bindingPointsUsed[bindingPointTypeIndex] += size;
+    return AGPU_OK;
 }
 
 } // End of namespace AgpuMetal

@@ -21,6 +21,9 @@ target_link_libraries(Sample-Cpp-3 SampleCppCommon)
 add_executable(Sample-Cpp-4 Sample4.cpp)
 target_link_libraries(Sample-Cpp-4 SampleCppCommon)
 
+add_executable(Sample-Cpp-5 Sample5.cpp)
+target_link_libraries(Sample-Cpp-5 SampleCppCommon)
+
 add_executable(Sample-Cpp-StateTracker-1 SampleStateTracker1.cpp)
 target_link_libraries(Sample-Cpp-StateTracker-1 SampleCppCommon)
 
