@@ -41,20 +41,24 @@ void AMtlShaderSignature::buildMSLMapping()
             spirv_cross::MSLResourceBinding binding;
             binding.desc_set = descriptorSet;
             binding.binding = descriptorBinding;
+            binding.count = element.bindingCount;
             
             switch(mapBindingType(element.type))
             {
             case MetalResourceBindingType::Buffer:
+                binding.basetype = spirv_cross::SPIRType::Void;
                 binding.msl_buffer = element.startIndex;
                 resourceBindings.push_back(binding);
                 break;
             case MetalResourceBindingType::Bytes:
                 break;
             case MetalResourceBindingType::Texture:
+                binding.basetype = spirv_cross::SPIRType::Image;
                 binding.msl_texture = element.startIndex;
                 resourceBindings.push_back(binding);
                 break;
             case MetalResourceBindingType::Sampler:
+                binding.basetype = spirv_cross::SPIRType::Sampler;
                 binding.msl_sampler = element.startIndex;
                 resourceBindings.push_back(binding);
                 break;

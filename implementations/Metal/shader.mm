@@ -210,10 +210,22 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
         binding.stage = expectedExecutionModel;
     }
 
-    //printf("getOrCreateSpirVShaderInstanceForSignature\n");
+    printf("getOrCreateSpirVShaderInstanceForSignature\n");
     spirv_cross::CompilerMSL msl(rawData, rawDataSize);
+
+    // Set some options.
+    auto options = msl.get_msl_options();
+    options.msl_version = spirv_cross::CompilerMSL::Options::make_msl_version(2, 0);
+    options.argument_buffers = true;
+    options.force_active_argument_buffer_resources = true;
+    options.pad_argument_buffer_resources = true;
+    options.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
+    msl.set_msl_options(options);
+
     for (auto & binding : resourceBindings)
+    {
         msl.add_msl_resource_binding(binding);
+    }
     
     // Get the entry point.
     std::string usedEntryPoint;
@@ -242,11 +254,6 @@ agpu_error AMtlShader::getOrCreateSpirVShaderInstanceForSignature(const agpu::sh
 
     // Set the entry point.
     msl.set_entry_point(usedEntryPoint, expectedExecutionModel);
-
-    // Set some options.
-	spirv_cross::CompilerMSL::Options options;
-    options.force_native_arrays = true;
-	msl.set_msl_options(options);
     
     // Use only the active interface variables.
     auto activeInterfaceVariables = msl.get_active_interface_variables();
