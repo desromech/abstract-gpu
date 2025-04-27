@@ -77,6 +77,66 @@ public:
         return *this;
     }
 
+    bool operator==(const agpu_ref<T> &other) const
+    {
+        return pointer == other.pointer;
+    }
+
+    bool operator==(const T *otherPointer) const
+    {
+        return pointer == otherPointer;
+    }
+
+    bool operator!=(const agpu_ref<T> &other) const
+    {
+        return pointer != other.pointer;
+    }
+
+    bool operator!=(const T *otherPointer) const
+    {
+        return pointer != otherPointer;
+    }
+
+    bool operator<(const agpu_ref<T> &other) const
+    {
+        return pointer < other.pointer;
+    }
+
+    bool operator<(const T *otherPointer) const
+    {
+        return pointer < otherPointer;
+    }
+
+    bool operator<=(const agpu_ref<T> &other) const
+    {
+        return pointer < other.pointer;
+    }
+
+    bool operator<=(const T *otherPointer) const
+    {
+        return pointer <= otherPointer;
+    }
+
+    bool operator>(const agpu_ref<T> &other) const
+    {
+        return pointer > other.pointer;
+    }
+
+    bool operator>(const T *otherPointer) const
+    {
+        return pointer > otherPointer;
+    }
+
+    bool operator>=(const agpu_ref<T> &other) const
+    {
+        return pointer > other.pointer;
+    }
+
+    bool operator>=(const T *otherPointer) const
+    {
+        return pointer >= otherPointer;
+    }
+    
 	void reset(T *newPointer = nullptr)
 	{
 		if(pointer)
@@ -2267,19 +2327,19 @@ public:
 		agpuThrowIfFailed(agpuImmediateRendererMultiplyTransposeMatrix(this, elements));
 	}
 
-	inline void ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
+	inline void ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance)
 	{
-		agpuThrowIfFailed(agpuImmediateRendererOrtho(this, left, right, bottom, top, near, far));
+		agpuThrowIfFailed(agpuImmediateRendererOrtho(this, left, right, bottom, top, nearDistance, farDistance));
 	}
 
-	inline void frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far)
+	inline void frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance)
 	{
-		agpuThrowIfFailed(agpuImmediateRendererFrustum(this, left, right, bottom, top, near, far));
+		agpuThrowIfFailed(agpuImmediateRendererFrustum(this, left, right, bottom, top, nearDistance, farDistance));
 	}
 
-	inline void perspective(agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far)
+	inline void perspective(agpu_float fovy, agpu_float aspect, agpu_float nearDistance, agpu_float farDistance)
 	{
-		agpuThrowIfFailed(agpuImmediateRendererPerspective(this, fovy, aspect, near, far));
+		agpuThrowIfFailed(agpuImmediateRendererPerspective(this, fovy, aspect, nearDistance, farDistance));
 	}
 
 	inline void rotate(agpu_float angle, agpu_float x, agpu_float y, agpu_float z)

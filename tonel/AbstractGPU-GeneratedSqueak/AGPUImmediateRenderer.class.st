@@ -208,23 +208,23 @@ AGPUImmediateRenderer >> multiplyTransposeMatrix: elements [
 ]
 
 { #category : #'wrappers' }
-AGPUImmediateRenderer >> ortho: left right: right bottom: bottom top: top near: near far: far [
+AGPUImmediateRenderer >> ortho: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance ortho_immediate_renderer: (self validHandle) left: left right: right bottom: bottom top: top near: near far: far.
+	resultValue_ := AGPUCBindings uniqueInstance ortho_immediate_renderer: (self validHandle) left: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance.
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUImmediateRenderer >> frustum: left right: right bottom: bottom top: top near: near far: far [
+AGPUImmediateRenderer >> frustum: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance frustum_immediate_renderer: (self validHandle) left: left right: right bottom: bottom top: top near: near far: far.
+	resultValue_ := AGPUCBindings uniqueInstance frustum_immediate_renderer: (self validHandle) left: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance.
 	self checkErrorCode: resultValue_
 ]
 
 { #category : #'wrappers' }
-AGPUImmediateRenderer >> perspective: fovy aspect: aspect near: near far: far [
+AGPUImmediateRenderer >> perspective: fovy aspect: aspect nearDistance: nearDistance farDistance: farDistance [
 	| resultValue_ |
-	resultValue_ := AGPUCBindings uniqueInstance perspective_immediate_renderer: (self validHandle) fovy: fovy aspect: aspect near: near far: far.
+	resultValue_ := AGPUCBindings uniqueInstance perspective_immediate_renderer: (self validHandle) fovy: fovy aspect: aspect nearDistance: nearDistance farDistance: farDistance.
 	self checkErrorCode: resultValue_
 ]
 

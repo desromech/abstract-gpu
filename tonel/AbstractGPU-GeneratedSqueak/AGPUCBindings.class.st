@@ -2210,19 +2210,19 @@ AGPUCBindings >> multiplyTransposeMatrix_immediate_renderer: immediate_renderer 
 ]
 
 { #category : #'immediate_renderer' }
-AGPUCBindings >> ortho_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
+AGPUCBindings >> ortho_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance [
 	<cdecl: long 'agpuImmediateRendererOrtho' (void* float float float float float float)>
 	^ self externalCallFailed
 ]
 
 { #category : #'immediate_renderer' }
-AGPUCBindings >> frustum_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
+AGPUCBindings >> frustum_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance [
 	<cdecl: long 'agpuImmediateRendererFrustum' (void* float float float float float float)>
 	^ self externalCallFailed
 ]
 
 { #category : #'immediate_renderer' }
-AGPUCBindings >> perspective_immediate_renderer: immediate_renderer fovy: fovy aspect: aspect near: near far: far [
+AGPUCBindings >> perspective_immediate_renderer: immediate_renderer fovy: fovy aspect: aspect nearDistance: nearDistance farDistance: farDistance [
 	<cdecl: long 'agpuImmediateRendererPerspective' (void* float float float float)>
 	^ self externalCallFailed
 ]

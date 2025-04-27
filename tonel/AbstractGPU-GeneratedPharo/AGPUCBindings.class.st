@@ -1844,18 +1844,18 @@ AGPUCBindings >> multiplyTransposeMatrix_immediate_renderer: immediate_renderer 
 ]
 
 { #category : #'immediate_renderer' }
-AGPUCBindings >> ortho_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
-	^ self ffiCall: #(agpu_error agpuImmediateRendererOrtho (agpu_immediate_renderer* immediate_renderer , agpu_float left , agpu_float right , agpu_float bottom , agpu_float top , agpu_float near , agpu_float far) )
+AGPUCBindings >> ortho_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererOrtho (agpu_immediate_renderer* immediate_renderer , agpu_float left , agpu_float right , agpu_float bottom , agpu_float top , agpu_float nearDistance , agpu_float farDistance) )
 ]
 
 { #category : #'immediate_renderer' }
-AGPUCBindings >> frustum_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top near: near far: far [
-	^ self ffiCall: #(agpu_error agpuImmediateRendererFrustum (agpu_immediate_renderer* immediate_renderer , agpu_float left , agpu_float right , agpu_float bottom , agpu_float top , agpu_float near , agpu_float far) )
+AGPUCBindings >> frustum_immediate_renderer: immediate_renderer left: left right: right bottom: bottom top: top nearDistance: nearDistance farDistance: farDistance [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererFrustum (agpu_immediate_renderer* immediate_renderer , agpu_float left , agpu_float right , agpu_float bottom , agpu_float top , agpu_float nearDistance , agpu_float farDistance) )
 ]
 
 { #category : #'immediate_renderer' }
-AGPUCBindings >> perspective_immediate_renderer: immediate_renderer fovy: fovy aspect: aspect near: near far: far [
-	^ self ffiCall: #(agpu_error agpuImmediateRendererPerspective (agpu_immediate_renderer* immediate_renderer , agpu_float fovy , agpu_float aspect , agpu_float near , agpu_float far) )
+AGPUCBindings >> perspective_immediate_renderer: immediate_renderer fovy: fovy aspect: aspect nearDistance: nearDistance farDistance: farDistance [
+	^ self ffiCall: #(agpu_error agpuImmediateRendererPerspective (agpu_immediate_renderer* immediate_renderer , agpu_float fovy , agpu_float aspect , agpu_float nearDistance , agpu_float farDistance) )
 ]
 
 { #category : #'immediate_renderer' }

@@ -1989,9 +1989,9 @@ typedef agpu_error (*agpuImmediateRendererLoadMatrix_FUN) (agpu_immediate_render
 typedef agpu_error (*agpuImmediateRendererLoadTransposeMatrix_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float* elements);
 typedef agpu_error (*agpuImmediateRendererMultiplyMatrix_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float* elements);
 typedef agpu_error (*agpuImmediateRendererMultiplyTransposeMatrix_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float* elements);
-typedef agpu_error (*agpuImmediateRendererOrtho_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
-typedef agpu_error (*agpuImmediateRendererFrustum_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
-typedef agpu_error (*agpuImmediateRendererPerspective_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far);
+typedef agpu_error (*agpuImmediateRendererOrtho_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance);
+typedef agpu_error (*agpuImmediateRendererFrustum_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance);
+typedef agpu_error (*agpuImmediateRendererPerspective_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float nearDistance, agpu_float farDistance);
 typedef agpu_error (*agpuImmediateRendererRotate_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float angle, agpu_float x, agpu_float y, agpu_float z);
 typedef agpu_error (*agpuImmediateRendererTranslate_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
 typedef agpu_error (*agpuImmediateRendererScale_FUN) (agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
@@ -2061,9 +2061,9 @@ AGPU_EXPORT agpu_error agpuImmediateRendererLoadMatrix(agpu_immediate_renderer* 
 AGPU_EXPORT agpu_error agpuImmediateRendererLoadTransposeMatrix(agpu_immediate_renderer* immediate_renderer, agpu_float* elements);
 AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyMatrix(agpu_immediate_renderer* immediate_renderer, agpu_float* elements);
 AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyTransposeMatrix(agpu_immediate_renderer* immediate_renderer, agpu_float* elements);
-AGPU_EXPORT agpu_error agpuImmediateRendererOrtho(agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
-AGPU_EXPORT agpu_error agpuImmediateRendererFrustum(agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far);
-AGPU_EXPORT agpu_error agpuImmediateRendererPerspective(agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far);
+AGPU_EXPORT agpu_error agpuImmediateRendererOrtho(agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance);
+AGPU_EXPORT agpu_error agpuImmediateRendererFrustum(agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance);
+AGPU_EXPORT agpu_error agpuImmediateRendererPerspective(agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float nearDistance, agpu_float farDistance);
 AGPU_EXPORT agpu_error agpuImmediateRendererRotate(agpu_immediate_renderer* immediate_renderer, agpu_float angle, agpu_float x, agpu_float y, agpu_float z);
 AGPU_EXPORT agpu_error agpuImmediateRendererTranslate(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);
 AGPU_EXPORT agpu_error agpuImmediateRendererScale(agpu_immediate_renderer* immediate_renderer, agpu_float x, agpu_float y, agpu_float z);

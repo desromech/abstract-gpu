@@ -1055,9 +1055,9 @@ public:
 	virtual agpu_error loadTransposeMatrix(agpu_float* elements) = 0;
 	virtual agpu_error multiplyMatrix(agpu_float* elements) = 0;
 	virtual agpu_error multiplyTransposeMatrix(agpu_float* elements) = 0;
-	virtual agpu_error ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) = 0;
-	virtual agpu_error frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far) = 0;
-	virtual agpu_error perspective(agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far) = 0;
+	virtual agpu_error ortho(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance) = 0;
+	virtual agpu_error frustum(agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance) = 0;
+	virtual agpu_error perspective(agpu_float fovy, agpu_float aspect, agpu_float nearDistance, agpu_float farDistance) = 0;
 	virtual agpu_error rotate(agpu_float angle, agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error translate(agpu_float x, agpu_float y, agpu_float z) = 0;
 	virtual agpu_error scale(agpu_float x, agpu_float y, agpu_float z) = 0;

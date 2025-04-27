@@ -1569,9 +1569,9 @@ function agpuImmediateRendererLoadMatrix externC (immediate_renderer: ImmediateR
 function agpuImmediateRendererLoadTransposeMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
 function agpuImmediateRendererMultiplyMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
 function agpuImmediateRendererMultiplyTransposeMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
-function agpuImmediateRendererOrtho externC (immediate_renderer: ImmediateRenderer pointer, left: Float32, right: Float32, bottom: Float32, top: Float32, near: Float32, far: Float32) => Error.
-function agpuImmediateRendererFrustum externC (immediate_renderer: ImmediateRenderer pointer, left: Float32, right: Float32, bottom: Float32, top: Float32, near: Float32, far: Float32) => Error.
-function agpuImmediateRendererPerspective externC (immediate_renderer: ImmediateRenderer pointer, fovy: Float32, aspect: Float32, near: Float32, far: Float32) => Error.
+function agpuImmediateRendererOrtho externC (immediate_renderer: ImmediateRenderer pointer, left: Float32, right: Float32, bottom: Float32, top: Float32, nearDistance: Float32, farDistance: Float32) => Error.
+function agpuImmediateRendererFrustum externC (immediate_renderer: ImmediateRenderer pointer, left: Float32, right: Float32, bottom: Float32, top: Float32, nearDistance: Float32, farDistance: Float32) => Error.
+function agpuImmediateRendererPerspective externC (immediate_renderer: ImmediateRenderer pointer, fovy: Float32, aspect: Float32, nearDistance: Float32, farDistance: Float32) => Error.
 function agpuImmediateRendererRotate externC (immediate_renderer: ImmediateRenderer pointer, angle: Float32, x: Float32, y: Float32, z: Float32) => Error.
 function agpuImmediateRendererTranslate externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
 function agpuImmediateRendererScale externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
@@ -2833,14 +2833,14 @@ ImmediateRenderer extend: {
 	inline method multiplyTransposeMatrix: (elements: Float32 pointer) ::=> Void
 		:= throwIfError: (agpuImmediateRendererMultiplyTransposeMatrix(self address, elements)).
 
-	inline method ortho: (left: Float32) right: (right: Float32) bottom: (bottom: Float32) top: (top: Float32) near: (near: Float32) far: (far: Float32) ::=> Void
-		:= throwIfError: (agpuImmediateRendererOrtho(self address, left, right, bottom, top, near, far)).
+	inline method ortho: (left: Float32) right: (right: Float32) bottom: (bottom: Float32) top: (top: Float32) nearDistance: (nearDistance: Float32) farDistance: (farDistance: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererOrtho(self address, left, right, bottom, top, nearDistance, farDistance)).
 
-	inline method frustum: (left: Float32) right: (right: Float32) bottom: (bottom: Float32) top: (top: Float32) near: (near: Float32) far: (far: Float32) ::=> Void
-		:= throwIfError: (agpuImmediateRendererFrustum(self address, left, right, bottom, top, near, far)).
+	inline method frustum: (left: Float32) right: (right: Float32) bottom: (bottom: Float32) top: (top: Float32) nearDistance: (nearDistance: Float32) farDistance: (farDistance: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererFrustum(self address, left, right, bottom, top, nearDistance, farDistance)).
 
-	inline method perspective: (fovy: Float32) aspect: (aspect: Float32) near: (near: Float32) far: (far: Float32) ::=> Void
-		:= throwIfError: (agpuImmediateRendererPerspective(self address, fovy, aspect, near, far)).
+	inline method perspective: (fovy: Float32) aspect: (aspect: Float32) nearDistance: (nearDistance: Float32) farDistance: (farDistance: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererPerspective(self address, fovy, aspect, nearDistance, farDistance)).
 
 	inline method rotate: (angle: Float32) x: (x: Float32) y: (y: Float32) z: (z: Float32) ::=> Void
 		:= throwIfError: (agpuImmediateRendererRotate(self address, angle, x, y, z)).

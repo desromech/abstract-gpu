@@ -2937,28 +2937,28 @@ AGPU_EXPORT agpu_error agpuImmediateRendererMultiplyTransposeMatrix ( agpu_immed
 	return (*dispatchTable)->agpuImmediateRendererMultiplyTransposeMatrix ( immediate_renderer, elements );
 }
 
-AGPU_EXPORT agpu_error agpuImmediateRendererOrtho ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far )
+AGPU_EXPORT agpu_error agpuImmediateRendererOrtho ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance )
 {
 	if (immediate_renderer == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
-	return (*dispatchTable)->agpuImmediateRendererOrtho ( immediate_renderer, left, right, bottom, top, near, far );
+	return (*dispatchTable)->agpuImmediateRendererOrtho ( immediate_renderer, left, right, bottom, top, nearDistance, farDistance );
 }
 
-AGPU_EXPORT agpu_error agpuImmediateRendererFrustum ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float near, agpu_float far )
+AGPU_EXPORT agpu_error agpuImmediateRendererFrustum ( agpu_immediate_renderer* immediate_renderer, agpu_float left, agpu_float right, agpu_float bottom, agpu_float top, agpu_float nearDistance, agpu_float farDistance )
 {
 	if (immediate_renderer == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
-	return (*dispatchTable)->agpuImmediateRendererFrustum ( immediate_renderer, left, right, bottom, top, near, far );
+	return (*dispatchTable)->agpuImmediateRendererFrustum ( immediate_renderer, left, right, bottom, top, nearDistance, farDistance );
 }
 
-AGPU_EXPORT agpu_error agpuImmediateRendererPerspective ( agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float near, agpu_float far )
+AGPU_EXPORT agpu_error agpuImmediateRendererPerspective ( agpu_immediate_renderer* immediate_renderer, agpu_float fovy, agpu_float aspect, agpu_float nearDistance, agpu_float farDistance )
 {
 	if (immediate_renderer == nullptr)
 		return AGPU_NULL_POINTER;
 	agpu_icd_dispatch **dispatchTable = reinterpret_cast<agpu_icd_dispatch**> (immediate_renderer);
-	return (*dispatchTable)->agpuImmediateRendererPerspective ( immediate_renderer, fovy, aspect, near, far );
+	return (*dispatchTable)->agpuImmediateRendererPerspective ( immediate_renderer, fovy, aspect, nearDistance, farDistance );
 }
 
 AGPU_EXPORT agpu_error agpuImmediateRendererRotate ( agpu_immediate_renderer* immediate_renderer, agpu_float angle, agpu_float x, agpu_float y, agpu_float z )

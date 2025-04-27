@@ -2906,8 +2906,8 @@
                 <arg name="right" type="float" />
                 <arg name="bottom" type="float" />
                 <arg name="top" type="float" />
-                <arg name="near" type="float" />
-                <arg name="far" type="float" />
+                <arg name="nearDistance" type="float" />
+                <arg name="farDistance" type="float" />
             </method>
 
             <method name="frustum" cname="ImmediateRendererFrustum" returnType="error">
@@ -2915,15 +2915,15 @@
                 <arg name="right" type="float" />
                 <arg name="bottom" type="float" />
                 <arg name="top" type="float" />
-                <arg name="near" type="float" />
-                <arg name="far" type="float" />
+                <arg name="nearDistance" type="float" />
+                <arg name="farDistance" type="float" />
             </method>
 
             <method name="perspective" cname="ImmediateRendererPerspective" returnType="error">
                 <arg name="fovy" type="float" />
                 <arg name="aspect" type="float" />
-                <arg name="near" type="float" />
-                <arg name="far" type="float" />
+                <arg name="nearDistance" type="float" />
+                <arg name="farDistance" type="float" />
             </method>
 
             <method name="rotate" cname="ImmediateRendererRotate" returnType="error">
