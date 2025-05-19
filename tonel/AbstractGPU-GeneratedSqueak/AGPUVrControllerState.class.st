@@ -13,8 +13,8 @@ AGPUVrControllerState class >> fields [
 	self defineFields
 	"
     ^ #(
-		(buttons_pressed 'ulonglong longlong')
-		(buttons_touched 'ulonglong longlong')
+		(buttons_pressed 'ulong')
+		(buttons_touched 'ulong')
 		(axis0 'AGPUVrControllerAxisState')
 		(axis1 'AGPUVrControllerAxisState')
 		(axis2 'AGPUVrControllerAxisState')

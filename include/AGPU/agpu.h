@@ -1067,8 +1067,8 @@ typedef struct agpu_vr_controller_axis_state {
 
 /* Structure agpu_vr_controller_state. */
 typedef struct agpu_vr_controller_state {
-	agpu_ulong buttons_pressed;
-	agpu_ulong buttons_touched;
+	agpu_uint buttons_pressed;
+	agpu_uint buttons_touched;
 	agpu_vr_controller_axis_state axis0;
 	agpu_vr_controller_axis_state axis1;
 	agpu_vr_controller_axis_state axis2;

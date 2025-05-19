@@ -355,8 +355,8 @@
         </struct>
 
         <struct name="vr_controller_state">
-            <field name="buttons_pressed" type="ulong" />
-            <field name="buttons_touched" type="ulong" />
+            <field name="buttons_pressed" type="uint" />
+            <field name="buttons_touched" type="uint" />
 
             <field name="axis0" type="vr_controller_axis_state" />
             <field name="axis1" type="vr_controller_axis_state" />

@@ -1084,8 +1084,8 @@ struct VrControllerAxisState definition: {
 }.
 
 struct VrControllerState definition: {
-	public field buttons_pressed type: UInt64.
-	public field buttons_touched type: UInt64.
+	public field buttons_pressed type: UInt32.
+	public field buttons_touched type: UInt32.
 	public field axis0 type: VrControllerAxisState.
 	public field axis1 type: VrControllerAxisState.
 	public field axis2 type: VrControllerAxisState.
