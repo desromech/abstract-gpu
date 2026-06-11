@@ -4050,6 +4050,7 @@ remove them if not needed.
 */
 #include <cassert> // for assert
 #include <algorithm> // for min, max
+#include <cstdio>
 #include <mutex>
 
 #ifndef VMA_NULL
