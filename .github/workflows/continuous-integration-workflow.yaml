@@ -94,28 +94,28 @@ jobs:
         strategy:
             matrix:
                 variant:
-                    - os: windows-latest
+                    - os: windows-2022
                       platformName: windows-x86
                       vsPlatform: Win32
                       buildMode: Debug
-                    - os: windows-latest
+                    - os: windows-2022
                       platformName: windows-x86
                       vsPlatform: Win32
                       buildMode: RelWithDebInfo
-                    - os: windows-latest
+                    - os: windows-2022
                       platformName: windows-x86
                       vsPlatform: Win32
                       buildMode: Release
 
-                    - os: windows-latest
+                    - os: windows-2022
                       platformName: windows-x64
                       vsPlatform: x64
                       buildMode: Debug
-                    - os: windows-latest
+                    - os: windows-2022
                       platformName: windows-x64
                       vsPlatform: x64
                       buildMode: RelWithDebInfo
-                    - os: windows-latest
+                    - os: windows-2022
                       platformName: windows-x64
                       vsPlatform: x64
                       buildMode: Release
